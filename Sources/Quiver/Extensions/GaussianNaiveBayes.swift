@@ -40,7 +40,7 @@ import Foundation
 /// let predictions = model.predict([[2.0, 2.5], [5.5, 7.0]])
 /// // [0, 1]
 /// ```
-public struct GaussianNaiveBayes {
+public struct GaussianNaiveBayes: Classifier {
 
     /// Statistics learned from the training data for a single class.
     ///

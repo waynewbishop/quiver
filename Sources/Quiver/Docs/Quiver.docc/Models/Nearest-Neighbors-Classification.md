@@ -179,6 +179,26 @@ print("Accuracy: \(cm.accuracy)")
 
 `Panel` is entirely optional. The classifier accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for details.
 
+### Structured results with classify
+
+The `predict(_:)` method returns raw class labels as `[Int]` — ideal for evaluation metrics like `accuracy()` and `classificationReport()`. When exploring results interactively, `classify(_:)` groups the inputs by their predicted label, returning `Classification` objects that pair each label with its assigned points:
+
+```swift
+import Quiver
+
+let results = model.classify([[2.0, 2.5], [5.5, 7.0], [6.0, 8.0]])
+for group in results {
+    print("Class \(group.label): \(group.count) points")
+    for point in group {
+        print("  \(point)")
+    }
+}
+```
+
+Each `Classification` result conforms to `Sequence` — the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives you its data points directly, just like iterating an `Array`.
+
+> Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy()`, `classificationReport()`, or `confusionMatrix()`.
+
 ### When to use Nearest Neighbors
 
 Nearest Neighbors works best when:
@@ -203,6 +223,11 @@ Nearest Neighbors struggles with large datasets (prediction scans every training
 
 ### Prediction
 - ``KNearestNeighbors/predict(_:)``
+- ``KNearestNeighbors/classify(_:)``
+
+### Classification result
+- ``Classification``
+- ``Classifier``
 
 ### Configuration
 - ``DistanceMetric``

@@ -81,7 +81,7 @@ public enum VoteWeight {
 /// let predictions = model.predict([[2.0, 2.5], [5.5, 7.0]])
 /// // [0, 1]
 /// ```
-public struct KNearestNeighbors {
+public struct KNearestNeighbors: Classifier {
 
     /// The training feature vectors, stored for distance computation at prediction time.
     public let trainingFeatures: [[Double]]

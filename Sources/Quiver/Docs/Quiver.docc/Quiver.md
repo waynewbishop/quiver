@@ -83,5 +83,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Supporting Types
 - ``Fraction``
 - ``LogDeterminant``
+- ``Classification``
+- ``Classifier``
 - ``AggregationMethod``
 - ``MatrixError``

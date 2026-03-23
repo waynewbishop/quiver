@@ -136,4 +136,49 @@ final class KNearestNeighborsTests: XCTestCase {
         XCTAssertNotNil(cm.precision)
         XCTAssertNotNil(cm.recall)
     }
+
+    // MARK: - Classify
+
+    // classify() groups inputs by predicted label
+    func testClassifyGroupsByLabel() {
+        let features: [[Double]] = [
+            [1.0, 2.0], [1.5, 1.8], [1.2, 2.1],
+            [5.0, 8.0], [6.0, 9.0], [5.5, 7.5]
+        ]
+        let labels = [0, 0, 0, 1, 1, 1]
+        let model = KNearestNeighbors.fit(features: features, labels: labels, k: 3)
+
+        let results = model.classify([[2.0, 3.0], [5.0, 7.0], [6.0, 8.0]])
+
+        // Should have two groups (class 0 and class 1)
+        XCTAssertEqual(results.count, 2)
+
+        // Groups should be sorted by label
+        XCTAssertEqual(results[0].label, 0)
+        XCTAssertEqual(results[1].label, 1)
+
+        // Total points across all groups should match input count
+        let totalPoints = results.reduce(0) { $0 + $1.count }
+        XCTAssertEqual(totalPoints, 3)
+    }
+
+    // classify() results conform to Sequence — can iterate points
+    func testClassifySequenceConformance() {
+        let features: [[Double]] = [
+            [1.0, 2.0], [1.5, 1.8],
+            [5.0, 8.0], [6.0, 9.0]
+        ]
+        let labels = [0, 0, 1, 1]
+        let model = KNearestNeighbors.fit(features: features, labels: labels, k: 2)
+
+        let results = model.classify([[1.0, 1.5]])
+        XCTAssertEqual(results.count, 1)
+
+        // Can iterate over points in the classification group
+        var pointCount = 0
+        for _ in results[0] {
+            pointCount += 1
+        }
+        XCTAssertEqual(pointCount, results[0].count)
+    }
 }

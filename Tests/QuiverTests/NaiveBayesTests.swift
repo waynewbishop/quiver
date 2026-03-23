@@ -139,4 +139,27 @@ final class NaiveBayesTests: XCTestCase {
         XCTAssertNotNil(cm.precision)
         XCTAssertNotNil(cm.recall)
     }
+
+    // MARK: - Classify
+
+    // classify() groups inputs by predicted label
+    func testClassifyGroupsByLabel() {
+        let features: [[Double]] = [
+            [1.0, 2.0], [2.0, 3.0], [1.5, 2.5],
+            [8.0, 9.0], [9.0, 8.0], [8.5, 8.5]
+        ]
+        let labels = [0, 0, 0, 1, 1, 1]
+        let model = GaussianNaiveBayes.fit(features: features, labels: labels)
+
+        let results = model.classify([[1.0, 1.5], [8.0, 8.0], [9.0, 9.0]])
+
+        // Should have two groups
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(results[0].label, 0)
+        XCTAssertEqual(results[1].label, 1)
+
+        // Total points across groups matches input count
+        let totalPoints = results.reduce(0) { $0 + $1.count }
+        XCTAssertEqual(totalPoints, 3)
+    }
 }

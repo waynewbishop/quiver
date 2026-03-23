@@ -119,6 +119,26 @@ print("Accuracy: \(cm.accuracy)")
 
 `Panel` is entirely optional. The classifier accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for details.
 
+### Structured results with classify
+
+The `predict(_:)` method returns raw class labels as `[Int]` for evaluation pipelines. When exploring results interactively, `classify(_:)` groups the inputs by their predicted label:
+
+```swift
+import Quiver
+
+let results = model.classify([[700.0, 20000.0, 0.3], [500.0, 90000.0, 0.05]])
+for group in results {
+    print("Class \(group.label): \(group.count) customers")
+    for point in group {
+        print("  \(point)")
+    }
+}
+```
+
+Each `Classification` result conforms to `Sequence` — the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives you its data points directly, just like iterating an `Array`.
+
+> Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy()`, `classificationReport()`, or `confusionMatrix()`.
+
 ### Safe by design
 
 `GaussianNaiveBayes` is a Swift struct, which means it cannot be accidentally changed after creation. This design prevents three common mistakes:
@@ -144,6 +164,11 @@ Naive Bayes multiplies together one probability for every feature in every class
 
 ### Prediction
 - ``GaussianNaiveBayes/predict(_:)``
+- ``GaussianNaiveBayes/classify(_:)``
+
+### Classification result
+- ``Classification``
+- ``Classifier``
 
 ### Related
 - <doc:Machine-Learning-Primer>
