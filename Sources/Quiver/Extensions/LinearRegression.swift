@@ -39,7 +39,12 @@ import Foundation
 /// let predictions = model.predict([[6.0], [7.0]])
 /// // predictions ≈ [11.8, 13.8]
 /// ```
-public struct LinearRegression {
+public struct LinearRegression: CustomStringConvertible {
+
+    public var description: String {
+        let interceptStr = hasIntercept ? ", intercept: \(String(format: "%.2f", coefficients[0]))" : ""
+        return "LinearRegression: \(featureCount) \(featureCount == 1 ? "feature" : "features")\(interceptStr)"
+    }
 
     /// The fitted coefficient vector.
     ///

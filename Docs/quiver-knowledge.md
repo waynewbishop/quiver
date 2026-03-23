@@ -8,6 +8,7 @@ Complete reference for the Quiver Swift package. Upload this file to a Claude Pr
 **Platforms:** macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+
 **Swift:** 5.9+
 **Dependencies:** None (pure Swift)
+**Compiled size:** ~1.9 MB (release) — 33 files, 7,662 lines. Uses 2.5% of watchOS's 75 MB app bundle limit
 
 ---
 
@@ -30,6 +31,23 @@ Quiver extends Swift's `Array` type with numerical computing methods. There are 
 Internal logic lives in `_Vector` types that are not part of the public API. The public surface is clean Array extensions constrained by `Numeric`, `FloatingPoint`, `Comparable`, or `BinaryFloatingPoint`.
 
 ML models are immutable value types created via static `fit()` methods. There is no unfitted state — you cannot call `predict()` on a model that hasn't been trained.
+
+All model and result types conform to `CustomStringConvertible`, producing clean summaries when printed:
+
+```swift
+print(model)    // KMeans: 3 clusters, 9 points, converged in 4 iterations (inertia: 1.08)
+print(cluster)  // Cluster: center [1.23, 1.97], 3 points
+print(cm)       // TP: 3  FP: 1  TN: 3  FN: 1  (accuracy: 75.0%)
+print(knn)      // KNearestNeighbors: k=3, euclidean, 6 training points, 2 features
+print(nb)       // GaussianNaiveBayes: 2 classes, 2 features
+print(lr)       // LinearRegression: 1 feature, intercept: 150000.00
+print(scaler)   // FeatureScaler: 2 features, range 0.0...1.0
+print(group)    // Class 0: 3 points
+```
+
+Individual properties remain accessible for detailed inspection — `model.labels`, `cluster.centroid`, `cm.truePositives`, etc.
+
+Key result types also conform to `Equatable`: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`. This enables direct comparison with `==` in tests and assertions.
 
 ---
 

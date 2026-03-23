@@ -172,4 +172,19 @@ final class KMeansTests: XCTestCase {
         XCTAssertEqual(model.centroids[0][0], 3.0, accuracy: 1e-9)
         XCTAssertEqual(model.centroids[0][1], 4.0, accuracy: 1e-9)
     }
+
+    // MARK: - Equatable
+
+    // Cluster supports == comparison
+    func testClusterEquatable() {
+        let data: [[Double]] = [
+            [1.0, 2.0], [1.5, 1.8], [1.2, 2.1],
+            [8.0, 8.0], [8.5, 7.5], [9.0, 8.5]
+        ]
+        let model = KMeans.fit(data: data, k: 2, seed: 42)
+
+        let clusters1 = model.clusters(from: data)
+        let clusters2 = model.clusters(from: data)
+        XCTAssertEqual(clusters1, clusters2)
+    }
 }

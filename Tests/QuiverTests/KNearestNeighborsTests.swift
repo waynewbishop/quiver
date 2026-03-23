@@ -181,4 +181,20 @@ final class KNearestNeighborsTests: XCTestCase {
         }
         XCTAssertEqual(pointCount, results[0].count)
     }
+
+    // MARK: - Equatable
+
+    // Classification supports == comparison
+    func testClassificationEquatable() {
+        let features: [[Double]] = [
+            [1.0, 2.0], [1.5, 1.8],
+            [5.0, 8.0], [6.0, 9.0]
+        ]
+        let labels = [0, 0, 1, 1]
+        let model = KNearestNeighbors.fit(features: features, labels: labels, k: 2)
+
+        let results1 = model.classify([[1.0, 1.5]])
+        let results2 = model.classify([[1.0, 1.5]])
+        XCTAssertEqual(results1, results2)
+    }
 }

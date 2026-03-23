@@ -106,4 +106,19 @@ final class FeatureScalerTests: XCTestCase {
             XCTAssertTrue(p == 0 || p == 1)
         }
     }
+
+    // MARK: - Equatable
+
+    // FeatureScaler supports == comparison
+    func testFeatureScalerEquatable() {
+        let features: [[Double]] = [[1.0, 100.0], [2.0, 200.0], [3.0, 300.0]]
+
+        let scaler1 = FeatureScaler.fit(features: features)
+        let scaler2 = FeatureScaler.fit(features: features)
+        XCTAssertEqual(scaler1, scaler2)
+
+        // Different data produces different scalers
+        let scaler3 = FeatureScaler.fit(features: [[0.0, 0.0], [10.0, 10.0]])
+        XCTAssertNotEqual(scaler1, scaler3)
+    }
 }

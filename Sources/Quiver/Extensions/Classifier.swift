@@ -39,7 +39,11 @@ import Foundation
 ///     }
 /// }
 /// ```
-public struct Classification: Sequence {
+public struct Classification: Sequence, CustomStringConvertible, Equatable {
+
+    public var description: String {
+        "Class \(label): \(count) \(count == 1 ? "point" : "points")"
+    }
 
     /// The predicted class label for this group.
     public let label: Int

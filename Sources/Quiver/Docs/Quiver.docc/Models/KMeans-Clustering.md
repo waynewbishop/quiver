@@ -37,8 +37,8 @@ let data: [[Double]] = [
 
 // Fit with 2 clusters — seed ensures reproducible results
 let model = KMeans.fit(data: data, k: 2, seed: 42)
-print(model.labels)    // [0, 0, 0, 1, 1, 1]
-print(model.centroids) // final cluster centers
+print(model)           // KMeans: 2 clusters, 6 points, converged in N iterations
+print(model.labels)    // [0, 0, 0, 1, 1, 1] — individual properties still accessible
 ```
 
 Because centroids start at random positions, a single run can converge on a poor clustering — two groups split left-right instead of top-bottom, for example. The `bestFit` method solves this by running the algorithm multiple times, each with a different seed, and returning the model with the lowest inertia:
@@ -79,7 +79,7 @@ import Quiver
 let clusters = model.clusters(from: data)
 
 for cluster in clusters {
-    print("Center: \(cluster.centroid), size: \(cluster.count)")
+    print(cluster)  // Cluster: center [1.23, 1.97], 3 points
     for point in cluster {
         print("  \(point)")
     }

@@ -47,7 +47,11 @@ import Foundation
 /// let scaledTrain = scaler.transform(trainX)
 /// let scaledTest = scaler.transform(testX)
 /// ```
-public struct FeatureScaler {
+public struct FeatureScaler: CustomStringConvertible, Equatable {
+
+    public var description: String {
+        "FeatureScaler: \(featureCount) features, range \(range.lowerBound)...\(range.upperBound)"
+    }
 
     /// Per-column minimum values learned from the training data.
     public let minimums: [Double]

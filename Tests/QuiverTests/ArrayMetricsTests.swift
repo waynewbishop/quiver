@@ -95,6 +95,22 @@ final class ArrayMetricsTests: XCTestCase {
         XCTAssertEqual(r, 0.5)
     }
 
+    // MARK: - Equatable
+
+    // ConfusionMatrix supports == comparison
+    func testConfusionMatrixEquatable() {
+        let predictions = [1, 0, 1, 1, 0]
+        let actual      = [1, 0, 0, 1, 0]
+
+        let cm1 = predictions.confusionMatrix(actual: actual)
+        let cm2 = predictions.confusionMatrix(actual: actual)
+        XCTAssertEqual(cm1, cm2)
+
+        // Different inputs produce different matrices
+        let cm3 = [0, 0, 0, 0, 0].confusionMatrix(actual: actual)
+        XCTAssertNotEqual(cm1, cm3)
+    }
+
     // MARK: - Classification Report
 
     // classificationReport produces a formatted multi-line summary

@@ -29,7 +29,12 @@ import Foundation
 ///     }
 /// }
 /// ```
-public struct Cluster: Sequence {
+public struct Cluster: Sequence, CustomStringConvertible, Equatable {
+
+    public var description: String {
+        let center = centroid.map { String(format: "%.2f", $0) }.joined(separator: ", ")
+        return "Cluster: center [\(center)], \(count) \(count == 1 ? "point" : "points")"
+    }
 
     /// The centroid position for this cluster.
     public let centroid: [Double]
@@ -73,7 +78,11 @@ public struct Cluster: Sequence {
 /// print(model.centroids)    // cluster centers
 /// print(model.inertia)      // sum of squared distances
 /// ```
-public struct KMeans {
+public struct KMeans: CustomStringConvertible {
+
+    public var description: String {
+        "KMeans: \(centroids.count) clusters, \(labels.count) points, converged in \(iterations) iterations (inertia: \(String(format: "%.2f", inertia)))"
+    }
 
     /// The final centroid positions after convergence.
     public let centroids: [[Double]]

@@ -29,13 +29,14 @@ let features: [[Double]] = [
 let labels = [0, 0, 1, 1]
 
 let model = GaussianNaiveBayes.fit(features: features, labels: labels)
+print(model)  // GaussianNaiveBayes: 2 classes, 2 features
 
-// Inspect what the model learned
+// Inspect what the model learned — each class prints cleanly
 for stats in model.classes {
-    print("Class \(stats.label): prior=\(stats.prior), means=\(stats.means)")
+    print(stats)
 }
-// Class 0: prior=0.5, means=[1.25, 1.9]
-// Class 1: prior=0.5, means=[5.5, 8.5]
+// Class 0: prior 50.0%, means [1.25, 1.90], 2 samples
+// Class 1: prior 50.0%, means [5.50, 8.50], 2 samples
 ```
 
 ### Making predictions

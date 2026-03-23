@@ -172,7 +172,18 @@ This eliminates the need to match seeds across parallel array splits, which is e
 
 ### Descriptive statistics
 
-Call `describe()` on any panel to print a per-column summary of count, mean, standard deviation, minimum, and maximum. This provides a quick sanity check on the data before feeding it into a model — verifying that scales are reasonable, no columns are constant, and row counts match expectations.
+`print()` gives a quick structural overview, while `describe()` provides detailed per-column statistics:
+
+```swift
+import Quiver
+
+print(data)  // Panel: 3 columns, 5 rows
+
+print(data.describe())
+// Prints count, mean, std, min, and max for each column
+```
+
+This provides a quick sanity check on the data before feeding it into a model — verifying that scales are reasonable, no columns are constant, and row counts match expectations.
 
 ### Classification pipeline
 
