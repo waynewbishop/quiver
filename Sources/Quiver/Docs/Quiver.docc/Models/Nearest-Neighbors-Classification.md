@@ -211,7 +211,7 @@ Nearest Neighbors struggles with large datasets (prediction scans every training
 
 ### Safe by design
 
-`KNearestNeighbors` follows the same immutable-struct pattern as `GaussianNaiveBayes` and `LinearRegression`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results.
+`KNearestNeighbors` follows the same immutable-struct pattern as `GaussianNaiveBayes` and `LinearRegression`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models and their `Classification` also conform to Swift's `Equatable` protocol'.
 
 ## Topics
 

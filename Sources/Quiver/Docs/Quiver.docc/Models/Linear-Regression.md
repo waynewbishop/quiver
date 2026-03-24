@@ -188,7 +188,7 @@ redundant.determinant  // 0.0 → fit will throw MatrixError.singular
 
 ### Safe by design
 
-`LinearRegression` follows the same immutable-struct pattern as `GaussianNaiveBayes`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results.
+`LinearRegression` follows the same immutable-struct pattern as `GaussianNaiveBayes`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models support direct comparison with Swift's `Equatable` protocol', so verifying two training runs produce the same coefficients is a single expression.
 
 ## Topics
 

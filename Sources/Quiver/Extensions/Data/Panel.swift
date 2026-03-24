@@ -45,7 +45,7 @@ import Foundation
 /// let features = data.toMatrix(columns: ["age", "income"])
 /// // [[25.0, 50000.0], [30.0, 60000.0], [35.0, 75000.0], [28.0, 55000.0]]
 /// ```
-public struct Panel: CustomStringConvertible {
+public struct Panel: CustomStringConvertible, Equatable {
 
     public var description: String {
         "Panel: \(columnNames.count) columns, \(rowCount) rows"

@@ -150,6 +150,8 @@ Each `Classification` result conforms to `Sequence` — the same Swift protocol 
 
 **Reproducible splits.** Each call to `trainTestSplit(testRatio:seed:)` uses its own seed. There is no shared random state that other code can interfere with, so the same seed always produces the same split.
 
+**Direct comparison.** Models and their `Classification` results support Swift's `Equatable` protocol. Verifying that two training runs produce the same model is a single expression — no need to compare properties one at a time.
+
 ### Numerical stability
 
 Naive Bayes multiplies together one probability for every feature in every class. With many features, these probabilities become extremely small numbers that can round to zero, causing the model to stop distinguishing between classes. Quiver handles this internally by working with logarithms, which keeps the arithmetic accurate regardless of how many features the data contains.

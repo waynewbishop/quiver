@@ -137,6 +137,16 @@ final class PanelTests: XCTestCase {
         XCTAssertEqual(row1.count, row2.count)
     }
 
+    // Same columns and data produce equal Panels
+    func testPanelEquatable() {
+        let panel1 = Panel([("age", [25.0, 30.0]), ("score", [88.0, 92.0])])
+        let panel2 = Panel([("age", [25.0, 30.0]), ("score", [88.0, 92.0])])
+        XCTAssertEqual(panel1, panel2)
+
+        let different = Panel([("age", [25.0, 35.0]), ("score", [88.0, 92.0])])
+        XCTAssertNotEqual(panel1, different)
+    }
+
     // Describe produces per-column statistics with column names
     func testDescribeOutput() {
         let panel = Panel([

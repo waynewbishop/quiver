@@ -4,9 +4,9 @@ A Quiver type that organizes named columns of numeric data into a single contain
 
 ## Overview
 
-Panel takes a matrix of rows and pivots it into named columns, where each column represents a [feature or label](<doc:Machine-Learning-Primer>). Each column is a `[Double]` — effectively a named vector. The data is the same, just organized by column instead of by row. Without Panel, a feature matrix like `[[619, 15000, 0.08], [502, 78000, 0.04]]` offers no indication of what each column represents, and splitting or filtering requires careful coordination across parallel arrays to keep rows aligned.
+Panel takes a matrix of rows and pivots it into named columns, where each column represents a [feature or label](<doc:Machine-Learning-Primer>). Each column is a `[Double]` — effectively a named vector. The data is the same, just organized by column instead of by row. Without Panel, features offer no indication of what each column represents, and splitting or filtering requires careful coordination across parallel arrays to keep rows aligned.
 
-With Panel, each column gets a name and all rows stay together as a unit. Developers familiar with Python's pandas `DataFrame` will recognize the concept — Panel serves a similar role for labeled column data, scoped to Quiver's numeric focus.
+With Panel, each column gets a name and all rows stay together as a unit. It serves as a lightweight container for labeled column data, scoped to Quiver's numeric focus.
 
 > Important: `Panel` does not replace Quiver's array and matrix operations — it organizes them. Each column is a standard `[Double]` that supports Quiver vector operations like `.mean()`, `.std()`, `.standardized()`, and boolean masking.
 
@@ -172,7 +172,7 @@ This eliminates the need to match seeds across parallel array splits, which is e
 
 ### Inspecting data
 
-Panel provides three levels of detail for inspecting data, matching the workflow Python developers expect from pandas:
+Panel provides three levels of detail for inspecting data:
 
 ```swift
 import Quiver
@@ -246,4 +246,6 @@ let predictions = model.predict(testScaled)
 ### Design scope
 
 `Panel` is intentionally focused on numeric columnar data for ML workflows. It is a value type with a fixed schema — columns are defined at creation and all values are `Double`. This focused design keeps `Panel` lightweight and predictable, optimized for the split-scale-train-evaluate cycle that classification workflows require.
+
+Panels support direct comparison with `==`. Two panels are equal when they have the same column names in the same order and the same data in every column. This is useful for verifying that a filtering or splitting operation produced the expected result.
 
