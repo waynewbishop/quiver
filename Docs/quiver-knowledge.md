@@ -47,7 +47,15 @@ print(group)    // Class 0: 3 points
 
 Individual properties remain accessible for detailed inspection — `model.labels`, `cluster.centroid`, `cm.truePositives`, etc.
 
-Key result types also conform to `Equatable`: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`. This enables direct comparison with `==` in tests and assertions.
+All models and result types conform to `Equatable`, enabling direct comparison with `==` in tests and assertions:
+
+```swift
+let run1 = KMeans.fit(data: points, k: 3, seed: 42)
+let run2 = KMeans.fit(data: points, k: 3, seed: 42)
+run1 == run2  // true
+```
+
+Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`.
 
 ---
 
@@ -210,7 +218,6 @@ if let avg = data.mean() { print(avg) }           // Double?
 if let mid = data.median() { print(mid) }         // Double?
 if let v = data.variance(ddof: 0) { print(v) }    // Double? (population)
 if let s = data.std(ddof: 1) { print(s) }         // Double? (sample)
-if let se = data.standardError() { print(se) }   // Double? (std / √n)
 if let q = data.quartiles() { print(q.iqr) }      // tuple?
 if let lo = data.argMin() { print(lo) }            // Int?
 if let hi = data.argMax() { print(hi) }            // Int?
@@ -543,8 +550,10 @@ panel.toMatrix()          // [[Double]]
 panel.filtered(where: [true, false, true])
 let (train, test) = panel.trainTestSplit(testRatio: 0.2, seed: 42)
 
-// Summary statistics
-panel.describe()   // String
+// Display and summary statistics
+panel.head()       // Pandas-style tabular output (default 10 rows)
+panel.head(n: 3)   // First 3 rows in tabular format
+panel.describe()   // Per-column statistics (count, mean, std, min, max)
 ```
 
 ---
@@ -723,7 +732,7 @@ Three questions about any dataset: where is the center, how spread out, and whic
 
 - **Aggregation:** `sum()`, `product()` (non-optional). `argMin()`, `argMax()` (optional — return indices).
 - **Central tendency:** `mean()`, `median()` — both optional. When they diverge, data is skewed.
-- **Dispersion:** `variance(ddof:)`, `std(ddof:)` — both optional. `ddof: 0` for population, `ddof: 1` for sample. `standardError(ddof:)` — `std / √n`, measures how precisely the sample mean estimates the true mean. Used in hypothesis testing and A/B tests.
+- **Dispersion:** `variance(ddof:)`, `std(ddof:)` — both optional. `ddof: 0` for population, `ddof: 1` for sample.
 - **Cumulative:** `cumulativeSum()`, `cumulativeProduct()` — non-optional. Running totals.
 - **Outlier detection:** `outlierMask(threshold:)` — z-score method, returns `[Bool]`. Default std of 1.0 when all values identical.
 - **Vector averaging:** `meanVector()` — element-wise mean across multiple vectors. Returns optional.
@@ -852,6 +861,7 @@ Organizes named columns of numeric data. Similar to Python's pandas DataFrame bu
 - **Properties:** `.columnNames`, `.rowCount`.
 - **Filter:** `panel.filtered(where: boolMask)` — applies mask to all columns simultaneously.
 - **Split:** `panel.trainTestSplit(testRatio:seed:)` — splits all columns atomically by the same rows.
+- **Head:** `panel.head()` — Pandas-style tabular display of first 10 rows. `panel.head(n: 3)` for custom count.
 - **Describe:** `panel.describe()` — per-column summary statistics.
 - **Design:** Value type, fixed schema, all `Double` columns. Models accept `[[Double]]` and `[Int]` directly — Panel organizes data, models consume raw arrays.
 

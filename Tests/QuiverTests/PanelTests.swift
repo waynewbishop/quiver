@@ -77,6 +77,66 @@ final class PanelTests: XCTestCase {
         XCTAssertEqual(filtered["label"], [1.0, 0.0, 1.0])
     }
 
+    // head() displays the first rows in a Pandas-style tabular format
+    func testHeadDefault() {
+        let panel = Panel([
+            ("age", [25.0, 30.0, 35.0]),
+            ("score", [88.0, 92.0, 85.0])
+        ])
+
+        let output = panel.head()
+        let lines = output.split(separator: "\n")
+
+        // Header plus 3 data rows
+        XCTAssertEqual(lines.count, 4)
+
+        // Header contains column names
+        XCTAssertTrue(output.contains("age"))
+        XCTAssertTrue(output.contains("score"))
+
+        // Row indices appear
+        XCTAssertTrue(lines[1].hasPrefix("0"))
+        XCTAssertTrue(lines[2].hasPrefix("1"))
+        XCTAssertTrue(lines[3].hasPrefix("2"))
+
+        // Values appear
+        XCTAssertTrue(output.contains("25.0"))
+        XCTAssertTrue(output.contains("92.0"))
+    }
+
+    // head(n) limits to the specified number of rows
+    func testHeadWithLimit() {
+        let panel = Panel([
+            ("x", [1.0, 2.0, 3.0, 4.0, 5.0])
+        ])
+
+        let output = panel.head(n: 2)
+        let lines = output.split(separator: "\n")
+
+        // Header plus 2 data rows
+        XCTAssertEqual(lines.count, 3)
+        XCTAssertTrue(output.contains("1.0"))
+        XCTAssertTrue(output.contains("2.0"))
+        XCTAssertFalse(output.contains("3.0"))
+    }
+
+    // head() right-aligns values within each column
+    func testHeadAlignment() {
+        let panel = Panel([
+            ("value", [1.0, 1000.0])
+        ])
+
+        let output = panel.head()
+        let lines = output.split(separator: "\n")
+
+        // The "1.0" row should be padded so it aligns with "1000.0"
+        let row1 = String(lines[1])
+        let row2 = String(lines[2])
+
+        // Both value strings should end at the same column position
+        XCTAssertEqual(row1.count, row2.count)
+    }
+
     // Describe produces per-column statistics with column names
     func testDescribeOutput() {
         let panel = Panel([

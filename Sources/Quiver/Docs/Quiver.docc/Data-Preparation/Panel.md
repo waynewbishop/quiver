@@ -170,20 +170,46 @@ let trainLabels = train.labels("label")
 
 This eliminates the need to match seeds across parallel array splits, which is error-prone and a common source of row misalignment bugs.
 
-### Descriptive statistics
+### Inspecting data
 
-`print()` gives a quick structural overview, while `describe()` provides detailed per-column statistics:
+Panel provides three levels of detail for inspecting data, matching the workflow Python developers expect from pandas:
 
 ```swift
 import Quiver
 
+let data = Panel([
+    ("age", [25.0, 30.0, 35.0, 28.0, 42.0]),
+    ("income", [50000.0, 62000.0, 75000.0, 58000.0, 95000.0]),
+    ("score", [88.0, 92.0, 85.0, 91.0, 78.0])
+])
+
 print(data)  // Panel: 3 columns, 5 rows
+
+print(data.head())
+//        age    income  score
+// 0     25.0   50000.0  88.0
+// 1     30.0   62000.0  92.0
+// 2     35.0   75000.0  85.0
+// 3     28.0   58000.0  91.0
+// 4     42.0   95000.0  78.0
 
 print(data.describe())
 // Prints count, mean, std, min, and max for each column
 ```
 
-This provides a quick sanity check on the data before feeding it into a model — verifying that scales are reasonable, no columns are constant, and row counts match expectations.
+`print()` gives a quick structural overview. `head()` shows the actual row data in a Pandas-style tabular format — column headers with right-aligned values and a row index. `describe()` provides per-column summary statistics. Together they provide a complete sanity check on the data before feeding it into a model.
+
+By default, `head()` displays up to 10 rows. Pass a count to limit the output:
+
+```swift
+print(data.head(n: 3))
+//        age    income  score
+// 0     25.0   50000.0  88.0
+// 1     30.0   62000.0  92.0
+// 2     35.0   75000.0  85.0
+```
+
+> Tip: Use `head()` in a Playground to visually verify your data after loading or filtering. Catching a column of unexpected zeros early saves debugging time later.
 
 ### Classification pipeline
 

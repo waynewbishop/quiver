@@ -187,4 +187,15 @@ final class KMeansTests: XCTestCase {
         let clusters2 = model.clusters(from: data)
         XCTAssertEqual(clusters1, clusters2)
     }
+
+    // Same seed and data produce equal models
+    func testKMeansEquatable() {
+        let data: [[Double]] = [[1.0, 2.0], [1.5, 1.8], [5.0, 8.0], [6.0, 9.0], [1.0, 0.6], [5.5, 7.5]]
+        let model1 = KMeans.fit(data: data, k: 2, seed: 42)
+        let model2 = KMeans.fit(data: data, k: 2, seed: 42)
+        XCTAssertEqual(model1, model2)
+
+        let different = KMeans.fit(data: data, k: 2, seed: 99)
+        XCTAssertNotEqual(model1, different)
+    }
 }

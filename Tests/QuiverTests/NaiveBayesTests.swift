@@ -162,4 +162,13 @@ final class NaiveBayesTests: XCTestCase {
         let totalPoints = results.reduce(0) { $0 + $1.count }
         XCTAssertEqual(totalPoints, 3)
     }
+
+    // Same training data produces equal models
+    func testNaiveBayesEquatable() {
+        let features: [[Double]] = [[1.0, 2.0], [2.0, 3.0], [8.0, 9.0], [9.0, 8.0]]
+        let labels = [0, 0, 1, 1]
+        let model1 = GaussianNaiveBayes.fit(features: features, labels: labels)
+        let model2 = GaussianNaiveBayes.fit(features: features, labels: labels)
+        XCTAssertEqual(model1, model2)
+    }
 }

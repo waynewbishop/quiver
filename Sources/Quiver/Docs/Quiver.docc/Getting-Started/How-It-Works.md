@@ -129,6 +129,22 @@ let (stores, days) = sales.shape
 
 This is **tuple destructuring** — we choose names that match our domain rather than the generic `.rows` and `.columns`. The binding works by position, so the first value is always the row count and the second is always the column count. The result is code that reads like a sentence: "this data has two stores and seven days."
 
+### Comparing results
+
+Quiver's models support direct comparison with `==`. This makes it straightforward to verify that two training runs produce the same clusters, confirm that a confusion matrix matches expectations, or check whether feature scaling preserved the original configuration:
+
+```swift
+import Quiver
+
+let run1 = KMeans.fit(data: points, k: 3, seed: 42)
+let run2 = KMeans.fit(data: points, k: 3, seed: 42)
+
+// Same seed, same data — same model
+run1 == run2  // true
+```
+
+No need to serialize, compare properties one at a time, or write custom comparison logic. This works across all four models — `KMeans`, `LinearRegression`, `KNearestNeighbors`, and `GaussianNaiveBayes` — as well as result types like `Cluster`, `Classification`, `ConfusionMatrix`, and `FeatureScaler`. Unit tests can use `XCTAssertEqual` directly.
+
 ### A focused, intentional scope
 
 Quiver is designed for educational use, on-device ML features, and data science workflows where understanding the mathematics matters as much as the result. GPU acceleration, automatic differentiation, and distributed training are outside that scope as they bring significant complexity: external dependencies, platform restrictions, and a steeper learning curve that would work against the framework's core goals of clarity, portability, and zero-dependency deployment.

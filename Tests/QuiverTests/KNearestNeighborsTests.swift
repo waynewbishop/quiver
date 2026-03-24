@@ -197,4 +197,16 @@ final class KNearestNeighborsTests: XCTestCase {
         let results2 = model.classify([[1.0, 1.5]])
         XCTAssertEqual(results1, results2)
     }
+
+    // Same training data and parameters produce equal models
+    func testKNNEquatable() {
+        let features: [[Double]] = [[1.0, 2.0], [1.5, 1.8], [5.0, 8.0], [6.0, 9.0]]
+        let labels = [0, 0, 1, 1]
+        let model1 = KNearestNeighbors.fit(features: features, labels: labels, k: 3)
+        let model2 = KNearestNeighbors.fit(features: features, labels: labels, k: 3)
+        XCTAssertEqual(model1, model2)
+
+        let different = KNearestNeighbors.fit(features: features, labels: labels, k: 1)
+        XCTAssertNotEqual(model1, different)
+    }
 }

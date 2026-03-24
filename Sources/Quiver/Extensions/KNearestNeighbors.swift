@@ -21,7 +21,7 @@ import Foundation
 /// well when features have similar scales. Cosine distance measures the angle
 /// between vectors and works well for text embeddings and high-dimensional data
 /// where magnitude is less meaningful than direction.
-public enum DistanceMetric {
+public enum DistanceMetric: Equatable {
 
     /// Euclidean distance: √Σ(aᵢ − bᵢ)².
     ///
@@ -44,7 +44,7 @@ public enum DistanceMetric {
 /// Uniform weighting gives each neighbor one vote. Distance weighting gives
 /// closer neighbors more influence, which can improve accuracy when the
 /// decision boundary is near the query point.
-public enum VoteWeight {
+public enum VoteWeight: Equatable {
 
     /// Each neighbor gets one vote regardless of distance.
     case uniform
@@ -81,7 +81,7 @@ public enum VoteWeight {
 /// let predictions = model.predict([[2.0, 2.5], [5.5, 7.0]])
 /// // [0, 1]
 /// ```
-public struct KNearestNeighbors: Classifier, CustomStringConvertible {
+public struct KNearestNeighbors: Classifier, CustomStringConvertible, Equatable {
 
     public var description: String {
         "KNearestNeighbors: k=\(k), \(metric), \(trainingFeatures.count) training points, \(featureCount) features"

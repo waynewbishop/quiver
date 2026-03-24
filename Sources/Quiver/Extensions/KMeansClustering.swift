@@ -78,7 +78,7 @@ public struct Cluster: Sequence, CustomStringConvertible, Equatable {
 /// print(model.centroids)    // cluster centers
 /// print(model.inertia)      // sum of squared distances
 /// ```
-public struct KMeans: CustomStringConvertible {
+public struct KMeans: CustomStringConvertible, Equatable {
 
     public var description: String {
         "KMeans: \(centroids.count) clusters, \(labels.count) points, converged in \(iterations) iterations (inertia: \(String(format: "%.2f", inertia)))"

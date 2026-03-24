@@ -309,6 +309,84 @@ public struct Panel: CustomStringConvertible {
         return (train: Panel(trainPairs), test: Panel(testPairs))
     }
 
+    // MARK: - Display
+
+    /// Returns the first rows of the panel as a formatted table.
+    ///
+    /// Displays data in a space-delimited tabular format matching Pandas' default
+    /// `DataFrame.head()` output — column headers right-aligned above their values,
+    /// with a row index on the left.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let data = Panel([
+    ///     ("age", [25.0, 30.0, 35.0, 28.0]),
+    ///     ("income", [50000.0, 62000.0, 75000.0, 58000.0]),
+    ///     ("score", [88.0, 92.0, 85.0, 91.0])
+    /// ])
+    /// print(data.head(n: 3))
+    /// //        age    income  score
+    /// // 0     25.0   50000.0   88.0
+    /// // 1     30.0   62000.0   92.0
+    /// // 2     35.0   75000.0   85.0
+    /// ```
+    ///
+    /// - Parameter n: Number of rows to display. Defaults to 10.
+    /// - Returns: A formatted string showing the first `n` rows in tabular form.
+    public func head(n: Int = 10) -> String {
+        let displayRows = Swift.min(n, rowCount)
+        guard displayRows > 0 else { return "(empty Panel)" }
+
+        // Format each value: drop ".0" for whole numbers, otherwise 1 decimal
+        func format(_ value: Double) -> String {
+            if value == value.rounded(.towardZero) && !value.isNaN && !value.isInfinite {
+                let intVal = Int(value)
+                return "\(intVal).0"
+            }
+            return String(format: "%.1f", value)
+        }
+
+        // Build the index column
+        let indexStrings = (0..<displayRows).map { "\($0)" }
+        let indexWidth = Swift.max(indexStrings.last?.count ?? 1, 1)
+
+        // Build formatted value strings per column and compute widths
+        var columnStrings: [[String]] = []
+        var columnWidths: [Int] = []
+
+        for name in columnNames {
+            let col = column(name)
+            let values = (0..<displayRows).map { format(col[$0]) }
+            let width = Swift.max(name.count, values.map { $0.count }.max() ?? 0)
+            columnStrings.append(values)
+            columnWidths.append(width)
+        }
+
+        // Build header line
+        let indexPad = String(repeating: " ", count: indexWidth)
+        let headerParts = zip(columnNames, columnWidths).map { name, width in
+            name.padding(toLength: width, withPad: " ", startingAt: 0)
+                .replacingOccurrences(of: name,
+                    with: String(repeating: " ", count: width - name.count) + name)
+        }
+        var lines = [indexPad + "  " + headerParts.joined(separator: "  ")]
+
+        // Build data rows
+        for r in 0..<displayRows {
+            let idx = indexStrings[r].padding(toLength: indexWidth, withPad: " ", startingAt: 0)
+            let valueParts = (0..<columnNames.count).map { c in
+                let val = columnStrings[c][r]
+                let width = columnWidths[c]
+                return String(repeating: " ", count: width - val.count) + val
+            }
+            lines.append(idx + "  " + valueParts.joined(separator: "  "))
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
     // MARK: - Description
 
     /// Returns per-column summary statistics as a formatted string.

@@ -240,28 +240,6 @@ public extension Array where Element: FloatingPoint {
         return vector.std(ddof: ddof)
     }
 
-    /// Standard error of the mean: how precisely the sample mean estimates
-    /// the true population mean.
-    ///
-    /// Computed as `std / √n`. A smaller standard error means the sample mean
-    /// is a more reliable estimate. This is the building block for confidence
-    /// intervals, hypothesis tests, and A/B test significance calculations.
-    ///
-    /// Example:
-    /// ```swift
-    /// import Quiver
-    ///
-    /// let groupA = [1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0]
-    /// let se = groupA.standardError()  // std / √10
-    /// ```
-    ///
-    /// - Parameter ddof: Delta Degrees of Freedom — 0 for population (default), 1 for sample
-    /// - Returns: The standard error, or nil if the array is empty or has fewer elements than `ddof + 1`
-    func standardError(ddof: Int = 0) -> Element? {
-        guard let sd = std(ddof: ddof), count > 0 else { return nil }
-        return sd / Element(count).squareRoot()
-    }
-
     /// Detects outliers using the z-score method and returns a boolean mask.
     ///
     /// Each element's z-score is computed as the absolute distance from the mean divided

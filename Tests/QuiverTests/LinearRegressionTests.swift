@@ -149,4 +149,13 @@ final class LinearRegressionTests: XCTestCase {
         XCTAssertGreaterThan(r2, 0.95)
         XCTAssertLessThan(rmse, 1.0)
     }
+
+    // Same training data produces equal models
+    func testLinearRegressionEquatable() throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let targets = [3.0, 5.0, 7.0, 9.0]
+        let model1 = try LinearRegression.fit(features: features, targets: targets)
+        let model2 = try LinearRegression.fit(features: features, targets: targets)
+        XCTAssertEqual(model1, model2)
+    }
 }
