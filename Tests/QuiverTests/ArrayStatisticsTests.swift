@@ -93,6 +93,25 @@ final class ArrayStatisticsTests: XCTestCase {
         XCTAssertEqual(outliers.first, 35.0)
     }
 
+    // MARK: - Standard Error
+
+    func testStandardError() {
+        let data = [1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0]
+        // std (ddof=0) = 0.4899..., n = 10
+        // SE = std / sqrt(n) = 0.4899 / 3.162 = 0.15492...
+        let se = data.standardError()
+        XCTAssertNotNil(se)
+        XCTAssertEqual(se!, 0.15492, accuracy: 0.001)
+
+        // SE with ddof=1 (sample) should be slightly larger
+        let seSample = data.standardError(ddof: 1)
+        XCTAssertNotNil(seSample)
+        XCTAssertGreaterThan(seSample!, se!)
+
+        // Empty array returns nil
+        XCTAssertNil([Double]().standardError())
+    }
+
     // MARK: - Vector Array Operations Tests
 
     // Covers meanVector basic and edge cases

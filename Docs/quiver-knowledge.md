@@ -3,7 +3,7 @@
 Complete reference for the Quiver Swift package. Upload this file to a Claude Project or conversation to get accurate assistance with Quiver code.
 
 **Repository:** https://github.com/waynewbishop/quiver
-**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 29 interactive recipes for learning vector math, statistics, and ML models in Swift
+**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 32 interactive recipes for learning vector math, statistics, and ML models in Swift
 **Module:** `import Quiver`
 **Platforms:** macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+
 **Swift:** 5.9+
@@ -210,6 +210,7 @@ if let avg = data.mean() { print(avg) }           // Double?
 if let mid = data.median() { print(mid) }         // Double?
 if let v = data.variance(ddof: 0) { print(v) }    // Double? (population)
 if let s = data.std(ddof: 1) { print(s) }         // Double? (sample)
+if let se = data.standardError() { print(se) }   // Double? (std / √n)
 if let q = data.quartiles() { print(q.iqr) }      // tuple?
 if let lo = data.argMin() { print(lo) }            // Int?
 if let hi = data.argMax() { print(hi) }            // Int?
@@ -490,21 +491,36 @@ let knn = KNearestNeighbors.fit(
 // DistanceMetric: .euclidean, .cosine
 // VoteWeight: .uniform, .distance
 
-knn.predict(testX)   // [Int]
+knn.predict(testX)   // [Int] — raw labels for evaluation pipelines
+knn.classify(testX)  // [Classification] — grouped by predicted label
 knn.k                // Int
 knn.metric           // DistanceMetric
 knn.featureCount     // Int
+
+// classify() groups inputs by predicted label (Classifier protocol)
+// Each Classification conforms to Sequence — iterate with for-in
+for group in knn.classify(testX) {
+    print(group)  // Class 0: 3 points
+    for point in group { print(point) }
+}
 ```
 
 ## Gaussian Naive Bayes
 
 ```swift
 let gnb = GaussianNaiveBayes.fit(features: trainX, labels: trainY)
-gnb.predict(testX)                    // [Int]
+print(gnb)  // GaussianNaiveBayes: 2 classes, 2 features
+
+gnb.predict(testX)                    // [Int] — raw labels for evaluation pipelines
+gnb.classify(testX)                   // [Classification] — grouped by predicted label
 gnb.predictLogProbabilities(testX)    // [[Double]]
 gnb.featureCount                      // Int
 gnb.classes                           // [ClassStats]
-  // .label: Int, .prior: Double, .means: [Double], .variances: [Double], .count: Int
+
+// ClassStats prints cleanly
+for stats in gnb.classes {
+    print(stats)  // Class 0: prior 50.0%, means [83.75, 32.50], 4 samples
+}
 ```
 
 ## Panel (Columnar Data)
@@ -512,6 +528,7 @@ gnb.classes                           // [ClassStats]
 ```swift
 // Create
 let panel = Panel([("age", [25.0, 30.0, 35.0]), ("salary", [50000.0, 60000.0, 70000.0])])
+print(panel)  // Panel: 2 columns, 3 rows
 let panel2 = Panel(["age": [25.0, 30.0], "salary": [50000.0, 60000.0]])
 let panel3 = Panel(matrix: [[25.0, 50000.0], [30.0, 60000.0]], columns: ["age", "salary"])
 
@@ -663,7 +680,8 @@ Quiver's ML models follow a consistent pattern: `fit()` → `predict()` → eval
 - **Train/test split.** Never evaluate on training data. Use `trainTestSplit(testRatio:seed:)` or `stratifiedSplit(labels:testRatio:seed:)` to hold out evaluation data.
 - **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating.
 - **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression. All use static `fit()` methods — no unfitted state exists.
-- **Evaluation:** `confusionMatrix(actual:)` for classification (accuracy, precision, recall, F1). `rSquared(actual:)`, `meanSquaredError(actual:)` for regression.
+- **Evaluation (after training):** `confusionMatrix(actual:)` for classification (accuracy, precision, recall, F1). `rSquared(actual:)`, `meanSquaredError(actual:)` for regression. `classificationReport(actual:)` for a formatted summary.
+- **Loss (during training):** Not yet shipped. Current models use closed-form solutions (LinearRegression) or single-pass statistics (NaiveBayes) — no iterative loss. When GradientDescent ships, `lossHistory` will expose per-iteration loss as a `[Double]`, compatible with `rollingMean()` and Swift Charts. KMeans `inertia` is the closest current equivalent — it measures sum of squared distances to centroids.
 
 ### Vector Operations
 
@@ -705,7 +723,7 @@ Three questions about any dataset: where is the center, how spread out, and whic
 
 - **Aggregation:** `sum()`, `product()` (non-optional). `argMin()`, `argMax()` (optional — return indices).
 - **Central tendency:** `mean()`, `median()` — both optional. When they diverge, data is skewed.
-- **Dispersion:** `variance(ddof:)`, `std(ddof:)` — both optional. `ddof: 0` for population, `ddof: 1` for sample.
+- **Dispersion:** `variance(ddof:)`, `std(ddof:)` — both optional. `ddof: 0` for population, `ddof: 1` for sample. `standardError(ddof:)` — `std / √n`, measures how precisely the sample mean estimates the true mean. Used in hypothesis testing and A/B tests.
 - **Cumulative:** `cumulativeSum()`, `cumulativeProduct()` — non-optional. Running totals.
 - **Outlier detection:** `outlierMask(threshold:)` — z-score method, returns `[Bool]`. Default std of 1.0 when all values identical.
 - **Vector averaging:** `meanVector()` — element-wise mean across multiple vectors. Returns optional.
@@ -875,9 +893,10 @@ Prepare data for Swift Charts and other visualization frameworks.
 Simplest effective classifier. Assumes features are conditionally independent given the class label.
 
 - **Fit:** `GaussianNaiveBayes.fit(features: trainX, labels: trainY)` — learns per-class means, variances, and priors.
-- **Predict:** `model.predict(testX)` → `[Int]`.
+- **Predict:** `model.predict(testX)` → `[Int]` — raw labels for evaluation pipelines.
+- **Classify:** `model.classify(testX)` → `[Classification]` — groups inputs by predicted label, same pattern as KNN.
 - **Log probabilities:** `model.predictLogProbabilities(testX)` → `[[Double]]` — one row per sample, one column per class.
-- **Inspect:** `model.classes` → `[ClassStats]` with `.label`, `.prior`, `.means`, `.variances`, `.count`.
+- **Inspect:** `model.classes` → `[ClassStats]` with `.label`, `.prior`, `.means`, `.variances`, `.count`. Each `ClassStats` conforms to `CustomStringConvertible`: `print(stats)` shows `Class 0: prior 50.0%, means [...], N samples`.
 - **When to use:** Baseline classifier. Fast training. Works well with small datasets. Good first model before trying more complex approaches.
 
 ### K-Nearest Neighbors
@@ -887,7 +906,8 @@ Classifies by finding the k closest training examples and voting on their labels
 - **Fit:** `KNearestNeighbors.fit(features:labels:k:metric:weight:)`.
 - **Metrics:** `.euclidean` (default), `.cosine` (for high-dimensional text/embeddings).
 - **Weights:** `.uniform` (majority vote), `.distance` (closer neighbors have more influence).
-- **Predict:** `model.predict(testX)` → `[Int]`.
+- **Predict:** `model.predict(testX)` → `[Int]` — raw labels for evaluation pipelines.
+- **Classify:** `model.classify(testX)` → `[Classification]` — groups inputs by predicted label. Each `Classification` conforms to `Sequence` with `.label`, `.points`, `.count`.
 - **Properties:** `.k`, `.metric`, `.featureCount`.
 - **When to use:** Non-linear decision boundaries. When similar items should be classified similarly. Feature scaling recommended.
 
@@ -915,7 +935,8 @@ Fits a line (or hyperplane) to continuous data using the normal equation.
 
 Measure model performance after prediction.
 
-- **Classification:** `predictions.confusionMatrix(actual: truth)` → `ConfusionMatrix` with `.truePositives`, `.falsePositives`, `.trueNegatives`, `.falseNegatives`, `.accuracy` (non-optional), `.precision` (optional), `.recall` (optional), `.f1Score` (optional).
+- **Classification:** `predictions.confusionMatrix(actual: truth)` → `ConfusionMatrix` with `.truePositives`, `.falsePositives`, `.trueNegatives`, `.falseNegatives`, `.accuracy` (non-optional), `.precision` (optional), `.recall` (optional), `.f1Score` (optional). Conforms to `Equatable` and `CustomStringConvertible`.
+- **Classification report:** `predictions.classificationReport(actual: truth)` → formatted `String` with accuracy, precision, recall, F1. Undefined metrics show "N/A".
 - **Standalone:** `predictions.accuracy(actual:)`, `.precision(actual:)`, `.recall(actual:)`, `.f1Score(actual:)`.
 - **Regression:** `predicted.rSquared(actual:)` (1.0 = perfect), `.meanSquaredError(actual:)`, `.rootMeanSquaredError(actual:)`.
 
