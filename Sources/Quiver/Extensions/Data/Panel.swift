@@ -62,6 +62,26 @@ public struct Panel: CustomStringConvertible, Equatable {
     /// Number of rows (shared across all columns).
     public let rowCount: Int
 
+    /// The dimensions of the panel as a named tuple.
+    ///
+    /// Returns the same `(rows: Int, columns: Int)` format as matrix `.shape`,
+    /// so developers who learn `.shape` on a `[[Double]]` can use the same
+    /// API on Panel without switching conventions.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let data = Panel([
+    ///     ("age", [25.0, 30.0, 35.0]),
+    ///     ("score", [88.0, 92.0, 85.0])
+    /// ])
+    /// data.shape  // (rows: 3, columns: 2)
+    /// ```
+    public var shape: (rows: Int, columns: Int) {
+        (rows: rowCount, columns: columnNames.count)
+    }
+
     // MARK: - Initializers
 
     /// Creates a panel from an ordered list of named columns.

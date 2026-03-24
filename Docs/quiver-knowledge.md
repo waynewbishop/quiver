@@ -544,6 +544,7 @@ panel["age"]              // [Double]
 panel.labels("age")       // [Int]
 panel.columnNames         // [String]
 panel.rowCount            // Int
+panel.shape               // (rows: Int, columns: Int) — same as matrix .shape
 panel.toMatrix()          // [[Double]]
 
 // Filter and split
@@ -881,7 +882,7 @@ Organizes named columns of numeric data into a lightweight container focused on 
 
 - **Create:** `Panel([("age", [25.0, 30.0]), ("income", [50000.0, 60000.0])])` or `Panel(matrix:columns:)`.
 - **Access:** `panel["age"]` → `[Double]`. `panel.labels("age")` → `[Int]`. `panel.toMatrix(columns:)` → `[[Double]]`.
-- **Properties:** `.columnNames`, `.rowCount`.
+- **Properties:** `.columnNames`, `.rowCount`, `.shape` → `(rows: Int, columns: Int)` — same format as matrix `.shape`.
 - **Filter:** `panel.filtered(where: boolMask)` — applies mask to all columns simultaneously.
 - **Split:** `panel.trainTestSplit(testRatio:seed:)` — splits all columns atomically by the same rows.
 - **Head:** `panel.head()` — tabular display of first 10 rows. `panel.head(n: 3)` for custom count.

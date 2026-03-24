@@ -29,6 +29,17 @@ final class PanelTests: XCTestCase {
         XCTAssertEqual(panel["score"], [88.0, 92.0, 75.0])
     }
 
+    // shape returns the same (rows, columns) tuple format as matrix .shape
+    func testShape() {
+        let panel = Panel([
+            ("a", [1.0, 2.0, 3.0]),
+            ("b", [4.0, 5.0, 6.0]),
+            ("c", [7.0, 8.0, 9.0])
+        ])
+        XCTAssertEqual(panel.shape.rows, 3)
+        XCTAssertEqual(panel.shape.columns, 3)
+    }
+
     // Extracting a matrix respects column selection and ordering
     func testToMatrix() {
         let panel = Panel([

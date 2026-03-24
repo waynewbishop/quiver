@@ -180,7 +180,8 @@ let data = Panel([
     ("score", [88.0, 92.0, 85.0, 91.0, 78.0])
 ])
 
-print(data)  // Panel: 3 columns, 5 rows
+print(data)        // Panel: 3 columns, 5 rows
+print(data.shape)  // (rows: 5, columns: 3)
 
 print(data.head())
 //        age    income  score
@@ -194,7 +195,7 @@ print(data.describe())
 // Prints count, mean, std, min, and max for each column
 ```
 
-`print()` gives a quick structural overview. `head()` shows the actual row data in a Pandas-style tabular format — column headers with right-aligned values and a row index. `describe()` provides per-column summary statistics. Together they provide a complete sanity check on the data before feeding it into a model. By default, `head()` displays up to 10 rows. Pass a count to limit the output:
+`print()` gives a quick structural overview. `.shape` returns the dimensions as a `(rows: Int, columns: Int)` named tuple — the same format as matrix `.shape`, so the API is consistent across both types. `head()` shows the actual row data in tabular format — column headers with right-aligned values and a row index. `describe()` provides per-column summary statistics. Together they provide a complete sanity check on the data before feeding it into a model. By default, `head()` displays up to 10 rows. Pass a count to limit the output:
 
 ```swift
 print(data.head(n: 3))

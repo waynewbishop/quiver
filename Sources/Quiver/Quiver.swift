@@ -1,7 +1,7 @@
 /*
 import Foundation
 
-/// Quiver: A Swift library for vector operations
+/// Quiver: Vector mathematics, numerical computing, and machine learning for Swift
 ///
 /// See the documentation articles for usage examples and API details.
 public enum Quiver {
