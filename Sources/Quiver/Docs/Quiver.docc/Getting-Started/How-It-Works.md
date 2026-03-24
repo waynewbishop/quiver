@@ -131,7 +131,7 @@ This is **tuple destructuring** — we choose names that match our domain rather
 
 ### Comparing results
 
-Quiver's models support direct comparison with `==`. This makes it straightforward to verify that two training runs produce the same clusters, confirm that a confusion matrix matches expectations, or check whether feature scaling preserved the original configuration:
+Quiver's models support Swift's `Equatable` protocol. This makes it straightforward to verify that two training runs produce the same clusters, confirm that a confusion matrix matches expectations, or check whether feature scaling preserved the original configuration:
 
 ```swift
 import Quiver
@@ -143,7 +143,30 @@ let run2 = KMeans.fit(data: points, k: 3, seed: 42)
 run1 == run2  // true
 ```
 
-No need to serialize, compare properties one at a time, or write custom comparison logic. This works across all four models — `KMeans`, `LinearRegression`, `KNearestNeighbors`, and `GaussianNaiveBayes` — as well as result types like `Cluster`, `Classification`, `ConfusionMatrix`, and `FeatureScaler`. Unit tests can use `XCTAssertEqual` directly.
+### Models are always ready
+
+Quiver's ML models are created fully trained — there is no separate "empty" or "unfitted" state. The `fit()` method returns a model that is immediately ready to use:
+
+```swift
+import Quiver
+
+let model = KNearestNeighbors.fit(features: trainingData, labels: labels, k: 3)
+let predictions = model.predict(newData)
+```
+
+Because `fit()` is the only way to create a model, the compiler makes it impossible to call `predict()` on something that has not been trained. There is no runtime error for "model not fitted" — the situation cannot arise. Every model in Quiver follows this pattern including `LinearRegression`, `GaussianNaiveBayes`, `KNearestNeighbors`, and `KMeans`.
+
+Models are also immutable. Once created, their coefficients, centroids, and learned parameters cannot change. This eliminates an entire category of bugs where a model is accidentally retrained or modified between predictions.
+
+### Clean output by default
+
+Every model and result type produces a readable summary when printed. This makes Playground exploration and debugging straightforward — there is no wall of raw properties to parse:
+
+```swift
+print(model)    // KNearestNeighbors: k=3, euclidean, 6 training points, 2 features
+print(cluster)  // Cluster: center [1.23, 1.97], 3 points
+print(cm)       // TP: 3  FP: 1  TN: 3  FN: 1  (accuracy: 75.0%)
+```
 
 ### A focused, intentional scope
 

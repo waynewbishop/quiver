@@ -3,12 +3,12 @@
 Complete reference for the Quiver Swift package. Upload this file to a Claude Project or conversation to get accurate assistance with Quiver code.
 
 **Repository:** https://github.com/waynewbishop/quiver
-**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 32 interactive recipes for learning vector math, statistics, and ML models in Swift
+**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 33 interactive recipes for learning vector math, statistics, and ML models in Swift
 **Module:** `import Quiver`
 **Platforms:** macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+
 **Swift:** 5.9+
 **Dependencies:** None (pure Swift)
-**Compiled size:** ~1.9 MB (release) — 33 files, 7,662 lines. Uses 2.5% of watchOS's 75 MB app bundle limit
+**Compiled size:** ~1.9 MB (release) — 33 files, 7,784 lines. Uses 2.5% of watchOS's 75 MB app bundle limit
 
 ---
 
@@ -16,11 +16,11 @@ Complete reference for the Quiver Swift package. Upload this file to a Claude Pr
 
 Quiver fills the gap between Swift's standard library and Apple's ML frameworks (CoreML, CreateML, Core AI). Swift gives you `Array` with basic operations. Apple's frameworks give you trained model inference. Between them is a wide space of real-time numerical computing — statistics, vector math, matrix operations, similarity search, clustering, regression — that neither addresses. Quiver fills that gap with 350+ APIs, zero dependencies, and a footprint small enough for watchOS.
 
-**Quiver is not competing with Python.** It serves Swift developers who need numerical computing in the language they already use — on iOS, watchOS, visionOS, server-side Linux, and in Xcode Playgrounds. No context switch to Python, no `.mlmodel` files, no Accelerate wrappers.
+**Built for Swift developers.** Quiver serves developers who need numerical computing in the language they already use — on iOS, watchOS, visionOS, server-side Linux, and in Xcode Playgrounds. No context switching, no `.mlmodel` files, no Accelerate wrappers.
 
 **Core AI and CoreML are complementary, not competitive.** Those frameworks run trained models (inference). Quiver provides the computational building blocks: `mean()`, `percentile()`, `cosineOfAngle(with:)`, `trainTestSplit()`, `KMeans.fit()`, `LinearRegression.fit()`. No Apple framework offers ad-hoc statistical queries, pairwise semantic comparison, or transparent ML model training on raw arrays.
 
-**Validated against Python.** Quiver has 242 unit tests plus a separate cross-validation suite that verifies results against NumPy, scikit-learn, SciPy, and Pandas (44 Python checks + 29 Swift tests, all passing). Quiver produces identical results for identical inputs.
+**Validated against industry-standard implementations.** Quiver has 259 unit tests plus a separate cross-validation suite (44 checks + 29 tests, all passing). Quiver produces identical results for identical inputs.
 
 ---
 
@@ -551,7 +551,7 @@ panel.filtered(where: [true, false, true])
 let (train, test) = panel.trainTestSplit(testRatio: 0.2, seed: 42)
 
 // Display and summary statistics
-panel.head()       // Pandas-style tabular output (default 10 rows)
+panel.head()       // Tabular output showing first 10 rows
 panel.head(n: 3)   // First 3 rows in tabular format
 panel.describe()   // Per-column statistics (count, mean, std, min, max)
 ```
@@ -632,6 +632,29 @@ let bins = raw.histogram(bins: 5)              // for bar charts
 
 ### O(n log n) — Sorting-based
 `median()`, `percentile(_:)`, `quartiles()`, `percentileRanks()`, `topIndices(k:)`, `sortedIndices()` — sort internally. When computing multiple percentiles, `quartiles()` sorts once.
+
+### Benchmarks (release build, Apple Silicon M-series, March 2026)
+
+Quiver's performance is optimized for educational datasets (hundreds to low thousands of samples), on-device inference (real-time sensor data), and server-side queries (similarity search on embedded vectors).
+
+| Operation | Data Size | Time | Memory Δ |
+|---|---|---|---|
+| Naive Bayes fit + predict | 10K train, 1K query, 20 features | 1ms | +0.2 MB |
+| KMeans fit | 1K samples, k=5, 10 features | 1ms | +0.0 MB |
+| Linear Regression fit | 5K samples, 10 features | 2ms | +2.5 MB |
+| KNN Euclidean predict | 1K train, 100 query, 10 features | 3ms | +0.0 MB |
+| KNN Cosine predict | 1K train, 100 query, 10 features | 4ms | +0.1 MB |
+| Matrix Multiply | 100×100 | 30ms | +0.0 MB |
+| Transpose | 500×500 | 32ms | +3.9 MB |
+| Determinant | 150×150 | 97ms | +0.3 MB |
+| findDuplicates | 500 vectors, 20 dims | <1ms | +0.0 MB |
+| clusterCohesion | 500 vectors, 20 dims | <1ms | +0.0 MB |
+
+**What these numbers mean for app developers:** Training a Naive Bayes classifier on 10,000 samples takes 1ms — fast enough for real-time use on watchOS. KNN prediction on 1,000 training points completes in 3ms — well within a 60fps frame budget. Matrix operations are comfortable up to a few hundred rows.
+
+**Where performance scales and where it doesn't:** ML models, statistics, similarity operations, and boolean masking all scale linearly and handle tens of thousands of elements comfortably. Matrix multiplication, inversion, and determinant are cubic — they perform well up to a few hundred rows but grow rapidly beyond that. Pairwise operations (findDuplicates, clusterCohesion) are quadratic — use them on subsets, not entire datasets.
+
+Run benchmarks locally: `swift test -c release --filter QuiverStressTests`
 
 ---
 
@@ -854,14 +877,14 @@ Find information by meaning, not keywords. Full pipeline: tokenize → embed →
 
 ### Panel
 
-Organizes named columns of numeric data. Similar to Python's pandas DataFrame but focused on numeric ML workflows.
+Organizes named columns of numeric data into a lightweight container focused on numeric ML workflows.
 
 - **Create:** `Panel([("age", [25.0, 30.0]), ("income", [50000.0, 60000.0])])` or `Panel(matrix:columns:)`.
 - **Access:** `panel["age"]` → `[Double]`. `panel.labels("age")` → `[Int]`. `panel.toMatrix(columns:)` → `[[Double]]`.
 - **Properties:** `.columnNames`, `.rowCount`.
 - **Filter:** `panel.filtered(where: boolMask)` — applies mask to all columns simultaneously.
 - **Split:** `panel.trainTestSplit(testRatio:seed:)` — splits all columns atomically by the same rows.
-- **Head:** `panel.head()` — Pandas-style tabular display of first 10 rows. `panel.head(n: 3)` for custom count.
+- **Head:** `panel.head()` — tabular display of first 10 rows. `panel.head(n: 3)` for custom count.
 - **Describe:** `panel.describe()` — per-column summary statistics.
 - **Design:** Value type, fixed schema, all `Double` columns. Models accept `[[Double]]` and `[Int]` directly — Panel organizes data, models consume raw arrays.
 

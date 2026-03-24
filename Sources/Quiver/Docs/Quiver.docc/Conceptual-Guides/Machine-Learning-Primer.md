@@ -1,6 +1,6 @@
 # Machine Learning Primer
 
-Core vocabulary and concepts for understanding classification workflows in Quiver.
+Core vocabulary and concepts for understanding machine learning workflows in Quiver.
 
 ## Overview
 

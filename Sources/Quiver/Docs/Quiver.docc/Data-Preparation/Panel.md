@@ -8,7 +8,7 @@ Panel takes a matrix of rows and pivots it into named columns, where each column
 
 With Panel, each column gets a name and all rows stay together as a unit. It serves as a lightweight container for labeled column data, scoped to Quiver's numeric focus.
 
-> Important: `Panel` does not replace Quiver's array and matrix operations — it organizes them. Each column is a standard `[Double]` that supports Quiver vector operations like `.mean()`, `.std()`, `.standardized()`, and boolean masking.
+> Important: `Panel` does not replace Quiver's array and matrix operations — it organizes them. Each column is a standard `[Double]` that supports Quiver vector operations like `.mean()`, `.std()`, and boolean masking.
 
 ### Creating a panel
 
@@ -150,14 +150,11 @@ Split a `Panel` into training and testing subsets with a single call. All column
 ```swift
 import Quiver
 
-// 10 samples with two feature columns and a binary label
+// 5 samples with two feature columns and a binary label
 let data = Panel([
-    ("feature1", [1.0, 2.0, 3.0, 4.0, 5.0,
-                  6.0, 7.0, 8.0, 9.0, 10.0]),
-    ("feature2", [10.0, 20.0, 30.0, 40.0, 50.0,
-                  60.0, 70.0, 80.0, 90.0, 100.0]),
-    ("label", [0.0, 1.0, 0.0, 1.0, 0.0,
-               1.0, 0.0, 1.0, 0.0, 1.0])
+    ("feature1", [1.0, 2.0, 3.0, 4.0, 5.0]),
+    ("feature2", [10.0, 20.0, 30.0, 40.0, 50.0]),
+    ("label", [0.0, 1.0, 0.0, 1.0, 0.0])
 ])
 
 // Split 80/20 — all columns partitioned by the same rows
@@ -197,9 +194,7 @@ print(data.describe())
 // Prints count, mean, std, min, and max for each column
 ```
 
-`print()` gives a quick structural overview. `head()` shows the actual row data in a Pandas-style tabular format — column headers with right-aligned values and a row index. `describe()` provides per-column summary statistics. Together they provide a complete sanity check on the data before feeding it into a model.
-
-By default, `head()` displays up to 10 rows. Pass a count to limit the output:
+`print()` gives a quick structural overview. `head()` shows the actual row data in a Pandas-style tabular format — column headers with right-aligned values and a row index. `describe()` provides per-column summary statistics. Together they provide a complete sanity check on the data before feeding it into a model. By default, `head()` displays up to 10 rows. Pass a count to limit the output:
 
 ```swift
 print(data.head(n: 3))
@@ -212,8 +207,6 @@ print(data.head(n: 3))
 > Tip: Use `head()` in a Playground to visually verify your data after loading or filtering. Catching a column of unexpected zeros early saves debugging time later.
 
 ### Classification pipeline
-
-> Tip: `Panel` is a convenience, not a requirement. Every Quiver classifier accepts standard `[[Double]]` matrices and `[Int]` label arrays directly. `Panel` simply keeps columns named and rows aligned — use it when that organization helps, skip it when raw arrays are simpler.
 
 `Panel` integrates directly with Quiver's classification workflow. A typical pipeline scales features, fits a classifier on training data, and evaluates predictions — all while keeping columns aligned:
 
@@ -242,6 +235,8 @@ let model = GaussianNaiveBayes.fit(
 )
 let predictions = model.predict(testScaled)
 ```
+
+> Tip: `Panel` is a convenience, not a requirement. Every Quiver classifier accepts standard `[[Double]]` matrices and `[Int]` label arrays directly. `Panel` simply keeps columns named and rows aligned — use it when that organization helps, skip it when raw arrays are simpler.
 
 ### Design scope
 
