@@ -42,8 +42,28 @@ import Foundation
 public struct LinearRegression: CustomStringConvertible, Equatable {
 
     public var description: String {
-        let interceptStr = hasIntercept ? ", intercept: \(String(format: "%.2f", coefficients[0]))" : ""
-        return "LinearRegression: \(featureCount) \(featureCount == 1 ? "feature" : "features")\(interceptStr)"
+        let featureLabel = featureCount == 1 ? "feature" : "features"
+        var parts = "LinearRegression: \(featureCount) \(featureLabel)"
+
+        if hasIntercept {
+            parts += ", intercept: \(String(format: "%.2f", coefficients[0]))"
+            let weights = Array(coefficients.dropFirst())
+            if featureCount == 1, let slope = weights.first {
+                parts += ", slope: \(String(format: "%.2f", slope))"
+            } else {
+                let formatted = weights.map { String(format: "%.2f", $0) }
+                parts += ", weights: [\(formatted.joined(separator: ", "))]"
+            }
+        } else {
+            if featureCount == 1, let slope = coefficients.first {
+                parts += ", slope: \(String(format: "%.2f", slope))"
+            } else {
+                let formatted = coefficients.map { String(format: "%.2f", $0) }
+                parts += ", weights: [\(formatted.joined(separator: ", "))]"
+            }
+        }
+
+        return parts
     }
 
     /// The fitted coefficient vector.

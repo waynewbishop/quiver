@@ -82,7 +82,7 @@ The right metric depends on the cost of errors in the specific domain. In recall
 
 ### Classification report
 
-When evaluating a model, computing each metric individually and formatting the output is repetitive. The `classificationReport(actual:)` method computes accuracy, precision, recall, and F1 in one call and returns a formatted summary:
+When evaluating a model, computing each metric individually and formatting the output is repetitive. The `classificationReport(actual:)` method computes per-class precision, recall, F1, and support in one call, along with overall accuracy and macro/weighted averages:
 
 ```swift
 import Quiver
@@ -91,13 +91,17 @@ let predictions = [1, 0, 1, 1, 0, 0, 1, 0]
 let actual      = [1, 0, 0, 1, 0, 1, 1, 0]
 
 print(predictions.classificationReport(actual: actual))
-// Accuracy:  75.0%
-// Precision: 0.75
-// Recall:    0.75
-// F1 Score:  0.75
+//               precision    recall  f1-score   support
+//
+//            0       0.75      0.75      0.75         4
+//            1       0.75      0.75      0.75         4
+//
+//     accuracy                           0.75         8
+//    macro avg       0.75      0.75      0.75         8
+// weighted avg       0.75      0.75      0.75         8
 ```
 
-Metrics that are undefined (e.g., precision when no positives were predicted) display as "N/A" rather than a misleading zero.
+Each class gets its own row with precision, recall, F1, and support (sample count). The macro average is the unweighted mean across classes — it treats every class equally regardless of size. The weighted average accounts for class imbalance by weighting each class by its support. Undefined metrics display as 0.00 in the report. The individual `precision()`, `recall()`, and `f1Score()` methods still return `nil` for programmatic access.
 
 ### The full pipeline
 
@@ -142,7 +146,7 @@ print(predictions.classificationReport(actual: testY))
 - ``Swift/Array/precision(actual:positiveLabel:)``
 - ``Swift/Array/recall(actual:positiveLabel:)``
 - ``Swift/Array/f1Score(actual:positiveLabel:)``
-- ``Swift/Array/classificationReport(actual:positiveLabel:)``
+- ``Swift/Array/classificationReport(actual:)``
 
 ### Related
 - <doc:Machine-Learning-Primer>

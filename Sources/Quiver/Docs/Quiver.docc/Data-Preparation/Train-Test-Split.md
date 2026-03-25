@@ -118,6 +118,27 @@ let labels = ["cat", "dog", "bird", "cat", "dog", "bird", "cat", "dog"]
 let (trainLabels, testLabels) = labels.trainTestSplit(testRatio: 0.25, seed: 42)
 ```
 
+### Detecting class imbalance
+
+Before training, `imbalanceRatio()` measures how skewed the class distribution is. A ratio of 1.0 means all classes have the same number of samples. Higher values indicate greater imbalance — a ratio of 4.0 means the largest class has four times as many samples as the smallest:
+
+```swift
+import Quiver
+
+let labels = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+labels.classDistribution()  // [0: 8, 1: 2]
+labels.imbalanceRatio()     // 4.0
+```
+
+Developers set their own threshold based on the domain. A common guideline: ratios above 3.0 suggest oversampling before training:
+
+```swift
+if let ratio = labels.imbalanceRatio(), ratio > 3.0 {
+    let (balanced, balancedLabels) = features.oversample(labels: labels)
+    // train on balanced data
+}
+```
+
 ### Oversampling imbalanced data
 
 Stratified splitting preserves class ratios, but if the smaller class has very few samples, even a proportional split leaves the model with too little data to learn its pattern. `oversample(labels:)` addresses this by generating synthetic samples before splitting:

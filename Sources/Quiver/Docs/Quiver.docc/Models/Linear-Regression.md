@@ -26,10 +26,8 @@ let sqft   = [1000.0, 1500.0, 2000.0, 2500.0, 3000.0]
 let prices = [150000.0, 200000.0, 260000.0, 310000.0, 370000.0]
 
 let model = try LinearRegression.fit(features: sqft, targets: prices)
-
-// Inspect the coefficients
-print("Intercept: \(model.coefficients[0])")   // bias term
-print("Slope: \(model.coefficients[1])")        // price per sqft
+print(model)
+// LinearRegression: 1 feature, intercept: 38000.00, slope: 110.00
 ```
 
 For single-feature regression, `fit` accepts a flat `[Double]` array directly — no need to wrap each value in `[[Double]]`. Multi-feature regression uses the standard `fit(features: [[Double]], targets:)` form shown below.
@@ -76,9 +74,10 @@ let features: [[Double]] = [
 let targets = [180000.0, 260000.0, 350000.0,
                230000.0, 290000.0, 420000.0]
 
-// Fit produces one coefficient per feature plus an intercept
+// Fit produces one weight per feature plus an intercept
 let model = try LinearRegression.fit(features: features, targets: targets)
-print("Features: \(model.featureCount)")  // 3
+print(model)
+// LinearRegression: 3 features, intercept: ..., weights: [...]
 ```
 
 ### Evaluating the fit
@@ -168,7 +167,7 @@ print("R²: \(r2)")
 
 ### When the normal equation fails
 
-The normal equation requires inverting the matrix X'X. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), the matrix is singular and cannot be inverted. In this case, `fit` throws `MatrixError.singular`. The fix is to remove redundant features before fitting.
+The normal equation requires inverting the matrix X'X. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), the matrix is [singular](<doc:Determinants-Primer>) and cannot be inverted. In this case, `fit` throws `MatrixError.singular`. The fix is to remove redundant features before fitting.
 
 To check beforehand, inspect the determinant of your feature matrix. A non-zero value means the columns are independent and the model can be fitted:
 
@@ -188,7 +187,7 @@ redundant.determinant  // 0.0 → fit will throw MatrixError.singular
 
 ### Safe by design
 
-`LinearRegression` follows the same immutable-struct pattern as `GaussianNaiveBayes`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models support direct comparison with Swift's `Equatable` protocol', so verifying two training runs produce the same coefficients is a single expression.
+`LinearRegression` follows the same immutable-struct pattern as `GaussianNaiveBayes`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models conform to Swift's `Equatable` protocol, so verifying two training runs produce the same coefficients is a single expression.
 
 ## Topics
 

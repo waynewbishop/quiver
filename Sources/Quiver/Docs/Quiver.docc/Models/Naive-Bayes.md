@@ -146,11 +146,11 @@ Each `Classification` result conforms to `Sequence` — the same Swift protocol 
 
 **The model is always ready to use.** Calling `fit(features:labels:)` returns a fully trained model in one step. There is no way to create an empty model and forget to train it before making predictions.
 
-**Training data stays separate from test data.** Both `GaussianNaiveBayes` and `FeatureScaler` are immutable once created. Fitting the scaler on training data and applying it to both sets ensures that test data never influences the scaling — a subtle but common source of data leakage in ML pipelines.
+**Training data stays separate from test data.** Both `GaussianNaiveBayes` and `FeatureScaler` are immutable once created. Fitting the scaler on training data and applying it to both sets ensures that test data never influences the scaling — a subtle but common source of [data leakage](<doc:Machine-Learning-Primer>) in ML pipelines.
 
 **Reproducible splits.** Each call to `trainTestSplit(testRatio:seed:)` uses its own seed. There is no shared random state that other code can interfere with, so the same seed always produces the same split.
 
-**Direct comparison.** Models and their `Classification` results support Swift's `Equatable` protocol. Verifying that two training runs produce the same model is a single expression — no need to compare properties one at a time.
+**Direct comparison.** Models and their `Classification` results conform to Swift's `Equatable` protocol. Verifying that two training runs produce the same model is a single expression — no need to compare properties one at a time.
 
 ### Numerical stability
 

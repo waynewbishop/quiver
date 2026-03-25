@@ -71,6 +71,7 @@ print(model.labels)
 - Classify workout intensity zones in real time using the user's own live biometric stream — no predefined thresholds
 - Detect pace or heart rate anomalies during a run by measuring distance from the current rolling centroid
 - Fit a linear regression trend on elapsed heart rate data mid-workout to anticipate fatigue before it peaks
+- Detect class imbalance in accumulated session labels with `imbalanceRatio()` and oversample before re-fitting — no server needed
 - Build a personal performance baseline that refines itself across every session, entirely on the watch
 
 > Tip: Quiver's models are fast enough to re-fit on every incoming sensor sample. K-Means on a 20-sample window completes in milliseconds on Apple Watch hardware, making continuous in-session updates practical. Feature scaling is essential when combining heart rate (40–200 bpm) with elapsed time (minutes) — see <doc:Feature-Scaling>.

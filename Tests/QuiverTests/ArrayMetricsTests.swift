@@ -113,30 +113,126 @@ final class ArrayMetricsTests: XCTestCase {
 
     // MARK: - Classification Report
 
-    // classificationReport produces a formatted multi-line summary
+    // classificationReport produces per-class metrics with averages
     func testClassificationReport() {
         let predictions = [1, 0, 1, 1, 0, 0, 1, 0]
         let actual      = [1, 0, 0, 1, 0, 1, 1, 0]
 
         let report = predictions.classificationReport(actual: actual)
 
-        XCTAssertTrue(report.contains("Accuracy:"))
-        XCTAssertTrue(report.contains("Precision:"))
-        XCTAssertTrue(report.contains("Recall:"))
-        XCTAssertTrue(report.contains("F1 Score:"))
-        XCTAssertTrue(report.contains("75.0%"))
+        XCTAssertTrue(report.contains("precision"))
+        XCTAssertTrue(report.contains("recall"))
+        XCTAssertTrue(report.contains("f1-score"))
+        XCTAssertTrue(report.contains("support"))
+        XCTAssertTrue(report.contains("accuracy"))
+        XCTAssertTrue(report.contains("macro avg"))
+        XCTAssertTrue(report.contains("weighted avg"))
         XCTAssertTrue(report.contains("0.75"))
     }
 
-    // classificationReport shows N/A when metrics are undefined
+    // classificationReport shows per-class rows for each unique label
+    func testClassificationReportPerClass() {
+        let predictions = [0, 1, 2, 0, 1, 2]
+        let actual      = [0, 1, 2, 0, 2, 1]
+
+        let report = predictions.classificationReport(actual: actual)
+
+        // Each class appears as a row
+        XCTAssertTrue(report.contains("0"))
+        XCTAssertTrue(report.contains("1"))
+        XCTAssertTrue(report.contains("2"))
+        XCTAssertTrue(report.contains("macro avg"))
+        XCTAssertTrue(report.contains("weighted avg"))
+    }
+
+    // classificationReport shows 0.00 for undefined metrics (matches sklearn default)
     func testClassificationReportUndefined() {
         let predictions = [0, 0, 0, 0]
         let actual      = [1, 1, 0, 0]
 
         let report = predictions.classificationReport(actual: actual)
 
-        XCTAssertTrue(report.contains("N/A"), "Precision should show N/A when no positives predicted")
-        XCTAssertTrue(report.contains("Accuracy:"))
+        // Class 1 has no predictions — precision, recall, F1 all 0.00
+        XCTAssertTrue(report.contains("0.00"))
+        XCTAssertTrue(report.contains("accuracy"))
+        XCTAssertTrue(report.contains("macro avg"))
+    }
+
+    // classificationReport values match expected per-class metrics
+    func testClassificationReportValues() {
+        // Multi-class: 2 correct, 2 swapped between classes 1 and 2
+        let predictions = [0, 1, 2, 0, 1, 2]
+        let actual      = [0, 1, 2, 0, 2, 1]
+
+        let report = predictions.classificationReport(actual: actual)
+
+        // Class 0: precision=1.0, recall=1.0 (2 TP, 0 FP, 0 FN)
+        // Class 1: precision=0.5, recall=0.5 (1 TP, 1 FP, 1 FN)
+        // Class 2: precision=0.5, recall=0.5 (1 TP, 1 FP, 1 FN)
+        XCTAssertTrue(report.contains("1.00"))
+        XCTAssertTrue(report.contains("0.50"))
+
+        // Accuracy = 4/6 ≈ 0.67
+        XCTAssertTrue(report.contains("0.67"))
+    }
+
+    // MARK: - Class Balance
+
+    // classDistribution counts each label
+    func testClassDistribution() {
+        let labels = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+        let counts = labels.classDistribution()
+        XCTAssertEqual(counts[0], 8)
+        XCTAssertEqual(counts[1], 2)
+        XCTAssertEqual(counts.count, 2)
+    }
+
+    // classDistribution handles multi-class
+    func testClassDistributionMultiClass() {
+        let labels = [0, 0, 0, 1, 1, 2]
+        let counts = labels.classDistribution()
+        XCTAssertEqual(counts[0], 3)
+        XCTAssertEqual(counts[1], 2)
+        XCTAssertEqual(counts[2], 1)
+    }
+
+    // classDistribution returns empty dictionary for empty array
+    func testClassDistributionEmpty() {
+        let labels: [Int] = []
+        let counts = labels.classDistribution()
+        XCTAssertTrue(counts.isEmpty)
+    }
+
+    // Balanced data returns ratio of 1.0
+    func testImbalanceRatioBalanced() {
+        let labels = [0, 0, 1, 1]
+        XCTAssertEqual(labels.imbalanceRatio(), 1.0)
+    }
+
+    // Imbalanced binary data returns correct ratio
+    func testImbalanceRatioBinary() {
+        let labels = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+        // 8 / 2 = 4.0
+        XCTAssertEqual(labels.imbalanceRatio(), 4.0)
+    }
+
+    // Multi-class imbalance uses largest vs smallest
+    func testImbalanceRatioMultiClass() {
+        let labels = [0, 0, 0, 0, 0, 0, 1, 1, 1, 2]
+        // largest = 6 (class 0), smallest = 1 (class 2), ratio = 6.0
+        XCTAssertEqual(labels.imbalanceRatio(), 6.0)
+    }
+
+    // Single class returns nil — no imbalance to measure
+    func testImbalanceRatioSingleClass() {
+        let labels = [0, 0, 0, 0]
+        XCTAssertNil(labels.imbalanceRatio())
+    }
+
+    // Empty array returns nil
+    func testImbalanceRatioEmpty() {
+        let labels: [Int] = []
+        XCTAssertNil(labels.imbalanceRatio())
     }
 
     // MARK: - Regression Metrics

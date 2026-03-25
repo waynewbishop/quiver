@@ -150,6 +150,42 @@ final class LinearRegressionTests: XCTestCase {
         XCTAssertLessThan(rmse, 1.0)
     }
 
+    // Description shows intercept and slope for single-feature model
+    func testDescriptionSingleFeature() throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let targets = [3.0, 5.0, 7.0, 9.0]  // y = 2x + 1
+        let model = try LinearRegression.fit(features: features, targets: targets)
+        let desc = model.description
+        XCTAssertTrue(desc.contains("1 feature"))
+        XCTAssertTrue(desc.contains("intercept:"))
+        XCTAssertTrue(desc.contains("slope:"))
+    }
+
+    // Description shows intercept and weights for multi-feature model
+    func testDescriptionMultiFeature() throws {
+        let features: [[Double]] = [
+            [1.0, 1.0], [2.0, 1.0], [1.0, 2.0], [3.0, 2.0], [2.0, 3.0]
+        ]
+        let targets = features.map { 1.0 + 2.0 * $0[0] + 3.0 * $0[1] }
+        let model = try LinearRegression.fit(features: features, targets: targets)
+        let desc = model.description
+        XCTAssertTrue(desc.contains("2 features"))
+        XCTAssertTrue(desc.contains("intercept:"))
+        XCTAssertTrue(desc.contains("weights: ["))
+    }
+
+    // Description shows slope without intercept when intercept is disabled
+    func testDescriptionNoIntercept() throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let targets = [2.0, 4.0, 6.0, 8.0]  // y = 2x
+        let model = try LinearRegression.fit(
+            features: features, targets: targets, intercept: false
+        )
+        let desc = model.description
+        XCTAssertFalse(desc.contains("intercept"))
+        XCTAssertTrue(desc.contains("slope:"))
+    }
+
     // Same training data produces equal models
     func testLinearRegressionEquatable() throws {
         let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]

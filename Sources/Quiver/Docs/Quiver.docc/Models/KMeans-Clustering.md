@@ -186,7 +186,7 @@ K-Means struggles with non-spherical cluster shapes (elongated, curved, or neste
 
 `KMeans` follows the same immutable-struct pattern as `GaussianNaiveBayes`, `LinearRegression`, and `KNearestNeighbors`. The model is always ready to use after `fit`, the training data stays separate from the result, and reproducible seeds ensure consistent results across runs.
 
-Both `KMeans` and `Cluster` support direct comparison with Swift's `Equatable` protocol'. When two runs use the same data and the same seed, the results are guaranteed identical:
+Both `KMeans` and `Cluster` conform to Swift's `Equatable` protocol. When two runs use the same data and the same seed, the results are guaranteed identical:
 
 ```swift
 import Quiver

@@ -49,7 +49,7 @@ let predictions = model.predict(newSamples)
 
 The parameter `k` determines how many training vectors the algorithm consults when classifying a new point. After measuring the distance from the new sample to every training vector, the algorithm selects the `k` closest ones and uses their labels to vote on the prediction. A higher `k` means more vectors influence the decision, while a lower `k` means fewer, potentially just one, determine the outcome.
 
-The value of `k` controls the tradeoff between sensitivity and smoothness. A small `k` (e.g., 1 or 3) is sensitive to local patterns, capturing fine-grained boundaries but may overfit to noisy data points. A large `k` (e.g., 15 or 21) produces smoother decision boundaries that are more robust to noise but may miss local structure. Choosing an odd value avoids ties in binary classification: with two classes and `k=4`, a 2-2 split requires a tiebreaker, while `k=3` guarantees one class always wins. A common starting point is `k = √n` where `n` is the number of training samples, rounded to the nearest odd number.
+The value of `k` controls the tradeoff between sensitivity and smoothness. A small `k` (e.g., 1 or 3) is sensitive to local patterns, capturing fine-grained boundaries but may [overfit](<doc:Machine-Learning-Primer>) to noisy data points. A large `k` (e.g., 15 or 21) produces smoother decision boundaries that are more robust to noise but may miss local structure. Choosing an odd value avoids ties in binary classification: with two classes and `k=4`, a 2-2 split requires a tiebreaker, while `k=3` guarantees one class always wins. A common starting point is `k = √n` where `n` is the number of training samples, rounded to the nearest odd number.
 
 ### Distance metrics
 
@@ -211,7 +211,7 @@ Nearest Neighbors struggles with large datasets (prediction scans every training
 
 ### Safe by design
 
-`KNearestNeighbors` follows the same immutable-struct pattern as `GaussianNaiveBayes` and `LinearRegression`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models and their `Classification` also conform to Swift's `Equatable` protocol'.
+`KNearestNeighbors` follows the same immutable-struct pattern as `GaussianNaiveBayes` and `LinearRegression`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models and their `Classification` results also conform to Swift's `Equatable` protocol.
 
 ## Topics
 

@@ -416,8 +416,18 @@ public struct Panel: CustomStringConvertible, Equatable {
     ///
     /// - Returns: A multi-line string with one row of statistics per column.
     public func summary() -> String {
-        var lines = ["column          count       mean        std        min        max"]
-        lines.append(String(repeating: "-", count: 70))
+
+        // Format a value: drop trailing ".0" for whole numbers, otherwise 4 decimals
+        func format(_ value: Double) -> String {
+            if value == value.rounded(.towardZero) && !value.isNaN && !value.isInfinite {
+                return "\(Int(value)).0"
+            }
+            return String(format: "%.4f", value)
+        }
+
+        // Compute stats for each column
+        let headers = ["column", "count", "mean", "std", "min", "max"]
+        var rows: [[String]] = []
 
         for name in columnNames {
             let col = column(name)
@@ -425,9 +435,34 @@ public struct Panel: CustomStringConvertible, Equatable {
             let std = col.std() ?? 0.0
             let minVal = col.min() ?? 0.0
             let maxVal = col.max() ?? 0.0
-            let paddedName = name.padding(toLength: 15, withPad: " ", startingAt: 0)
-            let line = "\(paddedName) \(col.count)    \(round(mean * 10000) / 10000)    \(round(std * 10000) / 10000)    \(round(minVal * 10000) / 10000)    \(round(maxVal * 10000) / 10000)"
-            lines.append(line)
+            rows.append([name, "\(col.count)", format(mean), format(std), format(minVal), format(maxVal)])
+        }
+
+        // Compute width for each column based on header and data
+        var widths = headers.map { $0.count }
+        for row in rows {
+            for (c, val) in row.enumerated() {
+                widths[c] = Swift.max(widths[c], val.count)
+            }
+        }
+
+        // Build header — first column left-aligned, rest right-aligned
+        let headerParts = headers.enumerated().map { c, h in
+            c == 0
+                ? h.padding(toLength: widths[c], withPad: " ", startingAt: 0)
+                : String(repeating: " ", count: widths[c] - h.count) + h
+        }
+        var lines = [headerParts.joined(separator: "  ")]
+        lines.append(String(repeating: "-", count: lines[0].count))
+
+        // Build data rows — first column left-aligned, rest right-aligned
+        for row in rows {
+            let parts = row.enumerated().map { c, val in
+                c == 0
+                    ? val.padding(toLength: widths[c], withPad: " ", startingAt: 0)
+                    : String(repeating: " ", count: widths[c] - val.count) + val
+            }
+            lines.append(parts.joined(separator: "  "))
         }
 
         return lines.joined(separator: "\n")

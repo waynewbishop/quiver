@@ -40,7 +40,7 @@ print(cluster)  // Cluster: center [1.23, 1.97], 3 points
 print(cm)       // TP: 3  FP: 1  TN: 3  FN: 1  (accuracy: 75.0%)
 print(knn)      // KNearestNeighbors: k=3, euclidean, 6 training points, 2 features
 print(nb)       // GaussianNaiveBayes: 2 classes, 2 features
-print(lr)       // LinearRegression: 1 feature, intercept: 150000.00
+print(lr)       // LinearRegression: 1 feature, intercept: 38000.00, slope: 110.00
 print(scaler)   // FeatureScaler: 2 features, range 0.0...1.0
 print(group)    // Class 0: 3 points
 ```
@@ -898,6 +898,7 @@ Split data into training and testing subsets for honest evaluation.
 - **Reproducible:** Same seed + same data = same split every time.
 - **Stratified:** `features.stratifiedSplit(labels:testRatio:seed:)` preserves class proportions. Returns 4-tuple: `(trainFeatures, testFeatures, trainLabels, testLabels)`.
 - **Choosing ratio:** 0.2 is standard. 0.1 for small datasets. 0.3 for large datasets.
+- **Class balance diagnostics:** `labels.classDistribution()` → `[Int: Int]` mapping each label to its count. `labels.imbalanceRatio()` → `Double?` ratio of largest to smallest class (1.0 = balanced, 4.0 = 4x imbalance, nil for empty/single-class). Developers set their own threshold to decide when to oversample.
 - **Oversample:** `features.oversample(labels: labels)` → `(features: [[Double]], labels: [Int])`. Auto-detects smaller classes, generates synthetic points by interpolating between existing samples. Handles multi-class. Call before splitting.
 
 ### Feature Scaling
@@ -971,7 +972,7 @@ Fits a line (or hyperplane) to continuous data using the normal equation.
 Measure model performance after prediction.
 
 - **Classification:** `predictions.confusionMatrix(actual: truth)` → `ConfusionMatrix` with `.truePositives`, `.falsePositives`, `.trueNegatives`, `.falseNegatives`, `.accuracy` (non-optional), `.precision` (optional), `.recall` (optional), `.f1Score` (optional). Conforms to `Equatable` and `CustomStringConvertible`.
-- **Classification report:** `predictions.classificationReport(actual: truth)` → formatted `String` with accuracy, precision, recall, F1. Undefined metrics show "N/A".
+- **Classification report:** `predictions.classificationReport(actual: truth)` → per-class precision, recall, F1, and support with accuracy, macro avg, and weighted avg. Matches sklearn's `classification_report()` format.
 - **Standalone:** `predictions.accuracy(actual:)`, `.precision(actual:)`, `.recall(actual:)`, `.f1Score(actual:)`.
 - **Regression:** `predicted.rSquared(actual:)` (1.0 = perfect), `.meanSquaredError(actual:)`, `.rootMeanSquaredError(actual:)`.
 

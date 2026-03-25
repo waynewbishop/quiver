@@ -4,7 +4,7 @@ Understanding Quiver's architecture and how it works with Swift.
 
 ## Overview
 
-Quiver adds numerical computing capabilities directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with native Swift `Array`. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
+Quiver adds numerical computing capabilities directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
 
 ```swift
 import Quiver
@@ -16,7 +16,7 @@ let position = [3.0, 4.0]
 position.magnitude  // 5.0
 ```
 
-In this example, the `position` array could be passed to SwiftUI, Swift Charts, SwiftData, or any other Swift API.
+[Magnitude](<doc:Linear-Algebra-Primer>) measures how far a point sits from the origin — the length of the vector. In this example, the `position` array could be passed to SwiftUI, Swift Charts, SwiftData, or any other Swift API.
 
 ### What are extensions
 
@@ -131,7 +131,7 @@ This is **tuple destructuring** — we choose names that match our domain rather
 
 ### Comparing results
 
-Quiver's models support Swift's `Equatable` protocol. This makes it straightforward to verify that two training runs produce the same clusters, confirm that a confusion matrix matches expectations, or check whether feature scaling preserved the original configuration:
+Quiver's models conform to Swift's `Equatable` protocol. This makes it straightforward to verify that two training runs produce the same clusters, confirm that a confusion matrix matches expectations, or check whether feature scaling preserved the original configuration:
 
 ```swift
 import Quiver
@@ -167,6 +167,24 @@ print(model)    // KNearestNeighbors: k=3, euclidean, 6 training points, 2 featu
 print(cluster)  // Cluster: center [1.23, 1.97], 3 points
 print(cm)       // TP: 3  FP: 1  TN: 3  FN: 1  (accuracy: 75.0%)
 ```
+
+### Data-aware diagnostics
+
+Quiver provides diagnostic methods on label arrays that help developers catch data quality issues before training. `imbalanceRatio()` measures how skewed the class distribution is — a single value that developers can branch on to decide whether to oversample:
+
+```swift
+import Quiver
+
+let labels = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+
+if let ratio = labels.imbalanceRatio(), ratio > 3.0 {
+    // data is imbalanced — oversample before training
+}
+```
+
+The threshold is up to the developer. The diagnostic lives on the data, not on the model — keeping models focused on computation while giving developers the information they need to make informed decisions about their training pipeline.
+
+> Tip: Class imbalance applies to classification problems where labels are discrete categories (`[Int]`), not regression problems where targets are continuous values (`[Double]`). `imbalanceRatio()` is available on `[Int]` arrays only — the type system enforces this distinction at compile time.
 
 ### A focused, intentional scope
 

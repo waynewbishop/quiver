@@ -195,7 +195,7 @@ print(data.summary())
 // Prints count, mean, std, min, and max for each column
 ```
 
-`print()` gives a quick structural overview. `.shape` returns the dimensions as a `(rows: Int, columns: Int)` named tuple — the same format as matrix `.shape`, so the API is consistent across both types. `head()` shows the actual row data in tabular format — column headers with right-aligned values and a row index. `summary()` provides per-column summary statistics. Together they provide a complete sanity check on the data before feeding it into a model. By default, `head()` displays up to 10 rows. Pass a count to limit the output:
+`Print` shows the structure. `Shape` returns dimensions as a named tuple, matching the matrix API. `Head` displays row data in tabular format. `Summary` provides per-column statistics. By default, `head()` shows up to 10 rows — pass a count to limit the output:
 
 ```swift
 print(data.head(n: 3))
@@ -209,7 +209,7 @@ print(data.head(n: 3))
 
 ### Classification pipeline
 
-`Panel` integrates directly with Quiver's classification workflow. A typical pipeline scales features, fits a classifier on training data, and evaluates predictions — all while keeping columns aligned:
+`Panel` integrates directly with Quiver's [classification](<doc:Machine-Learning-Primer>) workflow. A typical pipeline scales features, fits a classifier on training data, and evaluates predictions — all while keeping columns aligned:
 
 ```swift
 import Quiver
@@ -243,5 +243,5 @@ let predictions = model.predict(testScaled)
 
 `Panel` is intentionally focused on numeric columnar data for ML workflows. It is a value type with a fixed schema — columns are defined at creation and all values are `Double`. This focused design keeps `Panel` lightweight and predictable, optimized for the split-scale-train-evaluate cycle that classification workflows require.
 
-Panels support direct comparison with `==`. Two panels are equal when they have the same column names in the same order and the same data in every column. This is useful for verifying that a filtering or splitting operation produced the expected result.
+Panels conform to Swift's `Equatable` protocol. Two panels are equal when they have the same column names in the same order and the same data in every column. This is useful for verifying that a filtering or splitting operation produced the expected result.
 
