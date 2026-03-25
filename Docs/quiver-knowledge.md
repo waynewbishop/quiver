@@ -32,6 +32,8 @@ Internal logic lives in `_Vector` types that are not part of the public API. The
 
 ML models are immutable value types created via static `fit()` methods. There is no unfitted state — you cannot call `predict()` on a model that hasn't been trained.
 
+All models and result types conform to `Codable`, enabling JSON serialization for persistence, network transfer, and cross-device deployment. The Swift compiler auto-synthesizes encoding/decoding since all stored properties are basic Swift types (`[Double]`, `Int`, `Bool`, etc.). Train once, encode to JSON, decode on any platform — identical predictions guaranteed.
+
 All model and result types conform to `CustomStringConvertible`, producing clean summaries when printed:
 
 ```swift

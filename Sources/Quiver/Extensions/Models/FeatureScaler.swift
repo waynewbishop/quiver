@@ -47,7 +47,7 @@ import Foundation
 /// let scaledTrain = scaler.transform(trainX)
 /// let scaledTest = scaler.transform(testX)
 /// ```
-public struct FeatureScaler: CustomStringConvertible, Equatable {
+public struct FeatureScaler: Codable, CustomStringConvertible, Equatable {
 
     public var description: String {
         "FeatureScaler: \(featureCount) features, range \(range.lowerBound)...\(range.upperBound)"

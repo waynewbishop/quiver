@@ -220,91 +220,33 @@ if cond < 1_000 {
 }
 ```
 
-### Log determinant
+### How Quiver uses determinants
 
-For large matrices, the determinant can overflow or underflow the range of `Double`. A `100`×`100` matrix with moderately large entries might produce a determinant of `10³⁰⁰`, which exceeds what floating-point numbers can represent. A matrix with small entries might produce a determinant so close to zero that it rounds to exactly `0.0`, becoming indistinguishable from a truly singular matrix.
+The determinant and matrix inversion are not just abstract concepts — they power linear regression behind the scenes. When we call `LinearRegression.fit(features:targets:)`, Quiver solves the normal equation θ = (X'X)⁻¹X'y to find the best-fit coefficients. That formula requires inverting the matrix `X'X`, which is only possible when its determinant is non-zero.
 
-The `logDeterminant` property solves this by working in log-space. Instead of computing the product of pivot values directly (which overflows), it sums their logarithms (which stays in a manageable range). The result separates the **sign** from the **magnitude**:
+If the feature vectors are linearly dependent — for example, temperature in both Celsius and Fahrenheit — the matrix `X'X` becomes singular (`determinant = 0`) and the inversion fails. That is why `fit` throws `MatrixError.singular`. This is the determinant telling us that the features do not contain enough independent information to solve the problem.
 
-```swift
-let A = [[4.0, 3.0],
-         [6.0, 3.0]]
-let ld = A.logDeterminant
-ld.sign         // -1.0 (determinant is negative)
-ld.logAbsValue  // 1.7918 (natural log of 6)
-ld.value        // -6.0 (reconstructed: sign × exp(logAbsValue))
-```
-
-The `LogDeterminant` struct provides three properties:
-- `sign` — the sign of the determinant: `-1.0`, `0.0`, or `1.0`
-- `logAbsValue` — the natural logarithm of the absolute determinant
-- `value` — the reconstructed determinant (useful for small matrices where overflow is not a concern)
-
-For larger matrices, the log form stays well within floating-point range while the raw product would approach overflow:
-
-```swift
-let large = [
-    [10.0, 0.0, 0.0, 0.0, 0.0],
-    [0.0, 20.0, 0.0, 0.0, 0.0],
-    [0.0, 0.0, 30.0, 0.0, 0.0],
-    [0.0, 0.0, 0.0, 40.0, 0.0],
-    [0.0, 0.0, 0.0, 0.0, 50.0]
-]
-let ld = large.logDeterminant
-ld.logAbsValue  // ~16.3 (manageable)
-ld.value        // 12000000 (reconstructed)
-```
-
-Singular matrices return a sign of zero and a log value of negative infinity:
-
-```swift
-let singular = [[1.0, 2.0],
-                [2.0, 4.0]]
-let ld = singular.logDeterminant
-ld.sign         // 0.0
-ld.logAbsValue  // -infinity
-```
-
-#### Comparing determinants safely
-
-The log form is especially useful when comparing the determinants of multiple matrices. Instead of comparing raw values that might be astronomically large or vanishingly small, we compare their logarithms, which are ordinary, well-behaved numbers:
-
-```swift
-let matrixA = [[10.0, 0.0], [0.0, 10.0]]
-let matrixB = [[5.0, 0.0], [0.0, 20.0]]
-
-// Compare in log-space
-let ldA = matrixA.logDeterminant
-let ldB = matrixB.logDeterminant
-
-ldA.logAbsValue  // 4.605 (log of 100)
-ldB.logAbsValue  // 4.605 (log of 100)
-// Same scaling factor, different axis distributions
-```
+> Tip: The same math used in <doc:Matrix-Transformations> to rotate and scale points is what that `LinearRegression` applies to find coefficients. The difference is context: in graphics we transform geometry, in regression we solve for the line that best fits the data.
 
 ### Putting it all together
 
-These three operations form a diagnostic chain. Before inverting a matrix in a production pipeline, we can verify the operation is safe:
+The determinant and condition number form a diagnostic pair. Before inverting a matrix, we can verify the operation is safe:
 
 ```swift
 let matrix = [[4.0, 7.0],
               [2.0, 6.0]]
 
-// Step 1: Is it singular?
+// Is it singular?
 let det = matrix.determinant  // 10.0 — non-zero, good
 
-// Step 2: Is it numerically stable?
+// Is it numerically stable?
 let cond = matrix.conditionNumber  // small value — safe to invert
 
-// Step 3: For large matrices, use log form to avoid overflow
-let ld = matrix.logDeterminant
-// ld.sign = 1.0, ld.logAbsValue ≈ 2.302
-
-// All checks pass — safe to proceed
+// Both checks pass — safe to proceed
 let inverse = try matrix.inverted()
 ```
 
-For matrices that fail these diagnostics, we know to handle the situation gracefully — whether that means adjusting the data to make the matrix better behaved, removing redundant features, or simply reporting that the computation cannot be performed reliably.
+For matrices that fail these checks, we know to handle the situation gracefully — whether that means removing redundant features, adjusting the data, or reporting that the computation cannot be performed reliably.
 
 ### See also
 

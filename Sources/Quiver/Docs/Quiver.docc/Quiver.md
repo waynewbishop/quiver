@@ -80,6 +80,9 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Evaluation-Metrics>
 - <doc:Activation-Functions>
 
+### Utilities
+- <doc:Model-Persistence>
+
 ### Supporting Types
 - ``Fraction``
 - ``LogDeterminant``

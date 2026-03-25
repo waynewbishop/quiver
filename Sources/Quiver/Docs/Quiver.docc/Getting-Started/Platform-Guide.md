@@ -38,7 +38,7 @@ let mid = prices.median()     // middle value
 - Calculate growth rates with `percentChange()` for bar and area charts
 - Compute statistics with `mean()`, `std()`, and `median()` for dashboard summaries
 - Build distributions with `histogram()` for frequency charts
-- Train models on local data with linear regression, KNN, or Naive Bayes
+- Train models on local data with `LinearRegression`, `KNearestNeighbors`, `GaussianNaiveBayes`, or `KMeans`
 
 > Tip: Quiver computes the data. Swift Charts renders it. See <doc:Statistical-Operations> for the full set of statistical operations and <doc:Data-Visualization> for charting patterns.
 

@@ -158,6 +158,8 @@ Because `fit()` is the only way to create a model, the compiler makes it impossi
 
 Models are also immutable. Once created, their coefficients, centroids, and learned parameters cannot change. This eliminates an entire category of bugs where a model is accidentally retrained or modified between predictions.
 
+> Tip: Models also conform to `Codable`. Because every stored property is a basic Swift type — arrays of numbers, integers, and booleans — the compiler auto-synthesizes JSON encoding and decoding. A model trained once can be saved to disk and loaded on the next app launch without retraining. See <doc:Model-Persistence> for platform-specific guidance.
+
 ### Clean output by default
 
 Every model and result type produces a readable summary when printed. This makes Playground exploration and debugging straightforward — there is no wall of raw properties to parse:

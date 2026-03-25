@@ -108,9 +108,37 @@ The goal is a model that generalizes, one that learns the true pattern well enou
 
 Supervised learning problems fall into two categories:
 
-**Classification** predicts a discrete category: spam or not spam, approved or denied, which digit (0–9) an image contains. The label is a class identifier, and the model's output is a predicted class (sometimes with a confidence score). Quiver's `GaussianNaiveBayes` is a classification model.
+**Classification** predicts a discrete category: spam or not spam, approved or denied, which digit (0–9) an image contains. The label is a class identifier, and the model's output is a predicted class:
 
-**Regression** predicts a continuous value: tomorrow's temperature, a house's sale price, how long a user session will last. The label is a number, and the model's output is a number. Quiver's `LinearRegression` is a regression model.
+```swift
+import Quiver
+
+let features: [[Double]] = [[720, 15000], [650, 78000], [580, 42000], [710, 8000]]
+let labels = [1, 0, 0, 1]
+
+// Train on labeled examples
+let model = GaussianNaiveBayes.fit(features: features, labels: labels)
+
+// Predict a class label for a new sample
+let predictions = model.predict([[690, 30000]])
+print(predictions)  // [1]
+```
+
+**Regression** predicts a continuous value: tomorrow's temperature, a house's sale price, how long a user session will last. The label is a number, and the model's output is a number:
+
+```swift
+import Quiver
+
+let sqft   = [1200.0, 1500.0, 1800.0, 2100.0]
+let prices = [250000.0, 320000.0, 380000.0, 440000.0]
+
+// Train on historical sales data
+let model = try LinearRegression.fit(features: sqft, targets: prices)
+
+// Predict a continuous value for a new listing
+let prediction = model.predict([2000.0])
+print(prediction)  // [~418000.0]
+```
 
 The distinction matters because evaluation metrics differ. Classification uses accuracy, precision, and recall. Regression uses measures like mean squared error and R².
 
@@ -118,7 +146,25 @@ The distinction matters because evaluation metrics differ. Classification uses a
 
 Every Quiver model follows the same two-step pattern: **fit**, then **predict**. Fitting is the learning phase where the model examines the training data and builds whatever internal representation it needs. For `LinearRegression`, fitting computes the optimal coefficients. For `GaussianNaiveBayes`, it calculates the mean and variance of each feature per class. For `KNearestNeighbors`, fitting simply stores the training data (all the real work happens later). The result of `fit` is always a ready-to-use model.
 
-Predicting is the application phase. We hand the fitted model new samples it has never seen, and it returns answers. Classification models return class labels; regression models return continuous values. The model uses what it learned during fitting but never modifies itself. Calling `predict` twice on the same input always gives the same result. This separation keeps the workflow clear: `fit` looks backward at training data to learn, `predict` looks forward at new data to answer.
+Predicting is the application phase. We hand the fitted model new samples it has never seen, and it returns answers. Classification models return class labels; regression models return continuous values:
+
+```swift
+import Quiver
+
+let features: [[Double]] = [[1, 2], [1.5, 1.8], [5, 8], [6, 9]]
+let labels = [0, 0, 1, 1]
+
+// Fit learns from training data
+let model = KNearestNeighbors.fit(features: features, labels: labels, k: 3)
+print(model)
+// KNearestNeighbors: k=3, euclidean, 4 training points, 2 features
+
+// Predict applies to new, unseen samples
+let predictions = model.predict([[2, 2.5], [5.5, 7]])
+print(predictions)  // [0, 1]
+```
+
+The model uses what it learned during fitting but never modifies itself. Calling `predict` twice on the same input always gives the same result.
 
 ### Evaluating models
 
@@ -126,7 +172,20 @@ Accuracy, the fraction of correct predictions, is the most intuitive metric, but
 
 Better metrics examine the types of errors a model makes. **Precision** measures how many of the model's positive predictions were actually correct, so high precision means few false alarms. **Recall** measures how many of the actually positive examples the model caught, so high recall means few missed cases. The **F1 score** is the harmonic mean of precision and recall, balancing both concerns into a single number.
 
-Which metric matters most depends on the cost of each error type. Missing a fraudulent transaction (low recall) is worse than flagging a legitimate one (low precision). For a full treatment of these metrics and the `ConfusionMatrix` type, see <doc:Evaluation-Metrics>.
+Which metric matters most depends on the cost of each error type. Missing a fraudulent transaction (low recall) is worse than flagging a legitimate one (low precision):
+
+```swift
+import Quiver
+
+let predictions = [1, 0, 1, 1, 0, 0, 1, 0]
+let actual      = [1, 0, 0, 1, 0, 1, 1, 0]
+
+// Per-class precision, recall, F1, and support in one call
+let report = predictions.classificationReport(actual: actual)
+print(report)
+```
+
+For a full treatment of these metrics and the `ConfusionMatrix` type, see <doc:Evaluation-Metrics>.
 
 ### Choosing an algorithm
 
