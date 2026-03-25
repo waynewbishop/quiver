@@ -118,6 +118,28 @@ let labels = ["cat", "dog", "bird", "cat", "dog", "bird", "cat", "dog"]
 let (trainLabels, testLabels) = labels.trainTestSplit(testRatio: 0.25, seed: 42)
 ```
 
+### Oversampling imbalanced data
+
+Stratified splitting preserves class ratios, but if the smaller class has very few samples, even a proportional split leaves the model with too little data to learn its pattern. `oversample(labels:)` addresses this by generating synthetic samples before splitting:
+
+```swift
+import Quiver
+
+let features: [[Double]] = [
+    [1.0, 2.0], [1.5, 1.8], [2.0, 2.5], [1.2, 2.1],
+    [7.0, 8.0], [7.5, 8.5]
+]
+let labels = [0, 0, 0, 0, 1, 1]
+
+// Balance first, then split
+let (balanced, balancedLabels) = features.oversample(labels: labels)
+let split = balanced.stratifiedSplit(
+    labels: balancedLabels, testRatio: 0.2, seed: 42
+)
+```
+
+The method auto-detects which classes are smaller and generates new samples by interpolating between existing points in vector space. For multi-class data, every class below the largest count is oversampled independently. Call `oversample` before `stratifiedSplit` so that both the training and test sets contain enough examples from every class.
+
 ## See also
 
 - <doc:Machine-Learning-Primer>

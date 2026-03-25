@@ -88,7 +88,7 @@ final class NaiveBayesTests: XCTestCase {
         XCTAssertGreaterThan(accuracy, 0.8)
     }
 
-    // Imbalanced priors — model should still predict minority class when features are clear
+    // Imbalanced priors — model should still predict the smaller class when features are clear
     func testImbalancedPriors() {
         // 90% class 0, 10% class 1 — but class 1 features are distinct
         var features: [[Double]] = []

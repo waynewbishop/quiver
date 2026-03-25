@@ -3,7 +3,7 @@
 Complete reference for the Quiver Swift package. Upload this file to a Claude Project or conversation to get accurate assistance with Quiver code.
 
 **Repository:** https://github.com/waynewbishop/quiver
-**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 33 interactive recipes for learning vector math, statistics, and ML models in Swift
+**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 34 interactive recipes for learning vector math, statistics, and ML models in Swift
 **Module:** `import Quiver`
 **Platforms:** macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+
 **Swift:** 5.9+
@@ -554,7 +554,7 @@ let (train, test) = panel.trainTestSplit(testRatio: 0.2, seed: 42)
 // Display and summary statistics
 panel.head()       // Tabular output showing first 10 rows
 panel.head(n: 3)   // First 3 rows in tabular format
-panel.describe()   // Per-column statistics (count, mean, std, min, max)
+panel.summary()    // Per-column statistics (count, mean, std, min, max)
 ```
 
 ---
@@ -886,7 +886,7 @@ Organizes named columns of numeric data into a lightweight container focused on 
 - **Filter:** `panel.filtered(where: boolMask)` — applies mask to all columns simultaneously.
 - **Split:** `panel.trainTestSplit(testRatio:seed:)` — splits all columns atomically by the same rows.
 - **Head:** `panel.head()` — tabular display of first 10 rows. `panel.head(n: 3)` for custom count.
-- **Describe:** `panel.describe()` — per-column summary statistics.
+- **Summary:** `panel.summary()` — per-column summary statistics.
 - **Design:** Value type, fixed schema, all `Double` columns. Models accept `[[Double]]` and `[Int]` directly — Panel organizes data, models consume raw arrays.
 
 ### Train-Test Split
@@ -898,6 +898,7 @@ Split data into training and testing subsets for honest evaluation.
 - **Reproducible:** Same seed + same data = same split every time.
 - **Stratified:** `features.stratifiedSplit(labels:testRatio:seed:)` preserves class proportions. Returns 4-tuple: `(trainFeatures, testFeatures, trainLabels, testLabels)`.
 - **Choosing ratio:** 0.2 is standard. 0.1 for small datasets. 0.3 for large datasets.
+- **Oversample:** `features.oversample(labels: labels)` → `(features: [[Double]], labels: [Int])`. Auto-detects smaller classes, generates synthetic points by interpolating between existing samples. Handles multi-class. Call before splitting.
 
 ### Feature Scaling
 

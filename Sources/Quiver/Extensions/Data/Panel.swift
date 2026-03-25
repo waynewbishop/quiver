@@ -415,7 +415,7 @@ public struct Panel: CustomStringConvertible, Equatable {
     /// maximum using existing Quiver vector operations.
     ///
     /// - Returns: A multi-line string with one row of statistics per column.
-    public func describe() -> String {
+    public func summary() -> String {
         var lines = ["column          count       mean        std        min        max"]
         lines.append(String(repeating: "-", count: 70))
 

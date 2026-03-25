@@ -138,4 +138,74 @@ final class ArraySamplingTests: XCTestCase {
         XCTAssertEqual(split90.test.count, 90)
         XCTAssertEqual(split90.train.count, 10)
     }
+
+    // MARK: - Oversample
+
+    // Oversampling balances classes to match the majority count
+    func testOversampleBalancesBinaryClasses() {
+        let features: [[Double]] = [
+            [1.0, 2.0], [1.5, 1.8], [2.0, 2.5], [1.2, 2.1],
+            [7.0, 8.0], [7.5, 8.5]
+        ]
+        let labels = [0, 0, 0, 0, 1, 1]
+
+        let (balanced, balancedLabels) = features.oversample(labels: labels)
+
+        // Both classes should now have 4 samples
+        let class0 = balancedLabels.filter { $0 == 0 }.count
+        let class1 = balancedLabels.filter { $0 == 1 }.count
+        XCTAssertEqual(class0, 4)
+        XCTAssertEqual(class1, 4)
+        XCTAssertEqual(balanced.count, balancedLabels.count)
+    }
+
+    // Oversampling handles multi-class data
+    func testOversampleMultiClass() {
+        let features: [[Double]] = [
+            [1.0, 1.0], [1.5, 1.5], [1.2, 1.2],
+            [5.0, 5.0], [5.5, 5.5],
+            [9.0, 9.0]
+        ]
+        let labels = [0, 0, 0, 1, 1, 2]
+
+        let (balanced, balancedLabels) = features.oversample(labels: labels)
+
+        // Total should be 9 (3 classes × 3 each)
+        XCTAssertEqual(balanced.count, 9)
+
+        // All classes should match the largest count (3)
+        let class0 = balancedLabels.filter { $0 == 0 }.count
+        let class1 = balancedLabels.filter { $0 == 1 }.count
+        let class2 = balancedLabels.filter { $0 == 2 }.count
+        XCTAssertEqual(class0, 3)
+        XCTAssertEqual(class1, 3)
+        XCTAssertEqual(class2, 3)
+    }
+
+    // Already balanced data returns unchanged
+    func testOversampleAlreadyBalanced() {
+        let features: [[Double]] = [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]]
+        let labels = [0, 0, 1, 1]
+
+        let (balanced, balancedLabels) = features.oversample(labels: labels)
+
+        XCTAssertEqual(balanced.count, 4)
+        XCTAssertEqual(balancedLabels, labels)
+    }
+
+    // Synthetic points have the correct dimensionality
+    func testOversampleDimensions() {
+        let features: [[Double]] = [
+            [1.0, 2.0, 3.0], [1.5, 2.5, 3.5], [2.0, 3.0, 4.0],
+            [8.0, 9.0, 10.0]
+        ]
+        let labels = [0, 0, 0, 1]
+
+        let (balanced, _) = features.oversample(labels: labels)
+
+        // Every row should have 3 columns
+        for row in balanced {
+            XCTAssertEqual(row.count, 3)
+        }
+    }
 }

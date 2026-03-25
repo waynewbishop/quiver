@@ -164,7 +164,7 @@ final class PanelTests: XCTestCase {
             ("x", [1.0, 2.0, 3.0, 4.0, 5.0])
         ])
 
-        let output = panel.describe()
+        let output = panel.summary()
 
         XCTAssertTrue(output.contains("x"), "Output should contain the column name")
         XCTAssertTrue(output.contains("mean"), "Output should contain a mean header")

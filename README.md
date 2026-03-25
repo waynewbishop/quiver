@@ -132,6 +132,10 @@ let outliers = sales.outlierMask(threshold: 1.2).trueIndices
 * **Data visualization** — Prepare chart-ready arrays (trend lines, elbow curves, heatmaps) for Swift Charts
 * **Server-side Swift** — Run numerical computing and ML pipelines on Linux and Vapor
 
+## Cookbook
+
+[34 interactive recipes](https://github.com/waynewbishop/quiver-cookbook) for learning vector math, statistics, and ML models in Swift. Each recipe is a single `.swift` file optimized for the Xcode `#Playground` macro — clone the repo, open in Xcode, and start experimenting.
+
 ## Documentation
 
 Full API documentation at [waynewbishop.github.io/quiver](https://waynewbishop.github.io/quiver/documentation/quiver/), including:

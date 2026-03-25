@@ -42,7 +42,7 @@ public struct ConfusionMatrix: CustomStringConvertible, Equatable {
     /// Fraction of all predictions that were correct: (TP + TN) / total.
     ///
     /// Accuracy can be misleading on imbalanced datasets. A model that always predicts
-    /// the majority class achieves high accuracy while catching none of the minority class.
+    /// the larger class achieves high accuracy while catching none of the smaller class.
     public var accuracy: Double {
         let total = truePositives + falsePositives + trueNegatives + falseNegatives
         guard total > 0 else { return 0.0 }

@@ -191,11 +191,11 @@ print(data.head())
 // 3     28.0   58000.0  91.0
 // 4     42.0   95000.0  78.0
 
-print(data.describe())
+print(data.summary())
 // Prints count, mean, std, min, and max for each column
 ```
 
-`print()` gives a quick structural overview. `.shape` returns the dimensions as a `(rows: Int, columns: Int)` named tuple — the same format as matrix `.shape`, so the API is consistent across both types. `head()` shows the actual row data in tabular format — column headers with right-aligned values and a row index. `describe()` provides per-column summary statistics. Together they provide a complete sanity check on the data before feeding it into a model. By default, `head()` displays up to 10 rows. Pass a count to limit the output:
+`print()` gives a quick structural overview. `.shape` returns the dimensions as a `(rows: Int, columns: Int)` named tuple — the same format as matrix `.shape`, so the API is consistent across both types. `head()` shows the actual row data in tabular format — column headers with right-aligned values and a row index. `summary()` provides per-column summary statistics. Together they provide a complete sanity check on the data before feeding it into a model. By default, `head()` displays up to 10 rows. Pass a count to limit the output:
 
 ```swift
 print(data.head(n: 3))
