@@ -102,7 +102,7 @@ The `#Playground` macro re-evaluates automatically when we edit. This makes it i
 import Playgrounds
 import Quiver
 
-#Playground("Feature Scaling") {
+#Playground("Comparing Normalization") {
     let raw = [100.0, 200.0, 300.0, 400.0, 500.0]
 
     // Rescale to [0, 1] based on min and max values
@@ -119,4 +119,4 @@ import Quiver
 }
 ```
 
-Min-max scaling compresses values into the range [0, 1] by subtracting the minimum and dividing by the range. Z-score scaling subtracts the mean and divides by the standard deviation, centering the data at zero. Both approaches are essential preprocessing steps before training machine learning models, because features on different scales can bias algorithms that rely on distance measurements.
+Min-max scaling compresses values into a target range. Z-score scaling centers data at zero with unit standard deviation. Both are useful for normalizing data for charts and exploration. For ML pipelines where training and test data must be scaled consistently, use `FeatureScaler` with the fit-then-transform pattern — see <doc:Feature-Scaling>.

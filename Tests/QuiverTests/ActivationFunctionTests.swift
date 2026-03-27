@@ -14,7 +14,7 @@
 import XCTest
 @testable import Quiver
 
-final class SoftmaxTests: XCTestCase {
+final class ActivationFunctionTests: XCTestCase {
 
     // Known values and sum-to-one property
     func testSoftmaxBasic() {

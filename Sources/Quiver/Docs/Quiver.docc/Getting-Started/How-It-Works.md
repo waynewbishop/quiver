@@ -47,7 +47,7 @@ Not every array operation makes sense for every element type. Computing a mean r
 Swift solves this with **constrained extensions** — an extension that applies only when the generic type parameter meets a specific requirement. The constraint acts as a gate: if the elements qualify, the methods appear. If they do not, the compiler prevents us from calling them:
 
 ```swift
-//Actual Quiver extension that adds `.magnitude` to arrays
+// Actual Quiver extension that adds `.magnitude` to arrays
 extension Array where Element: FloatingPoint {
     var magnitude: Element {
         var sumOfSquares = Element.zero

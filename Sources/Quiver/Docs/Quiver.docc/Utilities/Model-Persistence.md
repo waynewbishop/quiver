@@ -10,7 +10,7 @@ This works because Quiver models are immutable value types whose stored properti
 
 ### The pattern
 
-Every model follows the same three-step pattern: `train`, `encode`, `decode`. The decoded model is identical to the original — same properties, same predictions, same `Equatable` comparison:
+Every model follows the same three-step pattern: `fit`, `encode`, `decode`. The decoded model is identical to the original — same properties, same predictions, same `Equatable` comparison:
 
 ```swift
 import Quiver
@@ -56,9 +56,17 @@ let restored = try JSONDecoder().decode(KMeans.self, from: saved)
 let labels = restored.predict(newReadings)
 ```
 
+### When to persist the scaler
+
+Distance-based models like `KNearestNeighbors` and `KMeans` measure how far apart data points are. When features have different scales — a credit score ranging 300-850 and an account balance ranging 0-250,000 — the larger feature dominates every distance calculation. Feature scaling normalizes all columns to the same range so each one contributes equally.
+
+When scaling is used, the scaler and model become a matched pair. The model's learned distances and boundaries exist in the scaled coordinate space, so every future input must be scaled using the same min and max values from training. Losing the scaler means new inputs land in a different coordinate space, producing incorrect predictions with no error or warning.
+
+`LinearRegression` and `GaussianNaiveBayes` do not require scaling — regression coefficients compensate for different magnitudes mathematically, and Naive Bayes evaluates each feature independently. For these models, the scaler is optional and the model can be persisted on its own.
+
 ### Persisting a full pipeline
 
-In a typical ML workflow, the scaler and the model must stay paired — applying a different scaler to test data than was used during training produces incorrect predictions. Both conform to `Codable`, so they can be saved together:
+When scaling is part of the workflow, both the scaler and model conform to `Codable` and should be saved together:
 
 ```swift
 import Quiver
