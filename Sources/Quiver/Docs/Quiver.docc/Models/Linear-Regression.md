@@ -6,6 +6,8 @@ Train an ordinary least squares regression model.
 
 Linear regression finds the best-fit line (or hyperplane) through training data by minimizing the sum of squared residuals. Unlike classification models that predict discrete categories, regression models predict continuous values like prices, temperatures, scores, or any numerical quantity.
 
+![K-Means Process](diagram-linear-regression)
+
 ### How it works
 
 Linear regression models the relationship between features and a target as a linear equation: ŷ = θ₀ + θ₁x₁ + θ₂x₂ + ... + θₙxₙ. The goal is to find the coefficients θ that minimize the total squared error between predicted and actual values.

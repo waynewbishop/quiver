@@ -12,6 +12,8 @@ Imagine standing in sunlight. Your shadow on the ground is a projection — it s
 
 Vector projection works the same way. Given a vector and a reference direction, the **scalar projection** measures how far the vector reaches along that direction, which is the length of the shadow. The **vector projection** gives that shadow as a vector, pointing along the reference direction with the measured length. Together they answer: "how much of this vector is aligned with that direction?"
 
+![K-Means Process](diagram-vector-projection)
+
 ### What the orthogonal component measures
 
 If the projection is the shadow, the orthogonal component is everything the shadow misses. It captures the part of the vector that points away from the reference direction. "Orthogonal" means perpendicular. The orthogonal component measures how far the vector strays from the direction we care about.

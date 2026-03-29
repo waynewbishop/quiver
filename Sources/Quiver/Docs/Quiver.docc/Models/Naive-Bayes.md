@@ -12,6 +12,8 @@ The **Gaussian** in Gaussian Naive Bayes refers to the probability density funct
 
 During prediction, the model evaluates the Gaussian PDF for every feature against every class. It then combines these likelihoods with the class prior probabilities (how common each class is in the training data) to determine which class best explains the observed features. The class with the highest combined score wins.
 
+![Naive Bayes Process](diagram-naive-bayes)
+
 ### Fitting a model
 
 The `fit(features:labels:)` static method learns class statistics from training data and returns a ready-to-use model. There is no separate unfitted state — the returned struct is immediately usable.

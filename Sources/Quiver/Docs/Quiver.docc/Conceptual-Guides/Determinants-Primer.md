@@ -22,6 +22,8 @@ scale.determinant  // 15.0
 
 The original `1`×`1` unit square becomes a `3`×`5` rectangle with area `15`. The determinant captures this scaling factor directly, telling us that every region in the original space is now `15` times larger.
 
+![Determinant Scaling](diagram-determinant-scaling)
+
 Adding a shear component tilts the rectangle into a parallelogram, but the area does not change. The base-times-height calculation still produces the same result:
 
 ```swift
@@ -73,6 +75,8 @@ singular.determinant  // 0.0
 ```
 
 Both transformed basis vectors land on the line `y = x`. Every point in 2D space gets mapped onto that single line, losing an entire dimension of information. We cannot reconstruct the original 2D positions from a 1D line, so no inverse exists.
+
+![Determinant Singular](diagram-determinant-singular)
 
 The same principle applies to larger matrices. When one row is a linear combination of the others, the system of equations the matrix represents is underdetermined:
 

@@ -3,7 +3,7 @@
 Complete reference for the Quiver Swift package. Upload this file to a Claude Project or conversation to get accurate assistance with Quiver code.
 
 **Repository:** https://github.com/waynewbishop/quiver
-**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 34 interactive recipes for learning vector math, statistics, and ML models in Swift
+**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 38 interactive recipes for learning vector math, statistics, and ML models in Swift
 **Module:** `import Quiver`
 **Platforms:** macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+
 **Swift:** 5.9+
@@ -704,6 +704,7 @@ The determinant measures how a matrix scales space. For a 2×2 matrix `[[a,b],[c
 - **Invertibility:** Only matrices with non-zero determinant can be inverted. `try matrix.inverted()` throws `MatrixError.singular` if det = 0.
 - **Condition number:** `matrix.conditionNumber` measures numerical stability. Values near 1 = well-conditioned. Values > 1000 = results may be unreliable. Always check before trusting an inverse.
 - **Log determinant:** `matrix.logDeterminant` returns a `LogDeterminant` struct with `.sign`, `.logAbsValue`, and `.value`. Prevents overflow for large matrices where the raw determinant would exceed `Double.greatestFiniteMagnitude`.
+- **How Quiver uses determinants:** `LinearRegression.fit()` solves the normal equation θ = (X'X)⁻¹X'y, which requires inverting X'X. If the feature vectors are linearly dependent, the determinant of X'X is zero and `fit()` throws `MatrixError.singular`. The determinant tells us whether the features contain enough independent information to solve the problem.
 - **Diagnostic chain:** Check determinant → check condition number → attempt inversion → verify with `matrix.multiplyMatrix(inverse)` ≈ identity.
 
 ### Machine Learning Primer
@@ -713,8 +714,10 @@ Quiver's ML models follow a consistent pattern: `fit()` → `predict()` → eval
 - **Classification vs regression.** Classification predicts discrete categories (`[Int]` labels). Regression predicts continuous values (`[Double]` targets).
 - **Features and labels.** Features are the input measurements (`[[Double]]` matrix, rows = samples, columns = measurements). Labels are what we predict (`[Int]` for classification, `[Double]` for regression).
 - **Train/test split.** Never evaluate on training data. Use `trainTestSplit(testRatio:seed:)` or `stratifiedSplit(labels:testRatio:seed:)` to hold out evaluation data.
-- **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating.
+- **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling.
 - **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression. All use static `fit()` methods — no unfitted state exists.
+- **Model persistence.** All models conform to `Codable`. Train once, encode to JSON with `JSONEncoder`, decode on any platform with `JSONDecoder` — identical predictions guaranteed by `Equatable`. When scaling is used, persist both the scaler and model together. See the Model-Persistence documentation page for platform-specific guidance (iOS, watchOS, Vapor, SwiftData).
+- **Naive Bayes variance.** The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
 - **Evaluation (after training):** `confusionMatrix(actual:)` for classification (accuracy, precision, recall, F1). `rSquared(actual:)`, `meanSquaredError(actual:)` for regression. `classificationReport(actual:)` for a formatted summary.
 - **Loss (during training):** Not yet shipped. Current models use closed-form solutions (LinearRegression) or single-pass statistics (NaiveBayes) — no iterative loss. When GradientDescent ships, `lossHistory` will expose per-iteration loss as a `[Double]`, compatible with `rollingMean()` and Swift Charts. KMeans `inertia` is the closest current equivalent — it measures sum of squared distances to centroids.
 

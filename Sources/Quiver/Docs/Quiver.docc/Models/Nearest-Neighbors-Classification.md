@@ -10,6 +10,8 @@ K-Nearest Neighbors is one of the most intuitive classification algorithms. Give
 
 For each new sample, the algorithm measures the **distance** from that sample to every training point, selects the closest neighbors `(k)` by sorting those distances, and assigns the most common label among them. The algorithm's simplicity is its strength: no assumptions about how the data is distributed, no parameters to optimize, and the decision boundary adapts automatically to the shape of the data. The tradeoff is that prediction requires scanning the entire training set for every query.
 
+![K-Means Process](diagram-nearest-neighbors)
+
 ### The distance connection
 
 Nearest Neighbors relies on the same `distance(to:)` operation used throughout Quiver's vector mathematics. This is Euclidean distance — the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². The same function powers centroid assignment in `KMeans` and similarity operations in <doc:Similarity-Operations>. Understanding this single linear algebra concept, that vectors are points in space and distance measures how far apart they are, unlocks classification, clustering, and similarity search simultaneously.
