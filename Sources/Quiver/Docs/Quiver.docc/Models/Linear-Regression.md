@@ -171,7 +171,7 @@ print("R²: \(r2)")
 
 The normal equation requires inverting the matrix X'X. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), the matrix is [singular](<doc:Determinants-Primer>) and cannot be inverted. In this case, `fit` throws `MatrixError.singular`. The fix is to remove redundant features before fitting.
 
-To check beforehand, inspect the determinant of your feature matrix. A non-zero value means the columns are independent and the model can be fitted:
+To check beforehand, inspect the determinant of the feature matrix. A non-zero value means the columns are independent and the model can be fitted:
 
 ```swift
 import Quiver

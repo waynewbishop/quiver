@@ -205,7 +205,7 @@ print(data.head(n: 3))
 // 2     35.0   75000.0  85.0
 ```
 
-> Tip: Use `head()` in a Playground to visually verify your data after loading or filtering. Catching a column of unexpected zeros early saves debugging time later.
+> Tip: Use `head()` in a Playground to visually verify the data after loading or filtering. Catching a column of unexpected zeros early saves debugging time later.
 
 ### Classification pipeline
 

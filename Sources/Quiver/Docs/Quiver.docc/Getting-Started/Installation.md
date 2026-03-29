@@ -12,7 +12,7 @@ Quiver is distributed as a Swift package with zero external dependencies. It sup
 
 ### Adding Quiver to an Xcode project
 
-Open your project in Xcode and navigate to **File → Add Package Dependencies**. In the search field, enter the repository URL:
+Open a project in Xcode and navigate to **File → Add Package Dependencies**. In the search field, enter the repository URL:
 
 ```
 https://github.com/waynewbishop/quiver
@@ -22,7 +22,7 @@ Set the dependency rule to **Up to Next Major Version** starting from `1.0.0`, t
 
 ### Adding Quiver to a Swift package
 
-Add Quiver as a dependency in your `Package.swift` file:
+Add Quiver as a dependency in `Package.swift`:
 
 ```swift
 dependencies: [
