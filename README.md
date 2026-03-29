@@ -32,9 +32,11 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
 
 * **Data Preparation**
   * Train/test split with reproducible seeded shuffling
+  * Stratified splitting preserving class proportions
   * Feature scaling (min-max normalization, fit-then-transform)
   * Panel (named-column data structure for aligned splitting)
   * Boolean masking and conditional selection
+  * Class distribution, imbalance ratio, and oversampling for imbalanced data
 
 * **Data Visualization**
   * Trend lines via linear regression predict
@@ -45,13 +47,16 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
 
 * **Machine Learning Models**
   * Gaussian Naive Bayes (classification)
+  * K-Nearest Neighbors (classification with Euclidean and cosine distance)
   * Linear Regression with single-feature convenience predict
   * K-Means Clustering with elbow method and multi-seed best fit
   * Consistent `fit`/`predict` API across all models
   * Full transparency — inspect coefficients, centroids, priors, means, variances
+  * All models conform to `Codable` — train once, encode to JSON, decode on any platform
 
 * **Evaluation Metrics**
   * Confusion matrix with accuracy, precision, recall, F1 score
+  * Per-class classification report with macro and weighted averages
   * R², MSE, RMSE for regression
   * All metrics available programmatically as typed values
 
@@ -134,7 +139,7 @@ let outliers = sales.outlierMask(threshold: 1.2).trueIndices
 
 ## Cookbook
 
-[34 interactive recipes](https://github.com/waynewbishop/quiver-cookbook) for learning vector math, statistics, and ML models in Swift. Each recipe is a single `.swift` file optimized for the Xcode `#Playground` macro — clone the repo, open in Xcode, and start experimenting.
+[38 interactive recipes](https://github.com/waynewbishop/quiver-cookbook) for learning vector math, statistics, and ML models in Swift. Each recipe is a single `.swift` file optimized for the Xcode `#Playground` macro — clone the repo, open in Xcode, and start experimenting.
 
 ## Documentation
 
@@ -143,7 +148,7 @@ Full API documentation at [waynewbishop.github.io/quiver](https://waynewbishop.g
 * Statistical function reference
 * Matrix operations and transformations
 * Data preparation and visualization guides
-* Machine learning model guides (Naive Bayes, Linear Regression, K-Means)
+* Machine learning model guides (Naive Bayes, K-Nearest Neighbors, Linear Regression, K-Means)
 
 Quiver is the companion numerical computing package for [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/).
 
