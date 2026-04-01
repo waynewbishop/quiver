@@ -66,6 +66,21 @@ public extension Array where Element == Double {
         return self.map { Foundation.round($0) }
     }
 
+    /// Returns each element rounded to a specified number of decimal places.
+    ///
+    /// Example:
+    /// ```swift
+    /// let scores = [0.98712, 0.87543, 0.71289]
+    /// scores.rounded(to: 2)  // [0.99, 0.88, 0.71]
+    /// ```
+    ///
+    /// - Parameter places: The number of decimal places to round to
+    /// - Returns: A new array with each element rounded to the specified precision
+    func rounded(to places: Int) -> [Double] {
+        let factor = Foundation.pow(10.0, Double(places))
+        return self.map { Foundation.round($0 * factor) / factor }
+    }
+
     /// Returns the natural logarithm of each element in the array.
     ///
     /// - Returns: A new array of natural log values (base e)

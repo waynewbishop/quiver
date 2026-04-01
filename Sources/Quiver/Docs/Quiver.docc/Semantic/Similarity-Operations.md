@@ -243,10 +243,11 @@ let documents = [
 let scores = documents.cosineSimilarities(to: query)
 let results = scores.topIndices(k: 2, labels: ["Athletic Footwear", "Cooking Recipes", "Running Shoes"])
 
-// results: [("Running Shoes", 1.0), ("Athletic Footwear", 0.99)]
+// results: [(rank: 1, label: "Running Shoes", score: 1.0),
+//           (rank: 2, label: "Athletic Footwear", score: 0.99)]
 ```
 
-The `topIndices(k:labels:)` method pairs each score with its original label, making it straightforward to map similarity results back to content.
+The `topIndices(k:labels:)` method pairs each score with its original label and a 1-based rank, making it straightforward to map similarity results back to content.
 
 > Tip: For a complete pipeline that starts from raw text — including tokenization, embedding lookup, and document vector averaging — see <doc:Semantic-Search>.
 

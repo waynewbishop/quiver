@@ -21,7 +21,7 @@ import Foundation
 /// All metrics are computed from these four counts. Precision and recall return `nil`
 /// when their denominators are zero, which surfaces undefined results at the type level
 /// rather than silently returning zero.
-public struct ConfusionMatrix: CustomStringConvertible, Equatable {
+public struct ConfusionMatrix: CustomStringConvertible, Equatable, Sendable {
 
     public var description: String {
         "TP: \(truePositives)  FP: \(falsePositives)  TN: \(trueNegatives)  FN: \(falseNegatives)  (accuracy: \(String(format: "%.1f", accuracy * 100))%)"

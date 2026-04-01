@@ -16,7 +16,7 @@ import Foundation
 // MARK: - Matrix Error Type
 
 /// Errors thrown by matrix operations that can fail at runtime.
-public enum MatrixError: Error, Equatable, CustomStringConvertible {
+public enum MatrixError: Error, Equatable, CustomStringConvertible, Sendable {
     /// The operation requires a square matrix but received a non-square one.
     case notSquare
     /// The matrix is singular (determinant = 0) and cannot be inverted.
@@ -41,7 +41,7 @@ public enum MatrixError: Error, Equatable, CustomStringConvertible {
 ///
 /// The determinant can be reconstructed via the `value` property, which computes
 /// `sign * exp(logAbsValue)`.
-public struct LogDeterminant {
+public struct LogDeterminant: Sendable {
 
     /// The sign of the determinant: -1, 0, or 1
     public let sign: Double
@@ -1020,29 +1020,32 @@ public extension Array where Element == Double {
 
     /// Returns the indices and values of the top K highest elements.
     ///
-    /// This method sorts the array in descending order and returns the indices and values
-    /// of the top K elements. Commonly used in similarity search, recommendation systems,
-    /// and ranking operations.
+    /// This method sorts the array in descending order and returns the rank, index,
+    /// and value of the top K elements. Commonly used in similarity search,
+    /// recommendation systems, and ranking operations.
     ///
     /// Example:
     /// ```swift
     /// let scores = [0.3, 0.9, 0.1, 0.7, 0.5]
     /// let top3 = scores.topIndices(k: 3)
-    /// // Returns: [(index: 1, score: 0.9), (index: 3, score: 0.7), (index: 4, score: 0.5)]
+    /// // Returns: [(rank: 1, index: 1, score: 0.9),
+    /// //           (rank: 2, index: 3, score: 0.7),
+    /// //           (rank: 3, index: 4, score: 0.5)]
     /// ```
     ///
     /// - Complexity: O(*n* log *n*) where *n* is the number of elements.
     /// - Parameter k: Number of top elements to return
-    /// - Returns: Array of tuples containing index and score, sorted by score (highest first)
-    func topIndices(k: Int) -> [(index: Int, score: Double)] {
+    /// - Returns: Array of tuples containing rank (1-based), index, and score, sorted by score (highest first)
+    func topIndices(k: Int) -> [(rank: Int, index: Int, score: Double)] {
         return self.enumerated()
             .map { (index: $0.offset, score: $0.element) }
             .sorted { $0.score > $1.score }
             .prefix(k)
-            .map { $0 }
+            .enumerated()
+            .map { (rank: $0.offset + 1, index: $0.element.index, score: $0.element.score) }
     }
 
-    /// Returns the top K highest scores with corresponding labels
+    /// Returns the top K highest scores with corresponding labels.
     ///
     /// This convenience method combines top-K selection with label mapping, eliminating the need
     /// to manually map indices back to labels. Particularly useful for word prediction, recommendation
@@ -1054,19 +1057,20 @@ public extension Array where Element == Double {
     /// let words = ["the", "cat", "dog", "sat"]
     ///
     /// let predictions = scores.topIndices(k: 2, labels: words)
-    /// // Returns: [(label: "cat", score: 0.9), (label: "sat", score: 0.7)]
+    /// // Returns: [(rank: 1, label: "cat", score: 0.9),
+    /// //           (rank: 2, label: "sat", score: 0.7)]
     /// ```
     ///
     /// - Parameters:
     ///   - k: Number of top elements to return
     ///   - labels: Array of labels corresponding to each score
     /// - Complexity: O(*n* log *n*) where *n* is the number of elements.
-    /// - Returns: Array of tuples containing label and score, sorted by score (highest first)
-    func topIndices<T>(k: Int, labels: [T]) -> [(label: T, score: Double)] {
+    /// - Returns: Array of tuples containing rank (1-based), label, and score, sorted by score (highest first)
+    func topIndices<T>(k: Int, labels: [T]) -> [(rank: Int, label: T, score: Double)] {
         precondition(self.count == labels.count, "Scores and labels must have the same count")
 
         return self.topIndices(k: k).map { result in
-            (label: labels[result.index], score: result.score)
+            (rank: result.rank, label: labels[result.index], score: result.score)
         }
     }
 

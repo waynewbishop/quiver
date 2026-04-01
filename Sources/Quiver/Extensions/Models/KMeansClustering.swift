@@ -29,7 +29,7 @@ import Foundation
 ///     }
 /// }
 /// ```
-public struct Cluster: Codable, Sequence, CustomStringConvertible, Equatable {
+public struct Cluster: Codable, Sequence, CustomStringConvertible, Equatable, Sendable {
 
     public var description: String {
         let center = centroid.map { String(format: "%.2f", $0) }.joined(separator: ", ")
@@ -78,7 +78,7 @@ public struct Cluster: Codable, Sequence, CustomStringConvertible, Equatable {
 /// print(model.centroids)    // cluster centers
 /// print(model.inertia)      // sum of squared distances
 /// ```
-public struct KMeans: Codable, CustomStringConvertible, Equatable {
+public struct KMeans: Codable, CustomStringConvertible, Equatable, Sendable {
 
     public var description: String {
         "KMeans: \(centroids.count) clusters, \(labels.count) points, converged in \(iterations) iterations (inertia: \(String(format: "%.2f", inertia)))"

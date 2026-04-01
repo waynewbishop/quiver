@@ -32,7 +32,7 @@ import Foundation
 /// print(display[0][0])        // "5/13"
 /// print(display[0][0].value)  // 0.384615...
 /// ```
-public struct Fraction: CustomStringConvertible, Equatable {
+public struct Fraction: CustomStringConvertible, Equatable, Sendable {
 
     /// The numerator of the fraction
     public let numerator: Int

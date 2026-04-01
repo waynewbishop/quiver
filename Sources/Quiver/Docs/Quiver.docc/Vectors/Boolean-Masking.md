@@ -95,7 +95,13 @@ let cleanFeatures = features.masked(by: valid)
 // Find which indices were kept
 let keptIndices = valid.trueIndices
 // [0, 1, 3, 4, 6]
+
+// Extract values with their original positions preserved
+let flagged = features.maskedWithIndices(by: valid.not)
+// [(index: 2, value: 150.0), (index: 5, value: -10.0)]
 ```
+
+The `maskedWithIndices(by:)` method is useful when we need to know *which* elements matched — for example, annotating outlier points on a chart with their day number or labeling flagged values in a report.
 
 This integrates directly with `Panel`. When filtering a `Panel`, the same mask applies to every column simultaneously, keeping rows aligned across all features:
 
@@ -146,6 +152,7 @@ let cleaned = readings.choose(where: valid, otherwise: defaults)
 
 ### Masking and filtering
 - ``Swift/Array/masked(by:)``
+- ``Swift/Array/maskedWithIndices(by:)``
 - ``Swift/Array/choose(where:otherwise:)``
 - ``Swift/Array/trueIndices``
 

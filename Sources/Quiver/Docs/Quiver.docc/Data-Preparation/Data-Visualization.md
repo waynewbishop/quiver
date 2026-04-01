@@ -105,7 +105,48 @@ let sixHourlyMax = hourlyTemps.downsample(factor: 6, using: .max)
 // [18.0, 26.0, 27.5, 21.0]
 ```
 
-The `AggregationMethod` parameter controls how values within each window are combined: `.mean` for smoothed trends, `.max` or `.min` for extremes, `.sum` for totals, and `.count` for frequency.
+The `AggregationMethod` parameter controls how values within each window are combined: `.mean` for smoothed trends, `.max` or `.min` for extremes, `.sum` for totals, `.count` for frequency, and `.percentage` for group sums normalized to 100%.
+
+### Time series smoothing and differentiation
+
+Time series data — sensor readings, financial prices, health metrics — often needs smoothing or rate-of-change computation before visualization.
+
+The `rollingMean(window:)` method computes a simple moving average where every point in the window carries equal weight. For signals where recent values matter more, `exponentialMean(alpha:)` gives exponentially decreasing weight to older values, making it more responsive to recent changes:
+
+```swift
+import Quiver
+
+let heartRate = [142.0, 145.0, 155.0, 148.0, 150.0, 162.0, 158.0]
+
+// Simple moving average — equal weight across the window
+let simple = heartRate.rollingMean(window: 3)
+// [142.0, 143.5, 147.3, 149.3, 151.0, 153.3, 156.7]
+
+// Exponential moving average — recent values weighted more heavily
+let smoothed = heartRate.exponentialMean(alpha: 0.3)
+// [142.0, 142.9, 146.5, 147.0, 147.9, 152.1, 153.9]
+
+// Span-based convenience (matches common financial conventions)
+let ema5 = heartRate.exponentialMean(span: 5)
+```
+
+The `derivative(sampleRate:)` method computes the rate of change between consecutive measurements. This converts position to velocity, velocity to acceleration, or any signal to its instantaneous rate of change:
+
+```swift
+import Quiver
+
+// Elevation samples at 1-second intervals
+let elevation = [100.0, 102.0, 105.0, 104.0, 107.0]
+let grade = elevation.derivative(sampleRate: 1.0)
+// [2.0, 3.0, -1.0, 3.0] — meters of climb per second
+
+// Speed samples at 0.5-second intervals
+let speed = [3.0, 3.5, 4.2, 4.0]
+let acceleration = speed.derivative(sampleRate: 0.5)
+// [1.0, 1.4, -0.4] — acceleration in m/s²
+```
+
+The result has one fewer element than the input because each derivative requires two adjacent values. The `sampleRate` parameter represents the time between consecutive measurements — dividing the raw difference by this interval produces the correct physical units.
 
 ### Filtering with boolean masks
 
@@ -233,6 +274,17 @@ The tallest bar is the model's prediction. The relative heights show how confide
 
 ### Downsampling
 - ``Swift/Array/downsample(factor:using:)``
+
+### Time series
+- ``Swift/Array/rollingMean(window:)``
+- ``Swift/Array/exponentialMean(alpha:)``
+- ``Swift/Array/exponentialMean(span:)``
+- ``Swift/Array/derivative(sampleRate:)``
+- ``Swift/Array/diff(lag:)``
+- ``Swift/Array/percentChange(lag:)``
+
+### Rounding
+- ``Swift/Array/rounded(to:)``
 
 ### Grouping and aggregation
 - ``Swift/Array/groupBy(_:using:)``

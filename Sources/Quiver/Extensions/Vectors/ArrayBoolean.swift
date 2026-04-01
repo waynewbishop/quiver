@@ -163,7 +163,29 @@ public extension Array {
             .filter { $0.1 }
             .map { $0.0 }
     }
-    
+
+    /// Returns elements where the mask is true, along with their original indices.
+    ///
+    /// Like `masked(by:)` but preserves the position of each element in the
+    /// original array. Useful for chart annotations, outlier labeling, and any
+    /// case where you need to know *which* elements matched.
+    ///
+    /// ```swift
+    /// let spending = [42.0, 310.0, 55.0, 285.0]
+    /// let outliers = spending.outlierMask(threshold: 1.5)
+    /// spending.maskedWithIndices(by: outliers)
+    /// // [(index: 1, value: 310.0), (index: 3, value: 285.0)]
+    /// ```
+    ///
+    /// - Parameter mask: The boolean mask to apply
+    /// - Returns: Array of tuples containing the original index and value for each true element
+    func maskedWithIndices(by mask: [Bool]) -> [(index: Int, value: Element)] {
+        precondition(self.count == mask.count, "Array and mask must have the same length")
+        return self.enumerated().compactMap { index, value in
+            mask[index] ? (index: index, value: value) : nil
+        }
+    }
+
     /// Returns a new array with elements conditionally chosen from this array or another.
     ///
     /// ```swift

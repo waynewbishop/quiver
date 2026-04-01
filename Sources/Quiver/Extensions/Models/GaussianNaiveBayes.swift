@@ -40,7 +40,7 @@ import Foundation
 /// let predictions = model.predict([[2.0, 2.5], [5.5, 7.0]])
 /// // [0, 1]
 /// ```
-public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, Equatable {
+public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, Equatable, Sendable {
 
     public var description: String {
         "GaussianNaiveBayes: \(classes.count) classes, \(featureCount) features"
@@ -50,7 +50,7 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
     ///
     /// Contains the prior probability (relative frequency), per-feature mean and
     /// variance, and the number of training samples belonging to this class.
-    public struct ClassStats: Codable, CustomStringConvertible, Equatable {
+    public struct ClassStats: Codable, CustomStringConvertible, Equatable, Sendable {
 
         public var description: String {
             let meansStr = means.map { String(format: "%.2f", $0) }.joined(separator: ", ")

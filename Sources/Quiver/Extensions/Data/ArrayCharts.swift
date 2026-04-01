@@ -16,7 +16,7 @@ import Foundation
 ///
 /// Used by `groupBy(_:using:)`, `groupedData(by:using:)`, and `downsample(factor:using:)`
 /// to control how multiple values are aggregated.
-public enum AggregationMethod {
+public enum AggregationMethod: Sendable {
     /// Sum all values in the group
     case sum
     /// Calculate the arithmetic mean of the group
@@ -27,6 +27,8 @@ public enum AggregationMethod {
     case min
     /// Select the maximum value in the group
     case max
+    /// Sum all values per group, then normalize so all groups sum to 100
+    case percentage
 }
 
 public extension Array where Element: FloatingPoint {
@@ -81,6 +83,62 @@ public extension Array where Element: FloatingPoint {
         return result
     }
 
+    /// Computes the exponential moving average, where recent values carry more weight.
+    ///
+    /// Unlike `rollingMean(window:)` which weights all values equally within a window,
+    /// the exponential moving average gives exponentially decreasing weight to older
+    /// values. This makes it more responsive to recent changes — useful for smoothing
+    /// sensor data, financial time series, and real-time signals.
+    ///
+    /// Each output value is computed as: `alpha × current + (1 − alpha) × previous`.
+    /// The first element is used as the initial value.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let heartRate = [142.0, 145.0, 155.0, 148.0, 150.0]
+    /// let smoothed = heartRate.exponentialMean(alpha: 0.3)
+    /// // Recent readings weighted more heavily than older ones
+    ///
+    /// // Convenience: span-based alpha (matches Pandas convention)
+    /// let ema20 = prices.exponentialMean(span: 20)
+    /// ```
+    ///
+    /// - Parameter alpha: Smoothing factor between 0 and 1. Higher values give more
+    ///   weight to recent observations. Typical values: 0.1–0.3 for heavy smoothing,
+    ///   0.5–0.9 for light smoothing.
+    /// - Returns: Array of smoothed values with the same length as the input
+    func exponentialMean(alpha: Element) -> [Element] {
+        precondition(alpha > .zero && alpha <= Element(1), "Alpha must be in (0, 1]")
+        guard let first = self.first else { return [] }
+
+        var result: [Element] = []
+        result.reserveCapacity(count)
+        var previous = first
+        result.append(previous)
+
+        for i in 1..<count {
+            previous = alpha * self[i] + (Element(1) - alpha) * previous
+            result.append(previous)
+        }
+
+        return result
+    }
+
+    /// Computes the exponential moving average using a span-based smoothing factor.
+    ///
+    /// Convenience wrapper that converts a span (number of periods) to alpha using
+    /// the formula `alpha = 2 / (span + 1)`, matching the Pandas `ewm(span:)` convention.
+    ///
+    /// - Parameter span: The number of periods for the EMA window. Must be >= 1.
+    /// - Returns: Array of smoothed values with the same length as the input
+    func exponentialMean(span: Int) -> [Element] {
+        precondition(span >= 1, "Span must be >= 1")
+        let alpha = Element(2) / (Element(span) + Element(1))
+        return exponentialMean(alpha: alpha)
+    }
+
     /// Calculates the difference between each element and the element a fixed number of
     /// periods before it.
     ///
@@ -119,6 +177,35 @@ public extension Array where Element: FloatingPoint {
         }
 
         return result
+    }
+
+    /// Computes the numerical derivative by dividing consecutive differences
+    /// by the sample rate (time between measurements).
+    ///
+    /// This converts position to velocity, velocity to acceleration, or any
+    /// signal to its rate of change. The result has one fewer element than
+    /// the input because each derivative requires two adjacent values.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// // Elevation samples at 1-second intervals
+    /// let elevation = [100.0, 102.0, 105.0, 104.0, 107.0]
+    /// let grade = elevation.derivative(sampleRate: 1.0)
+    /// // [2.0, 3.0, -1.0, 3.0] — meters of climb per second
+    ///
+    /// // Speed samples at 0.5-second intervals
+    /// let speed = [3.0, 3.5, 4.2, 4.0]
+    /// let acceleration = speed.derivative(sampleRate: 0.5)
+    /// // [1.0, 1.4, -0.4] — m/s² acceleration
+    /// ```
+    ///
+    /// - Parameter sampleRate: The time interval between consecutive samples
+    /// - Returns: Array of rate-of-change values with length `count - 1`
+    func derivative(sampleRate: Element) -> [Element] {
+        precondition(sampleRate > .zero, "Sample rate must be positive")
+        return self.diff(lag: 1).map { $0 / sampleRate }
     }
 
     /// Calculates the percentage change between each element and the element a fixed number
@@ -542,7 +629,7 @@ public extension Array where Element: FloatingPoint {
 
         for (category, values) in groups {
             switch method {
-            case .sum:
+            case .sum, .percentage:
                 result[category] = values.reduce(Element.zero, +)
             case .mean:
                 result[category] = values.mean() ?? .zero
@@ -552,6 +639,16 @@ public extension Array where Element: FloatingPoint {
                 result[category] = values.min() ?? .zero
             case .max:
                 result[category] = values.max() ?? .zero
+            }
+        }
+
+        // For percentage, normalize sums so all groups total 100
+        if method == .percentage {
+            let total = result.values.reduce(Element.zero, +)
+            if total != .zero {
+                for key in result.keys {
+                    result[key] = (result[key]! / total) * Element(100)
+                }
             }
         }
 
@@ -864,7 +961,7 @@ public extension Array where Element: FloatingPoint {
     /// Aggregate array using specified method
     private func aggregate(using method: AggregationMethod) -> Element {
         switch method {
-        case .sum:
+        case .sum, .percentage:
             return reduce(Element.zero, +)
         case .mean:
             return mean() ?? .zero

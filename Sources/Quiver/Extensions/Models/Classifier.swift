@@ -39,7 +39,7 @@ import Foundation
 ///     }
 /// }
 /// ```
-public struct Classification: Codable, Sequence, CustomStringConvertible, Equatable {
+public struct Classification: Codable, Sequence, CustomStringConvertible, Equatable, Sendable {
 
     public var description: String {
         "Class \(label): \(count) \(count == 1 ? "point" : "points")"

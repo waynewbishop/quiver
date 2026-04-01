@@ -144,7 +144,7 @@ let scores = docVectors.cosineSimilarities(to: queryVector)
 let results = scores.topIndices(k: 2, labels: labels)
 
 for result in results {
-    print("\(result.label): \(String(format: "%.1f%%", result.score * 100)) match")
+    print("#\(result.rank) \(result.label): \(String(format: "%.1f%%", result.score * 100)) match")
 }
 ```
 
