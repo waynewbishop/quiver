@@ -66,10 +66,15 @@ let scaled = scaler.transform(features)
 // [[-1.0], [0.0], [1.0]]
 ```
 
+### Pairing the scaler with its model
+
+When a model requires scaled features, the scaler and model must stay paired for correct predictions. `Pipeline` bundles them into a single value type that scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
+
 ## Topics
 
 ### Scaler
 - ``FeatureScaler``
 
 ### Related
+- <doc:Pipeline>
 - <doc:Machine-Learning-Primer>

@@ -66,34 +66,32 @@ When scaling is used, the scaler and model become a matched pair. The model's le
 
 ### Persisting a full pipeline
 
-When scaling is part of the workflow, both the scaler and model conform to `Codable` and should be saved together:
+When scaling is part of the workflow, `Pipeline` bundles the scaler and model into a single `Codable` value. One encode, one decode — they always travel together:
 
 ```swift
 import Quiver
 import Foundation
 
-// Train the pipeline — scaler and model together
+// Train and bundle
 let scaler = FeatureScaler.fit(features: trainingData)
-let scaledTrain = scaler.transform(trainingData)
 let model = KNearestNeighbors.fit(
-    features: scaledTrain, labels: labels, k: 5
+    features: scaler.transform(trainingData), labels: labels, k: 5
 )
+let pipeline = Pipeline(scaler: scaler, model: model)
 
-// Convert each to JSON bytes and write to separate files
-let scalerData = try JSONEncoder().encode(scaler)
-let modelData = try JSONEncoder().encode(model)
-try scalerData.write(to: scalerURL)
-try modelData.write(to: modelURL)
+// Save the entire pipeline as one JSON blob
+let data = try JSONEncoder().encode(pipeline)
+try data.write(to: pipelineURL)
 
-// Read files back into bytes, then convert to trained objects
-let loadedScaler = try JSONDecoder().decode(
-    FeatureScaler.self, from: Data(contentsOf: scalerURL)
+// On next launch, decode and predict immediately
+let saved = try Data(contentsOf: pipelineURL)
+let restored = try JSONDecoder().decode(
+    Pipeline<KNearestNeighbors>.self, from: saved
 )
-let loadedModel = try JSONDecoder().decode(
-    KNearestNeighbors.self, from: Data(contentsOf: modelURL)
-)
-let prediction = loadedModel.predict(loadedScaler.transform(newData))
+let predictions = restored.predict(newData)
 ```
+
+`Pipeline` scales inputs automatically at prediction time, so the caller never touches the scaler directly. See <doc:Pipeline> for the full API.
 
 ### Verifying round-trip fidelity
 
@@ -112,6 +110,7 @@ assert(model == decoded)
 Once a model is encoded, the resulting `Data` value can go anywhere Swift can write bytes. On iOS and macOS, write to the app's Application Support directory with `FileManager`, store in `UserDefaults` for small models, or persist as a `Data` property in SwiftData. On watchOS, save to the local documents directory for on-device models, or use `WatchConnectivity` to transfer encoded bytes from a paired iPhone. On server-side Swift with Vapor, write to a file path at deployment time and decode once at startup — the model stays in memory to serve concurrent requests.
 
 ### Related
+- <doc:Pipeline>
 - <doc:Machine-Learning-Primer>
 - <doc:Linear-Regression>
 - <doc:Naive-Bayes>

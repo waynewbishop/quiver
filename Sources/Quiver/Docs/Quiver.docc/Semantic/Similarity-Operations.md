@@ -6,7 +6,7 @@ Compute similarity between vectors using cosine similarity and distance metrics.
 
 Similarity operations measure how **related** two vectors are. These operations are fundamental for machine learning applications including recommendation systems, word prediction, clustering, <doc:Semantic-Search>, and nearest neighbor classification.
 
-## Dot product
+### Dot product
 
 The dot product computes the sum of element-wise products between two vectors. It's the fundamental operation underlying cosine similarity and many machine learning algorithms.
 

@@ -112,24 +112,31 @@ final class KMeansTests: XCTestCase {
         XCTAssertEqual(model1.inertia, model2.inertia)
     }
 
-    // Elbow method returns one inertia value per k
+    // Elbow method returns (k, inertia) tuples
     func testElbowMethod() {
         let data: [[Double]] = [
             [0.0, 0.0], [1.0, 0.0], [0.0, 1.0],
             [10.0, 10.0], [11.0, 10.0], [10.0, 11.0]
         ]
 
-        let kRange = Array(1...4)
-        let inertias = KMeans.elbowMethod(data: data, kRange: kRange, seed: 42)
+        let results = KMeans.elbowMethod(data: data, kRange: 1...4, seed: 42)
 
         // One result per k value
-        XCTAssertEqual(inertias.count, 4)
+        XCTAssertEqual(results.count, 4)
+
+        // k values are paired with their inertias
+        XCTAssertEqual(results[0].k, 1)
+        XCTAssertEqual(results[1].k, 2)
+        XCTAssertEqual(results[3].k, 4)
 
         // Inertia should decrease as k increases
-        XCTAssertGreaterThan(inertias[0], inertias[1])
+        XCTAssertGreaterThan(results[0].inertia, results[1].inertia)
 
         // k=2 should capture the structure well (big drop from k=1)
-        XCTAssertGreaterThan(inertias[0] - inertias[1], inertias[1] - inertias[2])
+        XCTAssertGreaterThan(
+            results[0].inertia - results[1].inertia,
+            results[1].inertia - results[2].inertia
+        )
     }
 
     // Clusters method groups data by label and provides Sequence conformance

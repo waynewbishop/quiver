@@ -210,27 +210,29 @@ public struct KMeans: Codable, CustomStringConvertible, Equatable, Sendable {
     ///     [8.0, 8.0], [8.5, 7.5], [9.0, 8.5]
     /// ]
     ///
-    /// let kRange = Array(1...6)
-    /// let inertias = KMeans.elbowMethod(data: data, kRange: kRange, seed: 42)
-    /// // kRange and inertias are parallel arrays ready for charting
+    /// let results = KMeans.elbowMethod(data: data, kRange: 1...6, seed: 42)
+    /// for result in results {
+    ///     print("k=\(result.k): inertia \(result.inertia)")
+    /// }
+    /// // The sharpest drop in inertia indicates the natural number of clusters
     /// ```
     ///
     /// - Parameters:
     ///   - data: 2D array where each row is a sample and each column is a feature.
-    ///   - kRange: The k values to evaluate.
+    ///   - kRange: The range of k values to evaluate.
     ///   - maxIterations: Maximum iterations per fit. Defaults to 100.
     ///   - seed: Random seed for reproducible results. Defaults to nil.
     /// - Complexity: O(|*kRange*|·*n*·*k*·*d*·*i*). Runs ``fit(data:k:maxIterations:seed:)``
     ///   once per value in `kRange`. Use a narrow range when dataset size is large.
-    /// - Returns: An array of inertia values, one per k value.
+    /// - Returns: An array of (k, inertia) tuples, one per k value.
     public static func elbowMethod(
         data: [[Double]],
-        kRange: [Int],
+        kRange: ClosedRange<Int>,
         maxIterations: Int = 100,
         seed: UInt64? = nil
-    ) -> [Double] {
+    ) -> [(k: Int, inertia: Double)] {
         return kRange.map { k in
-            fit(data: data, k: k, maxIterations: maxIterations, seed: seed).inertia
+            (k: k, inertia: fit(data: data, k: k, maxIterations: maxIterations, seed: seed).inertia)
         }
     }
 

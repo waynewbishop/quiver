@@ -167,6 +167,8 @@ print("R²: \(r2)")
 
 `Panel` is entirely optional. The regression model accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for details.
 
+> Tip: When scaling is part of the workflow, `Pipeline` bundles the scaler and model into a single value type. It scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
+
 ### When the normal equation fails
 
 The normal equation requires inverting the matrix X'X. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), the matrix is [singular](<doc:Determinants-Primer>) and cannot be inverted. In this case, `fit` throws `MatrixError.singular`. The fix is to remove redundant features before fitting.
@@ -206,5 +208,6 @@ redundant.determinant  // 0.0 → fit will throw MatrixError.singular
 - ``Swift/Array/rootMeanSquaredError(actual:)``
 
 ### Related
+- <doc:Pipeline>
 - <doc:Machine-Learning-Primer>
 - <doc:Naive-Bayes>

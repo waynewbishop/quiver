@@ -4,7 +4,7 @@ Classify samples by finding the closest training examples.
 
 ## Overview
 
-K-Nearest Neighbors is one of the most intuitive classification algorithms. Given a new sample, it finds the `k` closest points in the training data and predicts the most common label among them. There is no training phase. The model stores the data and does all the work at prediction time. This makes Nearest Neighbors a "lazy learner," in contrast to models like `GaussianNaiveBayes` and `LinearRegression` that compute parameters up front.
+K-Nearest Neighbors is one of the most intuitive classification algorithms. Given a new sample, it finds the `k` closest points in the training data and predicts the most common label among them. Unlike models that compute parameters during fitting, KNN defers all computation to prediction time — making fit instantaneous but prediction proportionally slower as the training set grows. This makes Nearest Neighbors a "lazy learner," in contrast to `GaussianNaiveBayes` and `LinearRegression` that do their heavy work up front.
 
 ### How it works
 
@@ -181,6 +181,8 @@ print("Accuracy: \(cm.accuracy)")
 
 `Panel` is entirely optional. The classifier accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for details.
 
+> Tip: When scaling is part of the workflow, `Pipeline` bundles the scaler and model into a single value type. It scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
+
 ### Structured results with classify
 
 The `predict(_:)` method returns raw class labels as `[Int]` — ideal for evaluation metrics like `accuracy()` and `classificationReport()`. When exploring results interactively, `classify(_:)` groups the inputs by their predicted label, returning `Classification` objects that pair each label with its assigned points:
@@ -236,6 +238,7 @@ Nearest Neighbors struggles with large datasets (prediction scans every training
 - ``VoteWeight``
 
 ### Related
+- <doc:Pipeline>
 - <doc:Machine-Learning-Primer>
 - <doc:Naive-Bayes>
 - <doc:Linear-Regression>

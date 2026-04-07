@@ -70,6 +70,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Panel>
 - <doc:Train-Test-Split>
 - <doc:Feature-Scaling>
+- <doc:Pipeline>
 - <doc:Data-Visualization>
 
 ### Models
