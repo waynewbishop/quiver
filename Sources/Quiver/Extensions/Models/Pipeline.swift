@@ -11,13 +11,18 @@ import Foundation
 /// without the scaler that was used to normalize its training data. When
 /// the scaler is lost, predictions on new data produce wrong results
 /// because the model expects scaled inputs. Pipeline eliminates this
-/// by bundling the `FeatureScaler` and the model into a single value
+/// by bundling a `StandardScaler` and the model into a single value
 /// that encodes and decodes as one unit.
 ///
 /// Pipeline works with any model that conforms to ``Classifier`` or
 /// ``Regressor``. The `transform` and `predict` steps are combined into
 /// a single call — the caller passes raw features and Pipeline handles
 /// scaling internally.
+///
+/// Pipeline uses `StandardScaler` (z-score normalization) because it is
+/// robust to outliers and is the default choice in most ML curricula.
+/// Users who need bounded-range scaling (for example, image pixels in
+/// 0...1) can use `FeatureScaler` directly without Pipeline.
 ///
 /// Example with a classifier:
 /// ```swift
@@ -26,15 +31,10 @@ import Foundation
 /// let features: [[Double]] = [[1, 2], [3, 4], [5, 8], [6, 9]]
 /// let labels = [0, 0, 1, 1]
 ///
-/// let scaler = FeatureScaler.fit(features: features)
-/// let model = KNearestNeighbors.fit(
-///     features: scaler.transform(features),
-///     labels: labels, k: 3
-/// )
+/// // One call — fits the scaler, trains the model, bundles them together
+/// let pipeline = Pipeline.fit(features: features, labels: labels, k: 3)
 ///
-/// let pipeline = Pipeline(scaler: scaler, model: model)
-///
-/// // One call — scaling happens automatically
+/// // Predict on raw features — scaling happens automatically
 /// let predictions = pipeline.predict([[2, 3], [5, 7]])
 /// // [0, 1]
 ///
@@ -50,33 +50,26 @@ import Foundation
 /// let features: [[Double]] = [[1400], [1600], [1800], [2000]]
 /// let targets = [245000.0, 312000.0, 378000.0, 440000.0]
 ///
-/// let scaler = FeatureScaler.fit(features: features)
-/// let model = try LinearRegression.fit(
-///     features: scaler.transform(features),
-///     targets: targets
-/// )
-///
-/// let pipeline = Pipeline(scaler: scaler, model: model)
+/// let pipeline = try Pipeline.fit(features: features, targets: targets)
 /// let prices = pipeline.predict([[1500], [1900]])
 /// ```
-public struct Pipeline<Model: Codable & Equatable & Sendable> {
+public struct Pipeline<Model: Codable & Equatable & Sendable>: Codable, Equatable, Sendable {
 
-    /// The feature scaler that normalizes raw inputs before prediction.
-    public let scaler: FeatureScaler
+    /// The scaler that normalizes raw inputs before prediction.
+    public let scaler: StandardScaler
 
     /// The trained model that produces predictions from scaled features.
     public let model: Model
 
     /// Creates a pipeline from a fitted scaler and a trained model.
     ///
-    /// The scaler and model must have been fitted on the same data —
-    /// the scaler learns column statistics, the model learns from
-    /// the scaled output. Pipeline preserves this pairing permanently.
+    /// In most cases, prefer the `fit()` factory methods which handle
+    /// scaling, training, and bundling in a single call.
     ///
     /// - Parameters:
-    ///   - scaler: A fitted `FeatureScaler`.
-    ///   - model: A trained model (any `Codable & Equatable & Sendable` type).
-    public init(scaler: FeatureScaler, model: Model) {
+    ///   - scaler: A fitted `StandardScaler`.
+    ///   - model: A trained model.
+    public init(scaler: StandardScaler, model: Model) {
         self.scaler = scaler
         self.model = model
     }
@@ -118,28 +111,24 @@ extension Pipeline where Model: Regressor {
 
 // MARK: - Pipeline.fit() — Concrete Overloads
 
-// Each overload scales the training data, trains the model, and
-// bundles both into an immutable Pipeline in one call. This prevents
-// the most common ML mistake: training on unscaled data or saving
-// the model without the scaler.
+// Each overload fits a StandardScaler, trains the model, and bundles
+// both into an immutable Pipeline in one call. This prevents the most
+// common ML mistake: training on unscaled data or saving the model
+// without the scaler.
 
 extension Pipeline where Model == KNearestNeighbors {
 
-    /// Scales features, trains a K-Nearest Neighbors classifier, and
-    /// bundles the scaler and model into a Pipeline.
+    /// Fits a scaler, trains a K-Nearest Neighbors classifier, and
+    /// bundles them into a Pipeline.
     ///
     /// ```swift
-    /// let pipeline = Pipeline.fit(
-    ///     features: trainingData, labels: labels,
-    ///     scaler: scaler, k: 3
-    /// )
+    /// let pipeline = Pipeline.fit(features: x, labels: y, k: 3)
     /// let predictions = pipeline.predict(newData)
     /// ```
     ///
     /// - Parameters:
     ///   - features: Raw (unscaled) training feature matrix.
     ///   - labels: Integer class labels, one per sample.
-    ///   - scaler: A fitted `FeatureScaler`.
     ///   - k: Number of neighbors. Defaults to 3.
     ///   - metric: Distance metric. Defaults to `.euclidean`.
     ///   - weight: Vote weighting. Defaults to `.uniform`.
@@ -147,11 +136,11 @@ extension Pipeline where Model == KNearestNeighbors {
     public static func fit(
         features: [[Double]],
         labels: [Int],
-        scaler: FeatureScaler,
         k: Int = 3,
         metric: DistanceMetric = .euclidean,
         weight: VoteWeight = .uniform
     ) -> Pipeline<KNearestNeighbors> {
+        let scaler = StandardScaler.fit(features: features)
         let scaled = scaler.transform(features)
         let model = KNearestNeighbors.fit(
             features: scaled, labels: labels,
@@ -163,26 +152,22 @@ extension Pipeline where Model == KNearestNeighbors {
 
 extension Pipeline where Model == GaussianNaiveBayes {
 
-    /// Scales features, trains a Gaussian Naive Bayes classifier, and
-    /// bundles the scaler and model into a Pipeline.
+    /// Fits a scaler, trains a Gaussian Naive Bayes classifier, and
+    /// bundles them into a Pipeline.
     ///
     /// ```swift
-    /// let pipeline = Pipeline.fit(
-    ///     features: trainingData, labels: labels,
-    ///     scaler: scaler
-    /// )
+    /// let pipeline = Pipeline.fit(features: x, labels: y)
     /// ```
     ///
     /// - Parameters:
     ///   - features: Raw (unscaled) training feature matrix.
     ///   - labels: Integer class labels, one per sample.
-    ///   - scaler: A fitted `FeatureScaler`.
     /// - Returns: An immutable `Pipeline<GaussianNaiveBayes>`.
     public static func fit(
         features: [[Double]],
-        labels: [Int],
-        scaler: FeatureScaler
+        labels: [Int]
     ) -> Pipeline<GaussianNaiveBayes> {
+        let scaler = StandardScaler.fit(features: features)
         let scaled = scaler.transform(features)
         let model = GaussianNaiveBayes.fit(features: scaled, labels: labels)
         return Pipeline(scaler: scaler, model: model)
@@ -191,29 +176,26 @@ extension Pipeline where Model == GaussianNaiveBayes {
 
 extension Pipeline where Model == KMeans {
 
-    /// Scales features, trains a K-Means clustering model, and
-    /// bundles the scaler and model into a Pipeline.
+    /// Fits a scaler, trains a K-Means clustering model, and
+    /// bundles them into a Pipeline.
     ///
     /// ```swift
-    /// let pipeline = Pipeline.fit(
-    ///     data: trainingData, scaler: scaler, k: 3
-    /// )
+    /// let pipeline = Pipeline.fit(data: x, k: 3)
     /// ```
     ///
     /// - Parameters:
     ///   - data: Raw (unscaled) feature matrix.
-    ///   - scaler: A fitted `FeatureScaler`.
     ///   - k: Number of clusters.
     ///   - maxIterations: Maximum iterations. Defaults to 100.
     ///   - seed: Random seed for reproducibility.
     /// - Returns: An immutable `Pipeline<KMeans>`.
     public static func fit(
         data: [[Double]],
-        scaler: FeatureScaler,
         k: Int,
         maxIterations: Int = 100,
         seed: UInt64? = nil
     ) -> Pipeline<KMeans> {
+        let scaler = StandardScaler.fit(features: data)
         let scaled = scaler.transform(data)
         let model = KMeans.fit(data: scaled, k: k, maxIterations: maxIterations, seed: seed)
         return Pipeline(scaler: scaler, model: model)
@@ -222,29 +204,25 @@ extension Pipeline where Model == KMeans {
 
 extension Pipeline where Model == LinearRegression {
 
-    /// Scales features, trains a Linear Regression model, and
-    /// bundles the scaler and model into a Pipeline.
+    /// Fits a scaler, trains a Linear Regression model, and
+    /// bundles them into a Pipeline.
     ///
     /// ```swift
-    /// let pipeline = try Pipeline.fit(
-    ///     features: trainingData, targets: prices,
-    ///     scaler: scaler
-    /// )
+    /// let pipeline = try Pipeline.fit(features: x, targets: y)
     /// ```
     ///
     /// - Parameters:
     ///   - features: Raw (unscaled) training feature matrix.
     ///   - targets: Continuous target values, one per sample.
-    ///   - scaler: A fitted `FeatureScaler`.
     ///   - intercept: Whether to include a bias term. Defaults to `true`.
     /// - Returns: An immutable `Pipeline<LinearRegression>`.
     /// - Throws: `MatrixError.singular` if features are linearly dependent.
     public static func fit(
         features: [[Double]],
         targets: [Double],
-        scaler: FeatureScaler,
         intercept: Bool = true
     ) throws -> Pipeline<LinearRegression> {
+        let scaler = StandardScaler.fit(features: features)
         let scaled = scaler.transform(features)
         let model = try LinearRegression.fit(
             features: scaled, targets: targets, intercept: intercept
@@ -252,27 +230,6 @@ extension Pipeline where Model == LinearRegression {
         return Pipeline(scaler: scaler, model: model)
     }
 }
-
-// MARK: - Codable
-
-extension Pipeline: Codable {
-    enum CodingKeys: String, CodingKey {
-        case scaler
-        case model
-    }
-}
-
-// MARK: - Equatable
-
-extension Pipeline: Equatable {
-    public static func == (lhs: Pipeline, rhs: Pipeline) -> Bool {
-        lhs.scaler == rhs.scaler && lhs.model == rhs.model
-    }
-}
-
-// MARK: - Sendable
-
-extension Pipeline: Sendable {}
 
 // MARK: - CustomStringConvertible
 

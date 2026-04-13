@@ -1,10 +1,10 @@
-# Platform Guide
+# Explore
 
 @Metadata {
-  @TitleHeading("Getting Started")
+  @TitleHeading("Essentials")
 }
 
-Explore what becomes possible with Quiver and Apple platforms.
+Explore what becomes possible with Quiver across Apple platforms.
 
 ## Overview
 

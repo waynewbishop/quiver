@@ -6,7 +6,9 @@ Bundle a scaler and model into a single matched pair.
 
 The most common mistake when deploying ML models is saving the model without the scaler that normalized its training data. The model's learned boundaries exist in the scaled coordinate space — if the scaler is lost, new inputs land in a different space and every prediction is silently wrong. No error, no warning, just bad results.
 
-`Pipeline` solves this by pairing a `FeatureScaler` with any trained model in a single value type. The scaler and model encode, decode, compare, and predict as one unit. The caller passes raw features and Pipeline handles scaling internally.
+`Pipeline` solves this by pairing a `StandardScaler` with any trained model in a single value type. The scaler and model encode, decode, compare, and predict as one unit. The caller passes raw features and Pipeline handles scaling internally.
+
+Pipeline uses `StandardScaler` (z-score normalization) because it is robust to outliers and is the default choice in most ML curricula. Users who need bounded-range scaling (for example, image pixels in 0...1) can use `FeatureScaler` directly without Pipeline. See <doc:Standard-Scaling> and <doc:Feature-Scaling> for details on each scaler.
 
 ### Creating a pipeline
 
@@ -22,7 +24,7 @@ let features: [[Double]] = [
 let labels = [0, 0, 0, 1, 1, 1]
 
 // Fit the scaler on training data
-let scaler = FeatureScaler.fit(features: features)
+let scaler = StandardScaler.fit(features: features)
 
 // Train the model on scaled data
 let model = KNearestNeighbors.fit(
@@ -107,6 +109,7 @@ original == decoded  // true
 
 ## See also
 
+- <doc:Standard-Scaling>
 - <doc:Feature-Scaling>
 - <doc:Model-Persistence>
 - <doc:Nearest-Neighbors-Classification>
@@ -115,6 +118,6 @@ original == decoded  // true
 ## Topics
 
 ### Related types
-- ``FeatureScaler``
+- ``StandardScaler``
 - ``Classifier``
 - ``Regressor``

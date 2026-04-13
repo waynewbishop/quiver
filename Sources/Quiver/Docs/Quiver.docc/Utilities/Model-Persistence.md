@@ -105,6 +105,27 @@ let decoded = try JSONDecoder().decode(GaussianNaiveBayes.self, from: json)
 assert(model == decoded)
 ```
 
+### Loading models in async contexts
+
+The same value semantics that make Quiver models `Codable` also make them `Sendable`. A model decoded inside an `async` function can be returned to the caller, passed across task boundaries, or handed to a SwiftUI view without any additional ceremony — the decoded value crosses freely because there's nothing shared or mutable inside it.
+
+```swift
+import Quiver
+import Foundation
+
+func loadClassifier(from url: URL) async throws -> KNearestNeighbors {
+    let data = try Data(contentsOf: url)
+    return try JSONDecoder().decode(KNearestNeighbors.self, from: data)
+}
+
+// Call from anywhere — main actor, background task, detached task
+let classifier = try await loadClassifier(from: modelURL)
+```
+
+This is the natural pattern for apps that load a pre-trained model at startup: decode it off the main thread, hand the result to the view layer, and start predicting. The fitted model behaves the same whether it was just trained or just decoded — immutable, thread-safe, and ready to use.
+
+> Tip: For the full set of concurrency patterns — training inside a task, long-running fits, and SwiftUI integration — see <doc:Concurrency-Primer>.
+
 ### Where to store the encoded bytes
 
 Once a model is encoded, the resulting `Data` value can go anywhere Swift can write bytes. On iOS and macOS, write to the app's Application Support directory with `FileManager`, store in `UserDefaults` for small models, or persist as a `Data` property in SwiftData. On watchOS, save to the local documents directory for on-device models, or use `WatchConnectivity` to transfer encoded bytes from a paired iPhone. On server-side Swift with Vapor, write to a file path at deployment time and decode once at startup — the model stays in memory to serve concurrent requests.

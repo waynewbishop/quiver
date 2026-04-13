@@ -32,16 +32,21 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ## Topics
 
-### Getting Started
+### Essentials
 - <doc:Installation>
 - <doc:How-It-Works>
-- <doc:Platform-Guide>
 - <doc:Usage>
+- <doc:Explore>
 
 ### Conceptual Guides
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
 - <doc:Machine-Learning-Primer>
+- <doc:Concurrency-Primer>
+
+### watchOS
+- <doc:watchOS-Guide>
+- <doc:watchOS-Patterns>
 
 ### Vectors
 - <doc:Vector-Operations>
@@ -70,6 +75,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Panel>
 - <doc:Train-Test-Split>
 - <doc:Feature-Scaling>
+- <doc:Standard-Scaling>
 - <doc:Pipeline>
 - <doc:Data-Visualization>
 

@@ -160,6 +160,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 Quiver is available under the Apache License, Version 2.0. See the LICENSE file for more info.
 
+## Newsletter
+
+[The Feature Vector](https://featurevector.substack.com) — a newsletter about ML intuition for engineers, built in Swift. One idea per issue, with a recipe you can run in Xcode.
+
 ## Questions
 
 Have a question? Feel free to contact me on [LinkedIn](https://www.linkedin.com/in/waynebishop).
