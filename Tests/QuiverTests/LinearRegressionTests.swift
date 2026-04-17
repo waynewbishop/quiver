@@ -186,6 +186,55 @@ final class LinearRegressionTests: XCTestCase {
         XCTAssertTrue(desc.contains("slope:"))
     }
 
+    // Integration: StandardScaler fitted on training data, applied to both train and test.
+    // Two genuinely independent features at very different scales. After scaling, the
+    // coefficients shift (they now reflect scaled units), but R² on held-out data stays
+    // high — which is the property we care about.
+    func testWithStandardScaler() throws {
+        var rng = SeededRandom(seed: 42)
+        var features: [[Double]] = []
+        var targets: [Double] = []
+        for _ in 0..<50 {
+            // x1 small scale, x2 large scale, independent random draws
+            let x1 = rng.nextDouble(in: 0.0...1.0)
+            let x2 = rng.nextDouble(in: 10000.0...50000.0)
+            features.append([x1, x2])
+            // y = 5 * x1 + 0.0001 * x2 + small noise
+            let noise = rng.nextDouble(in: -0.1...0.1)
+            targets.append(5.0 * x1 + 0.0001 * x2 + noise)
+        }
+
+        let (trainX, testX) = features.trainTestSplit(testRatio: 0.25, seed: 42)
+        let (trainY, testY) = targets.trainTestSplit(testRatio: 0.25, seed: 42)
+
+        // Fit scaler on training data only
+        let scaler = StandardScaler.fit(features: trainX)
+
+        let model = try LinearRegression.fit(
+            features: scaler.transform(trainX),
+            targets: trainY
+        )
+        let predictions = model.predict(scaler.transform(testX))
+
+        // R² should stay strong on scaled features — the underlying relationship is unchanged
+        let r2 = predictions.rSquared(actual: testY)
+        XCTAssertGreaterThan(r2, 0.95)
+    }
+
+    // Simple deterministic RNG for reproducible test data
+    private struct SeededRandom {
+        private var state: UInt64
+        init(seed: UInt64) { self.state = seed == 0 ? 1 : seed }
+        mutating func nextDouble(in range: ClosedRange<Double>) -> Double {
+            // xorshift64
+            state ^= state << 13
+            state ^= state >> 7
+            state ^= state << 17
+            let normalized = Double(state % 1_000_000) / 1_000_000.0
+            return range.lowerBound + normalized * (range.upperBound - range.lowerBound)
+        }
+    }
+
     // Same training data produces equal models
     func testLinearRegressionEquatable() throws {
         let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]

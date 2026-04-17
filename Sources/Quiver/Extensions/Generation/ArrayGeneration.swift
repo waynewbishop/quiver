@@ -218,5 +218,52 @@ public extension Array where Element: FloatingPoint {
     static func arange(_ start: Element, _ stop: Element, step: Element = 1) -> [Element] {
         return _Vector<Element>.arange(start, stop, step: step).elements
     }
-    
+
+}
+
+// MARK: - Signal Generation
+
+public extension Array where Element == Double {
+
+    /// Generates a sine wave signal at a given frequency and sample rate.
+    ///
+    /// Each sample is computed as `offset + amplitude × sin(2π × frequency × t)`
+    /// where `t` is the time in seconds at that sample index. This is the standard
+    /// form of a sinusoidal signal used in signals textbooks.
+    ///
+    /// ```swift
+    /// import Quiver
+    ///
+    /// // Generate a 440 Hz tone (concert A) sampled at 8000 Hz
+    /// let tone = [Double].sineWave(frequency: 440.0, sampleRate: 8000.0, count: 256)
+    ///
+    /// // Simulate R-R intervals with respiratory modulation at 0.25 Hz
+    /// let rrSignal = [Double].sineWave(
+    ///     frequency: 0.25, sampleRate: 4.0, count: 480,
+    ///     amplitude: 50.0, offset: 1000.0
+    /// )
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - frequency: The frequency of the sine wave in Hz.
+    ///   - sampleRate: The number of samples per second.
+    ///   - count: The number of samples to generate.
+    ///   - amplitude: The peak amplitude of the sine wave. Defaults to `1.0`.
+    ///   - offset: A constant value added to every sample (the DC component).
+    ///     Defaults to `0.0`.
+    /// - Returns: An array of `count` samples representing one or more cycles of the
+    ///   sine wave at the specified frequency.
+    /// - Complexity: O(n)
+    static func sineWave(
+        frequency: Double,
+        sampleRate: Double,
+        count: Int,
+        amplitude: Double = 1.0,
+        offset: Double = 0.0
+    ) -> [Double] {
+        let angularFrequency = 2.0 * Double.pi * frequency
+        return (0..<count).map { index in
+            offset + amplitude * Foundation.sin(angularFrequency * Double(index) / sampleRate)
+        }
+    }
 }

@@ -162,4 +162,22 @@ final class QuiverStressTests: XCTestCase {
             let _ = model.predict(queries)
         }
     }
+
+    // MARK: - Fourier Transform (O(n log n))
+
+    func testFourierTransform() {
+        // 16,384 samples — realistic audio-length signal
+        let signal = [Double].sineWave(frequency: 440.0, sampleRate: 8000.0, count: 16_384)
+        benchmark("Fourier Transform 16k samples") {
+            let _ = signal.fourierMagnitude()
+        }
+    }
+
+    func testFourierWithWindowing() {
+        // Full pipeline: window → pad → magnitude
+        let signal = [Double].sineWave(frequency: 440.0, sampleRate: 8000.0, count: 16_384)
+        benchmark("Fourier Windowed Pipeline 16k samples") {
+            let _ = signal.hannWindowed().fourierMagnitudeHalf()
+        }
+    }
 }

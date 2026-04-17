@@ -80,7 +80,7 @@ let (trainX, testX) = features.trainTestSplit(testRatio: 0.25, seed: 42)
 let (trainY, testY) = labels.trainTestSplit(testRatio: 0.25, seed: 42)
 
 // Scale, fit, predict, evaluate
-let scaler = FeatureScaler.fit(features: trainX)
+let scaler = StandardScaler.fit(features: trainX)
 let model = GaussianNaiveBayes.fit(features: scaler.transform(trainX), labels: trainY)
 let predictions = model.predict(scaler.transform(testX))
 let cm = predictions.confusionMatrix(actual: testY)
@@ -110,7 +110,7 @@ let (train, test) = data.trainTestSplit(testRatio: 0.25, seed: 42)
 let featureColumns = ["creditScore", "balance", "loyalty"]
 
 // Scale, fit, predict, evaluate — same API
-let scaler = FeatureScaler.fit(features: train.toMatrix(columns: featureColumns))
+let scaler = StandardScaler.fit(features: train.toMatrix(columns: featureColumns))
 let model = GaussianNaiveBayes.fit(
     features: scaler.transform(train.toMatrix(columns: featureColumns)),
     labels: train.labels("churned")
@@ -148,7 +148,7 @@ Each `Classification` result conforms to `Sequence` — the same Swift protocol 
 
 **The model is always ready to use.** Calling `fit(features:labels:)` returns a fully trained model in one step. There is no way to create an empty model and forget to train it before making predictions.
 
-**Training data stays separate from test data.** Both `GaussianNaiveBayes` and `FeatureScaler` are immutable once created. Fitting the scaler on training data and applying it to both sets ensures that test data never influences the scaling — a subtle but common source of [data leakage](<doc:Machine-Learning-Primer>) in ML pipelines.
+**Training data stays separate from test data.** Both `GaussianNaiveBayes` and `StandardScaler` are immutable once created. Fitting the scaler on training data and applying it to both sets ensures that test data never influences the scaling — a subtle but common source of [data leakage](<doc:Machine-Learning-Primer>) in ML pipelines.
 
 **Reproducible splits.** Each call to `trainTestSplit(testRatio:seed:)` uses its own seed. There is no shared random state that other code can interfere with, so the same seed always produces the same split.
 

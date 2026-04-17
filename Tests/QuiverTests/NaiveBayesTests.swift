@@ -163,6 +163,39 @@ final class NaiveBayesTests: XCTestCase {
         XCTAssertEqual(totalPoints, 3)
     }
 
+    // Integration: StandardScaler fitted on training data, applied to both train and test.
+    // Naive Bayes handles mixed scales internally, but the scaler + model pipeline should
+    // still produce strong accuracy on clear data.
+    func testWithStandardScaler() {
+        // Mixed-scale features similar to FeatureScalerTests.testWithNaiveBayes
+        var features: [[Double]] = []
+        var labels: [Int] = []
+        for _ in 0..<40 {
+            features.append([Double.random(in: 0.01...0.15), Double.random(in: 150000...250000)])
+            labels.append(0)
+        }
+        for _ in 0..<40 {
+            features.append([Double.random(in: 0.35...0.55), Double.random(in: 10000...80000)])
+            labels.append(1)
+        }
+
+        let (trainX, testX) = features.trainTestSplit(testRatio: 0.25, seed: 42)
+        let (trainY, testY) = labels.trainTestSplit(testRatio: 0.25, seed: 42)
+
+        // Fit scaler on training data only
+        let scaler = StandardScaler.fit(features: trainX)
+
+        let model = GaussianNaiveBayes.fit(
+            features: scaler.transform(trainX),
+            labels: trainY
+        )
+        let predictions = model.predict(scaler.transform(testX))
+
+        // Accuracy should be strong on clearly separated classes
+        let cm = predictions.confusionMatrix(actual: testY)
+        XCTAssertGreaterThan(cm.accuracy, 0.8)
+    }
+
     // Same training data produces equal models
     func testNaiveBayesEquatable() {
         let features: [[Double]] = [[1.0, 2.0], [2.0, 3.0], [8.0, 9.0], [9.0, 8.0]]

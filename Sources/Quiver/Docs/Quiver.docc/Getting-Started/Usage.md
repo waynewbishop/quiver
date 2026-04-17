@@ -121,4 +121,25 @@ import Quiver
 
 Min-max scaling compresses values into a target range. Z-score scaling centers data at zero with unit standard deviation. Both are useful for normalizing data for charts and exploration. For ML pipelines where training and test data must be scaled consistently, use `FeatureScaler` with the fit-then-transform pattern — see <doc:Feature-Scaling>.
 
+### Signal processing
+
+Quiver also operates in the frequency domain. The Fourier transform reveals which repeating cycles are hidden inside a signal — a fundamentally different question from regression or classification, but one that uses the same `[Double]` arrays and the same interactive workflow:
+
+```swift
+import Playgrounds
+import Quiver
+
+#Playground("Detect a Frequency") {
+    // Generate a 440 Hz tone at 8000 Hz sample rate
+    let sampleRate = 8000.0
+    let signal = [Double].sineWave(frequency: 440.0, sampleRate: sampleRate, count: 256)
+
+    // Find the dominant frequency — one call, automatic padding
+    let dominant = signal.fourierDominantFrequency(sampleRate: sampleRate, windowed: true)
+    dominant  // 437.5 Hz (nearest bin center)
+}
+```
+
+For the full Fourier API — spectrum computation, windowing, phase analysis, and real-world applications — see <doc:Fourier-Transform>.
+
 > Tip: The [Quiver Cookbook](https://github.com/waynewbishop/quiver-cookbook) has interactive recipes that run as `#Playground` macros in Xcode. Each recipe solves a single problem — from computing distance to training a classifier — in under 30 lines.

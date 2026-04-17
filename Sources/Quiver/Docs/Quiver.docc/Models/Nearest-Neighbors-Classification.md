@@ -57,15 +57,15 @@ The value of `k` controls the tradeoff between sensitivity and smoothness. A sma
 
 Quiver supports two distance metrics via the `DistanceMetric` enum:
 
-**Euclidean distance** (default) measures straight-line distance between points. It works well when features have similar scales, but can be dominated by high-magnitude features when scales differ. Use `FeatureScaler` to normalize features before fitting:
+**Euclidean distance** (default) measures straight-line distance between points. It works well when features have similar scales, but can be dominated by high-magnitude features when scales differ. `StandardScaler` is the recommended choice for distance-based classifiers because it centers each feature at zero with unit variance, preventing any single feature from dominating the distance calculation. `FeatureScaler` (min-max scaling) is an alternative when a bounded [0, 1] range is preferred:
 
 ```swift
 import Quiver
 
-// Learn min/max from training data
-let scaler = FeatureScaler.fit(features: trainX)
+// Learn mean/std from training data
+let scaler = StandardScaler.fit(features: trainX)
 
-// Scale training features to [0, 1] range
+// Scale training features to zero mean, unit variance
 let model = KNearestNeighbors.fit(
     features: scaler.transform(trainX),
     labels: trainY,
@@ -139,7 +139,7 @@ let (trainX, testX) = features.trainTestSplit(testRatio: 0.3, seed: 42)
 let (trainY, testY) = labels.trainTestSplit(testRatio: 0.3, seed: 42)
 
 // Scale, fit, predict, evaluate
-let scaler = FeatureScaler.fit(features: trainX)
+let scaler = StandardScaler.fit(features: trainX)
 let model = KNearestNeighbors.fit(
     features: scaler.transform(trainX),
     labels: trainY,
@@ -168,7 +168,7 @@ let (train, test) = data.trainTestSplit(testRatio: 0.3, seed: 42)
 let featureColumns = ["petalLength", "petalWidth"]
 
 // Scale, fit, predict, evaluate — same API
-let scaler = FeatureScaler.fit(features: train.toMatrix(columns: featureColumns))
+let scaler = StandardScaler.fit(features: train.toMatrix(columns: featureColumns))
 let model = KNearestNeighbors.fit(
     features: scaler.transform(train.toMatrix(columns: featureColumns)),
     labels: train.labels("species"),
@@ -211,7 +211,7 @@ Nearest Neighbors works best when:
 - There is no strong prior about data distribution
 - Interpretability matters, because it is easy to explain "these are the 5 most similar cases"
 
-Nearest Neighbors struggles with large datasets (prediction scans every training point), high-dimensional data (the "curse of dimensionality" makes distances less meaningful), and features on different scales (use `FeatureScaler` to mitigate).
+Nearest Neighbors struggles with large datasets (prediction scans every training point), high-dimensional data (the "curse of dimensionality" makes distances less meaningful), and features on different scales (use `StandardScaler` to mitigate).
 
 ### Safe by design
 

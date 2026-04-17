@@ -180,6 +180,40 @@ final class KMeansTests: XCTestCase {
         XCTAssertEqual(model.centroids[0][1], 4.0, accuracy: 1e-9)
     }
 
+    // Integration: StandardScaler applied before KMeans.
+    // Like KNN, KMeans is scale-sensitive — Euclidean distance to centroids would be
+    // dominated by the large-scale feature without scaling.
+    func testWithStandardScaler() {
+        // Two well-separated clusters with mixed-scale features:
+        //   feature 0 is small (0–5), feature 1 is large (0–5000).
+        var data: [[Double]] = []
+        for _ in 0..<20 {
+            data.append([Double.random(in: 0.0...2.0), Double.random(in: 0.0...2000.0)])
+        }
+        for _ in 0..<20 {
+            data.append([Double.random(in: 3.0...5.0), Double.random(in: 3000.0...5000.0)])
+        }
+
+        // Scale before clustering
+        let scaler = StandardScaler.fit(features: data)
+        let scaled = scaler.transform(data)
+
+        let model = KMeans.fit(data: scaled, k: 2, seed: 42)
+
+        // The first 20 points (originally the low-scale cluster) should share a label
+        let firstLabel = model.labels[0]
+        for i in 0..<20 {
+            XCTAssertEqual(model.labels[i], firstLabel)
+        }
+
+        // The last 20 points (originally the high-scale cluster) should share the other label
+        let lastLabel = model.labels[20]
+        XCTAssertNotEqual(firstLabel, lastLabel)
+        for i in 20..<40 {
+            XCTAssertEqual(model.labels[i], lastLabel)
+        }
+    }
+
     // MARK: - Equatable
 
     // Cluster supports == comparison

@@ -175,4 +175,5 @@ Vector operations in Quiver are based on well-established mathematical principle
 - <doc:Semantic-Search>
 - <doc:Matrix-Transformations>
 - <doc:Matrix-Operations>
+- <doc:Fourier-Transform>
 - <doc:Broadcasting-Operations>

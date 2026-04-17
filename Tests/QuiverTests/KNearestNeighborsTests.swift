@@ -182,6 +182,41 @@ final class KNearestNeighborsTests: XCTestCase {
         XCTAssertEqual(pointCount, results[0].count)
     }
 
+    // Integration: StandardScaler fitted on training data, applied to both train and test.
+    // KNN is the most scale-sensitive model — a large-scale feature would dominate Euclidean
+    // distance without scaling. This test confirms the scaler + KNN compose correctly.
+    func testWithStandardScaler() {
+        // Two well-separated clusters with mixed-scale features:
+        //   feature 0 is small (0–5), feature 1 is large (0–5000).
+        var features: [[Double]] = []
+        var labels: [Int] = []
+        for _ in 0..<40 {
+            features.append([Double.random(in: 0.0...2.0), Double.random(in: 0.0...2000.0)])
+            labels.append(0)
+        }
+        for _ in 0..<40 {
+            features.append([Double.random(in: 3.0...5.0), Double.random(in: 3000.0...5000.0)])
+            labels.append(1)
+        }
+
+        let (trainX, testX) = features.trainTestSplit(testRatio: 0.25, seed: 42)
+        let (trainY, testY) = labels.trainTestSplit(testRatio: 0.25, seed: 42)
+
+        // Fit scaler on training data only
+        let scaler = StandardScaler.fit(features: trainX)
+
+        let model = KNearestNeighbors.fit(
+            features: scaler.transform(trainX),
+            labels: trainY,
+            k: 5
+        )
+        let predictions = model.predict(scaler.transform(testX))
+
+        // Accuracy should be strong on well-separated scaled features
+        let cm = predictions.confusionMatrix(actual: testY)
+        XCTAssertGreaterThan(cm.accuracy, 0.8)
+    }
+
     // MARK: - Equatable
 
     // Classification supports == comparison

@@ -71,6 +71,9 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Similarity-Operations>
 - <doc:Semantic-Search>
 
+### Signal Processing
+- <doc:Fourier-Transform>
+
 ### Data Preparation
 - <doc:Panel>
 - <doc:Train-Test-Split>
