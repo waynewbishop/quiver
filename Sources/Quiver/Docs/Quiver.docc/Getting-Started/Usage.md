@@ -119,7 +119,7 @@ import Quiver
 }
 ```
 
-Min-max scaling compresses values into a target range. Z-score scaling centers data at zero with unit standard deviation. Both are useful for normalizing data for charts and exploration. For ML pipelines where training and test data must be scaled consistently, use `FeatureScaler` with the fit-then-transform pattern — see <doc:Feature-Scaling>.
+Min-max scaling compresses values into a target range. Z-score scaling rescales data so every value is measured in standard deviations from the mean — see <doc:Statistics-Primer> for the concept. Both are useful for normalizing data for charts and exploration. For ML pipelines where training and test data must be scaled consistently, use `FeatureScaler` with the fit-then-transform pattern — see <doc:Feature-Scaling>.
 
 ### Signal processing
 

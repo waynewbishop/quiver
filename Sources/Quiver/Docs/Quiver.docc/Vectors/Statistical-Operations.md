@@ -1,6 +1,6 @@
 # Statistical Operations
 
-Calculate common statistical measures from arrays of numerical data.
+Computing centers, spreads, and outliers from arrays of numerical data.
 
 ## Overview
 
@@ -63,7 +63,7 @@ if let minIndex = data.argMin(), let maxIndex = data.argMax() {
 
 ### Central tendency
 
-Mean and median both describe the center of a distribution, but they respond differently to extreme values. The mean shifts toward outliers; the median ignores them. When the two diverge significantly, it signals a skewed distribution — and `outlierMask()` can help identify the values responsible.
+`mean()` and `median()` both describe the center of a distribution, but they respond differently to extreme values. For the conceptual treatment of when to reach for each, see <doc:Statistics-Primer>.
 
 ```swift
 import Quiver
@@ -74,15 +74,11 @@ if let mean = responseTimes.mean(), let median = responseTimes.median() {
     print(mean)    // 75.86 (pulled up by 450)
     print(median)  // 14.0  (unaffected)
 }
-
-// The gap between mean and median signals an outlier
-let outliers = responseTimes.outlierMask(threshold: 2.0)
-// [false, false, false, false, false, false, true]
 ```
 
 ### Dispersion and variation
 
-Variance and standard deviation measure how far values spread from the mean. A low standard deviation means values cluster tightly; a high one means they are scattered. These two measures are the inputs to z-score standardization — dividing by the standard deviation converts any dataset to a common scale where values represent distance from the mean in standard-deviation units.
+`variance()` and `std()` measure how far values spread from the mean. The `ddof` parameter (Delta Degrees of Freedom) selects between population statistics (`ddof: 0`, the default) and sample statistics (`ddof: 1`). For the conceptual background on variance and standard deviation, see <doc:Statistics-Primer>.
 
 ```swift
 import Quiver
@@ -102,8 +98,6 @@ if let sampleVar = data.variance(ddof: 1), let sampleStd = data.std(ddof: 1) {
 }
 ```
 
-> Important: The `ddof` parameter (Delta Degrees of Freedom) controls the denominator. Use `ddof: 0` for population statistics when the data is the complete set. Use `ddof: 1` for sample statistics when the data is a subset of all possible observations.
-
 ### Cumulative operations
 
 Cumulative functions replace each element with the running total or running product up to that position. These are useful for tracking growth over time, computing running balances, and building empirical distribution functions.
@@ -117,21 +111,20 @@ let cumProd = data.cumulativeProduct() // [1.0, 2.0, 6.0, 24.0, 120.0]
 
 ### Anomaly detection
 
-Find values that deviate significantly from the norm using the z-score method. A z-score measures how many standard deviations a value is from the mean — the threshold parameter sets the cutoff:
+`outlierMask(threshold:)` returns a boolean mask flagging values that exceed the given z-score threshold. The threshold is in units of standard deviations. For the concept behind z-scores and guidance on choosing a threshold, see <doc:Statistics-Primer>.
 
 ```swift
 import Quiver
 
 let data = [4.0, 7.0, 2.0, 9.0, 3.0, 35.0, 5.0]
 
-// Find outliers (values more than 2 standard deviations from mean)
 let mask = data.outlierMask(threshold: 2.0)
 // [false, false, false, false, false, true, false]
 
-// Extract outlier values using boolean masking
+// Extract the flagged values using boolean masking
 let outliers = data.masked(by: mask)  // [35.0]
 
-// Pre-calculate statistics when processing multiple arrays
+// Pre-calculate statistics when processing multiple arrays against the same baseline
 guard let mean = data.mean(), let std = data.std() else {
     fatalError("Unable to calculate statistics for empty array")
 }

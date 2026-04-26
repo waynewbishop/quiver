@@ -1,14 +1,14 @@
 # Similarity Operations
 
-Compute similarity between vectors using cosine similarity and distance metrics.
+Measuring how related two vectors are with cosine similarity, dot products, and distance metrics.
 
 ## Overview
 
-Similarity operations measure how **related** two vectors are. These operations are fundamental for machine learning applications including recommendation systems, word prediction, clustering, <doc:Semantic-Search>, and nearest neighbor classification.
+Similarity operations measure how related two vectors are. These operations are fundamental for machine learning applications including recommendation systems, word prediction, clustering, <doc:Semantic-Search>, and nearest neighbor classification.
 
 ### Dot product
 
-The dot product computes the sum of element-wise products between two vectors. It's the fundamental operation underlying cosine similarity and many machine learning algorithms.
+The dot product computes the sum of element-wise products between two vectors. It is the fundamental operation underlying cosine similarity and many machine learning algorithms. For the conceptual treatment of dot product and what it tells us about two vectors, see <doc:Vector-Operations> and <doc:Linear-Algebra-Primer>.
 
 ```swift
 let v1 = [2.0, 3.0, 4.0]
@@ -18,14 +18,7 @@ let dotProduct = v1.dot(v2)
 // 20.0 = (2×1) + (3×2) + (4×3)
 ```
 
-**Mathematical definition:**
-```
-dot(v, w) = v₁w₁ + v₂w₂ + ... + vₙwₙ
-```
-
-### Relationship to other operations
-
-The dot product is the foundation for other similarity metrics:
+The dot product alone is a general signal of similarity, but its value depends on magnitude. Cosine similarity normalizes by both vector magnitudes to remove length and isolate direction. For the distinction between magnitude and Euclidean distance, see <doc:Vector-Operations>.
 
 ```swift
 let v1 = [3.0, 4.0]
@@ -39,29 +32,9 @@ let cosine = v1.cosineOfAngle(with: v2)
 // dot / (||v1|| × ||v2||) = 63.0 / (5.0 × 13.0) = 0.969
 ```
 
-### Magnitude vs distance
-
-Both magnitude and [Euclidean distance](<doc:Linear-Algebra-Primer>) use the Pythagorean theorem, but measure different things. `Magnitude` provides an answer to "how far am I from home (origin)" while Euclidean distance solves "how far is the coffee shop from the library".
-
-```swift
-// Magnitude: distance from origin 
-let v = [3.0, 4.0]
-let mag = v.magnitude  // 5.0 = sqrt(3² + 4²)
-
-// Euclidean distance: distance between any two vectors
-let v1 = [1.0, 2.0]
-let v2 = [4.0, 6.0]
-let dist = v1.distance(to: v2)  // 5.0 = sqrt((4-1)² + (6-2)²)
-
-// Magnitude is a special case - measurement from origin
-let equivalentDist = [0.0, 0.0].distance(to: v)  // 5.0 (same as magnitude)
-```
-
-This distinction matters for cosine similarity, which normalizes by dividing by the product of magnitudes (`||v1|| × ||v2||`).
-
 ### Normalization and dot product
 
-Normalization transforms the dot product into a pure directional similarity measure. Without it, the dot product mixes alignment with magnitude, making comparisons unreliable. Two vectors pointing identically but with different lengths produce vastly different dot products.
+Normalization transforms the dot product into a pure directional similarity measure. Without it, the dot product mixes alignment with magnitude, so two vectors pointing identically but with different lengths produce vastly different scores.
 
 ```swift
 let v1 = [3.0, 4.0]
@@ -80,7 +53,7 @@ v1.cosineOfAngle(with: v2)  // 1.0
 v3.cosineOfAngle(with: v4)  // 1.0 (consistent)
 ```
 
-While `cosineOfAngle` is determined based on normalized vectors, we can also calculate a unit vector using the `normalized` property.
+While `cosineOfAngle(with:)` works on the raw vectors and normalizes internally, we can also produce a unit vector directly with the `normalized` property.
 
 ```swift
 let v1 = [3.0, 4.0]
@@ -103,10 +76,7 @@ let similarity = v1.cosineOfAngle(with: v2)
 // 1.0 - identical direction despite different magnitudes
 ```
 
-**Mathematical definition:**
-```
-cosine_similarity(v, w) = (v · w) / (||v|| × ||w||)
-```
+Mathematically, cosine similarity is the dot product divided by the product of the magnitudes — `cos(θ) = (v · w) / (||v|| × ||w||)`.
 
 > Important: `cosineOfAngle(with:)` returns `0.0` if either vector has zero magnitude. Check for zero vectors before interpreting results.
 
@@ -131,10 +101,7 @@ In machine learning and information retrieval, the raw cosine value is typically
 
 ### Range interpretation
 
-- `1.0`: Identical direction (very similar)
-- `0.5-0.8`: Related
-- `0.0`: Orthogonal (unrelated)
-- `-1.0`: Opposite direction
+Cosine similarity scores fall on a fixed scale, and a few reference points help calibrate intuition. A score of `1.0` means identical direction and indicates very similar vectors. Scores between `0.5` and `0.8` indicate related but not identical vectors. A score of `0.0` means the vectors are orthogonal — unrelated. A score of `-1.0` means the vectors point in opposite directions.
 
 ## Batch operations
 
@@ -154,7 +121,7 @@ let similarities = database.cosineSimilarities(to: query)
 // [0.99, 0.88, 0.99]
 ```
 
-**Result preservation:** `similarities[i]` is the similarity between `database[i]` and `query`.
+The result preserves index order: `similarities[i]` is the similarity between `database[i]` and `query`.
 
 ## Common use cases
 

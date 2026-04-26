@@ -8,7 +8,7 @@ The most common mistake when deploying ML models is saving the model without the
 
 `Pipeline` solves this by pairing a `StandardScaler` with any trained model in a single value type. The scaler and model encode, decode, compare, and predict as one unit. The caller passes raw features and Pipeline handles scaling internally.
 
-Pipeline uses `StandardScaler` (z-score normalization) because it is robust to outliers and is the default choice in most ML curricula. Users who need bounded-range scaling (for example, image pixels in 0...1) can use `FeatureScaler` directly without Pipeline. See <doc:Standard-Scaling> and <doc:Feature-Scaling> for details on each scaler.
+Pipeline uses `StandardScaler` (z-score normalization) because it is robust to outliers and is the default choice in most machine learning curricula. Users who need bounded-range scaling (for example, image pixels in 0...1) can use `FeatureScaler` directly without Pipeline. See <doc:Feature-Scaling> for details on both scalers.
 
 ### Creating a pipeline
 
@@ -109,7 +109,6 @@ original == decoded  // true
 
 ## See also
 
-- <doc:Standard-Scaling>
 - <doc:Feature-Scaling>
 - <doc:Model-Persistence>
 - <doc:Nearest-Neighbors-Classification>

@@ -232,3 +232,4 @@ let result2 = floatMatrix * 2.0
 - <doc:Determinants-Primer>
 - <doc:Matrix-Transformations>
 - <doc:Composing-Transformations>
+- <doc:Fraction>

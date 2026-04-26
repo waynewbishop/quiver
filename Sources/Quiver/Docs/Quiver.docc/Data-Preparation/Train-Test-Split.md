@@ -1,6 +1,6 @@
-# Sampling and Data Splitting
+# Train-Test Split
 
-Split arrays into training and testing subsets with reproducible results.
+Splitting arrays into training and testing subsets with reproducible, class-balanced partitions.
 
 ## Overview
 

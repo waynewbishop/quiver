@@ -1,12 +1,12 @@
 # watchOS Guide
 
-Quiver on Apple Watch — sensor streams, authorized sessions, and on-wrist training.
+Live sensor processing and in-session summaries on Apple Watch with Quiver.
 
 ## Overview
 
-Apple Watch is the only Apple platform where the device is the whole stack. During an active workout, a live navigation session, a flight tracker on cellular, or a focus-mode app reading ambient motion, the decision has to happen in-process, from the data the watch can see, in the next second. There is no server to ask. The companion iPhone is often not in reach. The connection is variable, the latency budget is short, and the user is waiting.
+Apps on Apple Watch work with data the moment it arrives. A workout view smooths a noisy heart-rate stream into a stable display. A sleep tracker groups motion samples into stages while the user is still asleep. A focus-mode app classifies ambient motion into walking, sitting, or driving. A weather complication folds an hourly forecast into a single number that fits on a watch face. Each new sample arrives within a few seconds of the last one, and the computation has to keep up.
 
-Quiver fits this reality by running entirely in-process as pure Swift, with no bridging layer, no external dependencies, and models that are plain value types carrying their own state. The patterns in this guide show how to pair Quiver with `HKWorkoutSession`, Swift Concurrency, and the live sensor stream to build models that respond to what the watch can observe — whether that is heart rate and cadence during a run, accelerometer and altimeter readings during a walk, arrival-time features during a navigation session, or any live data stream a watchOS app has access to.
+Quiver fits this reality by running entirely in-process as pure Swift, with no bridging layer and no external dependencies. Rolling windows of `mean()` and `std()` smooth a live sensor stream without dropping samples. `KNearestNeighbors` classifies the current window against a small set of labeled patterns the app shipped with. `Pipeline` keeps the scaler and the classifier as one matched pair, so the same transformation applied during fitting applies during prediction. Because every Quiver model is `Sendable`, the fitted state crosses task boundaries during an `HKWorkoutSession` without locks or copies.
 
 ### Live sensor streams and rolling windows
 

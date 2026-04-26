@@ -1,6 +1,6 @@
 # watchOS Patterns
 
-Applied patterns for effort classification, personal baselines, training cadence, and model sizing on Apple Watch.
+Classifying effort, building personal baselines, and sizing models for Quiver on Apple Watch.
 
 ## Overview
 
@@ -43,7 +43,7 @@ Apple Watch sensors capture mechanical and cardiovascular load â€” heart rate, c
 
 ### Building a personal baseline
 
-Machine learning on watchOS becomes compounding when a model persists useful statistics across sessions rather than starting fresh every time. A personal baseline is a set of summary statistics, cluster centroids, or scaling parameters that reflect the user's own data across the history of their activity. Each new session is interpreted relative to that baseline, and the baseline itself updates as new sessions arrive.
+On-device modeling on watchOS becomes compounding when a model persists useful statistics across sessions rather than starting fresh every time. A personal baseline is a set of summary statistics, cluster centroids, or scaling parameters that reflect the user's own data across the history of their activity. Each new session is interpreted relative to that baseline, and the baseline itself updates as new sessions arrive.
 
 #### Persisting across sessions
 
@@ -57,7 +57,7 @@ A Quiver baseline is a lightweight, honest way to make the model user-specific â
 
 ### When to train, when to predict
 
-One of the engineering decisions watchOS machine learning forces is when to refit the model and when to simply run predictions against a model that was fit earlier. The answer depends on how quickly the signal changes and how stable the patterns are within a session.
+One of the engineering decisions in-session modeling on watchOS forces is when to refit the model and when to simply run predictions against a model that was fit earlier. The answer depends on how quickly the signal changes and how stable the patterns are within a session.
 
 #### Stable signals, single fit
 
@@ -95,7 +95,7 @@ K-Nearest Neighbors is particularly well suited to this pattern because its `fit
 
 ### Sizing a model for the wrist
 
-Quiver's classical machine learning models are small and fast enough that fitting them on sensor-window data is a millisecond-scale operation, not a seconds-scale one. The models themselves are Swift structs built from plain arrays and numbers, so their memory footprint scales with the training data they store, not with a compiled runtime.
+Quiver's classifiers and regressions are small and fast enough that fitting them on sensor-window data is a millisecond-scale operation, not a seconds-scale one. The models themselves are Swift structs built from plain arrays and numbers, so their memory footprint scales with the training data they store, not with a compiled runtime.
 
 #### Measured performance
 

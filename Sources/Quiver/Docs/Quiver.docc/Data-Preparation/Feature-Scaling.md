@@ -1,12 +1,12 @@
 # Feature Scaling
 
-Normalize feature columns to a common range before classification.
+Normalizing feature columns before classification with StandardScaler or FeatureScaler.
 
 ## Overview
 
 In real-world datasets, [features](<doc:Machine-Learning-Primer>) often exist on vastly different scales. A customer's account balance might range from 0 to 250,000, while a loyalty ratio ranges from 0.0 to 0.56 — almost six orders of magnitude apart. When features are on different scales, the larger values can dominate the model's calculations, causing it to ignore smaller but equally important features.
 
-Quiver provides `FeatureScaler`, a column-wise min-max scaler that normalizes each feature independently so every value falls within a target range. The default range is 0 to 1: the column's minimum maps to 0, its maximum maps to 1, and everything else falls proportionally in between.
+Quiver provides two column-wise scalers that solve this problem in different ways. `StandardScaler` applies z-score standardization, centering each column at zero and scaling it to unit variance. `FeatureScaler` applies min-max scaling, mapping each column into a bounded range. Both follow the same fit-then-transform workflow, so the choice between them is a matter of which output shape the downstream model prefers.
 
 ### When scaling matters
 
@@ -14,11 +14,19 @@ Not every model requires scaling, but in practice it often makes the difference 
 
 ![Feature Scaler](diagram-feature-scaler)
 
-Scaling all features to the same range gives each one equal influence in the model's calculations. The classifier can then distinguish between classes based on the actual patterns in the data, not on which features happen to have the largest numbers.
+Scaling all features to a common range gives each one equal influence in the model's calculations. The classifier can then distinguish between classes based on the actual patterns in the data, not on which features happen to have the largest numbers.
+
+### Choosing between StandardScaler and FeatureScaler
+
+`StandardScaler` is the default choice for most machine learning workflows and is the scaler used by `Pipeline`. It works well when features have different units or ranges, and it is more robust to outliers than min-max scaling. A single extreme value will not compress the rest of the data into a narrow band, because the formula uses mean and standard deviation rather than minimum and maximum. For the concept behind z-scores, see <doc:Statistics-Primer>.
+
+`FeatureScaler` applies min-max scaling, which is the right choice when the target range matters. Image pipelines that expect pixel intensities in 0...1, visualizations bounded to a fixed axis, and neural network layers that assume bounded inputs all benefit from a scaler that produces values in a known interval. The trade-off is that an outlier in the training data will compress the rest of the values toward one end of the range.
+
+A useful rule of thumb is to default to `StandardScaler` for distance-based and gradient-based learning, and reach for `FeatureScaler` when a downstream component requires bounded inputs.
 
 ### The fit-then-transform workflow
 
-The key rule for scaling is simple: fit on training data, transform everything. The scaler learns the minimum and maximum of each column from the training set, then uses those same statistics to scale both the training and test sets.
+The key rule for scaling is simple: fit on training data, transform everything. The scaler learns its statistics from the training set, then uses those same statistics to scale both the training and test sets. The pattern is identical for both scalers — only the type name changes.
 
 ```swift
 import Quiver
@@ -34,7 +42,7 @@ let labels = [1, 1, 0, 0, 1, 0, 1, 0, 1, 0]
 let split = features.stratifiedSplit(labels: labels, testRatio: 0.25, seed: 42)
 
 // Fit on training data only
-let scaler = FeatureScaler.fit(features: split.trainFeatures)
+let scaler = StandardScaler.fit(features: split.trainFeatures)
 
 // Transform both sets using the same statistics
 let scaledTrain = scaler.transform(split.trainFeatures)
@@ -43,19 +51,11 @@ let scaledTest = scaler.transform(split.testFeatures)
 
 This separation matters because the test set is meant to simulate unseen data. If the scaler learned its statistics from both sets combined, it would leak information from the test set into the training process — a subtle bug that makes evaluation results look better than they actually are.
 
-### Why fit and transform are separate steps
+Both scalers cannot change once they are created. Once fitted, the statistics are locked in, which means the same scaler can safely transform training data, test data, and future incoming data with identical behavior. There is no combined fit-and-transform method, so accidentally re-fitting on test data is not possible.
 
-Combining fit and transform into a single call would be convenient, but it would also make it easy to accidentally re-fit on test data. By keeping them separate, the workflow makes the right approach obvious: call `fit` once on training data, then call `transform` on any dataset that needs scaling.
+### Custom ranges with FeatureScaler
 
-`FeatureScaler` is immutable after creation. Once fitted, its statistics cannot change. This means the same scaler can safely transform training data, test data, and future production data with identical behavior.
-
-### Constant columns
-
-If a feature column has the same value for every training sample (zero range), scaling would require dividing by zero. `FeatureScaler` handles this by mapping constant columns to the lower bound of the target range. No special handling is needed from the caller.
-
-### Custom ranges
-
-The default target range is 0 to 1, but some algorithms work better with different ranges. Pass a custom `ClosedRange` to change the target:
+`FeatureScaler` defaults to a target range of 0 to 1, but some algorithms work better with different bounds. Pass a custom `ClosedRange` to change the target:
 
 ```swift
 import Quiver
@@ -66,15 +66,21 @@ let scaled = scaler.transform(features)
 // [[-1.0], [0.0], [1.0]]
 ```
 
+### Constant columns
+
+If a feature column has the same value for every training sample, scaling would otherwise require dividing by zero — by the standard deviation for `StandardScaler`, or by the column's range for `FeatureScaler`. Both scalers handle this case automatically without any special handling from the caller. `StandardScaler` maps constant columns to zero. `FeatureScaler` maps constant columns to the lower bound of the target range.
+
 ### Pairing the scaler with its model
 
-When a model requires scaled features, the scaler and model must stay paired for correct predictions. `Pipeline` bundles them into a single value type that scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
+When a model requires scaled features, the scaler and model must stay paired for correct predictions. `Pipeline` bundles a `StandardScaler` and a model into a single value type that scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
 
 ## Topics
 
-### Scaler
+### Scalers
+- ``StandardScaler``
 - ``FeatureScaler``
 
 ### Related
 - <doc:Pipeline>
 - <doc:Machine-Learning-Primer>
+- <doc:Statistics-Primer>

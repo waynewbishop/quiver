@@ -12,7 +12,7 @@ This primer covers the core patterns — training a model inside a task, keeping
 
 ### What Sendable means for Quiver
 
-`Sendable` is a Swift protocol that marks a type as safe to move between tasks. When the compiler sees a `Sendable` value crossing a task boundary, it knows the value has no shared mutable state to protect. Every public type in Quiver conforms to `Sendable`, which is why a fitted model can flow cleanly from a background task to the caller without any extra ceremony.
+A type that is safe to move between tasks has no shared mutable state to protect. The Swift compiler verifies this property through a protocol called `Sendable`. When the compiler sees a `Sendable` value crossing a task boundary, it knows the value can be handed off without coordination. Every public type in Quiver conforms to `Sendable`, which is why a fitted model can flow cleanly from a background task to the caller without any extra ceremony.
 
 ```swift
 import Quiver
