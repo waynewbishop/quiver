@@ -39,7 +39,7 @@ import Foundation
 /// let predictions = model.predict([[6.0], [7.0]])
 /// // predictions ≈ [11.8, 13.8]
 /// ```
-public struct LinearRegression: Codable, CustomStringConvertible, Equatable, Sendable {
+public struct LinearRegression: Regressor, Codable, CustomStringConvertible, Equatable, Sendable {
 
     public var description: String {
         let featureLabel = featureCount == 1 ? "feature" : "features"

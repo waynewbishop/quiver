@@ -1,20 +1,21 @@
 # Common Transformations
 
-Apply rotation, scaling, reflection, and shear transformations using transformation matrices.
+Constructing rotation, scaling, reflection, and shear matrices for common geometric operations.
 
 ## Overview
 
 After understanding how transformation matrices work (see <doc:Matrix-Transformations>), we can construct specific matrices for common geometric operations. These transformations are fundamental to graphics programming, game development, computer vision, and spatial computing.
 
-Each transformation has a characteristic matrix form that describes how it moves the basis vectors (i-hat and j-hat). Understanding these patterns enables creating custom transformations and predicting how vectors will move.
+Each transformation has a characteristic matrix form that describes how it moves the basis vectors — the unit vectors along the x and y axes. Recognizing these patterns makes it possible to read a matrix at a glance and predict what it will do to any vector it acts on.
 
 ## Rotation
 
-Rotation transforms rotate vectors around the origin by a specified angle. In 2D, rotation is counterclockwise for positive angles.
+Rotation transforms rotate vectors around the origin by a specified angle. In 2D, positive angles produce counterclockwise rotation.
 
-### Common rotations
+### Common rotation matrices
 
-**90° counterclockwise:**
+A rotation by 90° counterclockwise sends the unit vector along the x-axis to the unit vector along the y-axis, and the unit vector along the y-axis to the negative x-axis.
+
 ```swift
 import Quiver
 
@@ -30,14 +31,10 @@ let rotate90 = [
 // Row 1: [0, -1] • [1, 0] = (0×1 + (-1)×0) = 0
 // Row 2: [1,  0] • [1, 0] = (1×1 +   0×0)  = 1
 // Result: [0.0, 1.0]
-
-[0.0, 1.0].transformedBy(rotate90)
-// Row 1: [0, -1] • [0, 1] = (0×0 + (-1)×1) = -1
-// Row 2: [1,  0] • [0, 1] = (1×0 +   0×1)  =  0
-// Result: [-1.0, 0.0]
 ```
 
-**180° (flip):**
+A 180° rotation reverses every vector by negating both components, while a 45° rotation produces the canonical √2/2 ≈ 0.707 entries.
+
 ```swift
 // Rotate vectors 180° to reverse direction
 let rotate180 = [
@@ -45,27 +42,18 @@ let rotate180 = [
     [ 0.0, -1.0]
 ]
 
-[3.0, 4.0].transformedBy(rotate180)
-// Row 1: [-1, 0] • [3, 4] = ((-1)×3 + 0×4) = -3
-// Row 2: [0, -1] • [3, 4] = (0×3 + (-1)×4) = -4
-// Result: [-3.0, -4.0]
-```
-
-**45° counterclockwise:**
-```swift
 // Rotate vectors 45° counterclockwise
 let rotate45 = [
     [0.707, -0.707],
     [0.707,  0.707]
 ]
 
-[1.0, 0.0].transformedBy(rotate45)
-// Row 1: [0.707, -0.707] • [1, 0] = (0.707×1 + (-0.707)×0) = 0.707
-// Row 2: [0.707,  0.707] • [1, 0] = (0.707×1 +   0.707×0)  = 0.707
-// Result: [0.707, 0.707] — 45° between x and y axes
+[3.0, 4.0].transformedBy(rotate180)  // [-3.0, -4.0]
+[1.0, 0.0].transformedBy(rotate45)   // [0.707, 0.707] — 45° between x and y axes
 ```
 
-**90° clockwise:**
+A clockwise rotation is the transpose of its counterclockwise counterpart, which mirrors the off-diagonal signs.
+
 ```swift
 // Rotate vectors 90° clockwise
 let rotate90cw = [
@@ -73,38 +61,33 @@ let rotate90cw = [
     [-1.0, 0.0]
 ]
 
-[1.0, 0.0].transformedBy(rotate90cw)
-// Row 1: [0,  1] • [1, 0] = (0×1 + 1×0)    =  0
-// Row 2: [-1, 0] • [1, 0] = ((-1)×1 + 0×0) = -1
-// Result: [0.0, -1.0] — vector now points down
+[1.0, 0.0].transformedBy(rotate90cw)  // [0.0, -1.0] — vector now points down
 ```
 
 ### Practical examples
 
-**Game character rotation:**
+Rotation matrices appear throughout interactive graphics — turning a character's facing direction, animating an object along a circular path, orienting a sprite. The same matrix that rotates `[1, 0]` to `[0, 1]` rotates any vector by the same angle.
+
 ```swift
 // Rotate a character's facing direction
 let facingRight = [1.0, 0.0]
 
 let facingUp = facingRight.transformedBy(rotate90)    // [0.0, 1.0]
-let facingLeft = facingRight.transformedBy(rotate180)  // [-1.0, 0.0]
-```
+let facingLeft = facingRight.transformedBy(rotate180) // [-1.0, 0.0]
 
-**Circular motion:**
-```swift
 // Move an object along a circular path around the origin
 let radius = 5.0
-let position = [radius, 0.0].transformedBy(rotate90)
-// Row 1: [0, -1] • [5, 0] = (0×5 + (-1)×0) = 0
-// Row 2: [1,  0] • [5, 0] = (1×5 +   0×0)  = 5
-// Result: [0.0, 5.0]
+let position = [radius, 0.0].transformedBy(rotate90)  // [0.0, 5.0]
 ```
 
 ## Scaling
 
-Scaling transformations change the magnitude of vectors. Uniform scaling multiplies all dimensions equally; non-uniform scaling stretches or compresses individual axes.
+Scaling transformations change the magnitude of vectors. Uniform scaling multiplies every dimension by the same factor; non-uniform scaling stretches or compresses individual axes by different amounts.
 
-**Uniform scaling (same factor all directions):**
+### Uniform and non-uniform scaling
+
+A diagonal matrix with the same value in every diagonal position scales uniformly. Different diagonal entries produce non-uniform scaling, where each axis stretches or compresses independently.
+
 ```swift
 // Scale all axes by the same factor
 let scale2x = [Double].diag([2.0, 2.0])
@@ -115,132 +98,89 @@ let scale2x = [Double].diag([2.0, 2.0])
 // Row 1: [2, 0] • [3, 4] = (2×3 + 0×4) = 6
 // Row 2: [0, 2] • [3, 4] = (0×3 + 2×4) = 8
 // Result: [6.0, 8.0]
-```
 
-**Non-uniform scaling (different per axis):**
-```swift
 // Stretch horizontally and compress vertically
 let stretch = [
     [3.0, 0.0],
     [0.0, 0.5]
 ]
 
-[2.0, 4.0].transformedBy(stretch)
-// Row 1: [3, 0]   • [2, 4] = (3×2 + 0×4)   = 6
-// Row 2: [0, 0.5] • [2, 4] = (0×2 + 0.5×4) = 2
-// Result: [6.0, 2.0] — 3× wider, half as tall
+[2.0, 4.0].transformedBy(stretch)  // [6.0, 2.0] — 3× wider, half as tall
 ```
 
 ### Practical examples
 
-**Sprite scaling:**
+Scaling underlies sprite resizing, aspect-ratio correction, and camera zoom. A uniform scale preserves shape; a non-uniform scale deliberately distorts it.
+
 ```swift
 // Double the size of a sprite
 let scale2x = [Double].diag([2.0, 2.0])
 let spriteSize = [32.0, 48.0]
-let scaled = spriteSize.transformedBy(scale2x)
-// Row 1: [2, 0] • [32, 48] = (2×32 + 0×48) = 64
-// Row 2: [0, 2] • [32, 48] = (0×32 + 2×48) = 96
-// Result: [64.0, 96.0]
-```
+let scaled = spriteSize.transformedBy(scale2x)  // [64.0, 96.0]
 
-**Aspect ratio correction:**
-```swift
-// Correct a 16:9 aspect ratio to square coordinates
-let aspectCorrection = [
-    [1.0, 0.0],
-    [0.0, 16.0/9.0]
-]
-
-let wideScreen = [16.0, 9.0]
-let squareCoords = wideScreen.transformedBy(aspectCorrection)
-// Row 1: [1, 0]     • [16, 9] = (1×16 + 0×9)         = 16
-// Row 2: [0, 1.778] • [16, 9] = (0×16 + 1.778×9) ≈ 16
-// Result: [16.0, 16.0]
-```
-
-**Zoom effect:**
-```swift
 // Apply a zoom level to camera coordinates
 let zoomLevel = 1.5
 let zoom = [Double].diag([zoomLevel, zoomLevel])
-
 let cameraCenter = [100.0, 75.0]
-let zoomedView = cameraCenter.transformedBy(zoom)
-// Row 1: [1.5, 0]   • [100, 75] = (1.5×100 + 0×75) = 150
-// Row 2: [0,   1.5] • [100, 75] = (0×100 + 1.5×75)  = 112.5
-// Result: [150.0, 112.5]
+let zoomedView = cameraCenter.transformedBy(zoom)  // [150.0, 112.5]
 ```
+
+For aspect-ratio correction, mapping a 16:9 vector into a square coordinate space requires stretching only the y-axis. The matrix has a 1.0 on the x-axis and `16/9` on the y-axis, leaving the horizontal coordinate unchanged.
 
 ## Reflection
 
-Reflection mirrors vectors across an axis or line. The transformation flips coordinates while preserving distances and angles.
+Reflection mirrors vectors across an axis or line. The transformation flips coordinates while preserving distances and angles, so a reflected shape has the same size as the original but reversed handedness.
 
-**Reflect across x-axis (horizontal flip):**
+### Reflection matrices
+
+The three most common 2D reflections — across the x-axis, the y-axis, and the diagonal `y = x` — each negate exactly one coordinate or swap them.
+
 ```swift
-// Mirror a vector across the x-axis
+// Mirror a vector across the x-axis (y is negated)
 let reflectX = [
     [ 1.0, 0.0],
     [ 0.0, -1.0]
 ]
 
-[3.0, 4.0].transformedBy(reflectX)
-// Row 1: [1,  0] • [3, 4] = (1×3 +  0×4) =  3
-// Row 2: [0, -1] • [3, 4] = (0×3 + (-1)×4) = -4
-// Result: [3.0, -4.0] — x stays same, y inverted
-```
-
-**Reflect across y-axis (vertical flip):**
-```swift
-// Mirror a vector across the y-axis
+// Mirror a vector across the y-axis (x is negated)
 let reflectY = [
     [-1.0, 0.0],
     [ 0.0, 1.0]
 ]
 
-[3.0, 4.0].transformedBy(reflectY)
-// Row 1: [-1, 0] • [3, 4] = ((-1)×3 + 0×4) = -3
-// Row 2: [ 0, 1] • [3, 4] = (0×3 + 1×4)    =  4
-// Result: [-3.0, 4.0] — y stays same, x inverted
-```
-
-**Reflect across diagonal (y=x):**
-```swift
-// Swap x and y coordinates by reflecting across y=x
+// Swap x and y by reflecting across y=x (this is also the transpose)
 let reflectDiagonal = [
     [0.0, 1.0],
     [1.0, 0.0]
 ]
 
-[3.0, 4.0].transformedBy(reflectDiagonal)
-// Row 1: [0, 1] • [3, 4] = (0×3 + 1×4) = 4
-// Row 2: [1, 0] • [3, 4] = (1×3 + 0×4) = 3
-// Result: [4.0, 3.0] — x and y swapped (this is transpose!)
+[3.0, 4.0].transformedBy(reflectX)         // [3.0, -4.0]
+[3.0, 4.0].transformedBy(reflectY)         // [-3.0, 4.0]
+[3.0, 4.0].transformedBy(reflectDiagonal)  // [4.0, 3.0]
 ```
 
 ### Practical examples
 
-**Mirror image:**
+Reflection appears whenever a scene requires a mirror image — a sprite facing the other direction, an object's image below a water line, or a UI element flipped for a right-to-left layout.
+
 ```swift
 // Flip a sprite to face the opposite direction
 let spritePosition = [10.0, 5.0]
-let mirrored = spritePosition.transformedBy(reflectY)
-// [-10.0, 5.0]
-```
+let mirrored = spritePosition.transformedBy(reflectY)  // [-10.0, 5.0]
 
-**Water reflection:**
-```swift
 // Reflect an object's position below the water line
 let objectPosition = [5.0, 10.0]
-let waterReflection = objectPosition.transformedBy(reflectX)
-// [5.0, -10.0] - 10 units below water
+let waterReflection = objectPosition.transformedBy(reflectX)  // [5.0, -10.0]
 ```
 
 ## Shear
 
-Shear transformations "slant" the coordinate system, shifting one axis proportionally to the other. This creates a "leaning" or "skewed" effect.
+Shear transformations slant the coordinate system, shifting one axis proportionally to the other. The result is a leaning or skewed effect — rectangles become parallelograms, squares become rhombi.
 
-**Horizontal shear (x depends on y):**
+### Horizontal and vertical shear
+
+A horizontal shear shifts x in proportion to y; a vertical shear shifts y in proportion to x. The shear factor controls how much one axis bleeds into the other.
+
 ```swift
 // Shift x proportionally to y with a shear factor of 0.5
 let shearH = [
@@ -248,29 +188,20 @@ let shearH = [
     [0.0, 1.0]
 ]
 
-[2.0, 4.0].transformedBy(shearH)
-// Row 1: [1, 0.5] • [2, 4] = (1×2 + 0.5×4) = 4
-// Row 2: [0, 1]   • [2, 4] = (0×2 + 1×4)   = 4
-// Result: [4.0, 4.0]
-```
-
-**Vertical shear (y depends on x):**
-```swift
 // Shift y proportionally to x with a shear factor of 0.5
 let shearV = [
     [1.0, 0.0],
     [0.5, 1.0]
 ]
 
-[2.0, 4.0].transformedBy(shearV)
-// Row 1: [1,   0] • [2, 4] = (1×2 + 0×4)   = 2
-// Row 2: [0.5, 1] • [2, 4] = (0.5×2 + 1×4) = 5
-// Result: [2.0, 5.0]
+[2.0, 4.0].transformedBy(shearH)  // [4.0, 4.0]
+[2.0, 4.0].transformedBy(shearV)  // [2.0, 5.0]
 ```
 
 ### Practical examples
 
-**Italic text effect:**
+Shear matrices simulate italic text and approximate perspective foreshortening. The italic shear leans letters to the right; the perspective shear shifts horizontal position based on apparent depth.
+
 ```swift
 // Simulate italic text by leaning letters to the right
 let italicShear = [
@@ -279,48 +210,8 @@ let italicShear = [
 ]
 
 let letterPosition = [10.0, 20.0]
-let italicPosition = letterPosition.transformedBy(italicShear)
-// Row 1: [1, 0.3] • [10, 20] = (1×10 + 0.3×20) = 16
-// Row 2: [0, 1]   • [10, 20] = (0×10 + 1×20)    = 20
-// Result: [16.0, 20.0]
+let italicPosition = letterPosition.transformedBy(italicShear)  // [16.0, 20.0]
 ```
-
-**Perspective projection:**
-```swift
-// Simulate depth by shifting x based on distance
-let perspective = [
-    [1.0, 0.2],
-    [0.0, 1.0]
-]
-
-let objectDepth = [5.0, 10.0]  // x position and z depth
-let screenPosition = objectDepth.transformedBy(perspective)
-// Row 1: [1, 0.2] • [5, 10] = (1×5 + 0.2×10) = 7
-// Row 2: [0, 1]   • [5, 10] = (0×5 + 1×10)   = 10
-// Result: [7.0, 10.0]
-```
-
-## Combining transformation properties
-
-### Preserving properties
-
-**Rotations preserve:**
-- Length (magnitude)
-- Angles between vectors
-- Orientation (handedness)
-
-**Scaling preserves:**
-- Ratios along axes
-- Parallel lines
-
-**Reflections preserve:**
-- Distances
-- Angles
-- Reverse orientation (flip handedness)
-
-**Shears preserve:**
-- Areas
-- Parallel lines
 
 ## See also
 

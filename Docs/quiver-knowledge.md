@@ -3,7 +3,7 @@
 Complete reference for the Quiver Swift package. Upload this file to a Claude Project or conversation to get accurate assistance with Quiver code.
 
 **Repository:** https://github.com/waynewbishop/quiver
-**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 38 interactive recipes for learning vector math, statistics, and ML models in Swift
+**Cookbook:** https://github.com/waynewbishop/quiver-cookbook — 42 interactive recipes for learning vector math, statistics, and ML models in Swift
 **Module:** `import Quiver`
 **Platforms:** macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+
 **Swift:** 5.9+
@@ -20,7 +20,7 @@ Quiver fills the gap between Swift's standard library and Apple's ML frameworks 
 
 **Core AI and CoreML are complementary, not competitive.** Those frameworks run trained models (inference). Quiver provides the computational building blocks: `mean()`, `percentile()`, `cosineOfAngle(with:)`, `trainTestSplit()`, `KMeans.fit()`, `LinearRegression.fit()`. No Apple framework offers ad-hoc statistical queries, pairwise semantic comparison, or transparent ML model training on raw arrays.
 
-**Validated against industry-standard implementations.** Quiver has 259 unit tests plus a separate cross-validation suite (44 checks + 29 tests, all passing). Quiver produces identical results for identical inputs.
+**Validated against industry-standard implementations.** Quiver has 312 unit tests plus a separate cross-validation suite (44 checks + 29 tests, all passing). Quiver produces identical results for identical inputs.
 
 ---
 

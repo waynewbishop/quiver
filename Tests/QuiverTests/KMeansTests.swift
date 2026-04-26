@@ -112,24 +112,31 @@ final class KMeansTests: XCTestCase {
         XCTAssertEqual(model1.inertia, model2.inertia)
     }
 
-    // Elbow method returns one inertia value per k
+    // Elbow method returns (k, inertia) tuples
     func testElbowMethod() {
         let data: [[Double]] = [
             [0.0, 0.0], [1.0, 0.0], [0.0, 1.0],
             [10.0, 10.0], [11.0, 10.0], [10.0, 11.0]
         ]
 
-        let kRange = Array(1...4)
-        let inertias = KMeans.elbowMethod(data: data, kRange: kRange, seed: 42)
+        let results = KMeans.elbowMethod(data: data, kRange: 1...4, seed: 42)
 
         // One result per k value
-        XCTAssertEqual(inertias.count, 4)
+        XCTAssertEqual(results.count, 4)
+
+        // k values are paired with their inertias
+        XCTAssertEqual(results[0].k, 1)
+        XCTAssertEqual(results[1].k, 2)
+        XCTAssertEqual(results[3].k, 4)
 
         // Inertia should decrease as k increases
-        XCTAssertGreaterThan(inertias[0], inertias[1])
+        XCTAssertGreaterThan(results[0].inertia, results[1].inertia)
 
         // k=2 should capture the structure well (big drop from k=1)
-        XCTAssertGreaterThan(inertias[0] - inertias[1], inertias[1] - inertias[2])
+        XCTAssertGreaterThan(
+            results[0].inertia - results[1].inertia,
+            results[1].inertia - results[2].inertia
+        )
     }
 
     // Clusters method groups data by label and provides Sequence conformance
@@ -171,6 +178,40 @@ final class KMeansTests: XCTestCase {
         XCTAssertEqual(model.centroids.count, 1)
         XCTAssertEqual(model.centroids[0][0], 3.0, accuracy: 1e-9)
         XCTAssertEqual(model.centroids[0][1], 4.0, accuracy: 1e-9)
+    }
+
+    // Integration: StandardScaler applied before KMeans.
+    // Like KNN, KMeans is scale-sensitive — Euclidean distance to centroids would be
+    // dominated by the large-scale feature without scaling.
+    func testWithStandardScaler() {
+        // Two well-separated clusters with mixed-scale features:
+        //   feature 0 is small (0–5), feature 1 is large (0–5000).
+        var data: [[Double]] = []
+        for _ in 0..<20 {
+            data.append([Double.random(in: 0.0...2.0), Double.random(in: 0.0...2000.0)])
+        }
+        for _ in 0..<20 {
+            data.append([Double.random(in: 3.0...5.0), Double.random(in: 3000.0...5000.0)])
+        }
+
+        // Scale before clustering
+        let scaler = StandardScaler.fit(features: data)
+        let scaled = scaler.transform(data)
+
+        let model = KMeans.fit(data: scaled, k: 2, seed: 42)
+
+        // The first 20 points (originally the low-scale cluster) should share a label
+        let firstLabel = model.labels[0]
+        for i in 0..<20 {
+            XCTAssertEqual(model.labels[i], firstLabel)
+        }
+
+        // The last 20 points (originally the high-scale cluster) should share the other label
+        let lastLabel = model.labels[20]
+        XCTAssertNotEqual(firstLabel, lastLabel)
+        for i in 20..<40 {
+            XCTAssertEqual(model.labels[i], lastLabel)
+        }
     }
 
     // MARK: - Equatable

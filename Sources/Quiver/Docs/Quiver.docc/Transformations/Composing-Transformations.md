@@ -1,18 +1,18 @@
 # Composing Transformations
 
-Combine multiple transformations using matrix multiplication to create complex effects.
+Combining transformations with matrix multiplication for graphics pipelines and animation systems.
 
 ## Overview
 
-Individual transformations like rotation and scaling are useful, but real applications often require combining them. Matrix multiplication lets us compose multiple transformations into a single operation, creating complex effects efficiently.
+Individual transformations like rotation and scaling are useful, but real applications often require combining them. Matrix multiplication lets us compose multiple transformations into a single operation, producing complex effects efficiently.
 
-Understanding transformation composition is crucial for graphics pipelines, animation systems, and any application that chains coordinate system changes.
+Understanding transformation composition is fundamental to graphics pipelines, animation systems, and any application that chains coordinate system changes.
 
 > Tip: For geometric intuition about how transformations compose, including visual examples of rotation, scaling, and chained operations, see [Matrix Transformations](https://waynewbishop.github.io/swift-algorithms/22-matrix-transformations.html) in Swift Algorithms & Data Structures.
 
 ## Matrix multiplication
 
-Matrix multiplication composes transformations: the result represents applying one transformation after another. Unlike regular multiplication, **order matters**.
+Matrix multiplication composes transformations: the result represents applying one transformation after another. Unlike scalar multiplication, the order is significant — `A × B` is generally different from `B × A`.
 
 ```swift
 import Quiver
@@ -34,24 +34,24 @@ let result = v.transformedBy(combined)
 
 ### Two equivalent approaches
 
-**Approach 1: Compose first, apply once**
+Composition gives us a choice between precomputing the combined matrix and applying transformations sequentially. Both produce the same result.
+
 ```swift
+// Compose first, apply once
 let combined = transform1.multiplyMatrix(transform2)
 let result = vector.transformedBy(combined)
-```
 
-**Approach 2: Apply sequentially**
-```swift
+// Apply sequentially
 let result = vector
     .transformedBy(transform1)
     .transformedBy(transform2)
 ```
 
-Both produce the same result, but composition is more efficient when applying the same transformation to many vectors.
+The composed-matrix form is more efficient when applying the same transformation to many vectors, because the matrix multiplication runs once instead of once per vector.
 
 ## Order matters
 
-Matrix multiplication is **not commutative**: `A × B ≠ B × A` in general.
+Matrix multiplication is not commutative. Reversing the order of two transformations generally produces a different combined matrix and a different final result.
 
 ```swift
 import Foundation
@@ -73,20 +73,19 @@ let rotateFirst = v.transformedBy(rotate90).transformedBy(scale2x)
 let scaleFirst = v.transformedBy(scale2x).transformedBy(rotate90)
 // [1,0] → scale → [2,0] → rotate → [0,2]
 
-// Different results!
 rotateFirst // [0, 1]
 scaleFirst  // [0, 2]
 ```
 
 ### Reading order
 
-When composing with matrix multiplication:
+When composing with matrix multiplication, the rightmost matrix is applied first.
 
 ```swift
 let combined = A.multiplyMatrix(B)
 ```
 
-Means: "First apply **B**, then apply **A**"
+This means: first apply B, then apply A. The convention follows directly from how matrix-vector multiplication associates — `(A × B) × v` evaluates as `A × (B × v)`, with B acting on the vector before A.
 
 ```swift
 // Rotate then scale
@@ -95,14 +94,11 @@ v.transformedBy(combined)
 // Same as: v.transformedBy(rotate).transformedBy(scale)
 ```
 
-**Why?** Matrix multiplication applies from right to left:
-- `v.transformedBy(A.multiplyMatrix(B))`
-- = `(A × B) × v`
-- = `A × (B × v)`  ← B applied first
-
 ## Common composition patterns
 
 ### Scale then rotate
+
+Scaling along the axes is straightforward when those axes are aligned with x and y. Rotation changes the orientation of the coordinate system, which makes any subsequent axis-aligned scaling more complex. The general guideline is to scale and shear first, then rotate last.
 
 ```swift
 // Make sprite 2× larger, then rotate 45°
@@ -118,17 +114,9 @@ let rotate = [
 let scaleRotate = rotate.multiplyMatrix(scale)
 ```
 
-**Why this order?**
-- Scaling along axes is simple when aligned with x/y
-- Rotation changes orientation, making subsequent scaling more complex
-- Generally: scale/shear first, rotate last
-
 ### Rotate around a point
 
-To rotate around a point other than origin:
-1. Translate point to origin
-2. Rotate
-3. Translate back
+Rotation matrices rotate vectors around the origin. To rotate around any other point, the standard pattern is a three-step sequence: translate so the pivot lands at the origin, rotate, and translate back.
 
 ```swift
 // Rotate around pivot point using a 3-step sequence
@@ -153,6 +141,8 @@ let rotated = vector.subtract(pivot)
 
 ### Multiple rotations
 
+Composing two rotations of the same direction produces a rotation by the sum of their angles.
+
 ```swift
 // Rotate 45° twice = 90° total
 let rotate45 = [
@@ -170,6 +160,8 @@ let rotate90 = rotate45.multiplyMatrix(rotate45)
 
 ### Combining different transformations
 
+Scaling, shearing, and rotation can be composed into a single matrix that captures all three operations. The rightmost matrix is applied first.
+
 ```swift
 // Complex transformation: scale, shear, then rotate
 let scale = [Double].diag([2.0, 1.5])
@@ -186,7 +178,7 @@ let rotate = [
     [1.0,  0.0]
 ]
 
-// Compose (remember: rightmost applied first)
+// Compose (rightmost applied first)
 let complex = rotate.multiplyMatrix(shear).multiplyMatrix(scale)
 
 // Apply to many vectors efficiently
@@ -196,7 +188,7 @@ let transformed = vectors.map { $0.transformedBy(complex) }
 
 ## Transformation pipelines
 
-Graphics applications often have transformation pipelines:
+Graphics applications commonly use transformation pipelines that move a vertex through several coordinate spaces — object to world, world to camera, camera to screen. Each space is reached by composing a matrix onto the previous one.
 
 ```swift
 // Object → World → Camera → Screen
@@ -215,7 +207,7 @@ let screenVertices = objectVertices.map { $0.transformedBy(objectToScreen) }
 
 ### Incremental updates
 
-When only one transform changes:
+When only one stage of the pipeline changes — usually because an object moves while the camera and projection remain fixed — caching the partial composition saves redundant work.
 
 ```swift
 // Cache partial compositions
@@ -227,9 +219,8 @@ let newObjectToScreen = worldToScreen.multiplyMatrix(newObjectTransform)
 
 ## Inverse transformations
 
-Some transformations can be reversed:
+Some transformations can be reversed by composing them with an inverse matrix that undoes their effect. A 90° rotation followed by a -90° rotation returns to the identity, and a 2× scale followed by a 0.5× scale does the same.
 
-**Rotation inverse:**
 ```swift
 // Rotate 90°, then rotate -90° returns to original
 let rotate = [
@@ -245,15 +236,12 @@ let unrotate = [
 
 let identity = rotate.multiplyMatrix(unrotate)
 // ≈ [[1,0],[0,1]] (within floating-point precision)
-```
 
-**Scaling inverse:**
-```swift
 // Scale by 2, then scale by 1/2 returns to original
 let scale = [Double].diag([2.0, 2.0])
 let unscale = [Double].diag([0.5, 0.5])
 
-let identity = scale.multiplyMatrix(unscale)
+let identityFromScale = scale.multiplyMatrix(unscale)
 // [[1,0],[0,1]]
 ```
 
@@ -261,8 +249,10 @@ let identity = scale.multiplyMatrix(unscale)
 
 ### Precompute complex transformations
 
+When the same chain of transformations is applied to many vectors, composing the matrices once and applying the result repeatedly is significantly faster than applying each matrix individually to every vector.
+
 ```swift
-// BAD: Recompute for every vertex
+// Recomputes the chain for every vertex
 for vertex in vertices {
     let transformed = vertex
         .transformedBy(scale)
@@ -270,23 +260,21 @@ for vertex in vertices {
         .transformedBy(shear)
 }
 
-// GOOD: Compose once, apply many times
+// Compose once, apply many times
 let combined = shear.multiplyMatrix(rotate).multiplyMatrix(scale)
 for vertex in vertices {
     let transformed = vertex.transformedBy(combined)
 }
 ```
 
+The first pattern recomputes the composed transformation for every vertex; the second precomputes it once and reuses the cached matrix.
+
 ### Matrix multiplication complexity
 
-- Matrix multiplication: O(n³) for n×n matrices
-- Matrix-vector multiplication: O(n²)
+Matrix multiplication is `O(n³)` for n×n matrices. Matrix-vector multiplication is `O(n²)`. For 2D transformations, that means a matrix-matrix multiply costs 8 scalar multiplications and 4 additions, while a matrix-vector multiply costs 4 multiplications and 2 additions.
 
-For n=2 (2D):
-- Matrix × matrix: 8 multiplications, 4 additions
-- Matrix × vector: 4 multiplications, 2 additions
+The implication for scenes with many vertices is direct. Composing the chain once and applying it to many vectors trades a single `O(n³)` operation for many cheaper `O(n²)` operations.
 
-**Implication:** For many vectors, compose first:
 ```swift
 // Transform 1000 vertices
 let vertices: [[Double]] = // 1000 2D points

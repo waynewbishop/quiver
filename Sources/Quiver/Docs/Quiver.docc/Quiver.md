@@ -32,16 +32,31 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ## Topics
 
-### Getting Started
+### Essentials
 - <doc:Installation>
-- <doc:How-It-Works>
-- <doc:Platform-Guide>
+- <doc:Basics>
 - <doc:Usage>
+- <doc:How-It-Works>
 
 ### Conceptual Guides
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
+- <doc:Statistics-Primer>
 - <doc:Machine-Learning-Primer>
+- <doc:Numerical-Literacy>
+- <doc:Concurrency-Primer>
+
+### iOS
+- <doc:iOS-Guide>
+- <doc:iOS-Patterns>
+
+### watchOS
+- <doc:watchOS-Guide>
+- <doc:watchOS-Patterns>
+
+### Vapor
+- <doc:Vapor-Guide>
+- <doc:Vapor-Patterns>
 
 ### Vectors
 - <doc:Vector-Operations>
@@ -63,14 +78,20 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Composing-Transformations>
 
 ### Similarity and Search
+- <doc:Text-Tokenization>
 - <doc:Similarity-Operations>
 - <doc:Semantic-Search>
 
+### Signal Processing
+- <doc:Fourier-Transform>
+
 ### Data Preparation
 - <doc:Panel>
+- <doc:Panel-and-Charts>
+- <doc:Data-Visualization>
 - <doc:Train-Test-Split>
 - <doc:Feature-Scaling>
-- <doc:Data-Visualization>
+- <doc:Pipeline>
 
 ### Models
 - <doc:Naive-Bayes>
@@ -82,9 +103,9 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Utilities
 - <doc:Model-Persistence>
+- <doc:Fraction>
 
 ### Supporting Types
-- ``Fraction``
 - ``LogDeterminant``
 - ``Classification``
 - ``Classifier``

@@ -1,14 +1,14 @@
 # Array Generation
 
-Create arrays with specific patterns and values for numerical computing tasks.
+Creating arrays and matrices with specific patterns, fills, and sequences.
 
 ## Overview
 
-Quiver provides a set of static methods to generate arrays with specific values, sequences, and patterns. These generation functions create arrays filled with zeros, ones, or custom values, as well as evenly spaced sequences or identity matrices.
+Most numerical work begins with an array of a known shape and a known fill value — a buffer of zeros to accumulate into, a row of ones to use as a multiplicative identity, an evenly spaced sequence for plotting, or an identity matrix for transformations. Quiver provides a small set of static methods on `Array` for these cases, so the starting array always has the right size and the right values without a manual loop.
 
-### Basic array creation
+### Filling arrays with constants
 
-Create arrays filled with specific values:
+The most common starting point is an array of a fixed length filled with a single value. `zeros`, `ones`, and `full` cover this case for any numeric type.
 
 ```swift
 import Quiver
@@ -19,11 +19,11 @@ let ones = [Int].ones(3)             // [1, 1, 1]
 let filled = [Double].full(4, value: 3.14)  // [3.14, 3.14, 3.14, 3.14]
 ```
 
-> Tip: Specify the element type by using the appropriate array type bracket notation like `[Double]` or `[Int]`.
+The element type is selected by the bracket notation on the left of the call. `[Double].zeros(5)` produces an array of `Double` values; `[Int].zeros(5)` produces an array of `Int` values. Quiver does not infer the type from context — the caller chooses it explicitly.
 
-### Creating sequences
+### Generating sequences
 
-Generate arrays with evenly spaced values:
+For evenly spaced sequences, `linspace` and `arange` cover the two common cases. `linspace` produces a fixed number of values between two endpoints; `arange` produces values at a fixed step size starting from a given value.
 
 ```swift
 // Create evenly spaced values
@@ -33,11 +33,11 @@ let linear = [Double].linspace(start: 0, end: 10, count: 5)  // [0.0, 2.5, 5.0, 
 let range = [Double].arange(0, 10, step: 2.5)  // [0.0, 2.5, 5.0, 7.5]
 ```
 
-> Note: The `linspace` function includes both endpoints, while `arange` includes the start value but excludes the end value.
+The two methods differ in how they treat the upper bound. `linspace` includes both endpoints, so the count is exact and the step is whatever it needs to be. `arange` includes the start and excludes the end, so the step is exact and the count is whatever it works out to. Reach for `linspace` when the number of points matters, and `arange` when the spacing matters.
 
-### Creating matrices
+### Filling matrices with constants
 
-Generate 2D arrays (matrices) with specific patterns:
+The same `zeros`, `ones`, and `full` methods extend to two-dimensional arrays by taking a row count and a column count. The result is a `[[Double]]` (or `[[Int]]`, etc.) with every element set to the fill value.
 
 ```swift
 // Create 2D arrays
@@ -51,11 +51,11 @@ let filledMatrix = [Int].full(2, 2, value: 7)
 // [[7, 7], [7, 7]]
 ```
 
-> Important: In Quiver, the first dimension represents rows and the second dimension represents columns, following mathematical convention.
+Quiver follows the standard mathematical convention: the first dimension is rows and the second is columns. A `[Double].zeros(3, 2)` has three rows and two columns, not the other way around.
 
-### Special matrices
+### Identity and diagonal matrices
 
-Create special-purpose matrices:
+Identity matrices appear constantly in linear algebra — they are the multiplicative identity for matrix multiplication, and they are the starting point for building transformations incrementally. Diagonal matrices generalize the same idea, with arbitrary values along the main diagonal and zeros everywhere else.
 
 ```swift
 // Create an identity matrix
@@ -67,15 +67,15 @@ let diag = [Int].diag([1, 2, 3])
 // [[1, 0, 0], [0, 2, 0], [0, 0, 3]]
 ```
 
-Identity and diagonal matrices are commonly used in linear algebra operations and transformations.
-
-> Tip: For a deep understanding of identity matrices and their role in transformations, see <doc:Matrix-Transformations>.
+A scaling transformation is exactly a diagonal matrix whose entries are the per-axis scale factors. For the role identity and diagonal matrices play in transformations, see <doc:Matrix-Transformations>.
 
 ## Common patterns
 
-These generation functions enable several common patterns in numerical computing:
+The generation methods compose with the rest of Quiver in a few recurring ways. A typical numerical pipeline starts with an empty buffer, builds an evenly spaced input, or initializes a transformation matrix that the rest of the code mutates incrementally.
 
-### Initializing data structures
+### Initializing buffers
+
+When accumulating results into an array, starting with `zeros` of the right length avoids an out-of-bounds index check on every write. Starting with `ones` is the same idea for multiplicative accumulation.
 
 ```swift
 // Initialize a container for results
@@ -85,7 +85,9 @@ let results = [Double].zeros(dataPoints.count)
 let factors = [Double].ones(n)
 ```
 
-### Creating test data
+### Generating plot inputs
+
+Plotting a function across a range begins with a sequence of x-values and a `map` over the function. `linspace` is the right choice here because the number of sample points usually matters more than the exact spacing between them.
 
 ```swift
 import Foundation
@@ -97,7 +99,9 @@ let x = [Double].linspace(start: 0, end: 2 * Double.pi, count: 100)
 let y = x.map { sin($0) }
 ```
 
-### Setting up matrix operations
+### Building transformations incrementally
+
+Transformations often start from an identity matrix and accumulate operations onto it. This pattern is especially common in graphics work, where a single transformation may need to scale, rotate, and translate before it is applied.
 
 ```swift
 // Start with an identity matrix for transformations
@@ -107,11 +111,15 @@ var transform = [Double].identity(4)
 transform[0][3] = 10.0  // Add translation
 ```
 
-## Implementation details
+### Memory cost
 
-The array generation functions in Quiver are implemented as static methods on Array extensions with appropriate type constraints. For example, sequence generation functions like `linspace` are only available on floating-point arrays, while basic creation functions like `zeros` are available for any numeric type.
+These methods allocate the entire array in a single step. For very large dimensions — millions of elements or large dense matrices — that allocation is the dominant cost of the call, and the resulting array sits in memory until it is released. The cost is the same as any equivalent manual allocation, but it is worth being aware of when generating large structures inside a tight loop.
 
-> Warning: When creating large arrays, be mindful of memory usage. These functions allocate memory for the entire array at once.
+## See also
+
+- <doc:Matrix-Operations>
+- <doc:Matrix-Transformations>
+- <doc:Random-Number-Generation>
 
 ## Topics
 
@@ -130,7 +138,3 @@ The array generation functions in Quiver are implemented as static methods on Ar
 - ``Swift/Array/full(_:_:value:)``
 - ``Swift/Array/identity(_:)``
 - ``Swift/Array/diag(_:)``
-
-### Related articles
-- <doc:Matrix-Operations>
-- <doc:Matrix-Transformations>

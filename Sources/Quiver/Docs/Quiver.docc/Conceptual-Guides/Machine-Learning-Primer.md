@@ -76,7 +76,7 @@ let scaledTrain = scaler.transform(trainFeatures)
 let scaledTest = scaler.transform(testFeatures)
 ```
 
-This pattern — fit once on training data, apply everywhere — prevents leakage and gives us an honest evaluation.
+This pattern — fit once on training data, apply everywhere — prevents leakage and gives us an honest evaluation. `Pipeline` enforces this automatically by bundling the scaler and model together, so the caller passes raw features and Pipeline handles scaling internally. See <doc:Pipeline> for details.
 
 ### Feature engineering and scaling
 
@@ -203,6 +203,7 @@ For a full treatment of these metrics and the `ConfusionMatrix` type, see <doc:E
 
 - <doc:Train-Test-Split> - Train/test splitting and stratified partitioning
 - <doc:Feature-Scaling> - Min-max normalization with data leakage prevention
+- <doc:Pipeline> - Bundle a scaler and model into a single matched pair
 - <doc:Naive-Bayes> - Gaussian Naive Bayes classifier
 - <doc:Nearest-Neighbors-Classification> - Nearest Neighbors classifier
 - <doc:Linear-Regression> - Linear regression for continuous targets

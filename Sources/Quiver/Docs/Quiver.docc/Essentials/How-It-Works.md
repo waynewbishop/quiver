@@ -190,10 +190,10 @@ The threshold is up to the developer. The diagnostic lives on the data, not on t
 
 ### A focused, intentional scope
 
-Quiver is designed for educational use, on-device ML features, and data science workflows where understanding the mathematics matters as much as the result. GPU acceleration, automatic differentiation, and distributed training are outside that scope as they bring significant complexity: external dependencies, platform restrictions, and a steeper learning curve that would work against the framework's core goals of clarity, portability, and zero-dependency deployment.
+Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. GPU acceleration, automatic differentiation, and distributed training are outside that scope as they bring significant complexity: external dependencies, platform restrictions, and a steeper learning curve that would work against the framework's core goals of clarity, portability, and zero-dependency deployment.
 
 ### Performance characteristics
 
-The design prioritizes clarity and portability — the same code runs identically on macOS, iOS, watchOS, visionOS, and Linux. Most operations — vector arithmetic, statistics, broadcasting, boolean masking, element-wise math — are linear and scale predictably to millions of elements.
+The design prioritizes clarity and portability — the same code runs identically on macOS, iOS, watchOS, visionOS, and Linux. Most operations — vector arithmetic, statistics, broadcasting, boolean masking, element-wise math — are linear and scale predictably to millions of elements. Fourier analysis is `O(n log n)` and scales efficiently to tens of thousands of samples.
 
 > Important: The operations worth thinking about are matrix multiplication, matrix inversion, and pairwise comparisons like `findDuplicates(threshold:)` and `clusterCohesion()`. These grow quadratically or cubically with input size, so they perform well for the hundreds-to-low-thousands range typical in educational and on-device use cases.

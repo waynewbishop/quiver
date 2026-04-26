@@ -124,7 +124,7 @@ let (trainX, testX) = features.trainTestSplit(testRatio: 0.3, seed: 42)
 let (trainY, testY) = labels.trainTestSplit(testRatio: 0.3, seed: 42)
 
 // Scale, fit, predict
-let scaler = FeatureScaler.fit(features: trainX)
+let scaler = StandardScaler.fit(features: trainX)
 let model = GaussianNaiveBayes.fit(
     features: scaler.transform(trainX),
     labels: trainY

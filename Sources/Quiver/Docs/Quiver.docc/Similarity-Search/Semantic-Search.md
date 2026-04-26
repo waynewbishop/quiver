@@ -154,6 +154,7 @@ The pipeline chains together five Quiver operations: `tokenize()`, `embed(using:
 
 ## See also
 
+- <doc:Text-Tokenization> - Tokenizing strings and looking up word vectors before search
 - <doc:Similarity-Operations> - Cosine similarity, batch operations, and cluster analysis
 - <doc:Vector-Operations> - Vector properties including magnitude, normalization, and dot product
 - <doc:Statistical-Operations> - Statistical operations including `meanVector()`
