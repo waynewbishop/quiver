@@ -8,7 +8,7 @@ A starting point for Swift developers new to numerical computing.
 
 ## Overview
 
-If we can write Swift, we already have most of what we need to work with data. Quiver is a Swift package, not a separate language or runtime, and its core type is the one we use every day: `[Double]`. The intimidating part of numerical computing is rarely the code — it is the vocabulary that surrounds it. Variance, regression, eigenvalue, normalization, gradient. These words sound like a different field of study, but every one of them describes something we can compute, see, and verify in a few lines of Swift.
+If we can write Swift, we already have most of what we need to work with data. The intimidating part of numerical computing is rarely the code — it's the vocabulary that surrounds it. Variance, regression, eigenvalue, normalization, gradient. These words sound like a different field of study, but every one of them describes something we can compute, see, and verify in a few lines of Swift.
 
 This page is a starting point organized around three pillars that show up in any data work: **statistics** (describing what is in the data), **linear algebra** (treating numbers as positions in space), and **machine learning** (using the first two to make predictions). Each section teaches the smallest useful idea, then points to a deeper guide when we want to go further.
 
