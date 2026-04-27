@@ -185,7 +185,7 @@ print("Accuracy: \(cm.accuracy)")
 
 ### Structured results with classify
 
-The `predict(_:)` method returns raw class labels as `[Int]` — ideal for evaluation metrics like `accuracy()` and `classificationReport()`. When exploring results interactively, `classify(_:)` groups the inputs by their predicted label, returning `Classification` objects that pair each label with its assigned points:
+The `predict(_:)` method returns raw class labels as `[Int]` — ideal for evaluation metrics like `accuracy` and `classificationReport`. When exploring results interactively, `classify(_:)` groups the inputs by their predicted label, returning `Classification` objects that pair each label with its assigned points:
 
 ```swift
 import Quiver
@@ -201,7 +201,7 @@ for group in results {
 
 Each `Classification` result conforms to `Sequence` — the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives you its data points directly, just like iterating an `Array`.
 
-> Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy()`, `classificationReport()`, or `confusionMatrix()`.
+> Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy`, `classificationReport`, or `confusionMatrix`.
 
 ### When to use Nearest Neighbors
 

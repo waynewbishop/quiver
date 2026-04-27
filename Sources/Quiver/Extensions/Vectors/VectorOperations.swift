@@ -1076,9 +1076,9 @@ public extension Array where Element == Double {
 
     /// Returns the indices that would sort the array in ascending order.
     ///
-    /// This method provides functionality equivalent to NumPy's `argsort()`,
-    /// returning the indices of elements in sorted order rather than the sorted elements themselves.
-    /// This is useful when you need to maintain a mapping between sorted and original positions.
+    /// This method returns the indices of elements in sorted order rather than the sorted
+    /// elements themselves. This is useful when you need to maintain a mapping between
+    /// sorted and original positions.
     ///
     /// Example:
     /// ```swift

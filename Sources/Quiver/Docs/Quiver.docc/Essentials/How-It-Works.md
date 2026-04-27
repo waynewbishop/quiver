@@ -82,7 +82,7 @@ integers.mean()          // Int is not FloatingPoint
 integers.magnitude       // Int is not FloatingPoint
 ```
 
-Each failed call is caught before the code ever runs. The compiler tells us exactly which protocol the element type is missing. When we refactor an array from `[Double]` to `[Int]`, the build itself flags every Quiver call that no longer applies — `mean()`, `magnitude`, `normalized`, `dot()`. We do not discover these issues through test failures or runtime crashes.
+Each failed call is caught before the code ever runs. The compiler tells us exactly which protocol the element type is missing. When we refactor an array from `[Double]` to `[Int]`, the build itself flags every Quiver call that no longer applies — `mean`, `magnitude`, `normalized`, `dot`. We do not discover these issues through test failures or runtime crashes.
 
 #### Dimensions encoded in types
 
@@ -145,7 +145,7 @@ run1 == run2  // true
 
 ### Models are always ready
 
-Quiver's ML models are created fully trained — there is no separate "empty" or "unfitted" state. The `fit()` method returns a model that is immediately ready to use:
+Quiver's ML models are created fully trained — there is no separate "empty" or "unfitted" state. The `fit` method returns a model that is immediately ready to use:
 
 ```swift
 import Quiver
@@ -154,7 +154,7 @@ let model = KNearestNeighbors.fit(features: trainingData, labels: labels, k: 3)
 let predictions = model.predict(newData)
 ```
 
-Because `fit()` is the only way to create a model, the compiler makes it impossible to call `predict()` on something that has not been trained. There is no runtime error for "model not fitted" — the situation cannot arise. Every model in Quiver follows this pattern including `LinearRegression`, `GaussianNaiveBayes`, `KNearestNeighbors`, and `KMeans`.
+Because `fit` is the only way to create a model, the compiler makes it impossible to call `predict` on something that has not been trained. There is no runtime error for "model not fitted" — the situation cannot arise. Every model in Quiver follows this pattern including `LinearRegression`, `GaussianNaiveBayes`, `KNearestNeighbors`, and `KMeans`.
 
 Models are also immutable. Once created, their coefficients, centroids, and learned parameters cannot change. This eliminates an entire category of bugs where a model is accidentally retrained or modified between predictions.
 
@@ -172,7 +172,7 @@ print(cm)       // TP: 3  FP: 1  TN: 3  FN: 1  (accuracy: 75.0%)
 
 ### Data-aware diagnostics
 
-Quiver provides diagnostic methods on label arrays that help developers catch data quality issues before training. `imbalanceRatio()` measures how skewed the class distribution is — a single value that developers can branch on to decide whether to oversample:
+Quiver provides diagnostic methods on label arrays that help developers catch data quality issues before training. `imbalanceRatio` measures how skewed the class distribution is — a single value that developers can branch on to decide whether to oversample:
 
 ```swift
 import Quiver
@@ -186,7 +186,7 @@ if let ratio = labels.imbalanceRatio(), ratio > 3.0 {
 
 The threshold is up to the developer. The diagnostic lives on the data, not on the model — keeping models focused on computation while giving developers the information they need to make informed decisions about their training pipeline.
 
-> Tip: Class imbalance applies to classification problems where labels are discrete categories (`[Int]`), not regression problems where targets are continuous values (`[Double]`). `imbalanceRatio()` is available on `[Int]` arrays only — the type system enforces this distinction at compile time.
+> Tip: Class imbalance applies to classification problems where labels are discrete categories (`[Int]`), not regression problems where targets are continuous values (`[Double]`). `imbalanceRatio` is available on `[Int]` arrays only — the type system enforces this distinction at compile time.
 
 ### A focused, intentional scope
 
@@ -196,4 +196,4 @@ Quiver is designed for educational use, on-device computing, and data science wo
 
 The design prioritizes clarity and portability — the same code runs identically on macOS, iOS, watchOS, visionOS, and Linux. Most operations — vector arithmetic, statistics, broadcasting, boolean masking, element-wise math — are linear and scale predictably to millions of elements. Fourier analysis is `O(n log n)` and scales efficiently to tens of thousands of samples.
 
-> Important: The operations worth thinking about are matrix multiplication, matrix inversion, and pairwise comparisons like `findDuplicates(threshold:)` and `clusterCohesion()`. These grow quadratically or cubically with input size, so they perform well for the hundreds-to-low-thousands range typical in educational and on-device use cases.
+> Important: The operations worth thinking about are matrix multiplication, matrix inversion, and pairwise comparisons like `findDuplicates(threshold:)` and `clusterCohesion`. These grow quadratically or cubically with input size, so they perform well for the hundreds-to-low-thousands range typical in educational and on-device use cases.

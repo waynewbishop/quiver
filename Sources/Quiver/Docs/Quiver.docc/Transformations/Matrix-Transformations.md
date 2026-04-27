@@ -158,13 +158,6 @@ let stretch = [Double].diag([3.0, 0.5])
 [2.0, 4.0].transformedBy(stretch)  // [6.0, 2.0]
 ```
 
-## See also
-
-- <doc:Common-Transformations> - Rotation, scaling, reflection, shearing examples
-- <doc:Composing-Transformations> - Combining multiple transformations
-- <doc:Matrix-Operations> - Matrix arithmetic and operations
-- <doc:Vector-Operations> - Vector operations
-
 ## Topics
 
 ### Matrix creation

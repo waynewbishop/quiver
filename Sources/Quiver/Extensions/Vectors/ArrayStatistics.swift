@@ -353,3 +353,52 @@ public extension Array where Element == [Float] {
         }
     }
 }
+
+// MARK: - Confidence Intervals
+
+public extension Array where Element == Double {
+
+    /// Returns the percentile-based confidence interval at the given coverage level.
+    ///
+    /// Treats the array as the resampled distribution of a statistic and returns
+    /// the empirical percentile interval — the lower and upper percentiles that
+    /// span `level` of the distribution's mass. For `level = 0.95`, the interval
+    /// runs from the 2.5th percentile to the 97.5th percentile.
+    ///
+    /// This is the simplest of the percentile-based interval methods and the one
+    /// most commonly seen in introductory statistics. It is **not** the bias-corrected
+    /// and accelerated (BCa) interval, and it is **not** a t-based interval —
+    /// those are different (and more complex) constructions. The percentile
+    /// interval is appropriate when the resampled distribution looks roughly
+    /// symmetric around the original sample statistic.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let scores = [88.0, 72.0, 95.0, 81.0, 90.0, 76.0, 84.0, 91.0]
+    /// let medians = scores.resampled(iterations: 1000, seed: 42) { resample in
+    ///     resample.median() ?? 0.0
+    /// }
+    /// let interval = medians.percentileCI(level: 0.95)
+    /// // (lower, upper) — the 2.5th and 97.5th percentiles of the resampled distribution
+    /// ```
+    ///
+    /// - Parameter level: The coverage level in `(0, 1)`. Defaults to `0.95`.
+    /// - Returns: A `(lower, upper)` tuple of percentile bounds, or `nil` if the
+    ///   array is empty or `level` is outside `(0, 1)`.
+    func percentileCI(level: Double = 0.95) -> (lower: Double, upper: Double)? {
+        guard !self.isEmpty else { return nil }
+        guard level > 0.0 && level < 1.0 else { return nil }
+
+        let alpha = 1.0 - level
+        let lowerPercent = (alpha / 2.0) * 100.0
+        let upperPercent = (1.0 - alpha / 2.0) * 100.0
+
+        guard let lower = self.percentile(lowerPercent),
+              let upper = self.percentile(upperPercent) else {
+            return nil
+        }
+        return (lower: lower, upper: upper)
+    }
+}

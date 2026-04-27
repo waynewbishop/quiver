@@ -159,11 +159,6 @@ if det != 0.0 {
 
 Uniform random generation uses Swift's built-in `Double.random(in:)` and `Float.random(in:)` functions. Normal distribution values are generated using the Box-Muller transform, which converts pairs of uniform random values into independent standard normal samples. Integer generation uses Swift's `Int.random(in:)` with a half-open range.
 
-## See also
-
-- <doc:Statistical-Operations>
-- <doc:Array-Generation>
-
 ## Topics
 
 ### Uniform random generation

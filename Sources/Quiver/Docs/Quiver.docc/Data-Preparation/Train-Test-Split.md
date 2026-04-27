@@ -67,7 +67,7 @@ let (trainPrices, testPrices) = prices.trainTestSplit(testRatio: 0.2, seed: 42)
 
 The same seed produces the same index permutation regardless of element type. A `[[Double]]` feature matrix and a `[Double]` label array shuffled with the same seed will place index 0 in the same partition, index 1 in the same partition, and so on.
 
-### Why two calls instead of one
+### Splitting features and labels together
 
 In other numerical computing ecosystems, train-test splitting is typically a single function that accepts multiple arrays and returns all partitions at once. This produces four or more return values that must be unpacked in the correct positional order — and getting that order wrong is a common source of silent bugs.
 
@@ -120,7 +120,7 @@ let (trainLabels, testLabels) = labels.trainTestSplit(testRatio: 0.25, seed: 42)
 
 ### Detecting class imbalance
 
-Before training, `imbalanceRatio()` measures how skewed the class distribution is. A ratio of 1.0 means all classes have the same number of samples. Higher values indicate greater imbalance — a ratio of 4.0 means the largest class has four times as many samples as the smallest:
+Before training, `imbalanceRatio` measures how skewed the class distribution is. A ratio of 1.0 means all classes have the same number of samples. Higher values indicate greater imbalance — a ratio of 4.0 means the largest class has four times as many samples as the smallest:
 
 ```swift
 import Quiver
@@ -161,10 +161,3 @@ let split = balanced.stratifiedSplit(
 
 The method auto-detects which classes are smaller and generates new samples by interpolating between existing points in vector space. For multi-class data, every class below the largest count is oversampled independently. Call `oversample` before `stratifiedSplit` so that both the training and test sets contain enough examples from every class.
 
-## See also
-
-- <doc:Machine-Learning-Primer>
-- <doc:Naive-Bayes>
-- <doc:Random-Number-Generation>
-- <doc:Statistical-Operations>
-- <doc:Shape-And-Size>

@@ -213,13 +213,6 @@ let letterPosition = [10.0, 20.0]
 let italicPosition = letterPosition.transformedBy(italicShear)  // [16.0, 20.0]
 ```
 
-## See also
-
-- <doc:Matrix-Transformations>
-- <doc:Composing-Transformations>
-- <doc:Matrix-Operations>
-- <doc:Vector-Operations>
-
 ## Topics
 
 ### Transformation operations

@@ -107,13 +107,6 @@ let decoded = try JSONDecoder().decode(Pipeline<KNearestNeighbors>.self, from: d
 original == decoded  // true
 ```
 
-## See also
-
-- <doc:Feature-Scaling>
-- <doc:Model-Persistence>
-- <doc:Nearest-Neighbors-Classification>
-- <doc:Linear-Regression>
-
 ## Topics
 
 ### Related types

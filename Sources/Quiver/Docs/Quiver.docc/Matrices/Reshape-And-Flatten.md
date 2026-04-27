@@ -106,7 +106,3 @@ let rowVec = v.reshaped(rows: 1, columns: 3)
 - **Reshape**: Dimensions must be positive (greater than zero)
 - **Flatten**: Empty matrices return an empty array
 
-## See also
-
-- <doc:Matrix-Operations>
-- <doc:Array-Generation>

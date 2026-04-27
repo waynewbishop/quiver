@@ -333,9 +333,8 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
 
     /// Returns the first rows of the panel as a formatted table.
     ///
-    /// Displays data in a space-delimited tabular format matching Pandas' default
-    /// `DataFrame.head()` output — column headers right-aligned above their values,
-    /// with a row index on the left.
+    /// Displays data in a space-delimited tabular format with column headers
+    /// right-aligned above their values, and a row index on the left.
     ///
     /// Example:
     /// ```swift

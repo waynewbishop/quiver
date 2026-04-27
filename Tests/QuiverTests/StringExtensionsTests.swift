@@ -19,18 +19,10 @@ final class StringExtensionsTests: XCTestCase {
 
     // MARK: - Tokenize Tests
 
+    // Covers basic splitting and lowercase conversion
     func testTokenizeBasicText() {
-        let text = "Comfortable Running Shoes"
-        let tokens = text.tokenize()
-
-        XCTAssertEqual(tokens, ["comfortable", "running", "shoes"])
-    }
-
-    func testTokenizeLowercaseConversion() {
-        let text = "UPPERCASE lowercase MixedCase"
-        let tokens = text.tokenize()
-
-        XCTAssertEqual(tokens, ["uppercase", "lowercase", "mixedcase"])
+        XCTAssertEqual("Comfortable Running Shoes".tokenize(), ["comfortable", "running", "shoes"])
+        XCTAssertEqual("UPPERCASE lowercase MixedCase".tokenize(), ["uppercase", "lowercase", "mixedcase"])
     }
 
     // Covers multiple spaces, newlines, mixed whitespace, leading/trailing whitespace
@@ -51,46 +43,31 @@ final class StringExtensionsTests: XCTestCase {
 
     // MARK: - Punctuation stripping (default behavior)
 
-    func testTokenizeStripsPunctuationByDefault() {
-        let text = "Hello, world! How are you?"
-        let tokens = text.tokenize()
+    // Covers trailing punctuation, quotes, brackets, hyphens, and punctuation-only tokens
+    func testTokenizeStripsPunctuation() {
+        // Mixed sentence punctuation
+        XCTAssertEqual("Hello, world! How are you?".tokenize(),
+                        ["hello", "world", "how", "are", "you"])
 
-        XCTAssertEqual(tokens, ["hello", "world", "how", "are", "you"])
+        // Trailing periods
+        XCTAssertEqual("end of sentence. next sentence.".tokenize(),
+                        ["end", "of", "sentence", "next", "sentence"])
+
+        // Quotes and brackets
+        XCTAssertEqual("\"quoted\" [bracketed] (parenthesized)".tokenize(),
+                        ["quoted", "bracketed", "parenthesized"])
+
+        // Punctuation-only tokens removed
+        XCTAssertEqual("hello ... world !!! done".tokenize(),
+                        ["hello", "world", "done"])
+
+        // Leading hyphens stripped
+        XCTAssertEqual("--flag -option".tokenize(), ["flag", "option"])
     }
 
-    func testTokenizeStripsTrailingPeriods() {
-        let text = "end of sentence. next sentence."
-        let tokens = text.tokenize()
-
-        XCTAssertEqual(tokens, ["end", "of", "sentence", "next", "sentence"])
-    }
-
-    func testTokenizeStripsQuotesAndBrackets() {
-        let text = "\"quoted\" [bracketed] (parenthesized)"
-        let tokens = text.tokenize()
-
-        XCTAssertEqual(tokens, ["quoted", "bracketed", "parenthesized"])
-    }
-
+    // Apostrophes and other interior punctuation are preserved
     func testTokenizePreservesInteriorPunctuation() {
-        let text = "don't can't it's"
-        let tokens = text.tokenize()
-
-        XCTAssertEqual(tokens, ["don't", "can't", "it's"])
-    }
-
-    func testTokenizePunctuationOnlyTokensRemoved() {
-        let text = "hello ... world !!! done"
-        let tokens = text.tokenize()
-
-        XCTAssertEqual(tokens, ["hello", "world", "done"])
-    }
-
-    func testTokenizeHyphensStripped() {
-        let text = "--flag -option"
-        let tokens = text.tokenize()
-
-        XCTAssertEqual(tokens, ["flag", "option"])
+        XCTAssertEqual("don't can't it's".tokenize(), ["don't", "can't", "it's"])
     }
 
     // MARK: - Punctuation preservation (opt-in)
@@ -107,61 +84,35 @@ final class StringExtensionsTests: XCTestCase {
         XCTAssertEqual("!!!".tokenize(strippingPunctuation: false), ["!!!"])
     }
 
-    // MARK: - Embedding integration
-
-    func testTokenizeProducesCleanKeysForEmbeddings() {
-        let text = "running, shoes!"
-        let embeddings = [
-            "running": [0.8, 0.7, 0.9],
-            "shoes": [0.1, 0.9, 0.2]
-        ]
-
-        let vectors = text.tokenize().embed(using: embeddings)
-
-        XCTAssertEqual(vectors.count, 2)
-        XCTAssertEqual(vectors[0], [0.8, 0.7, 0.9])
-        XCTAssertEqual(vectors[1], [0.1, 0.9, 0.2])
-    }
-
-    func testTokenizeSemanticSearchExample() {
-        let text = "lightweight cushioned running shoes"
-        let tokens = text.tokenize()
-
-        XCTAssertEqual(tokens, ["lightweight", "cushioned", "running", "shoes"])
-        XCTAssertEqual(tokens.count, 4)
-    }
-
     // MARK: - Embed Tests
 
-    func testEmbedBasicLookup() {
-        let words = ["running", "shoes"]
+    // Covers basic lookup, unknown-word skipping, and integration with tokenize()
+    func testEmbed() {
         let embeddings = [
             "running": [0.8, 0.7, 0.9],
             "shoes": [0.1, 0.9, 0.2]
         ]
 
-        let vectors = words.embed(using: embeddings)
+        // Basic lookup
+        let basic = ["running", "shoes"].embed(using: embeddings)
+        XCTAssertEqual(basic.count, 2)
+        XCTAssertEqual(basic[0], [0.8, 0.7, 0.9])
+        XCTAssertEqual(basic[1], [0.1, 0.9, 0.2])
 
-        XCTAssertEqual(vectors.count, 2)
-        XCTAssertEqual(vectors[0], [0.8, 0.7, 0.9])
-        XCTAssertEqual(vectors[1], [0.1, 0.9, 0.2])
+        // Unknown words are skipped
+        let withUnknown = ["running", "unknown", "shoes"].embed(using: embeddings)
+        XCTAssertEqual(withUnknown.count, 2)
+        XCTAssertEqual(withUnknown[0], [0.8, 0.7, 0.9])
+        XCTAssertEqual(withUnknown[1], [0.1, 0.9, 0.2])
+
+        // Tokenize then embed — punctuation must be stripped first
+        let fromText = "running, shoes!".tokenize().embed(using: embeddings)
+        XCTAssertEqual(fromText.count, 2)
+        XCTAssertEqual(fromText[0], [0.8, 0.7, 0.9])
+        XCTAssertEqual(fromText[1], [0.1, 0.9, 0.2])
     }
 
-    func testEmbedWithUnknownWords() {
-        let words = ["running", "unknown", "shoes"]
-        let embeddings = [
-            "running": [0.8, 0.7, 0.9],
-            "shoes": [0.1, 0.9, 0.2]
-        ]
-
-        let vectors = words.embed(using: embeddings)
-
-        XCTAssertEqual(vectors.count, 2)
-        XCTAssertEqual(vectors[0], [0.8, 0.7, 0.9])
-        XCTAssertEqual(vectors[1], [0.1, 0.9, 0.2])
-    }
-
-    // Covers empty array and no matches
+    // Covers empty input and no matches
     func testEmbedEdgeCases() {
         let embeddings = [
             "running": [0.8, 0.7, 0.9],
@@ -170,19 +121,5 @@ final class StringExtensionsTests: XCTestCase {
 
         XCTAssertEqual([String]().embed(using: embeddings).count, 0)
         XCTAssertEqual(["unknown1", "unknown2"].embed(using: embeddings).count, 0)
-    }
-
-    func testEmbedIntegrationWithTokenize() {
-        let text = "running shoes"
-        let embeddings = [
-            "running": [0.8, 0.7, 0.9],
-            "shoes": [0.1, 0.9, 0.2]
-        ]
-
-        let vectors = text.tokenize().embed(using: embeddings)
-
-        XCTAssertEqual(vectors.count, 2)
-        XCTAssertEqual(vectors[0], [0.8, 0.7, 0.9])
-        XCTAssertEqual(vectors[1], [0.1, 0.9, 0.2])
     }
 }

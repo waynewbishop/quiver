@@ -8,7 +8,7 @@ Statistical functions are the foundation of data analysis in Quiver. They answer
 
 ### Quick data overview
 
-The `info()` method provides a quick statistical summary of any array or matrix. For vectors, it reports count, type, mean, standard deviation, min, and max. For matrices, it adds shape and size:
+The `info` method provides a quick statistical summary of any array or matrix. For vectors, it reports count, type, mean, standard deviation, min, and max. For matrices, it adds shape and size:
 
 ```swift
 import Quiver
@@ -59,11 +59,11 @@ if let minIndex = data.argMin(), let maxIndex = data.argMax() {
 }
 ```
 
-> Tip: Use `argMin()` and `argMax()` to find not just the extreme values but also where they occur in the data. For the values themselves, use Swift's built-in `min()` and `max()` methods.
+> Tip: Use `argMin` and `argMax` to find not just the extreme values but also where they occur in the data. For the values themselves, use Swift's built-in `min` and `max` methods.
 
 ### Central tendency
 
-`mean()` and `median()` both describe the center of a distribution, but they respond differently to extreme values. For the conceptual treatment of when to reach for each, see <doc:Statistics-Primer>.
+`mean` and `median` both describe the center of a distribution, but they respond differently to extreme values. For the conceptual treatment of when to reach for each, see <doc:Statistics-Primer>.
 
 ```swift
 import Quiver
@@ -78,7 +78,7 @@ if let mean = responseTimes.mean(), let median = responseTimes.median() {
 
 ### Dispersion and variation
 
-`variance()` and `std()` measure how far values spread from the mean. The `ddof` parameter (Delta Degrees of Freedom) selects between population statistics (`ddof: 0`, the default) and sample statistics (`ddof: 1`). For the conceptual background on variance and standard deviation, see <doc:Statistics-Primer>.
+`variance` and `std` measure how far values spread from the mean. The `ddof` parameter (Delta Degrees of Freedom) selects between population statistics (`ddof: 0`, the default) and sample statistics (`ddof: 1`). For the conceptual background on variance and standard deviation, see <doc:Statistics-Primer>.
 
 ```swift
 import Quiver
@@ -133,6 +133,29 @@ let mask2 = data.outlierMask(threshold: 3.0, mean: mean, std: std)
 
 > Important: When all values are identical (zero standard deviation), `outlierMask` defaults the standard deviation to `1.0` and no values are flagged as outliers.
 
+### Resampling and inference
+
+The `resampled(iterations:seed:statistic:)` method estimates the variability of any statistic by drawing many resamples from the original data with replacement and recomputing the statistic on each resample. Pair it with `percentileCI(level:)` on the resulting distribution to read off a percentile confidence interval. The two methods are designed to compose — resample a statistic, then take the percentile interval of the result. For the conceptual treatment of resampling and what a percentile interval means, see <doc:Statistics-Primer>.
+
+```swift
+import Quiver
+
+let sessionSeconds = [245.0, 252.0, 238.0, 261.0, 247.0,
+                      255.0, 249.0, 258.0, 244.0, 251.0]
+
+// Resampled distribution of the sample mean
+let resampledMeans = sessionSeconds.resampled(iterations: 1000, seed: 42) { resample in
+    resample.mean() ?? 0.0
+}
+
+// 95% percentile confidence interval for the mean
+if let ci = resampledMeans.percentileCI(level: 0.95) {
+    print(ci.lower, ci.upper)   // ≈ 246, 254 — a plausible range for the population mean
+}
+```
+
+The closure can return any statistic — median, quartile, ratio, difference of group means — and the same percentile-interval pattern applies. The `seed` parameter pins the randomness so the same input always produces the same resampled distribution.
+
 ### Vector averaging
 
 Calculate the mean vector by averaging corresponding elements across multiple vectors. This operation computes the element-wise mean — essential for creating document vectors from word embeddings, computing centroids for clustering, and averaging feature vectors in machine learning:
@@ -150,7 +173,7 @@ if let documentVector = wordEmbeddings.meanVector() {
 }
 ```
 
-> Tip: The `meanVector()` method is a key step in building semantic search systems — it combines multiple word vectors into a single document vector for similarity comparison. See <doc:Semantic-Search> for a complete walkthrough.
+> Tip: The `meanVector` method is a key step in building semantic search systems — it combines multiple word vectors into a single document vector for similarity comparison. See <doc:Semantic-Search> for a complete walkthrough.
 
 ## Topics
 
@@ -171,6 +194,10 @@ if let documentVector = wordEmbeddings.meanVector() {
 ### Cumulative statistics
 - ``Swift/Array/cumulativeSum()``
 - ``Swift/Array/cumulativeProduct()``
+
+### Resampling and inference
+- ``Swift/Array/resampled(iterations:seed:statistic:)``
+- ``Swift/Array/percentileCI(level:)``
 
 ### Vector operations
 - ``Swift/Array/meanVector()->[Double]?``

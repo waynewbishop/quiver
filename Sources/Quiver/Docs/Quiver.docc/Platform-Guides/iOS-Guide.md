@@ -6,7 +6,7 @@ Presenting statistics, summaries, and derived insights inside iOS apps with Quiv
 
 Many iOS apps spend most of their screen time presenting derived data. A travel app shows a year of flights as totals per airport and a trend across months. A health dashboard summarizes the last thirty days of readings into a mean, a standard deviation, and a list of the unusual days. A spending feed flags the transactions that fall outside the user's typical range. A reading app shows the running pace of a habit. The data already exists — in the app's storage, in `HKHealthStore`, in a CSV the user imported — and the work is in the layer between that data and the screen.
 
-Quiver fits this reality by running inside the app's own Swift process and computing those derived numbers from `[Double]` arrays the app already holds. Aggregations like `mean()`, `std()`, `quartiles()`, and `outlierMask()` produce the values a dashboard surfaces. A `Panel` of named columns groups personal history by month, category, or label. A fitted `LinearRegression` becomes a trend line in a Swift Chart. A fitted `KNearestNeighbors` becomes a personalized recommendation index. Every Quiver model is `Codable` and `Sendable`, so app-launch loading, persistence to `Documents/`, and SwiftUI's data flow fall out naturally.
+Quiver fits this reality by running inside the app's own Swift process and computing those derived numbers from `[Double]` arrays the app already holds. Aggregations like `mean`, `std`, `quartiles`, and `outlierMask` produce the values a dashboard surfaces. A `Panel` of named columns groups personal history by month, category, or label. A fitted `LinearRegression` becomes a trend line in a Swift Chart. A fitted `KNearestNeighbors` becomes a personalized recommendation index. Every Quiver model is `Codable` and `Sendable`, so app-launch loading, persistence to `Documents/`, and SwiftUI's data flow fall out naturally.
 
 ### Loading models when the app launches
 
@@ -86,16 +86,7 @@ final class MeasurementAnalysis {
 }
 ```
 
-The CSV becomes a `[Double]` at the boundary. From there, every Quiver method — `mean()`, `std()`, `standardized()`, `quartiles()`, `outlierMask(threshold:)`, or a fitted model's `predict(...)` — works the same way it does anywhere else. The same shape applies to `HKHealthStore` samples mapped into a `[Double]` at the query callback, `CMMotionManager` accelerometer values pulled out of a `CMAccelerometerData`, or a list of numeric form entries collected from a SwiftUI form. Decode once, then treat the array as a Quiver value for the rest of the time the screen is on display.
+The CSV becomes a `[Double]` at the boundary. From there, every Quiver method — `mean`, `std`, `standardized`, `quartiles`, `outlierMask(threshold:)`, or a fitted model's `predict(...)` — works the same way it does anywhere else. The same shape applies to `HKHealthStore` samples mapped into a `[Double]` at the query callback, `CMMotionManager` accelerometer values pulled out of a `CMAccelerometerData`, or a list of numeric form entries collected from a SwiftUI form. Decode once, then treat the array as a Quiver value for the rest of the time the screen is on display.
 
 > Tip: iOS users notice when an app asks for permissions it does not need. Reading from `HKHealthStore` or `CMMotionManager` requires explicit authorization, and the permission prompt happens the first time the app reads. Bundle the read with a clear context — a settings action the user opted into, or the first appearance of a feature that requires it — rather than at app launch.
 
-## See also
-
-- <doc:iOS-Patterns> — Personalization, anomaly surfacing, recommendation, and chart aggregation patterns
-- <doc:Concurrency-Primer> — Swift Concurrency patterns for fitting off the main thread
-- <doc:Model-Persistence> — Saving and loading fitted models with `Codable`
-- <doc:Pipeline> — Bundling a scaler and model into a single matched pair
-- <doc:Panel> — Named columns over `[Double]` for multi-feature work
-- <doc:watchOS-Guide> — The watchOS counterpart, focused on live sensor streams
-- <doc:Vapor-Guide> — The Swift on Server counterpart, focused on routes that share a fitted model

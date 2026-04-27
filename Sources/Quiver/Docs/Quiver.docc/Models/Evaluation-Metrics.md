@@ -101,7 +101,7 @@ print(predictions.classificationReport(actual: actual))
 // weighted avg       0.75      0.75      0.75         8
 ```
 
-Each class gets its own row with precision, recall, F1, and support (sample count). The macro average is the unweighted mean across classes — it treats every class equally regardless of size. The weighted average accounts for class imbalance by weighting each class by its support. Undefined metrics display as 0.00 in the report. The individual `precision()`, `recall()`, and `f1Score()` methods still return `nil` for programmatic access.
+Each class gets its own row with precision, recall, F1, and support (sample count). The macro average is the unweighted mean across classes — it treats every class equally regardless of size. The weighted average accounts for class imbalance by weighting each class by its support. Undefined metrics display as 0.00 in the report. The individual `precision`, `recall`, and `f1Score` methods still return `nil` for programmatic access.
 
 ### The full pipeline
 

@@ -139,7 +139,7 @@ This makes geometric sense. If the original transformation scales area by a fact
 
 #### Fractional display
 
-The decimal result `0.0769...` obscures the underlying relationship — the denominator is `13` because the determinant is `13`. The `asFractions()` method reveals this structure:
+The decimal result `0.0769...` obscures the underlying relationship — the denominator is `13` because the determinant is `13`. The `asFractions` method reveals this structure:
 
 ```swift
 let A = [[3.0, 1.0],
@@ -153,11 +153,11 @@ inverse.asFractions()
 A.determinant.asFraction()  // 13
 ```
 
-Every element shares the determinant as its denominator. This pattern is hidden by decimal representation. The `Fraction` type is presentation-only; all operations continue to use standard `Double` values internally. Use `asFractions()` on any `[Double]` or `[[Double]]` result, or `asFraction()` on a single `Double`.
+Every element shares the determinant as its denominator. This pattern is hidden by decimal representation. The `Fraction` type is presentation-only; all operations continue to use standard `Double` values internally. Use `asFractions` on any `[Double]` or `[[Double]]` result, or `asFraction` on a single `Double`.
 
 ### Solving linear systems
 
-One of the most practical applications of matrix inversion is solving systems of linear equations. Given the system Ax = b, the solution is x = A⁻¹b:
+One of the most practical applications of matrix inversion is solving systems of linear equations. Given the system Ax = b, the `solve(_:)` method returns the solution vector `x` in a single call:
 
 ```swift
 // System: 3x + y = 10, 2x + 5y = 27
@@ -165,11 +165,19 @@ let A = [[3.0, 1.0],
          [2.0, 5.0]]
 let b = [10.0, 27.0]
 
+let solution = A.solve(b)
+// Optional([1.7692307692307692, 4.6923076923076925])
+```
+
+Under the hood, this is equivalent to inverting the matrix and applying the inverse to `b` — `x = A⁻¹b`. Working through the math by hand makes the geometry visible:
+
+```swift
+// Equivalent expansion: invert, then multiply
 let solution = try b.transformedBy(A.inverted())
 // [1.77, 4.69]
 ```
 
-This only works when the determinant is non-zero. A zero determinant means the equations are either contradictory (no solution) or redundant (infinitely many solutions).
+Both forms only work when the determinant is non-zero. A zero determinant means the equations are either contradictory (no solution) or redundant (infinitely many solutions). `solve` returns `nil` for a singular matrix; the inversion form throws `MatrixError.singular`.
 
 ### Condition number
 
@@ -252,10 +260,3 @@ let inverse = try matrix.inverted()
 
 For matrices that fail these checks, we know to handle the situation gracefully — whether that means removing redundant features, adjusting the data, or reporting that the computation cannot be performed reliably.
 
-### See also
-
-- <doc:Matrix-Operations> - Matrix arithmetic, transpose, and multiplication
-- <doc:Matrix-Transformations> - Matrix-vector transformations and basis vectors
-- <doc:Composing-Transformations> - Composing multiple transformations
-- <doc:Linear-Algebra-Primer> - Linear algebra fundamentals
-- <doc:Fraction> - Display matrix and vector results in exact rational form

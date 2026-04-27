@@ -105,11 +105,24 @@ let point = [3.0, 1.0]
 point.transformedBy(rotation)  // [-1.0, 3.0]
 ```
 
-The point `[3.0, 1.0]` moves to `[-1.0, 3.0]`. The matrix describes the rule; `transformedBy()` applies it. This particular matrix doesn't represent data about an object — it represents an *operation* that rotates any vector to a new position. Matrices can also scale (stretch or compress), reflect (mirror across an axis), shear (tilt), and compose multiple transformations together.
+The point `[3.0, 1.0]` moves to `[-1.0, 3.0]`. The matrix describes the rule; `transformedBy` applies it. This particular matrix doesn't represent data about an object — it represents an *operation* that rotates any vector to a new position. Matrices can also scale (stretch or compress), reflect (mirror across an axis), shear (tilt), and compose multiple transformations together.
 
 Beyond transformations, matrices organize collections of data. In a dataset, each row might represent a different sample and each column a different measurement. A matrix of athlete performance data with rows for athletes and columns for speed, endurance, and strength is three vectors stacked together — and matrix operations let us process all of them simultaneously.
 
 > Important: For a matrix to transform a vector, the number of columns must match the vector's length.
+
+The same machinery solves systems of linear equations. Given the system `Ax = b`, where `A` is a square matrix and `b` is a known right-hand side, the unknown vector `x` satisfies `x = A⁻¹b`. Quiver exposes this directly as `solve(_:)`:
+
+```swift
+// 2x +  y = 5
+//  x + 3y = 10
+let A = [[2.0, 1.0],
+         [1.0, 3.0]]
+let b = [5.0, 10.0]
+A.solve(b)   // [1.0, 3.0]
+```
+
+The method returns `nil` when the matrix is singular — the same condition that makes inversion fail. For the geometric meaning of singularity and condition number, see <doc:Determinants-Primer>.
 
 ### From arrays to algorithms
 
@@ -132,12 +145,3 @@ a.distance(to: b)  // √((4-1)² + (6-2)²) = √25 = 5.0
 
 `Distance` is what connects linear algebra to machine learning. Quiver's models use distance to find the most similar training examples, group data points together, and rank how related two arrays are. The <doc:Machine-Learning-Primer> explores each of these models and how they apply these concepts.
 
-### See also
-
-- <doc:Vector-Operations> - Magnitude, dot product, and angle measurements
-- <doc:Vector-Projections> - Decompose vectors into parallel and perpendicular components
-- <doc:Matrix-Operations> - Multiply, transpose, invert, and determinant
-- <doc:Matrix-Transformations> - Rotation, scaling, reflection, and composition
-- <doc:Similarity-Operations> - Cosine similarity, batch comparisons, and semantic search
-- <doc:Determinants-Primer> - How matrices scale space and when inversion is safe
-- <doc:Machine-Learning-Primer> - How these concepts connect to classification and regression

@@ -41,7 +41,7 @@ struct AddRequest: Content { let description: String }
 struct SearchResult: Content { let rank: Int; let description: String; let similarity: Double }
 ```
 
-This is the shape the [running-shoes demo](https://github.com/waynewbishop/quiver-demo-vapor) ships. Inside `ProductStore.search(...)`, the query is tokenized, embedded, and reduced to a single vector with `meanVector()`, then ranked against precomputed document vectors with `cosineSimilarities(to:)` and `topIndices(k:labels:)`.
+This is the shape the [running-shoes demo](https://github.com/waynewbishop/quiver-demo-vapor) ships. Inside `ProductStore.search(...)`, the query is tokenized, embedded, and reduced to a single vector with `meanVector`, then ranked against precomputed document vectors with `cosineSimilarities(to:)` and `topIndices(k:labels:)`.
 
 What this pattern is and what it is not: it is a search index over precomputed embeddings, optimized for fast reads. It is not a retraining loop. The catalog changes on demand through `POST /products`, never inside the search request handler. For the underlying operations, see <doc:Semantic-Search> and <doc:Similarity-Operations>.
 
@@ -72,7 +72,7 @@ struct ScoreRequest: Content { let features: [Double] }
 struct ScoreResponse: Content { let score: Double }
 ```
 
-What this pattern is and what it is not: it serves a fitted model. It does not retrain inside a request handler. For the question of how often to refit and what triggers a refit, the same logic that <doc:watchOS-Patterns> walks through under "When to train, when to predict" applies on the server, just with cron jobs or scheduled workers instead of workout session boundaries.
+This pattern serves a fitted model, but does not retrain inside a request handler — for that, the same logic that <doc:watchOS-Patterns> walks through under "When to train, when to predict" applies on the server, just with cron jobs or scheduled workers instead of workout session boundaries.
 
 > Tip: When training pairs a scaler with the model, save them together so they stay matched at prediction time. Decoding two separate JSON files invites a mismatched pair the first time someone retrains one and forgets the other. See <doc:Pipeline>.
 
@@ -129,17 +129,9 @@ What these patterns are and what they are not: these are prediction and analytic
 
 Server hardware is faster than a Watch and has more memory available, so the timing numbers from <doc:watchOS-Patterns>'s "Sizing a model for the wrist" are an upper bound for the same operations on Vapor. A K-Means fit that runs in about a millisecond on Apple Silicon will run faster on a server CPU. The interesting sizing question on Vapor is not how fast a single fit runs — it is what happens when many requests arrive at once.
 
-Can many request handlers all call `predict(...)` against the same fitted model, in parallel, without any coordination between them? Yes. The model never changes after `fit()` returns. `predict(...)` is a pure read — coefficients in, prediction out, no shared values touched along the way. Because the model is `Sendable`, the compiler verifies the value is safe to share across tasks. Because Swift's `Array` is copy-on-write, the captured `[Double]` parameters do not duplicate storage on read.
+Can many request handlers all call `predict(...)` against the same fitted model, in parallel, without any coordination between them? Yes. The model never changes after `fit` returns. `predict(...)` is a pure read — coefficients in, prediction out, no shared values touched along the way. Because the model is `Sendable`, the compiler verifies the value is safe to share across tasks. Because Swift's `Array` is copy-on-write, the captured `[Double]` parameters do not duplicate storage on read.
 
 The result is that fitting is the costly operation (kept off the request handler, run when the server starts or on a schedule), and prediction is the only operation that runs per request. With Quiver's classical models running in milliseconds even on Watch silicon, prediction on a server fits comfortably inside the time budget of an HTTP handler with room to spare.
 
 > Tip: `Array` in Swift is copy-on-write, so passing a `[Double]` to `predict(...)` shares storage. But mutating a captured array inside a closure forces a copy. In a busy request handler, that cost is small per request but adds up when traffic stays high — prefer reading from server-wide arrays rather than mutating them.
 
-## See also
-
-- <doc:Vapor-Guide> — Foundations: shared fitted models, practical realities, loading at server start
-- <doc:Semantic-Search> — The full tokenize, embed, `meanVector()`, `cosineSimilarities(to:)` pipeline
-- <doc:Model-Persistence> — Saving and loading fitted models with `Codable`
-- <doc:Pipeline> — Bundling a scaler and model into a single matched pair
-- <doc:Concurrency-Primer> — Swift Concurrency patterns
-- <doc:Linear-Regression> — Linear regression with the normal equation

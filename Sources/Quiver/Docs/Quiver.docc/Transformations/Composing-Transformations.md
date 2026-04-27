@@ -287,12 +287,6 @@ let AB = A.multiplyMatrix(B)
 let result2 = vertices.map { $0.transformedBy(AB) }
 ```
 
-## See also
-
-- <doc:Matrix-Transformations>
-- <doc:Common-Transformations>
-- <doc:Vector-Operations>
-
 ## Topics
 
 ### Transformation operations

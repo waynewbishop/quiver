@@ -119,7 +119,9 @@ The normal equation used in linear regression — θ = (X'X)⁻¹X'y — is a pr
 
 The intuition built here carries directly into that context. The prediction is the parallel component — the part of the target that the features can explain. The residual error is the orthogonal component — the part the features cannot reach. The best-fit model is the one where the error is perpendicular to every feature, meaning no feature can reduce it further.
 
-For a full treatment of the normal equation and how Quiver solves it, see <doc:Linear-Regression>.
+Polynomial regression generalizes the same projection. `polyfit(x:y:degree:)` projects the target vector `y` onto the column space spanned by `[1, x, x², ..., xⁿ]` — a Vandermonde-style basis whose powers replace the raw features of linear regression. The geometry is identical; only the columns change.
+
+For a full treatment of the normal equation and how Quiver solves it, see <doc:Linear-Regression>. For the `Polynomial` value type and `polyfit`, see <doc:Polynomials>.
 
 ## Topics
 

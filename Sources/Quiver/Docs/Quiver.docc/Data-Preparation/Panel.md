@@ -121,7 +121,7 @@ let features = data.toMatrix(columns: ["creditScore", "balance"])
 // [[720.0, 15000.0], [650.0, 78000.0], [580.0, 42000.0], [710.0, 8000.0]]
 ```
 
-The subscript returns a `[Double]` vector for continuous values like regression targets. The `labels()` method converts to `[Int]` for classifiers that expect integer class identifiers. The `toMatrix()` method assembles selected columns into the `[[Double]]` format that every Quiver model accepts.
+The subscript returns a `[Double]` vector for continuous values like regression targets. The `labels` method converts to `[Int]` for classifiers that expect integer class identifiers. The `toMatrix` method assembles selected columns into the `[[Double]]` format that every Quiver model accepts.
 
 Quiver's models — `LinearRegression`, `GaussianNaiveBayes`, `KNearestNeighbors`, and `KMeans` — all accept `[[Double]]` and `[Double]` or `[Int]` directly. None of them accept Panel. This is a deliberate design choice: models stay simple and decoupled from how data is organized. Panel handles the naming and alignment; the extraction step above converts to the shapes models expect.
 
@@ -195,7 +195,7 @@ print(data.summary())
 // Prints count, mean, std, min, and max for each column
 ```
 
-`Print` shows the structure. `Shape` returns dimensions as a named tuple, matching the matrix API. `Head` displays row data in tabular format. `Summary` provides per-column statistics. By default, `head()` shows up to 10 rows — pass a count to limit the output:
+`Print` shows the structure. `Shape` returns dimensions as a named tuple, matching the matrix API. `Head` displays row data in tabular format. `Summary` provides per-column statistics. By default, `head` shows up to 10 rows — pass a count to limit the output:
 
 ```swift
 print(data.head(n: 3))
@@ -205,7 +205,7 @@ print(data.head(n: 3))
 // 2     35.0   75000.0  85.0
 ```
 
-> Tip: Use `head()` in a Playground to visually verify the data after loading or filtering. Catching a column of unexpected zeros early saves debugging time later.
+> Tip: Use `head` in a Playground to visually verify the data after loading or filtering. Catching a column of unexpected zeros early saves debugging time later.
 
 ### Classification pipeline
 

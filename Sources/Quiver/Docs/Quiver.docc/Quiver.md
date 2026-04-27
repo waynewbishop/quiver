@@ -61,8 +61,11 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Vectors
 - <doc:Vector-Operations>
 - <doc:Vector-Projections>
-- <doc:Boolean-Masking>
+
+### Statistics
 - <doc:Statistical-Operations>
+- <doc:Working-With-Distributions>
+- <doc:Boolean-Masking>
 
 ### Matrices
 - <doc:Matrix-Operations>
@@ -96,6 +99,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Models
 - <doc:Naive-Bayes>
 - <doc:Linear-Regression>
+- <doc:Polynomials>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:KMeans-Clustering>
 - <doc:Evaluation-Metrics>
@@ -111,3 +115,5 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - ``Classifier``
 - ``AggregationMethod``
 - ``MatrixError``
+- ``Distributions``
+- ``Polynomial``

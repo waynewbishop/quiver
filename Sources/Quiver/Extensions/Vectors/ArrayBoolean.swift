@@ -147,7 +147,7 @@ public extension Array where Element == Bool {
 
 // MARK: - Boolean Indexing
 public extension Array {
-    /// Returns elements where the mask is true (like NumPy's `array[mask]`).
+    /// Returns elements where the mask is true.
     ///
     /// ```swift
     /// let scores = [85.0, 45.0, 92.0, 38.0, 76.0]

@@ -27,9 +27,9 @@ Task {
 }
 ```
 
-The reason this works comes back to how Quiver builds its models. Every property is a plain value — `[Double]` coefficients, `Int` dimensions, stored statistics — and every model is immutable once `fit()` returns. There's nothing to mutate, nothing to share, and nothing that could change on one thread while another thread is reading it.
+The reason this works comes back to how Quiver builds its models. Every property is a plain value — `[Double]` coefficients, `Int` dimensions, stored statistics — and every model is immutable once `fit` returns. There's nothing to mutate, nothing to share, and nothing that could change on one thread while another thread is reading it.
 
-The same property applies to `predict()`. A fitted model can be called from any number of concurrent tasks without serialization, because prediction is a pure read against immutable properties — the model computes an answer from its stored parameters and returns, without touching any shared state along the way.
+The same property applies to `predict`. A fitted model can be called from any number of concurrent tasks without serialization, because prediction is a pure read against immutable properties — the model computes an answer from its stored parameters and returns, without touching any shared state along the way.
 
 > Tip: Because models are also `Codable` and `Equatable`, the same value semantics that make them safe to share also make them easy to save, load, and compare. See <doc:Machine-Learning-Primer> for the full picture of how Quiver's models are designed.
 
@@ -124,9 +124,3 @@ final class WorkoutAnalysisViewModel {
 
 > Tip: The same pattern works for `UIKit` view controllers marked `@MainActor`. The `await` marks the boundary, the training runs off the main thread, and the fitted model arrives back on the main thread as a `Sendable` value.
 
-### See also
-
-- <doc:Machine-Learning-Primer> — Core vocabulary for Quiver's ML workflows
-- <doc:How-It-Works> — How Quiver's models are designed as immutable values
-- <doc:Pipeline> — Bundling a scaler and model into a single matched pair
-- <doc:Model-Persistence> — Saving and loading fitted models with `Codable`

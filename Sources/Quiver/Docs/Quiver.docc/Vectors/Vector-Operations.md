@@ -45,7 +45,7 @@ v1.angle(with: v2)        // π/2 radians (90 degrees)
 v1.angleInDegrees(with: v2)  // 90.0 degrees
 ```
 
-These angle functions work with vectors of any dimension. The `cosineOfAngle(with:)` method returns the raw cosine value, while `angle(with:)` applies `acos()` to produce the angle in radians.
+These angle functions work with vectors of any dimension. The `cosineOfAngle(with:)` method returns the raw cosine value, while `angle(with:)` applies `acos` to produce the angle in radians.
 
 > Tip: The dot product is zero when vectors are perpendicular.
 
@@ -98,7 +98,7 @@ diff.magnitude                          // √(0.16 + 0.16) ≈ 0.566
 sample.distance(to: trainingPoint)      // 0.566 (same result)
 ```
 
-Addition and division power `averaged()`, which combines multiple word embedding vectors into a single document vector for semantic search. Individual word vectors each capture one word's meaning — averaging them produces a vector that represents the entire document's meaning in the same vector space:
+Addition and division power `averaged`, which combines multiple word embedding vectors into a single document vector for semantic search. Individual word vectors each capture one word's meaning — averaging them produces a vector that represents the entire document's meaning in the same vector space:
 
 ```swift
 // Word embedding vectors (simplified to 3 dimensions)
@@ -119,7 +119,7 @@ if let documentVector = wordVectors.averaged() {
 
 Subtraction also gives displacement — the vector from one point to another. A player at `[100, 200]` and an enemy at `[130, 170]` have displacement `[100, 200].subtract([130, 170])` = `[-30, 30]`. The `magnitude` of that displacement is the distance between them. Addition combines forces or velocities — a boat moving at `[3, 0]` in a current of `[0, 2]` has actual velocity `[3, 0].add([0, 2])` = `[3, 2]`.
 
-> Important: The `multiply(_:)` method performs element-wise multiplication (Hadamard product), not matrix multiplication. For matrix multiplication, use `multiplyMatrix()`.
+> Important: The `multiply(_:)` method performs element-wise multiplication (Hadamard product), not matrix multiplication. For matrix multiplication, use `multiplyMatrix`.
 
 ### Matrix-vector operations
 

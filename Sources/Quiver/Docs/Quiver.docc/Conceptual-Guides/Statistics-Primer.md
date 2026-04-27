@@ -50,13 +50,13 @@ Mean and median describe a single point. They compress the whole dataset into on
 The first quartile (Q1) is the value below which 25% of the data sits. The second quartile is the median. The third quartile (Q3) is the value below which 75% of the data sits. Together, Q1 and Q3 bracket the middle 50% of the dataset — the **interquartile range**. Quiver returns quartiles and the extremes as a single five-number summary:
 
 ```swift
-let response_times = [120.0, 145.0, 160.0, 175.0, 180.0, 195.0, 210.0, 320.0]
+let responseTimes = [120.0, 145.0, 160.0, 175.0, 180.0, 195.0, 210.0, 320.0]
 
-if let q = response_times.quartiles() {
+if let q = responseTimes.quartiles() {
     print(q.min)     // 120.0
-    print(q.q1)      // 152.5 — 25th percentile
+    print(q.q1)      // 156.25 — 25th percentile
     print(q.median)  // 177.5 — 50th percentile
-    print(q.q3)      // 202.5 — 75th percentile
+    print(q.q3)      // 198.75 — 75th percentile
     print(q.max)     // 320.0
 }
 ```
@@ -69,9 +69,9 @@ Mean and standard deviation by themselves are summaries. They describe what the 
 
 Consider a list of quiz scores: `68, 72, 75, 77, 80, 82, 85, 88`. The average is around 78, and somebody got a 95. A z-score turns the informal question of how unusual 95 is into a number.
 
-The calculation has two steps. First, find the distance from the mean: `95 − 78 = 17`. The value sits 17 points above average. Second, compare that distance to the typical spread of the other scores. If most scores sit within 5 points of the average, being 17 above is wildly unusual. If most scores bounce around by 30 points, 17 is barely noteworthy. The measure of typical spread is the standard deviation. In this dataset, the standard deviation is about 6. Dividing the distance from the mean by the standard deviation gives the z-score: `17 / 6 ≈ 2.7`.
+The calculation has two steps. First, find the distance from the mean: `95 − 78 = 17`. The value sits 17 points above average. Second, compare that distance to the typical spread of the other scores. If most scores sit within 5 points of the average, being 17 above is wildly unusual. If most scores bounce around by 30 points, 17 is barely noteworthy. The measure of typical spread is the standard deviation. In this dataset, the standard deviation is about 6. Dividing the distance from the mean by the standard deviation gives the z-score: `17 / 6 ≈ 2.8`.
 
-A z-score of 2.7 means the value is 2.7 standard deviations away from the average. The units are standard deviations, not points or dollars or seconds. This is the key idea behind z-scores. They strip away the original unit and replace it with a universal ruler that works the same way across every dataset, every domain, and every scale of measurement.
+A z-score of 2.8 means the value is 2.8 standard deviations away from the average. The units are standard deviations, not points or dollars or seconds. This is the key idea behind z-scores. They strip away the original unit and replace it with a universal ruler that works the same way across every dataset, every domain, and every scale of measurement.
 
 ```swift
 let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0, 95.0]
@@ -79,7 +79,7 @@ let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0, 95.0]
 // Convert every value to its z-score
 let zScores = scores.standardized()
 
-// The 95 appears as ≈ 2.07 standard deviations above the mean
+// The 95 appears as ≈ 1.87 standard deviations above the mean
 // (the mean and standard deviation shift slightly once we include it)
 ```
 
@@ -170,7 +170,7 @@ if let sampleStd = sessionSeconds.std(ddof: 1) {  // ~6.91
 }
 ```
 
-> Important: Standard error uses the sample standard deviation, which divides by `n - 1`. Quiver's `std()` defaults to `ddof: 0` (population). For inferential work, always pass `ddof: 1`. A test built on `std()` without `ddof: 1` will compile, run, and produce a number — just the wrong one.
+> Important: Standard error uses the sample standard deviation, which divides by `n - 1`. Quiver's `std` defaults to `ddof: 0` (population). For inferential work, always pass `ddof: 1`. A test built on `std` without `ddof: 1` will compile, run, and produce a number — just the wrong one.
 
 ### Hypothesis testing
 
@@ -182,7 +182,7 @@ For an A/B test on session times, the null hypothesis is "the variant's populati
 
 Hypothesis tests can produce two kinds of mistakes. A **Type I error** is rejecting the null when it is true — a false alarm. A **Type II error** is failing to reject the null when the alternative is true — a missed detection. Setting alpha to `0.05` caps the Type I error rate at five percent. The Type II error rate depends on sample size, true effect size, and how strict alpha is.
 
-### The p-value and what it does not mean
+### Interpreting the p-value
 
 The output of a hypothesis test is a number called the **p-value**. It is the probability of observing data at least as extreme as our sample if the null hypothesis were true. A small p-value means the data would be surprising under the null, which is taken as evidence against the null. By convention, when the p-value falls below alpha, we reject the null.
 
@@ -194,146 +194,74 @@ The mistake is easy to make because the misinterpretation feels intuitive. It is
 
 A second common mistake is treating `p < 0.05` as an on-off switch — true or false, ship it or kill it. A p-value just below `0.05` and a p-value just above are barely distinguishable as evidence. The threshold is a convention for taking action, not a sharp break in the underlying truth. Effect size and practical significance, covered later in this primer, exist precisely to keep us from treating a borderline p-value as a yes-or-no verdict.
 
-### The t-distribution and degrees of freedom
+### Resampling
 
-The Central Limit Theorem tells us the sample mean is approximately normal — but only when we know the true population standard deviation. In practice we never know it; we estimate it from the sample. That extra estimation step adds uncertainty, and the normal distribution slightly understates how often the sample mean lands far from the population mean.
+Inferential statistics has two broad strategies. One is **parametric** — assume a reference distribution like the normal or the t, plug in a closed-form formula, and read off a p-value or interval. The other is **resampling** — let the data itself describe the variability of the estimate, by drawing many resamples and watching how much the statistic moves from one resample to the next. Quiver exposes the resampling tool as `resampled(iterations:seed:statistic:)` on `[Double]`.
 
-The fix is the **t-distribution** — a bell-shaped distribution with heavier tails than the normal, used when the population standard deviation has been estimated rather than known. As the sample grows, the t-distribution converges to the normal; for small samples, the heavier tails matter and using the normal would make us too confident.
+> Tip: In the statistics literature this technique is known as the *bootstrap*.
 
-The t-distribution is parameterized by a single number, its **degrees of freedom**. For a one-sample test on `n` observations, the degrees of freedom equal `n - 1` — the intuition is that one degree of freedom has been "spent" by computing the sample mean, leaving `n - 1` independent pieces of information about the spread. Quiver exposes the distribution as a value type:
-
-```swift
-import Quiver
-
-// Reference distribution for a sample of size 10
-let n = 10
-let degreesOfFreedom = n - 1
-let tDist = TDistribution(degreesOfFreedom: degreesOfFreedom)
-
-// Two-tailed p-value for an observed t-statistic
-let p = tDist.pValue(tStatistic: 4.575, twoTailed: true)
-```
-
-### One-sample t-test in practice
-
-The **one-sample t-test** answers a single question: is the population mean equal to a hypothesized value, or different from it. It is the right tool for an A/B test that compares a new variant's sample against a known baseline, for a sensor calibration check that compares a batch of readings against a target, or for any setting where we have one sample and one number to compare it against.
-
-The test statistic is the sample mean's distance from the hypothesized value, expressed in units of standard error. We then look up that statistic on a t-distribution with `n - 1` degrees of freedom to get a p-value:
+The idea is direct. Given a sample of size `n`, draw a resample of the same size *with replacement* — meaning the same value can appear multiple times in the resample, and some original values will be missing. Compute the statistic of interest on that resample. Repeat thousands of times. The collection of resampled statistics approximates the sampling distribution we cannot observe directly.
 
 ```swift
-import Foundation
 import Quiver
 
 // Variant's session times in seconds
 let sample = [245.0, 252.0, 238.0, 261.0, 247.0,
               255.0, 249.0, 258.0, 244.0, 251.0]
-let hypothesizedMean = 240.0   // control baseline
-let alpha = 0.05
 
-// Sample statistics — note ddof: 1 for inferential work
-let n = Double(sample.count)
-if let mean = sample.mean(),                          // 250.0
-   let sampleStd = sample.std(ddof: 1) {              // ~6.91
-    let standardError = sampleStd / sqrt(n)           // ~2.19
-
-    // Test statistic and degrees of freedom
-    let tStatistic = (mean - hypothesizedMean) / standardError  // ~4.58
-    let df = sample.count - 1                                    // 9
-
-    // Two-tailed p-value from the t-distribution
-    let tDist = TDistribution(degreesOfFreedom: df)
-    let pValue = tDist.pValue(tStatistic: tStatistic, twoTailed: true)
-    let rejectsNull = pValue < alpha                             // true
+// 1,000 resampled means — the resampled distribution of the mean
+let resampledMeans = sample.resampled(iterations: 1000, seed: 42) { resample in
+    resample.mean() ?? 0.0
 }
 ```
 
-The sample mean of `250.0` sits more than four standard errors above the baseline of `240.0`. On a t-distribution with nine degrees of freedom, that is far out in the tail, and the p-value lands well below `0.01`. We reject the null and conclude the variant differs from the baseline.
+The closure receives a fresh resample on each iteration. Returning `mean` makes the resampled distribution reflect the variability of the sample mean. Returning `median` would give the resampled distribution of the median instead. Any statistic the closure can compute on a `[Double]` is fair game — a quartile, a difference of group means, a ratio. The resampling framework does not need to know the math behind the statistic.
 
-The same test pattern — compute the test statistic, find the degrees of freedom, evaluate the reference distribution, compare against alpha — repeats for every inferential method in this primer.
+> Tip: The `seed` parameter pins the randomness. Calling `resampled` twice with the same seed produces identical resamples, which makes test runs and tutorials reproducible.
 
-### Confidence intervals
+### Confidence intervals from resampling
 
-A hypothesis test answers a yes-or-no question. A **confidence interval** answers a richer one: given the sample, what is a plausible range for the population parameter. Confidence intervals are usually more useful than p-values for product decisions, because the width of the interval communicates how precise the estimate is, not just whether some null value is rejected.
+A resampled distribution turns into a **confidence interval** by reading off its percentiles. A 95% percentile confidence interval for the mean runs from the 2.5th percentile of the resampled distribution to the 97.5th — the bounds that contain the middle 95% of the resampled values. Quiver exposes this as `percentileCI(level:)`, which works on any `[Double]` and was designed to compose with `resampled`:
 
-A 95% confidence interval for the mean is constructed by taking the sample mean and walking outward in both directions by a critical t-value times the standard error. The critical t-value is the cutoff that puts 2.5% of the t-distribution in each tail:
+```swift
+import Quiver
+
+let sample = [245.0, 252.0, 238.0, 261.0, 247.0,
+              255.0, 249.0, 258.0, 244.0, 251.0]
+
+// Resample the mean, then take its percentile interval
+let resampledMeans = sample.resampled(iterations: 1000, seed: 42) { resample in
+    resample.mean() ?? 0.0
+}
+if let ci = resampledMeans.percentileCI(level: 0.95) {
+    // ci.lower ≈ 246, ci.upper ≈ 254 — a plausible range for the population mean
+}
+```
+
+The interval `[~246, ~254]` answers the same question a parametric confidence interval would: given this sample of ten session times, the population mean is plausibly somewhere in that range. The control baseline of `240` sits clearly outside the interval, which is the resampling counterpart of rejecting the null. The width of the interval communicates how precise the estimate is — a narrower interval means the sample is informative; a wider interval means the data leaves the population mean less constrained.
+
+> Important: A 95% confidence interval does not mean "there is a 95% probability the population mean lies in this interval." The population mean is a fixed number, not a random variable; it either lies in the interval or it does not. The 95% refers to the procedure: if we were to repeat the experiment many times, computing a fresh 95% interval each time, about 95% of those intervals would contain the true population mean. The claim is about how the procedure performs across many repetitions, not about this one interval. The misinterpretation is common enough that it shows up in published research, so the right way to talk about a confidence interval in a product review is "we estimate the mean is around 250, plausibly between 246 and 254" — not "there is a 95% chance the true mean is between 246 and 254."
+
+The percentile interval is the simplest of the resampling-based interval methods. It is appropriate when the resampled distribution looks roughly symmetric around the original sample statistic, which is the common case for sample means and medians on data without extreme skew. More elaborate constructions — bias-corrected and accelerated intervals, for instance — exist for skewed distributions, but the plain percentile interval is the right starting point and it is what Quiver ships today.
+
+### The normal approximation
+
+When the sample is large enough, the Central Limit Theorem makes the sampling distribution of the mean approximately normal, and we can build confidence intervals and p-values directly from the normal distribution without resampling. Quiver exposes the normal CDF and quantile through `Distributions.normal`:
 
 ```swift
 import Foundation
 import Quiver
 
-let mean = 250.0
-let standardError = 2.19
-let df = 9
+// Large-sample approximation: 95% critical value on a standard normal
+let z = Distributions.normal.quantile(p: 0.975, mean: 0, std: 1)  // ≈ 1.96
 
-let tDist = TDistribution(degreesOfFreedom: df)
-let criticalT = tDist.criticalValue(alpha: 0.05, twoTailed: true)  // ~2.262
-let margin = criticalT * standardError                              // ~4.95
-
-let lower = mean - margin    // ~245.05
-let upper = mean + margin    // ~254.95
-let confidenceInterval = lower...upper
+// And the cumulative probability for a given z-statistic
+let p = Distributions.normal.cdf(x: 1.96, mean: 0, std: 1)        // ≈ 0.975
 ```
 
-The result is the range `[~245.0, ~255.0]`. That range has a precise meaning, and the meaning is not the one most readers assume.
+For a sample mean and standard error, the rough recipe is `mean ± 1.96 × standardError` for a 95% interval, and `2 × (1 − cdf(|z|))` for a two-tailed p-value of an observed `z = (mean − hypothesizedMean) / standardError`. This works well when the sample is large (a common rule of thumb is `n ≥ 30`) and the population is not pathologically skewed. For smaller samples, resampling is the more honest tool because it does not require the normal approximation to hold.
 
-> Important: A 95% confidence interval does not mean "there is a 95% probability the population mean lies in this interval." The population mean is a fixed number, not a random variable; it either lies in the interval or it does not. The 95% refers to the procedure: if we were to repeat this experiment many times, computing a fresh 95% interval each time, about 95% of those intervals would contain the true population mean. The claim is about how the procedure performs across many repetitions, not about this one interval.
-
-The misinterpretation is common enough that it shows up in published research. The right way to talk about a confidence interval in a product review is "we estimate the mean is around 250, plausibly between 245 and 255," not "there is a 95% chance the true mean is between 245 and 255." The first phrasing matches what the procedure actually delivers.
-
-### The chi-squared distribution
-
-The t-distribution is the right tool when the question is about a mean. A different family of questions is about counts and proportions across categories — whether crash reports are evenly distributed across device families, whether a feature flag's usage matches the rollout percentage, whether a tagging system labels images in the proportions we expected. These questions need a different reference distribution.
-
-The **chi-squared distribution** describes the spread of a particular kind of test statistic — one built by summing squared, scaled differences between observed and expected counts. It is right-skewed (the values cannot go below zero, and the distribution has a long tail to the right), and like the t-distribution, it is shaped by a single number called degrees of freedom. The shape changes noticeably as the degrees of freedom grow, but in every case the distribution describes how the test statistic behaves when the null hypothesis is true.
-
-Quiver exposes it as a value type with the same shape as `TDistribution`:
-
-```swift
-import Quiver
-
-// Chi-squared reference for a test with 3 degrees of freedom
-let chiSquaredDist = ChiSquared(degreesOfFreedom: 3)
-
-// Upper-tail p-value for an observed chi-squared statistic
-let p = chiSquaredDist.pValue(statistic: 104.0)
-```
-
-### Goodness-of-fit testing
-
-The **chi-squared goodness-of-fit test** asks whether observed counts across categories match an expected distribution. A common iOS-shaped use case is checking whether crash reports across device families match each family's actual market share — a sign that no one device is generating a disproportionate number of crashes.
-
-The test statistic, called the **chi-squared statistic**, sums the squared difference between observed and expected counts in each category, divided by the expected count. The division by expected count is what makes the contributions comparable across categories of different sizes:
-
-```swift
-import Quiver
-
-// Crash reports across four device families this week
-let observed: [Double] = [400, 280, 220, 100]
-let totalCrashes = observed.sum()                    // 1000
-
-// Each family's market share — the expected proportion of crashes
-let expectedProportions = [0.50, 0.30, 0.15, 0.05]
-let expected = expectedProportions.map { $0 * totalCrashes }
-// [500, 300, 150, 50]
-
-// Chi-squared statistic: sum over categories of (O - E)² / E
-var chiSquared = 0.0
-for i in 0..<observed.count {
-    let diff = observed[i] - expected[i]
-    chiSquared += (diff * diff) / expected[i]
-}
-// chiSquared ~ 104.0
-
-let df = observed.count - 1                          // 3
-
-let chiSquaredDist = ChiSquared(degreesOfFreedom: df)
-let pValue = chiSquaredDist.pValue(statistic: chiSquared)
-let rejectsNull = pValue < 0.05                      // true
-```
-
-The chi-squared statistic of `104.0` on three degrees of freedom is enormous. The p-value is effectively zero, and we reject the null. The crash distribution does not match market share, and the third device family — observed at `220` against an expected `150` — is the obvious place to start investigating.
-
-> Important: The chi-squared test is an approximation that breaks down when expected counts in any category drop below roughly five. For categories with small expected counts, the test statistic does not follow the chi-squared distribution closely enough to trust the p-value. Either combine small categories together, increase the sample size, or reach for an exact test instead. The library does not enforce this rule — the developer running the test has to check it.
+> Tip: See <doc:Working-With-Distributions> for the full normal-distribution API and worked examples of `cdf`, `quantile`, `pdf`, and `logPDF`.
 
 ### Effect size and practical significance
 
@@ -364,14 +292,4 @@ Significance and effect size are independent dimensions. A small p-value with a 
 The concepts in this primer reappear throughout Quiver's machine learning layer. `StandardScaler` applies z-score standardization column-by-column across a feature matrix — the same z-score from the quiz-score example, generalized so that every column in a dataset sits on the universal ruler. `Pipeline` wires a scaler and a model together so scaling happens automatically during `fit` and `predict`. Distance-based models — `KMeans`, `KNearestNeighbors` — work best when features share a common scale, because a column in dollars would otherwise dominate a column in ratios.
 
 Statistics is not a side topic in Quiver. It is how the library describes data, how it detects what is unusual, how it tests claims about populations, and how it prepares inputs for every model. The <doc:Machine-Learning-Primer> picks up from here and shows how these same ideas drive classification, clustering, and regression.
-
-### See also
-
-- <doc:Statistical-Operations> - Mean, median, variance, standard deviation, and outlier detection
-- <doc:Boolean-Masking> - Filter values using boolean masks produced by `outlierMask`
-- <doc:Feature-Scaling> - Standardize and min-max scale feature columns for machine learning
-- <doc:Pipeline> - Bundle a scaler with a model so they always travel together
-- <doc:Numerical-Literacy> - Why `variance()` and `std()` are numerically stable, and when floating-point error matters
-- <doc:Machine-Learning-Primer> - How descriptive statistics carry into classification and regression
-- <doc:Linear-Algebra-Primer> - The vector and matrix foundations that pair with statistics in Quiver
 

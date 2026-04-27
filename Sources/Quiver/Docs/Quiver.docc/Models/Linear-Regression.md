@@ -169,6 +169,27 @@ print("R²: \(r2)")
 
 > Tip: When scaling is part of the workflow, `Pipeline` bundles the scaler and model into a single value type. It scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
 
+### Polynomial regression
+
+Linear regression handles the form `y = θ₀ + θ₁x` — a straight line through the data. **Polynomial regression** is the natural extension: `y = θ₀ + θ₁x + θ₂x² + ... + θₙxⁿ` — a curve through the data. Quiver exposes it as `[Double].polyfit(x:y:degree:)`, which fits a polynomial of the given degree by ordinary least squares:
+
+```swift
+import Quiver
+
+// Underlying truth: 2x² + 3x + 1, evaluated at x = 1...5
+let x = [1.0, 2.0, 3.0, 4.0, 5.0]
+let y = [6.0, 15.0, 28.0, 45.0, 66.0]
+
+if let p = [Double].polyfit(x: x, y: y, degree: 2) {
+    p.coefficients   // ≈ [1.0, 3.0, 2.0]  — recovers a₀, a₁, a₂
+    p(6)             // ≈ 91.0              — predicted value at a new x
+}
+```
+
+Under the hood, `polyfit` builds a Vandermonde-style design matrix whose row `i` contains `[x[i], x[i]², ..., x[i]ⁿ]` and defers to `LinearRegression.fit` to solve the normal equation. The intercept of the fitted regression becomes the polynomial's constant term, and each weight becomes the next-higher-power coefficient. Same OLS math, same coefficients we would get from passing `[x, x², ..., xⁿ]` directly into `LinearRegression.fit` — `polyfit` is the convenience layer that handles the design-matrix construction and packages the result as a `Polynomial` value.
+
+> Tip: For the full `Polynomial` type — evaluation, arithmetic, derivatives, coefficient ordering — see <doc:Polynomials>.
+
 ### When the normal equation fails
 
 The normal equation requires inverting the matrix X'X. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), the matrix is [singular](<doc:Determinants-Primer>) and cannot be inverted. In this case, `fit` throws `MatrixError.singular`. The fix is to remove redundant features before fitting.
@@ -209,5 +230,6 @@ redundant.determinant  // 0.0 → fit will throw MatrixError.singular
 
 ### Related
 - <doc:Pipeline>
+- <doc:Polynomials>
 - <doc:Machine-Learning-Primer>
 - <doc:Naive-Bayes>

@@ -150,7 +150,7 @@ The inverse matrix A⁻¹ satisfies: A × A⁻¹ = I (identity matrix)
 - Reversing transformations
 - Computing least squares solutions
 
-For educational clarity, convert results to fractional form with `asFractions()`:
+For educational clarity, convert results to fractional form with `asFractions`:
 
 ```swift
 let inverse = try matrix.inverted()
@@ -226,10 +226,3 @@ let result2 = floatMatrix * 2.0
 - **Division**: Divisor cannot contain zero elements
 - **Column access**: Index must be within column count
 
-## See also
-
-- <doc:Vector-Operations>
-- <doc:Determinants-Primer>
-- <doc:Matrix-Transformations>
-- <doc:Composing-Transformations>
-- <doc:Fraction>
