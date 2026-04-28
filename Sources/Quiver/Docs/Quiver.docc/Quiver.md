@@ -67,6 +67,10 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Working-With-Distributions>
 - <doc:Boolean-Masking>
 
+### Algebra
+- <doc:Fraction>
+- <doc:Polynomials>
+
 ### Matrices
 - <doc:Matrix-Operations>
 - <doc:Shape-And-Size>
@@ -99,7 +103,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Models
 - <doc:Naive-Bayes>
 - <doc:Linear-Regression>
-- <doc:Polynomials>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:KMeans-Clustering>
 - <doc:Evaluation-Metrics>
@@ -107,7 +110,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Utilities
 - <doc:Model-Persistence>
-- <doc:Fraction>
 
 ### Supporting Types
 - ``LogDeterminant``

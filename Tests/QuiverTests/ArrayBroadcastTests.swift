@@ -14,6 +14,11 @@
 import XCTest
 @testable import Quiver
 
+// Array-to-array operators (e.g., [Double] + [Double]) are intentionally NOT
+// overloaded in Quiver. Element-wise array operations go through named methods:
+// `add`, `subtract`, `multiply`, `divide` (see ArrayArithmeticTests). Any future
+// addition of operator overloads for array-array would need explicit design review.
+
 final class ArrayBroadcastTests: XCTestCase {
 
     // MARK: - Scalar Broadcasting Tests
@@ -118,5 +123,30 @@ final class ArrayBroadcastTests: XCTestCase {
         let result = intermediate.broadcast(multiplyingEachColumnBy: columnVector)
 
         XCTAssertEqual(result, [[1100.0, 2200.0], [2600.0, 4800.0]])
+    }
+
+    // MARK: - Operator-Form Scalar Broadcasting
+
+    // Locks in the supported operator surface: scalar-on-array works in both directions
+    func testOperatorScalarBroadcasting() {
+        let v = [1.0, 2.0, 3.0]
+        XCTAssertEqual(v + 10.0, [11.0, 12.0, 13.0])
+        XCTAssertEqual(10.0 + v, [11.0, 12.0, 13.0])
+        XCTAssertEqual(v - 1.0, [0.0, 1.0, 2.0])
+        XCTAssertEqual(v * 2.0, [2.0, 4.0, 6.0])
+        XCTAssertEqual(v / 2.0, [0.5, 1.0, 1.5])
+
+        let m = [[1.0, 2.0], [3.0, 4.0]]
+        XCTAssertEqual(m + 10.0, [[11.0, 12.0], [13.0, 14.0]])
+        XCTAssertEqual(m * 2.0, [[2.0, 4.0], [6.0, 8.0]])
+    }
+
+    // Operator and method forms must produce identical results — protects against drift
+    func testOperatorMatchesMethodForm() {
+        let v = [1.0, 2.0, 3.0]
+        XCTAssertEqual(v + 5.0, v.broadcast(adding: 5.0))
+        XCTAssertEqual(v - 5.0, v.broadcast(subtracting: 5.0))
+        XCTAssertEqual(v * 5.0, v.broadcast(multiplyingBy: 5.0))
+        XCTAssertEqual(v / 5.0, v.broadcast(dividingBy: 5.0))
     }
 }

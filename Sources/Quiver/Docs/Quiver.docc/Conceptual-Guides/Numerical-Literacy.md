@@ -29,7 +29,7 @@ Neither `0.1` nor `0.2` can be written exactly in binary. They round to the near
 
 This rounding behavior is the source of most floating-point surprises. A test that asserts `a + b == 0.3` will fail. A computation that subtracts two nearly equal numbers can lose most of its precision in a single step. A loop that accumulates millions of small values can drift from the true answer.
 
-> Tip: Never compare floating-point values with `==`. Use a tolerance: `abs(a - b) < 1e-9`. Quiver follows this rule internally and we should follow it in any code that consumes Quiver's output.
+> Tip: Compare floating-point values with a tolerance — `abs(a - b) < 1e-9` is a reliable default. Quiver follows this rule internally and we follow it in any code that consumes Quiver's output.
 
 ### Where Quiver protects us
 
