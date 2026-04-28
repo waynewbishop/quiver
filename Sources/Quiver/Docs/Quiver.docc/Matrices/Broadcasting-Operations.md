@@ -37,9 +37,12 @@ let celsiusAlt = temperatures.broadcast(subtracting: 32.0)
 Broadcasting is ideal for applying scalar mathematical operations to arrays. It makes the code read like mathematical notation and clearly separates each transformation step. Use `map` for custom logic, complex transformations, or non-mathematical operations where broadcasting doesn't apply.
 
 ```swift
+let temperatures = [72.0, 68.0, 73.0, 70.0, 75.0]
+let scores = [88.0, 91.0, 76.0, 95.0, 82.0]
+
 // Broadcasting excels at scalar mathematical operations
-let normalized = (data - mean) / stdDev
-let scaled = matrix * 2.0
+let normalized = (scores - 79.0) / 8.0
+let scaled = temperatures * 2.0
 
 // Map excels at custom or non-numeric transformations
 let formatted = temperatures.map { "\($0)°F" }
@@ -103,6 +106,32 @@ let result4 = (matrix - 5.0) / 2.0
 ```
 
 The operator syntax is recommended for new code as it improves readability. The method-based syntax remains available for compatibility and for cases requiring custom operations via closures.
+
+### Array-to-array operations
+
+Operators (`+`, `-`, `*`, `/`) cover the scalar-on-array case. Element-wise operations between two arrays of the same shape use named methods instead — `add`, `subtract`, `multiply`, and `divide`:
+
+```swift
+let a = [1.0, 2.0, 3.0]
+let b = [10.0, 20.0, 30.0]
+
+let sum  = a.add(b)        // [11.0, 22.0, 33.0]
+let diff = a.subtract(b)   // [-9.0, -18.0, -27.0]
+let prod = a.multiply(b)   // [10.0, 40.0, 90.0]
+let quot = a.divide(b)     // [0.1, 0.1, 0.1]
+```
+
+The same methods work between two matrices of the same shape:
+
+```swift
+let m1 = [[1.0, 2.0], [3.0, 4.0]]
+let m2 = [[10.0, 20.0], [30.0, 40.0]]
+
+let summed = m1.add(m2)         // [[11.0, 22.0], [33.0, 44.0]]
+let scaled = m1.multiply(m2)    // [[10.0, 40.0], [90.0, 160.0]]
+```
+
+> Tip: Operators are intentionally reserved for scalar-on-array broadcasting. Quiver does not overload `+`, `-`, `*`, or `/` between two arrays to keep the standard library's array semantics intact and to make the intent of every expression explicit at the call site.
 
 ### Matrix-vector broadcasting
 
