@@ -128,3 +128,25 @@ a.trimmed() == b             // true  — canonical forms match
 
 The `degree` property reports the highest power with a non-zero coefficient regardless of trailing zeros, so `Polynomial([1, 2, 0])` reports a degree of `1`, not `2`. The zero polynomial — `Polynomial([0])` — has degree `0` by convention, the same as any other constant.
 
+## Topics
+
+### Creating a polynomial
+- ``Polynomial/init(_:)``
+
+### Properties
+- ``Polynomial/coefficients``
+- ``Polynomial/degree``
+
+### Evaluation
+- ``Polynomial/callAsFunction(_:)-(Double)``
+- ``Polynomial/callAsFunction(_:)-([Double])``
+
+### Calculus
+- ``Polynomial/derivative()``
+
+### Canonical form
+- ``Polynomial/trimmed()``
+
+### Fitting
+- ``Swift/Array/polyfit(x:y:degree:)``
+

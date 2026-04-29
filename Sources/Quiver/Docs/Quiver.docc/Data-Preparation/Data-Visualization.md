@@ -219,7 +219,7 @@ let inertias = KMeans.elbowMethod(data: data, kRange: kRange, seed: 42)
 
 The result is a line chart where each point is one `LineMark`. A sharp bend in the curve indicates the point where adding more clusters stops providing meaningful improvement.
 
-**Regression line overlay.** Linear regression produces coefficients that define a line (or hyperplane). For single-feature regression, we can overlay the fitted line on a scatter plot of the original data:
+**Regression line overlay.** Linear regression produces coefficients that define a line (or hyperplane — the same idea extended to more than two dimensions). For single-feature regression, we can overlay the fitted line on a scatter plot of the original data:
 
 ```swift
 import Quiver

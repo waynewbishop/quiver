@@ -216,8 +216,8 @@ public extension Array where Element == Double {
         for _ in 0..<iterations {
             // Draw n indices with replacement, build the resample, apply the statistic
             for i in 0..<n {
-                let idx = Int.random(in: 0..<n, using: &rng)
-                resample[i] = self[idx]
+                let index = Int.random(in: 0..<n, using: &rng)
+                resample[i] = self[index]
             }
             results.append(statistic(resample))
         }

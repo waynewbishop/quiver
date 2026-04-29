@@ -104,3 +104,16 @@ let bad = Distributions.normal.cdf(x: 1.0, mean: 0, std: -1)  // nil
 let edge = Distributions.normal.quantile(p: 1.0, mean: 0, std: 1)  // nil
 ```
 
+## Topics
+
+### Distributions
+- ``Distributions/normal``
+
+### Density
+- ``Distributions/normal/pdf(x:mean:std:)``
+- ``Distributions/normal/logPDF(x:mean:std:)``
+
+### Cumulative probability and quantiles
+- ``Distributions/normal/cdf(x:mean:std:)``
+- ``Distributions/normal/quantile(p:mean:std:)``
+

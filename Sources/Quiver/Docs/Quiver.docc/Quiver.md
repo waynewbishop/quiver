@@ -42,6 +42,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
 - <doc:Statistics-Primer>
+- <doc:Inferential-Statistics-Primer>
 - <doc:Machine-Learning-Primer>
 - <doc:Numerical-Literacy>
 - <doc:Concurrency-Primer>

@@ -10,7 +10,7 @@ K-Nearest Neighbors is one of the most intuitive classification algorithms. Give
 
 For each new sample, the algorithm measures the **distance** from that sample to every training point, selects the closest neighbors `(k)` by sorting those distances, and assigns the most common label among them. The algorithm's simplicity is its strength: no assumptions about how the data is distributed, no parameters to optimize, and the decision boundary adapts automatically to the shape of the data. The tradeoff is that prediction requires scanning the entire training set for every query.
 
-![K-Means Process](diagram-nearest-neighbors)
+![Query point surrounded by labeled neighbors with the closest k highlighted](diagram-nearest-neighbors)
 
 ### The distance connection
 

@@ -128,3 +128,25 @@ The `fourierInverse` method performs an inverse transform on real-valued input, 
 
 Fourier methods are stateless functions on `[Double]` that return new arrays without modifying the input. There is no type to conform to `Sendable` because the methods operate on Swift's `Array`, which is already a value type safe to pass between tasks. All Fourier operations work inside `Task`, `Task.detached`, and `async` functions with no additional annotations. For the full set of concurrency patterns, see <doc:Concurrency-Primer>.
 
+## Topics
+
+### Spectrum
+- ``Swift/Array/fourierMagnitude()``
+- ``Swift/Array/fourierMagnitudeHalf()``
+- ``Swift/Array/fourierFrequencies(sampleRate:)``
+- ``Swift/Array/fourierFrequenciesHalf(sampleRate:)``
+- ``Swift/Array/fourierPhase()``
+
+### Convenience
+- ``Swift/Array/fourierDominantFrequency(sampleRate:)``
+- ``Swift/Array/fourierDominantFrequency(sampleRate:windowed:)``
+- ``Swift/Array/fourierSpectrum(sampleRate:windowed:)``
+
+### Inverse
+- ``Swift/Array/fourierInverse()``
+
+### Signal preparation
+- ``Swift/Array/padded(toPowerOfTwo:)``
+- ``Swift/Array/hannWindowed()``
+- ``Swift/Array/sineWave(frequency:sampleRate:count:amplitude:offset:)``
+

@@ -12,7 +12,7 @@ K-Means is the most widely used clustering algorithm. Given a set of data points
 
 The algorithm starts by placing `k` centroids at random positions, then repeats two steps until the centroids stabilize. First, it computes the [Euclidean distance](<doc:Linear-Algebra-Primer>) from each data point to every centroid and assigns each point to the nearest one. Second, it recomputes each centroid as the **mean** position of all points assigned to its cluster. This cycle continues until the centroids stop moving (convergence) or the maximum number of iterations is reached. 
 
-![K-Means Process](diagram-kmeans)
+![Scatter plot of points grouped into colored clusters with each cluster's centroid marked](diagram-kmeans)
 
 Because initial centroid positions are random, different starting positions can produce different clusterings — the `seed` parameter ensures reproducible results. The `bestFit` method runs multiple initializations automatically and returns the model with the lowest inertia, avoiding poor outcomes caused by unlucky starting positions.
 

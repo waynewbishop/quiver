@@ -12,7 +12,7 @@ Imagine standing in sunlight. Your shadow on the ground is a projection — it s
 
 Vector projection works the same way. Given a vector and a reference direction, the **scalar projection** measures how far the vector reaches along that direction, which is the length of the shadow. The **vector projection** gives that shadow as a vector, pointing along the reference direction with the measured length. Together they answer: "how much of this vector is aligned with that direction?"
 
-![K-Means Process](diagram-vector-projection)
+![Vector b projected onto vector a, showing the parallel component along a and the orthogonal component perpendicular to it](diagram-vector-projection)
 
 ### What the orthogonal component measures
 

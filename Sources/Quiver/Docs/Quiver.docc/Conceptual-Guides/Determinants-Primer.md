@@ -228,7 +228,7 @@ if cond < 1_000 {
     let inverse = try matrix.inverted()
     // Safe to use the inverse
 } else {
-    // Matrix is ill-conditioned — consider regularization
+    // Matrix is ill-conditioned — consider regularization (adding a small penalty term to stabilize the solution)
 }
 ```
 

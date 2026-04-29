@@ -110,9 +110,9 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
             var variances = [Double](repeating: 0.0, count: featureCount)
 
             // Compute mean for each feature
-            for idx in indices {
+            for sampleIndex in indices {
                 for f in 0..<featureCount {
-                    means[f] += features[idx][f]
+                    means[f] += features[sampleIndex][f]
                 }
             }
             for f in 0..<featureCount {
@@ -120,9 +120,9 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
             }
 
             // Compute variance for each feature
-            for idx in indices {
+            for sampleIndex in indices {
                 for f in 0..<featureCount {
-                    let diff = features[idx][f] - means[f]
+                    let diff = features[sampleIndex][f] - means[f]
                     variances[f] += diff * diff
                 }
             }

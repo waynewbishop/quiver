@@ -1,6 +1,6 @@
 # iOS Patterns
 
-Personalizing classifiers, surfacing anomalies, ranking recommendations, and aggregating data for Swift Charts in iOS apps with Quiver.
+Personalizing classifiers, surfacing anomalies, and ranking recommendations on the device.
 
 ## Overview
 
