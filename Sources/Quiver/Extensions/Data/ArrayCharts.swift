@@ -101,7 +101,7 @@ public extension Array where Element: FloatingPoint {
     /// let smoothed = heartRate.exponentialMean(alpha: 0.3)
     /// // Recent readings weighted more heavily than older ones
     ///
-    /// // Convenience: span-based alpha (matches Pandas convention)
+    /// // Convenience: span-based alpha
     /// let ema20 = prices.exponentialMean(span: 20)
     /// ```
     ///
@@ -129,7 +129,7 @@ public extension Array where Element: FloatingPoint {
     /// Computes the exponential moving average using a span-based smoothing factor.
     ///
     /// Convenience wrapper that converts a span (number of periods) to alpha using
-    /// the formula `alpha = 2 / (span + 1)`, matching the Pandas `ewm(span:)` convention.
+    /// the formula `alpha = 2 / (span + 1)`.
     ///
     /// - Parameter span: The number of periods for the EMA window. Must be >= 1.
     /// - Returns: Array of smoothed values with the same length as the input
@@ -374,8 +374,8 @@ public extension Array where Element: FloatingPoint {
     /// let responseTimes = [12.0, 25.0, 18.0, 45.0, 30.0, 15.0, 22.0, 120.0]
     ///
     /// let p50 = responseTimes.percentile(50.0)   // 23.5 (median)
-    /// let p90 = responseTimes.percentile(90.0)   // 71.25
-    /// let p99 = responseTimes.percentile(99.0)   // 115.15
+    /// let p90 = responseTimes.percentile(90.0)   // 67.5
+    /// let p99 = responseTimes.percentile(99.0)   // 114.75
     /// ```
     ///
     /// - Complexity: O(*n* log *n*) where *n* is the number of elements.
@@ -647,7 +647,7 @@ public extension Array where Element: FloatingPoint {
             let total = result.values.reduce(Element.zero, +)
             if total != .zero {
                 for key in result.keys {
-                    result[key] = (result[key]! / total) * Element(100)
+                    result[key] = ((result[key] ?? .zero) / total) * Element(100)
                 }
             }
         }

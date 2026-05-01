@@ -21,14 +21,14 @@ let sizes = revenues.scaled(to: 10.0...50.0)
 
 // Z-score standardization (mean=0, std=1) for comparing distributions
 let standardized = revenues.standardized()
-// [-1.29, -0.04, -0.76, 1.58, 0.50]
+// [-1.29, -0.04, -0.75, 1.58, 0.50]
 
 // Convert to percentages of total (for pie/donut charts)
 let shares = revenues.asPercentages()
 // [17.2, 19.9, 18.4, 23.4, 21.1]
 ```
 
-Min-max scaling with `scaled(to:)` maps values to any closed range, which is useful for controlling the visual size of chart marks. Standardization with `standardized()` centers data around zero, making it possible to overlay series with different units on the same axis. Percentages with `asPercentages()` express each value as a share of the total, ready for proportional charts.
+Min-max scaling with `scaled(to:)` maps values to any closed range, which is useful for controlling the visual size of chart marks. Standardization with `standardized` centers data around zero, making it possible to overlay series with different units on the same axis. Percentages with `asPercentages` express each value as a share of the total, ready for proportional charts.
 
 ### Stacked series
 
@@ -219,7 +219,7 @@ let inertias = KMeans.elbowMethod(data: data, kRange: kRange, seed: 42)
 
 The result is a line chart where each point is one `LineMark`. A sharp bend in the curve indicates the point where adding more clusters stops providing meaningful improvement.
 
-**Regression line overlay.** Linear regression produces coefficients that define a line (or hyperplane). For single-feature regression, we can overlay the fitted line on a scatter plot of the original data:
+**Regression line overlay.** Linear regression produces coefficients that define a line (or hyperplane — the same idea extended to more than two dimensions). For single-feature regression, we can overlay the fitted line on a scatter plot of the original data:
 
 ```swift
 import Quiver
@@ -235,6 +235,27 @@ let yValues = model.predict(xValues)
 ```
 
 The scatter shows the raw data, and the line shows what the model learned. The gap between points and line is the residual error — visible at a glance.
+
+**Polynomial trend line.** When the relationship between `x` and `y` is curved rather than linear, `polyfit(x:y:degree:)` returns a `Polynomial` that captures the curve. Evaluating the polynomial across an evenly spaced grid produces a smooth overlay for Swift Charts, the same shape as the linear regression overlay above but with a quadratic (or higher-degree) fit:
+
+```swift
+import Quiver
+
+// Curved data — points roughly follow y = 2x² + 3x + 1
+let x = [1.0, 2.0, 3.0, 4.0, 5.0]
+let y = [6.5, 14.8, 28.1, 44.9, 66.2]
+
+if let p = [Double].polyfit(x: x, y: y, degree: 2) {
+    // Evaluate the curve across a dense grid for plotting
+    let xValues = Array.linspace(start: 0.5, end: 5.5, count: 50)
+    let yValues = p(xValues)
+
+    // x/y     — scatter points
+    // xValues/yValues — fitted polynomial trend (50 evenly spaced points)
+}
+```
+
+The same overlay pattern works for any polynomial degree. Higher degrees fit more flexible curves at the cost of overfitting risk on small samples — the right degree is the one that captures the trend without bending around noise.
 
 **SoftMax probability distribution.** The `softMax` function converts raw model scores into a probability distribution that sums to 1.0. This maps naturally to a `BarMark` showing confidence per class:
 

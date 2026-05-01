@@ -126,17 +126,11 @@ final class ArraySamplingTests: XCTestCase {
     func testRatioSizes() {
         let data = Array(0..<100)
 
-        let split10 = data.trainTestSplit(testRatio: 0.1, seed: 1)
-        XCTAssertEqual(split10.test.count, 10)
-        XCTAssertEqual(split10.train.count, 90)
-
-        let split50 = data.trainTestSplit(testRatio: 0.5, seed: 1)
-        XCTAssertEqual(split50.test.count, 50)
-        XCTAssertEqual(split50.train.count, 50)
-
-        let split90 = data.trainTestSplit(testRatio: 0.9, seed: 1)
-        XCTAssertEqual(split90.test.count, 90)
-        XCTAssertEqual(split90.train.count, 10)
+        for (ratio, expectedTest) in [(0.1, 10), (0.5, 50), (0.9, 90)] {
+            let split = data.trainTestSplit(testRatio: ratio, seed: 1)
+            XCTAssertEqual(split.test.count, expectedTest, "ratio=\(ratio)")
+            XCTAssertEqual(split.train.count, 100 - expectedTest, "ratio=\(ratio)")
+        }
     }
 
     // MARK: - Oversample
@@ -207,5 +201,86 @@ final class ArraySamplingTests: XCTestCase {
         for row in balanced {
             XCTAssertEqual(row.count, 3)
         }
+    }
+
+    // MARK: - Resampling
+
+    func testResampledDeterministicSeed() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        let a = data.resampled(iterations: 100, seed: 42) { $0.mean() ?? 0.0 }
+        let b = data.resampled(iterations: 100, seed: 42) { $0.mean() ?? 0.0 }
+        XCTAssertEqual(a, b, "same seed must produce identical resampled distribution")
+    }
+
+    func testResampledDifferentSeed() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let a = data.resampled(iterations: 100, seed: 42) { $0.mean() ?? 0.0 }
+        let b = data.resampled(iterations: 100, seed: 99) { $0.mean() ?? 0.0 }
+        XCTAssertNotEqual(a, b, "different seeds should produce different resampled distributions")
+    }
+
+    // Empty data and zero-iteration calls both return an empty distribution
+    func testResampledBoundaryInputs() {
+        let empty: [Double] = []
+        XCTAssertTrue(empty.resampled(iterations: 100, seed: 42) { $0.mean() ?? 0.0 }.isEmpty)
+
+        let data = [1.0, 2.0, 3.0]
+        XCTAssertTrue(data.resampled(iterations: 0, seed: 42) { $0.mean() ?? 0.0 }.isEmpty)
+    }
+
+    func testResampledMeanConverges() {
+        // Resampled-distribution mean should approximate sample mean for large iterations
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        let resampledMeans = data.resampled(iterations: 5000, seed: 42) { $0.mean() ?? 0.0 }
+        let trueMean = 5.5
+        let resampledMean = resampledMeans.mean() ?? 0.0
+        XCTAssertEqual(resampledMean, trueMean, accuracy: 0.1, "resampled mean should approximate sample mean")
+    }
+
+    func testResampledOutputLength() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let result = data.resampled(iterations: 250, seed: 42) { $0.mean() ?? 0.0 }
+        XCTAssertEqual(result.count, 250)
+    }
+
+    // MARK: - percentileCI
+
+    func testPercentileCIBasic() {
+        // Pre-sorted values 1...100; 95% CI should bracket the 2.5th and 97.5th percentiles
+        let data = (1...100).map(Double.init)
+        guard let ci = data.percentileCI(level: 0.95) else {
+            XCTFail("percentileCI returned nil"); return
+        }
+        XCTAssertGreaterThan(ci.lower, 1.0)
+        XCTAssertLessThan(ci.lower, 5.0)
+        XCTAssertGreaterThan(ci.upper, 95.0)
+        XCTAssertLessThan(ci.upper, 100.0)
+    }
+
+    func testPercentileCILevelOutOfRange() {
+        let data = [1.0, 2.0, 3.0]
+        XCTAssertNil(data.percentileCI(level: 0.0))
+        XCTAssertNil(data.percentileCI(level: 1.0))
+        XCTAssertNil(data.percentileCI(level: -0.5))
+        XCTAssertNil(data.percentileCI(level: 1.5))
+    }
+
+    func testPercentileCIEmpty() {
+        let data: [Double] = []
+        XCTAssertNil(data.percentileCI(level: 0.95))
+    }
+
+    func testResampledWithPercentileCI() {
+        // The intended composition pattern
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        let resampledMeans = data.resampled(iterations: 1000, seed: 42) { $0.mean() ?? 0.0 }
+        guard let ci = resampledMeans.percentileCI(level: 0.95) else {
+            XCTFail("percentileCI returned nil"); return
+        }
+        // For mean of 1..10, the 95% CI should bracket 5.5
+        XCTAssertLessThan(ci.lower, 5.5)
+        XCTAssertGreaterThan(ci.upper, 5.5)
+        // And the interval should be reasonably tight (not the full data range)
+        XCTAssertLessThan(ci.upper - ci.lower, 5.0)
     }
 }

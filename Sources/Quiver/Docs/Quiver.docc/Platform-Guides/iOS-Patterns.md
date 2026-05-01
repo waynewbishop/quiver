@@ -1,6 +1,6 @@
 # iOS Patterns
 
-Personalizing classifiers, surfacing anomalies, ranking recommendations, and aggregating data for Swift Charts in iOS apps with Quiver.
+Personalizing classifiers, surfacing anomalies, and ranking recommendations on the device.
 
 ## Overview
 
@@ -84,7 +84,7 @@ struct ReadingsList: View {
 
 The mask is computed once per render against the current list of values. Because Swift's `Array` is copy-on-write, mapping out the values and computing the mask does not allocate the underlying storage twice. As the list grows, the mask grows with it; as the user filters or searches, the mask recomputes against the visible subset.
 
-What this pattern is and what it is not: it is a one-shot z-score check against the dataset currently in view. It is not a moving-window detector running on a live stream — that is the watchOS shape, where the window slides forward continuously. On iOS the dataset is whatever the screen is currently showing, and the mask is recomputed when that dataset changes.
+The shape here is a one-shot z-score check against the dataset currently in view, not a moving-window detector running on a live stream — that is the watchOS shape, where the window slides forward continuously. On iOS the dataset is whatever the screen is currently showing, and the mask is recomputed when that dataset changes.
 
 ### Recommendation and similarity routes
 
@@ -131,7 +131,7 @@ struct RecommendationsView: View {
 }
 ```
 
-The full embedding pipeline — tokenizing text, building vectors, reducing with `meanVector()` — is covered in <doc:Semantic-Search>. What changes on iOS is where each piece runs: embedding happens when the catalog loads, the precomputed vectors live in observable state, and only the ranking call runs while a view is on screen. For the underlying operations, see <doc:Similarity-Operations>.
+The full embedding pipeline — tokenizing text, building vectors, reducing with `meanVector` — is covered in <doc:Semantic-Search>. What changes on iOS is where each piece runs: embedding happens when the catalog loads, the precomputed vectors live in observable state, and only the ranking call runs while a view is on screen. For the underlying operations, see <doc:Similarity-Operations>.
 
 What this pattern is and what it is not: it is a top-k similarity ranking against a precomputed index. It is not a learned recommender that personalizes from interaction history — that pattern combines this index with the personalization shape from earlier in the article, where a per-user model produces the query vector instead of a fixed input.
 
@@ -175,11 +175,3 @@ The second question is doing work off the main thread under SwiftUI. A fitted Qu
 
 > Tip: For models that ship in the bundle as JSON, the decode happens once the first time the model is used. Hold the fitted value in an `@Observable` store and let every view read from that store rather than decoding inside `onAppear` — decoding twice is a silent regression that only shows up under profiling.
 
-## See also
-
-- <doc:iOS-Guide> — Foundations: launch loading, what happens as screens appear, sensor and storage inputs
-- <doc:Model-Persistence> — Saving and loading fitted models with `Codable`
-- <doc:Pipeline> — Bundling a scaler and model into a single matched pair
-- <doc:Concurrency-Primer> — Swift Concurrency patterns for off-main-thread work
-- <doc:KMeans-Clustering> — K-Means clustering for unsupervised personalization
-- <doc:Similarity-Operations> — Cosine similarity and top-k ranking

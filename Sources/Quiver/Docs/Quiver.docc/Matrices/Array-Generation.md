@@ -115,12 +115,6 @@ transform[0][3] = 10.0  // Add translation
 
 These methods allocate the entire array in a single step. For very large dimensions — millions of elements or large dense matrices — that allocation is the dominant cost of the call, and the resulting array sits in memory until it is released. The cost is the same as any equivalent manual allocation, but it is worth being aware of when generating large structures inside a tight loop.
 
-## See also
-
-- <doc:Matrix-Operations>
-- <doc:Matrix-Transformations>
-- <doc:Random-Number-Generation>
-
 ## Topics
 
 ### Basic array creation

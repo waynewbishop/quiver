@@ -4,7 +4,7 @@ Splitting strings into tokens and looking up word vectors before any downstream 
 
 ## Overview
 
-Most numerical workflows assume the data has already been turned into numbers. Text is the exception. Before a classifier, a vector database, or a similarity comparison can act on a sentence, the sentence has to be broken into words and each word has to be mapped to a vector. Quiver provides two paired methods for that translation: `tokenize()` on `String` for the splitting step, and `embed(using:)` on `[String]` for the lookup step.
+Most numerical workflows assume the data has already been turned into numbers. Text is the exception. Before a classifier, a vector database, or a similarity comparison can act on a sentence, the sentence has to be broken into words and each word has to be mapped to a vector. Quiver provides two paired methods for that translation: `tokenize` on `String` for the splitting step, and `embed(using:)` on `[String]` for the lookup step.
 
 The two methods compose to produce a `[[Double]]` from raw text — one inner array per recognized word. From there, the rest of Quiver's vector operations apply. The <doc:Semantic-Search> article walks the full search pipeline from tokenization through ranked results; this article is the closer focus on tokenization and embedding as a standalone preprocessing pair, useful any time a developer needs to feed text into a numeric workflow.
 
@@ -26,7 +26,7 @@ let raw = "Hello, world!".tokenize(strippingPunctuation: false)
 
 Punctuation stripping operates on the boundaries of each token, so interior characters survive. Contractions like `"don't"` keep their apostrophe because the apostrophe is not at either end after the initial trim.
 
-> Note: `tokenize()` does not stem, lemmatize, or remove stop words. It is a literal split-and-clean step, leaving any vocabulary or normalization decisions to the caller.
+> Note: `tokenize` does not stem, lemmatize, or remove stop words. It is a literal split-and-clean step, leaving any vocabulary or normalization decisions to the caller.
 
 ### Looking up embeddings
 
@@ -48,7 +48,7 @@ The dictionary is plain `[String: [Double]]` — Quiver does not assume where th
 
 ### Building a document vector
 
-Tokenizing a sentence produces multiple word vectors, but most downstream tasks expect one vector per document. The standard reduction is `meanVector()`, which averages the inner arrays element-by-element to produce a single `[Double]` representing the document's overall meaning. The full pipeline reads naturally as a chain:
+Tokenizing a sentence produces multiple word vectors, but most downstream tasks expect one vector per document. The standard reduction is `meanVector`, which averages the inner arrays element-by-element to produce a single `[Double]` representing the document's overall meaning. The full pipeline reads naturally as a chain:
 
 ```swift
 let document = "Comfortable, lightweight running shoes."
@@ -60,10 +60,5 @@ let documentVector = document
 // Optional<[Double]> — nil if no recognized tokens
 ```
 
-From this point, the result is an ordinary `[Double]` and the rest of Quiver applies — `cosineSimilarities(to:)` for ranking against a corpus, `distance(to:)` for nearest-neighbor work, or any other vector operation. The full search example, including building a corpus and ranking results, is in <doc:Semantic-Search>. The aggregation reference for `meanVector()` and related summaries is in <doc:Statistical-Operations>.
+From this point, the result is an ordinary `[Double]` and the rest of Quiver applies — `cosineSimilarities(to:)` for ranking against a corpus, `distance(to:)` for nearest-neighbor work, or any other vector operation. The full search example, including building a corpus and ranking results, is in <doc:Semantic-Search>. The aggregation reference for `meanVector` and related summaries is in <doc:Statistical-Operations>.
 
-## See also
-
-- <doc:Semantic-Search>
-- <doc:Similarity-Operations>
-- <doc:Statistical-Operations>

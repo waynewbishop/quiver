@@ -89,7 +89,7 @@ func maybeRefit(currentWindow: [[Double]], currentLabels: [Int]) -> KNearestNeig
 }
 ```
 
-K-Nearest Neighbors is particularly well suited to this pattern because its `fit()` is effectively free — it just stores the training data — while its `predict()` does the real work.
+K-Nearest Neighbors is particularly well suited to this pattern because its `fit` is effectively free — it just stores the training data — while its `predict` does the real work.
 
 > Tip: For heart rate specifically, avoid refitting during the first minute after an effort change. The heart rate lag means the sensor is still catching up to the actual work level, and a model fit during that window will be learning from a stale signal. Wait for the signal to stabilize before refitting.
 
@@ -109,11 +109,3 @@ These input sizes match realistic watchOS workloads. A thousand samples is a com
 
 The operations worth thinking about for watchOS are the ones Quiver is built for: fitting a classical model on a rolling window of sensor data, running predictions against it as new samples arrive, and persisting the result across session boundaries. These all live in the millisecond-per-operation regime, which means a `.userInitiated` task can complete a fit without interrupting the user interface and without being interrupted by the watchOS runtime.
 
-### See also
-
-- <doc:watchOS-Guide> — Foundations: sensor streams, sensor realities, and authorized sessions
-- <doc:Model-Persistence> — Saving and loading fitted models with `Codable`
-- <doc:Pipeline> — Bundling a scaler and model into a single matched pair
-- <doc:Feature-Scaling> — Min-max normalization for multi-signal classification
-- <doc:KMeans-Clustering> — K-Means clustering for unsupervised learning
-- <doc:Nearest-Neighbors-Classification> — K-Nearest Neighbors classifier

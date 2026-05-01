@@ -155,7 +155,3 @@ let cleaned = readings.choose(where: valid, otherwise: defaults)
 - ``Swift/Array/maskedWithIndices(by:)``
 - ``Swift/Array/choose(where:otherwise:)``
 - ``Swift/Array/trueIndices``
-
-### See also
-- <doc:Panel>
-- <doc:Feature-Scaling>

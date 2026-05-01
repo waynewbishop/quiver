@@ -164,3 +164,63 @@ public extension Array where Element == [Double] {
         return (features: resultFeatures, labels: resultLabels)
     }
 }
+
+// MARK: - Resampling
+
+public extension Array where Element == Double {
+
+    /// Returns the resampled distribution of a statistic.
+    ///
+    /// Resamples the array with replacement many times, applies a statistic to
+    /// each resample, and returns the resulting distribution of values. Pair
+    /// the result with ``percentileCI(level:)`` to turn the distribution into
+    /// a percentile-based confidence interval. This is the technique known in
+    /// the statistics literature as the *bootstrap*.
+    ///
+    /// The resampling uses Quiver's seeded generator, so the same `seed` always
+    /// produces the same distribution. The closure receives a fresh resample
+    /// each iteration and returns a single statistic.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let scores = [88.0, 72.0, 95.0, 81.0, 90.0, 76.0, 84.0, 91.0]
+    ///
+    /// // Resampled distribution of the median
+    /// let medians = scores.resampled(iterations: 1000, seed: 42) { resample in
+    ///     resample.median() ?? 0.0
+    /// }
+    /// let ci = medians.percentileCI(level: 0.95)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - iterations: Number of resamples to draw. Defaults to 1,000.
+    ///   - seed: A `UInt64` seed for reproducible resampling.
+    ///   - statistic: A closure that takes a resample and returns a single value.
+    /// - Returns: An array of length `iterations` containing the statistic computed
+    ///   on each resample. Empty if the input array is empty or `iterations <= 0`.
+    func resampled(
+        iterations: Int = 1000,
+        seed: UInt64,
+        statistic: ([Double]) -> Double
+    ) -> [Double] {
+        guard !self.isEmpty, iterations > 0 else { return [] }
+
+        var rng = SeededRandomNumberGenerator(seed: seed)
+        let n = self.count
+        var results: [Double] = []
+        results.reserveCapacity(iterations)
+
+        var resample = [Double](repeating: 0.0, count: n)
+        for _ in 0..<iterations {
+            // Draw n indices with replacement, build the resample, apply the statistic
+            for i in 0..<n {
+                let index = Int.random(in: 0..<n, using: &rng)
+                resample[i] = self[index]
+            }
+            results.append(statistic(resample))
+        }
+        return results
+    }
+}

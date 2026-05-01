@@ -137,7 +137,7 @@ let model = try LinearRegression.fit(features: sqft, targets: prices)
 
 // Predict a continuous value for a new listing
 let prediction = model.predict([2000.0])
-print(prediction)  // [~418000.0]
+print(prediction)  // [~421000.0]
 ```
 
 The distinction matters because evaluation metrics differ. Classification uses accuracy, precision, and recall. Regression uses measures like mean squared error and R².
@@ -165,6 +165,8 @@ print(predictions)  // [0, 1]
 ```
 
 The model uses what it learned during fitting but never modifies itself. Calling `predict` twice on the same input always gives the same result.
+
+Some classifiers can also return **calibrated probabilities** — a probability distribution across classes that sums to `1.0` for each sample, useful for cost-sensitive decisions and threshold tuning. `GaussianNaiveBayes.predictProbabilities(_:)` exposes this for the Naive Bayes classifier; see <doc:Naive-Bayes>.
 
 ### Evaluating models
 
@@ -199,14 +201,3 @@ For a full treatment of these metrics and the `ConfusionMatrix` type, see <doc:E
 
 > Tip: Start simple: Naive Bayes for classification, Linear Regression for continuous targets, Nearest Neighbors when the decision boundary is nonlinear, K-Means for unlabeled data. The evaluation techniques in the previous section tell us whether our choice is working.
 
-### See also
-
-- <doc:Train-Test-Split> - Train/test splitting and stratified partitioning
-- <doc:Feature-Scaling> - Min-max normalization with data leakage prevention
-- <doc:Pipeline> - Bundle a scaler and model into a single matched pair
-- <doc:Naive-Bayes> - Gaussian Naive Bayes classifier
-- <doc:Nearest-Neighbors-Classification> - Nearest Neighbors classifier
-- <doc:Linear-Regression> - Linear regression for continuous targets
-- <doc:KMeans-Clustering> - K-Means clustering for unsupervised learning
-- <doc:Evaluation-Metrics> - Precision, recall, F1, and confusion matrices
-- <doc:Panel> - Organizing labeled columnar data

@@ -116,7 +116,7 @@ extension Classifier {
 
         // Return sorted by label for consistent ordering
         return groups.keys.sorted().map { label in
-            Classification(label: label, points: groups[label]!)
+            Classification(label: label, points: groups[label] ?? [])
         }
     }
 }

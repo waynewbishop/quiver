@@ -53,8 +53,7 @@ internal enum _Sampling {
     /// Splits array elements into training and testing partitions using a seeded shuffle.
     ///
     /// The algorithm shuffles an index array using the seeded generator, then slices
-    /// the shuffled indices at the split point. This is the same approach used by
-    /// scikit-learn's `ShuffleSplit` in Python.
+    /// the shuffled indices at the split point.
     ///
     /// - Parameters:
     ///   - elements: The source array to split.

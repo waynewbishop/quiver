@@ -20,7 +20,7 @@ The Fourier transform answers these directly: given a stream of accelerometer re
 
 ### The intersection with machine learning
 
-The Fourier transform is not a machine learning model. There is no `fit()` method, no `predict()` method, and no trained state. It is a pure mathematical transform: an array goes in, an array of frequency amplitudes comes out. Its value in a machine learning pipeline is as a feature engineering step. A dominant frequency extracted from an accelerometer window becomes a new column in a feature vector. A spectral entropy value computed from a heart rate signal becomes a measure of how irregular the rhythm is. These Fourier-derived features feed into `KNearestNeighbors`, `KMeans`, or `GaussianNaiveBayes` as additional inputs, giving the classifier information about periodicity that time-domain features alone cannot provide.
+The Fourier transform is not a machine learning model. There is no `fit` method, no `predict` method, and no trained state. It is a pure mathematical transform: an array goes in, an array of frequency amplitudes comes out. Its value in a machine learning pipeline is as a feature engineering step. A dominant frequency extracted from an accelerometer window becomes a new column in a feature vector. A spectral entropy value computed from a heart rate signal becomes a measure of how irregular the rhythm is. These Fourier-derived features feed into `KNearestNeighbors`, `KMeans`, or `GaussianNaiveBayes` as additional inputs, giving the classifier information about periodicity that time-domain features alone cannot provide.
 
 ### How it works
 
@@ -43,7 +43,7 @@ The convenience methods `fourierDominantFrequency(sampleRate:windowed:)` and `fo
 
 ### Computing the spectrum
 
-The `fourierMagnitude()` method returns the amplitude at each frequency bin, showing how strongly each frequency is present in the signal. The `fourierFrequencies(sampleRate:)` method maps each bin index to its corresponding frequency in Hz. The two arrays are parallel — `frequencies[i]` is the frequency whose amplitude is `magnitudes[i]`:
+The `fourierMagnitude` method returns the amplitude at each frequency bin, showing how strongly each frequency is present in the signal. The `fourierFrequencies(sampleRate:)` method maps each bin index to its corresponding frequency in Hz. The two arrays are parallel — `frequencies[i]` is the frequency whose amplitude is `magnitudes[i]`:
 
 ```swift
 import Quiver
@@ -61,7 +61,7 @@ let frequencies = signal.fourierFrequenciesHalf(sampleRate: sampleRate)
 
 ### Positive-frequency half
 
-For real-valued signals, the upper half of the Fourier output is a mirror of the lower half and carries no additional information. The `fourierMagnitudeHalf()` and `fourierFrequenciesHalf(sampleRate:)` methods return only the positive-frequency half — the range from 0 Hz up to the Nyquist frequency. These are the methods to use when plotting a spectrum or extracting features.
+For real-valued signals, the upper half of the Fourier output is a mirror of the lower half and carries no additional information. The `fourierMagnitudeHalf` and `fourierFrequenciesHalf(sampleRate:)` methods return only the positive-frequency half — the range from 0 Hz up to the Nyquist frequency. These are the methods to use when plotting a spectrum or extracting features.
 
 > Tip: The `Half` variants return `count / 2` elements. Both arrays are indexed identically, so they can be passed directly to Swift Charts as parallel x and y values.
 
@@ -81,7 +81,7 @@ The convenience overload with the `windowed:` parameter applies a Hann window an
 
 ### Windowing
 
-When a signal is sliced into a finite chunk, abrupt edges at the start and end create artificial high-frequency content called spectral leakage. The `hannWindowed()` method applies the most widely used window function, tapering the signal smoothly to zero at both ends to suppress this artifact:
+When a signal is sliced into a finite chunk, abrupt edges at the start and end create artificial high-frequency content called spectral leakage. The `hannWindowed` method applies the most widely used window function, tapering the signal smoothly to zero at both ends to suppress this artifact:
 
 ```swift
 let windowed = signal.hannWindowed()
@@ -120,16 +120,33 @@ This technique is common in wearable health devices where direct respiratory mea
 
 ### Phase and inverse transform
 
-The `fourierPhase()` method returns the phase angle at each frequency bin — where in its cycle each component sits at time zero. Most applications use magnitude only. Phase analysis is relevant in communications, audio engineering, and interference detection.
+The `fourierPhase` method returns the phase angle at each frequency bin — where in its cycle each component sits at time zero. Most applications use magnitude only. Phase analysis is relevant in communications, audio engineering, and interference detection.
 
-The `fourierInverse()` method performs an inverse transform on real-valued input, treating each element as a complex number with zero phase. Because phase information is not preserved in the public API, a forward-then-inverse round trip does not reconstruct the original signal exactly. For applications that require exact reconstruction — such as signal filtering, where unwanted frequency bins are zeroed out before reconstructing — the full complex spectrum (magnitude and phase) is needed. This is a limitation of the current public API surface and may be expanded in a future release.
+The `fourierInverse` method performs an inverse transform on real-valued input, treating each element as a complex number with zero phase. Because phase information is not preserved in the public API, a forward-then-inverse round trip does not reconstruct the original signal exactly. For applications that require exact reconstruction — such as signal filtering, where unwanted frequency bins are zeroed out before reconstructing — the full complex spectrum (magnitude and phase) is needed. This is a limitation of the current public API surface and may be expanded in a future release.
 
 ### Concurrency
 
 Fourier methods are stateless functions on `[Double]` that return new arrays without modifying the input. There is no type to conform to `Sendable` because the methods operate on Swift's `Array`, which is already a value type safe to pass between tasks. All Fourier operations work inside `Task`, `Task.detached`, and `async` functions with no additional annotations. For the full set of concurrency patterns, see <doc:Concurrency-Primer>.
 
-### See also
+## Topics
 
-- <doc:Vector-Operations> — Magnitude, element-wise math, and distance operations reused internally by the Fourier engine
-- <doc:Statistical-Operations> — `topIndices(k:)` powers dominant frequency detection
-- <doc:Concurrency-Primer> — Swift Concurrency patterns for training and computing off the main thread
+### Spectrum
+- ``Swift/Array/fourierMagnitude()``
+- ``Swift/Array/fourierMagnitudeHalf()``
+- ``Swift/Array/fourierFrequencies(sampleRate:)``
+- ``Swift/Array/fourierFrequenciesHalf(sampleRate:)``
+- ``Swift/Array/fourierPhase()``
+
+### Convenience
+- ``Swift/Array/fourierDominantFrequency(sampleRate:)``
+- ``Swift/Array/fourierDominantFrequency(sampleRate:windowed:)``
+- ``Swift/Array/fourierSpectrum(sampleRate:windowed:)``
+
+### Inverse
+- ``Swift/Array/fourierInverse()``
+
+### Signal preparation
+- ``Swift/Array/padded(toPowerOfTwo:)``
+- ``Swift/Array/hannWindowed()``
+- ``Swift/Array/sineWave(frequency:sampleRate:count:amplitude:offset:)``
+

@@ -150,40 +150,37 @@ final class LinearRegressionTests: XCTestCase {
         XCTAssertLessThan(rmse, 1.0)
     }
 
-    // Description shows intercept and slope for single-feature model
-    func testDescriptionSingleFeature() throws {
-        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
-        let targets = [3.0, 5.0, 7.0, 9.0]  // y = 2x + 1
-        let model = try LinearRegression.fit(features: features, targets: targets)
-        let desc = model.description
-        XCTAssertTrue(desc.contains("1 feature"))
-        XCTAssertTrue(desc.contains("intercept:"))
-        XCTAssertTrue(desc.contains("slope:"))
-    }
+    // Covers description output across single-feature, multi-feature, and no-intercept models
+    func testDescription() throws {
+        // Single-feature: shows intercept and slope
+        let singleFeatures: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let singleTargets = [3.0, 5.0, 7.0, 9.0]  // y = 2x + 1
+        let single = try LinearRegression.fit(features: singleFeatures, targets: singleTargets)
+        let singleDesc = single.description
+        XCTAssertTrue(singleDesc.contains("1 feature"))
+        XCTAssertTrue(singleDesc.contains("intercept:"))
+        XCTAssertTrue(singleDesc.contains("slope:"))
 
-    // Description shows intercept and weights for multi-feature model
-    func testDescriptionMultiFeature() throws {
-        let features: [[Double]] = [
+        // Multi-feature: shows intercept and weights array
+        let multiFeatures: [[Double]] = [
             [1.0, 1.0], [2.0, 1.0], [1.0, 2.0], [3.0, 2.0], [2.0, 3.0]
         ]
-        let targets = features.map { 1.0 + 2.0 * $0[0] + 3.0 * $0[1] }
-        let model = try LinearRegression.fit(features: features, targets: targets)
-        let desc = model.description
-        XCTAssertTrue(desc.contains("2 features"))
-        XCTAssertTrue(desc.contains("intercept:"))
-        XCTAssertTrue(desc.contains("weights: ["))
-    }
+        let multiTargets = multiFeatures.map { 1.0 + 2.0 * $0[0] + 3.0 * $0[1] }
+        let multi = try LinearRegression.fit(features: multiFeatures, targets: multiTargets)
+        let multiDesc = multi.description
+        XCTAssertTrue(multiDesc.contains("2 features"))
+        XCTAssertTrue(multiDesc.contains("intercept:"))
+        XCTAssertTrue(multiDesc.contains("weights: ["))
 
-    // Description shows slope without intercept when intercept is disabled
-    func testDescriptionNoIntercept() throws {
-        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
-        let targets = [2.0, 4.0, 6.0, 8.0]  // y = 2x
-        let model = try LinearRegression.fit(
-            features: features, targets: targets, intercept: false
+        // No-intercept: omits "intercept" but keeps slope
+        let noInterceptFeatures: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let noInterceptTargets = [2.0, 4.0, 6.0, 8.0]  // y = 2x
+        let noIntercept = try LinearRegression.fit(
+            features: noInterceptFeatures, targets: noInterceptTargets, intercept: false
         )
-        let desc = model.description
-        XCTAssertFalse(desc.contains("intercept"))
-        XCTAssertTrue(desc.contains("slope:"))
+        let noInterceptDesc = noIntercept.description
+        XCTAssertFalse(noInterceptDesc.contains("intercept"))
+        XCTAssertTrue(noInterceptDesc.contains("slope:"))
     }
 
     // Integration: StandardScaler fitted on training data, applied to both train and test.

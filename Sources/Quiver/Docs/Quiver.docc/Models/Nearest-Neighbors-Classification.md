@@ -10,7 +10,7 @@ K-Nearest Neighbors is one of the most intuitive classification algorithms. Give
 
 For each new sample, the algorithm measures the **distance** from that sample to every training point, selects the closest neighbors `(k)` by sorting those distances, and assigns the most common label among them. The algorithm's simplicity is its strength: no assumptions about how the data is distributed, no parameters to optimize, and the decision boundary adapts automatically to the shape of the data. The tradeoff is that prediction requires scanning the entire training set for every query.
 
-![K-Means Process](diagram-nearest-neighbors)
+![Query point surrounded by labeled neighbors with the closest k highlighted](diagram-nearest-neighbors)
 
 ### The distance connection
 
@@ -185,7 +185,7 @@ print("Accuracy: \(cm.accuracy)")
 
 ### Structured results with classify
 
-The `predict(_:)` method returns raw class labels as `[Int]` — ideal for evaluation metrics like `accuracy()` and `classificationReport()`. When exploring results interactively, `classify(_:)` groups the inputs by their predicted label, returning `Classification` objects that pair each label with its assigned points:
+The `predict(_:)` method returns raw class labels as `[Int]` — ideal for evaluation metrics like `accuracy` and `classificationReport`. When exploring results interactively, `classify(_:)` groups the inputs by their predicted label, returning `Classification` objects that pair each label with its assigned points:
 
 ```swift
 import Quiver
@@ -201,7 +201,7 @@ for group in results {
 
 Each `Classification` result conforms to `Sequence` — the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives you its data points directly, just like iterating an `Array`.
 
-> Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy()`, `classificationReport()`, or `confusionMatrix()`.
+> Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy`, `classificationReport`, or `confusionMatrix`.
 
 ### When to use Nearest Neighbors
 
@@ -239,6 +239,7 @@ Nearest Neighbors struggles with large datasets (prediction scans every training
 
 ### Related
 - <doc:Pipeline>
+- <doc:Feature-Scaling>
 - <doc:Machine-Learning-Primer>
 - <doc:Naive-Bayes>
 - <doc:Linear-Regression>

@@ -110,9 +110,9 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
             var variances = [Double](repeating: 0.0, count: featureCount)
 
             // Compute mean for each feature
-            for idx in indices {
+            for sampleIndex in indices {
                 for f in 0..<featureCount {
-                    means[f] += features[idx][f]
+                    means[f] += features[sampleIndex][f]
                 }
             }
             for f in 0..<featureCount {
@@ -120,9 +120,9 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
             }
 
             // Compute variance for each feature
-            for idx in indices {
+            for sampleIndex in indices {
                 for f in 0..<featureCount {
-                    let diff = features[idx][f] - means[f]
+                    let diff = features[sampleIndex][f] - means[f]
                     variances[f] += diff * diff
                 }
             }
@@ -179,6 +179,45 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
         }
     }
 
+    /// Returns calibrated class probabilities for each sample.
+    ///
+    /// Applies the softmax transform to the unnormalized log-probabilities from
+    /// ``predictLogProbabilities(_:)``, producing a probability distribution
+    /// across classes that sums to 1.0 for each row. Use this when the caller
+    /// needs calibrated probabilities — for cost-sensitive decisions, threshold
+    /// tuning, or downstream probabilistic reasoning — rather than just the
+    /// argmax label produced by ``predict(_:)``.
+    ///
+    /// The output ordering matches the ``classes`` array. For row `i` and class
+    /// index `c`, `result[i][c]` is the model's estimated `P(class = classes[c] | features[i])`.
+    ///
+    /// > Note: Quiver applies a flat variance floor of `1e-9` during fitting,
+    /// > which makes the returned probabilities more conservative than other
+    /// > implementations that scale their smoothing relative to the maximum
+    /// > observed variance. The argmax and rank order across classes are
+    /// > unaffected — only the absolute confidence values differ at extreme
+    /// > class separation.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let model = GaussianNaiveBayes.fit(features: trainX, labels: trainY)
+    /// let probs = model.predictProbabilities([[2.0, 2.5]])
+    /// // probs[0] sums to 1.0 across classes
+    /// ```
+    ///
+    /// - Complexity: O(*q*·*c*·*f*) where *q* is the number of query samples,
+    ///   *c* is the number of classes, and *f* is the feature count.
+    /// - Parameter features: 2D array where each row is a sample to classify.
+    /// - Returns: 2D array of class probabilities, shape [samples × classes].
+    ///   Each row sums to 1.0.
+    public func predictProbabilities(_ features: [[Double]]) -> [[Double]] {
+        return predictLogProbabilities(features).map { logProbs in
+            logProbs.softMax()
+        }
+    }
+
     // MARK: - Private Helpers
 
     /// Predicts the most likely class for a single sample.
@@ -198,29 +237,28 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
     }
 
     /// Computes log P(class) + Σ log P(x_i | class) for a sample and class.
+    ///
+    /// Delegates per-feature density evaluation to the public
+    /// ``Distributions/normal/logPDF(x:mean:std:)``. The variance floor applied
+    /// during ``fit(features:labels:)`` guarantees the standard deviation passed
+    /// here is strictly positive, so the optional return is always non-nil for
+    /// fitted models.
     private func _logProbability(sample: [Double], classStats: ClassStats) -> Double {
         var logProb = Foundation.log(classStats.prior)
 
         for f in 0..<featureCount {
-            logProb += _logGaussianPDF(
+            let std = Foundation.sqrt(classStats.variances[f])
+            // The fit step floors variance at 1e-9, so std is always positive
+            // and the public logPDF returns a non-nil value here.
+            if let logDensity = Distributions.normal.logPDF(
                 x: sample[f],
                 mean: classStats.means[f],
-                variance: classStats.variances[f]
-            )
+                std: std
+            ) {
+                logProb += logDensity
+            }
         }
 
         return logProb
-    }
-
-    /// Log of the Gaussian probability density function.
-    ///
-    /// log P(x | μ, σ²) = -0.5 * [log(2π) + log(σ²) + (x - μ)² / σ²]
-    ///
-    /// Working in log-space avoids underflow when feature values are far
-    /// from the class mean, which would produce extremely small PDF values
-    /// that round to zero in standard floating-point arithmetic.
-    private func _logGaussianPDF(x: Double, mean: Double, variance: Double) -> Double {
-        let diff = x - mean
-        return -0.5 * (Foundation.log(2.0 * .pi) + Foundation.log(variance) + (diff * diff) / variance)
     }
 }

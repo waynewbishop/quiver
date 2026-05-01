@@ -4,7 +4,7 @@ Convert raw model scores into probabilities for classification tasks.
 
 ## Overview
 
-Machine learning models often produce raw numerical scores — called **logits** — that need to be converted into probabilities before they can be interpreted as predictions. Activation functions perform this conversion. Quiver provides two standard activation functions: `softMax()` for multi-class problems and `sigmoid()` for binary classification.
+Machine learning models often produce raw numerical scores — called **logits** — that need to be converted into probabilities before they can be interpreted as predictions. Activation functions perform this conversion. Quiver provides two standard activation functions: `softMax` for multi-class problems and `sigmoid` for binary classification.
 
 ### Softmax
 
@@ -59,7 +59,7 @@ A useful mathematical property: σ(x) + σ(−x) = 1.0. This symmetry means the 
 
 ### Where activation functions fit
 
-Quiver's built-in models handle probability conversion internally, so calling `softMax()` or `sigmoid()` on their output is not necessary. These functions are most useful when working with external model output — many models return raw logits, and converting them with `softMax()` or `sigmoid()` produces human-readable probabilities that pair naturally with Quiver's visualization tools.
+Quiver's built-in models handle probability conversion internally, so calling `softMax` or `sigmoid` on their output is not necessary. These functions are most useful when working with external model output — many models return raw logits, and converting them with `softMax` or `sigmoid` produces human-readable probabilities that pair naturally with Quiver's visualization tools.
 
 Activation functions also work well for custom scoring systems. Any time we have raw numerical scores — user ratings, feature importance weights, similarity rankings — these functions convert them into a normalized probability scale for comparison and visualization.
 
@@ -68,8 +68,3 @@ Activation functions also work well for custom scoring systems. Any time we have
 ### Functions
 - ``Swift/Array/softMax()->[Double]``
 - ``Swift/Array/sigmoid()->[Double]``
-
-### See also
-- <doc:Naive-Bayes>
-- <doc:Nearest-Neighbors-Classification>
-- <doc:Machine-Learning-Primer>

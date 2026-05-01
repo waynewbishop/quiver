@@ -10,9 +10,9 @@ Panel is the bridge. It organizes raw columns into named features, supports filt
 
 ### What Panel provides
 
-Panel is a value type that holds named columns of `[Double]` data with rows aligned across columns. The full reference for the type, including initializers, splitting, and the design rationale, lives in <doc:Panel>. The pieces that matter for charting are a focused subset: `head(n:)` for previewing rows in tabular form, `summary()` for per-column statistics, `filtered(where:)` for boolean-mask filtering across all columns at once, and `toMatrix(columns:)` for extracting selected columns as `[[Double]]` when a chart needs to iterate rows.
+Panel is a value type that holds named columns of `[Double]` data with rows aligned across columns. The full reference for the type, including initializers, splitting, and the design rationale, lives in <doc:Panel>. The pieces that matter for charting are a focused subset: `head(n:)` for previewing rows in tabular form, `summary` for per-column statistics, `filtered(where:)` for boolean-mask filtering across all columns at once, and `toMatrix(columns:)` for extracting selected columns as `[[Double]]` when a chart needs to iterate rows.
 
-Each column returned by subscript is a plain `[Double]`, which means every Quiver vector operation — `mean()`, `std()`, `groupedData(by:using:)`, `rollingMean(window:)` — applies directly. That is the connective tissue between Panel and the rest of the data-preparation surface in <doc:Data-Visualization>.
+Each column returned by subscript is a plain `[Double]`, which means every Quiver vector operation — `mean`, `std`, `groupedData(by:using:)`, `rollingMean(window:)` — applies directly. That is the connective tissue between Panel and the rest of the data-preparation surface in <doc:Data-Visualization>.
 
 ### From raw data to Panel
 
@@ -37,7 +37,7 @@ print(workouts.summary())
 // One row per column: count, mean, std, min, max
 ```
 
-The `head()` output shows what is actually in the panel after construction. The `summary()` output gives the per-column descriptive statistics — mean, standard deviation, minimum, maximum — that often answer the question being asked before any chart is needed at all.
+The `head` output shows what is actually in the panel after construction. The `summary` output gives the per-column descriptive statistics — mean, standard deviation, minimum, maximum — that often answer the question being asked before any chart is needed at all.
 
 ### Plotting Panel data with Swift Charts
 
@@ -88,8 +88,3 @@ The aggregation step usually decides the chart shape. A categorical sum or mean 
 
 The full catalog of chart-ready transformations — stacked series, percentile ranks, scaled-to-range outputs, downsampled signals — is documented in <doc:Data-Visualization>. The pattern is consistent across all of them: the Quiver method returns a shape that matches a Swift Charts mark, and the chart code stays small.
 
-## See also
-
-- <doc:Panel>
-- <doc:Data-Visualization>
-- <doc:Statistical-Operations>

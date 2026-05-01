@@ -204,4 +204,57 @@ final class NaiveBayesTests: XCTestCase {
         let model2 = GaussianNaiveBayes.fit(features: features, labels: labels)
         XCTAssertEqual(model1, model2)
     }
+
+    // MARK: - predictProbabilities
+
+    // Each row of predicted probabilities sums to 1.0
+    func testPredictProbabilitiesSumToOne() {
+        let features: [[Double]] = [
+            [1.0, 1.0], [1.0, 2.0], [2.0, 1.0],
+            [5.0, 5.0], [5.0, 6.0], [6.0, 5.0]
+        ]
+        let labels = [0, 0, 0, 1, 1, 1]
+        let model = GaussianNaiveBayes.fit(features: features, labels: labels)
+
+        let predictions = model.predictProbabilities([[1.5, 1.5], [5.5, 5.5], [3.0, 3.0]])
+
+        for row in predictions {
+            let sum = row.reduce(0, +)
+            XCTAssertEqual(sum, 1.0, accuracy: 1e-9, "row probabilities should sum to 1")
+        }
+    }
+
+    // argmax of predictProbabilities matches the predict() output
+    func testPredictProbabilitiesMatchesPredict() {
+        let features: [[Double]] = [
+            [1.0, 1.0], [1.0, 2.0], [2.0, 1.0],
+            [5.0, 5.0], [5.0, 6.0], [6.0, 5.0]
+        ]
+        let labels = [0, 0, 0, 1, 1, 1]
+        let model = GaussianNaiveBayes.fit(features: features, labels: labels)
+
+        let test: [[Double]] = [[1.5, 1.5], [5.5, 5.5], [3.0, 3.5]]
+        let probs = model.predictProbabilities(test)
+        let predicted = model.predict(test)
+
+        for (row, predClass) in zip(probs, predicted) {
+            guard let argmaxIdx = row.indices.max(by: { row[$0] < row[$1] }) else {
+                XCTFail("empty probability row"); return
+            }
+            XCTAssertEqual(argmaxIdx, predClass, "argmax of probabilities should equal predict()")
+        }
+    }
+
+    // Clear class boundary gives high-confidence predictions for in-class points
+    func testPredictProbabilitiesConfidence() {
+        let features: [[Double]] = [
+            [0.0, 0.0], [0.1, 0.1], [-0.1, 0.0],
+            [10.0, 10.0], [10.1, 10.1], [9.9, 10.0]
+        ]
+        let labels = [0, 0, 0, 1, 1, 1]
+        let model = GaussianNaiveBayes.fit(features: features, labels: labels)
+
+        let probs = model.predictProbabilities([[0.05, 0.05]])
+        XCTAssertGreaterThan(probs[0][0], 0.95, "should strongly predict class 0")
+    }
 }

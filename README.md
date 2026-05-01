@@ -23,12 +23,20 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
   * Dispersion (variance, standard deviation, quartiles, percentiles)
   * Cumulative operations (sum, product)
   * Outlier detection (z-score method)
+  * Probability distributions — normal `pdf`, `logPDF`, `cdf`, and `quantile` via `Distributions.normal`
+  * Resampling for inference — `resampled` for the bootstrap distribution of any statistic, paired with `percentileCI` for confidence intervals
 
 * **Array Generation**
   * Generate arrays (zeros, ones, linspace, arange, random uniform/normal)
   * Special matrices (identity, diagonal)
   * Reshape and flatten (1D ↔ 2D)
   * Broadcasting (scalar, vector, custom)
+
+* **Algebra**
+  * `Polynomial` value type with evaluation, derivative, arithmetic (`+`, `*`), and trimming
+  * `polyfit(x:y:degree:)` for least-squares polynomial regression
+  * `solve(_:)` for linear systems `Ax = b`
+  * `Fraction` type for exact rational representation of matrix and vector results
 
 * **Data Preparation**
   * Train/test split with reproducible seeded shuffling
@@ -46,7 +54,7 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
   * Downsampling, stacked series, correlation matrices
 
 * **Machine Learning Models**
-  * Gaussian Naive Bayes (classification)
+  * Gaussian Naive Bayes with calibrated `predictProbabilities` for soft-output classification
   * K-Nearest Neighbors (classification with Euclidean and cosine distance)
   * Linear Regression with single-feature convenience predict
   * K-Means Clustering with elbow method and multi-seed best fit
@@ -139,7 +147,7 @@ let outliers = sales.outlierMask(threshold: 1.2).trueIndices
 
 ## Cookbook
 
-[38 interactive recipes](https://github.com/waynewbishop/quiver-cookbook) for learning vector math, statistics, and ML models in Swift. Each recipe is a single `.swift` file optimized for the Xcode `#Playground` macro — clone the repo, open in Xcode, and start experimenting.
+[42 interactive recipes](https://github.com/waynewbishop/quiver-cookbook) for learning vector math, statistics, and ML models in Swift. Each recipe is a single `.swift` file optimized for the Xcode `#Playground` macro — clone the repo, open in Xcode, and start experimenting.
 
 ## Documentation
 

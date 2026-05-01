@@ -333,9 +333,8 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
 
     /// Returns the first rows of the panel as a formatted table.
     ///
-    /// Displays data in a space-delimited tabular format matching Pandas' default
-    /// `DataFrame.head()` output — column headers right-aligned above their values,
-    /// with a row index on the left.
+    /// Displays data in a space-delimited tabular format with column headers
+    /// right-aligned above their values, and a row index on the left.
     ///
     /// Example:
     /// ```swift
@@ -395,13 +394,13 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
 
         // Build data rows
         for r in 0..<displayRows {
-            let idx = indexStrings[r].padding(toLength: indexWidth, withPad: " ", startingAt: 0)
+            let indexLabel = indexStrings[r].padding(toLength: indexWidth, withPad: " ", startingAt: 0)
             let valueParts = (0..<columnNames.count).map { c in
-                let val = columnStrings[c][r]
+                let cellValue = columnStrings[c][r]
                 let width = columnWidths[c]
-                return String(repeating: " ", count: width - val.count) + val
+                return String(repeating: " ", count: width - cellValue.count) + cellValue
             }
-            lines.append(idx + "  " + valueParts.joined(separator: "  "))
+            lines.append(indexLabel + "  " + valueParts.joined(separator: "  "))
         }
 
         return lines.joined(separator: "\n")
@@ -441,8 +440,8 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
         // Compute width for each column based on header and data
         var widths = headers.map { $0.count }
         for row in rows {
-            for (c, val) in row.enumerated() {
-                widths[c] = Swift.max(widths[c], val.count)
+            for (c, cellValue) in row.enumerated() {
+                widths[c] = Swift.max(widths[c], cellValue.count)
             }
         }
 
@@ -457,10 +456,10 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
 
         // Build data rows — first column left-aligned, rest right-aligned
         for row in rows {
-            let parts = row.enumerated().map { c, val in
+            let parts = row.enumerated().map { c, cellValue in
                 c == 0
-                    ? val.padding(toLength: widths[c], withPad: " ", startingAt: 0)
-                    : String(repeating: " ", count: widths[c] - val.count) + val
+                    ? cellValue.padding(toLength: widths[c], withPad: " ", startingAt: 0)
+                    : String(repeating: " ", count: widths[c] - cellValue.count) + cellValue
             }
             lines.append(parts.joined(separator: "  "))
         }

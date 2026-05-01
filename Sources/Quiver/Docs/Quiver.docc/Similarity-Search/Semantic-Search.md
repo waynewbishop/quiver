@@ -61,7 +61,7 @@ The subtraction `king.subtract(man)` isolates the "royalty" component by removin
 
 ## Tokenizing text
 
-The first step in any text pipeline converts raw text into individual words. Quiver's `tokenize()` method lowercases, splits on whitespace, and strips punctuation — producing clean tokens that match embedding dictionary keys:
+The first step in any text pipeline converts raw text into individual words. Quiver's `tokenize` method lowercases, splits on whitespace, and strips punctuation — producing clean tokens that match embedding dictionary keys:
 
 ```swift
 import Quiver
@@ -110,13 +110,13 @@ let queryVectors = queryTokens.embed(using: embeddings)
 //  [0.6, 0.9, 0.4, 0.1]]   shoes
 ```
 
-Words like "for" that don't appear in the dictionary are silently skipped. Common words like "the," "for," and "is" often carry little semantic weight, so filtering them out can improve results. Because `tokenize()` strips punctuation by default, input like "Comfortable, Running Shoes!" produces clean tokens that match dictionary keys directly — no manual cleanup required.
+Words like "for" that don't appear in the dictionary are silently skipped. Common words like "the," "for," and "is" often carry little semantic weight, so filtering them out can improve results. Because `tokenize` strips punctuation by default, input like "Comfortable, Running Shoes!" produces clean tokens that match dictionary keys directly — no manual cleanup required.
 
 > Note: The `embed(using:)` method accepts any `[String: [Double]]` dictionary. How that dictionary is built — whether from a pre-trained model, a custom training pipeline, or a server-side API — is entirely up to the developer.
 
 ## Building document vectors
 
-Each document now has multiple word vectors — one per recognized token. To compare documents, we need a single vector per document. The `meanVector()` method averages all word vectors element-by-element, producing one vector that captures the overall meaning:
+Each document now has multiple word vectors — one per recognized token. To compare documents, we need a single vector per document. The `meanVector` method averages all word vectors element-by-element, producing one vector that captures the overall meaning:
 
 ```swift
 // Using queryVectors from the previous example
@@ -130,7 +130,7 @@ guard let documentVector = queryVectors.meanVector() else {
 
 The averaged vector blends the athletic meaning of "running" with the product meaning of "shoes" and the quality meaning of "comfortable." Documents with similar averages will score highest.
 
-> Tip: The `meanVector()` method returns an optional — it returns `nil` if the array is empty or if vectors have inconsistent dimensions. See <doc:Statistical-Operations> for additional aggregation operations on vector collections.
+> Tip: The `meanVector` method returns an optional — it returns `nil` if the array is empty or if vectors have inconsistent dimensions. See <doc:Statistical-Operations> for additional aggregation operations on vector collections.
 
 ## Ranking results
 
@@ -148,13 +148,7 @@ for result in results {
 }
 ```
 
-The pipeline chains together five Quiver operations: `tokenize()`, `embed(using:)`, `meanVector()`, `cosineSimilarities(to:)`, and `topIndices(k:labels:)`.
+The pipeline chains together five Quiver operations: `tokenize`, `embed(using:)`, `meanVector`, `cosineSimilarities(to:)`, and `topIndices(k:labels:)`.
 
 > Tip: For large collections, pre-compute and store document vectors rather than recalculating them for each query. Only the query vector needs to be built at search time.
 
-## See also
-
-- <doc:Text-Tokenization> - Tokenizing strings and looking up word vectors before search
-- <doc:Similarity-Operations> - Cosine similarity, batch operations, and cluster analysis
-- <doc:Vector-Operations> - Vector properties including magnitude, normalization, and dot product
-- <doc:Statistical-Operations> - Statistical operations including `meanVector()`

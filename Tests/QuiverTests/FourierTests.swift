@@ -38,7 +38,8 @@ final class FourierTests: XCTestCase {
         XCTAssertEqual(padded9.count, 16)
     }
 
-    func testIsPowerOfTwo() {
+    // Covers isPowerOfTwo and nextPowerOfTwo together
+    func testPowerOfTwoUtilities() {
         // Verified: standard bit-twiddling identity n > 0 && (n & (n-1)) == 0
         XCTAssertTrue(_Fourier.isPowerOfTwo(1))
         XCTAssertTrue(_Fourier.isPowerOfTwo(2))
@@ -48,10 +49,8 @@ final class FourierTests: XCTestCase {
         XCTAssertFalse(_Fourier.isPowerOfTwo(3))
         XCTAssertFalse(_Fourier.isPowerOfTwo(6))
         XCTAssertFalse(_Fourier.isPowerOfTwo(1023))
-    }
 
-    func testNextPowerOfTwo() {
-        // Verified: manual computation
+        // nextPowerOfTwo — verified by manual computation
         XCTAssertEqual(_Fourier.nextPowerOfTwo(for: 0), 1)
         XCTAssertEqual(_Fourier.nextPowerOfTwo(for: 1), 1)
         XCTAssertEqual(_Fourier.nextPowerOfTwo(for: 5), 8)
@@ -164,41 +163,37 @@ final class FourierTests: XCTestCase {
 
     // MARK: - Windowing
 
-    func testHannWindowPreservesLength() {
-        let signal = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
-        let windowed = signal.hannWindowed()
-        XCTAssertEqual(windowed.count, signal.count)
-    }
-
-    func testHannWindowTapersToZero() {
-        // Hann window should be near zero at the endpoints
-        // Verified: np.hanning(8)[0] ≈ 0, np.hanning(8)[7] ≈ 0
+    // Hann window preserves length and tapers to zero at endpoints
+    func testHannWindow() {
         let signal = [Double](repeating: 1.0, count: 8)
         let windowed = signal.hannWindowed()
 
+        // Length preserved
+        XCTAssertEqual(windowed.count, signal.count)
+
+        // Endpoints near zero
+        // Verified: np.hanning(8)[0] ≈ 0, np.hanning(8)[7] ≈ 0
         XCTAssertEqual(windowed[0], 0.0, accuracy: 1e-10)
         XCTAssertEqual(windowed[windowed.count - 1], 0.0, accuracy: 0.01)
     }
 
     // MARK: - Frequency Axis
 
-    func testFrequencyAxisValues() {
+    // Covers full and half frequency-axis construction
+    func testFrequencyAxis() {
         // 8 samples at 8 Hz sample rate → frequencies [0, 1, 2, 3, 4, 5, 6, 7] Hz
         // Verified: np.fft.fftfreq(8, d=1/8) * 8 = [0, 1, 2, 3, 4, -3, -2, -1]
         // (our method returns [0, 1, 2, 3, 4, 5, 6, 7] before folding)
         let signal = [Double](repeating: 0.0, count: 8)
         let frequencies = signal.fourierFrequencies(sampleRate: 8.0)
-
         XCTAssertEqual(frequencies.count, 8)
         XCTAssertEqual(frequencies[0], 0.0, accuracy: 1e-10)
         XCTAssertEqual(frequencies[1], 1.0, accuracy: 1e-10)
         XCTAssertEqual(frequencies[4], 4.0, accuracy: 1e-10)
-    }
 
-    func testFrequencyAxisHalfLength() {
-        let signal = [Double](repeating: 0.0, count: 16)
-        let halfFrequencies = signal.fourierFrequenciesHalf(sampleRate: 100.0)
-        XCTAssertEqual(halfFrequencies.count, 8)
+        // Half axis returns N/2 entries
+        let half = [Double](repeating: 0.0, count: 16).fourierFrequenciesHalf(sampleRate: 100.0)
+        XCTAssertEqual(half.count, 8)
     }
 
     // MARK: - Edge Cases

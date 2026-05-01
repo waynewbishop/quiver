@@ -204,19 +204,19 @@ public extension Array where Element == Int {
         // Weighted average — weighted by support
         let totalSupport = perClass.map { $0.support }.reduce(0, +)
         let weightedP: Double? = totalSupport > 0
-            ? perClass.compactMap { m in m.precision.map { $0 * Double(m.support) } }.reduce(0, +) / Double(totalSupport)
+            ? perClass.compactMap { metrics in metrics.precision.map { $0 * Double(metrics.support) } }.reduce(0, +) / Double(totalSupport)
             : nil
         let weightedR: Double? = totalSupport > 0
-            ? perClass.compactMap { m in m.recall.map { $0 * Double(m.support) } }.reduce(0, +) / Double(totalSupport)
+            ? perClass.compactMap { metrics in metrics.recall.map { $0 * Double(metrics.support) } }.reduce(0, +) / Double(totalSupport)
             : nil
         let weightedF: Double? = totalSupport > 0
-            ? perClass.compactMap { m in m.f1Score.map { $0 * Double(m.support) } }.reduce(0, +) / Double(totalSupport)
+            ? perClass.compactMap { metrics in metrics.f1Score.map { $0 * Double(metrics.support) } }.reduce(0, +) / Double(totalSupport)
             : nil
 
-        // Format helpers matching sklearn column layout
+        // Format helpers for the column layout
         func fmt(_ val: Double?) -> String {
-            guard let v = val else { return " 0.00" }
-            return String(format: "%5.2f", v)
+            guard let value = val else { return " 0.00" }
+            return String(format: "%5.2f", value)
         }
         func fmtSupport(_ val: Int) -> String {
             return String(format: "%10d", val)
@@ -229,12 +229,12 @@ public extension Array where Element == Int {
             12
         )
 
-        // Header — matches sklearn's fixed column widths
+        // Header — fixed column widths
         let headerLabel = String(repeating: " ", count: labelWidth)
         let header = "\(headerLabel)  precision    recall  f1-score   support"
         var lines = [header, ""]
 
-        // Per-class rows — sklearn uses "      %0.2f" (6 spaces + 4-char value = 10 per column)
+        // Per-class rows — "      %0.2f" (6 spaces + 4-char value = 10 per column)
         for (i, m) in perClass.enumerated() {
             let pad = String(repeating: " ", count: labelWidth - labelStrings[i].count)
             lines.append("\(pad)\(labelStrings[i])      \(fmt(m.precision))     \(fmt(m.recall))     \(fmt(m.f1Score))\(fmtSupport(m.support))")

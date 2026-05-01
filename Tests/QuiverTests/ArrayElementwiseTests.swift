@@ -38,54 +38,42 @@ final class ArrayElementwiseTests: XCTestCase {
 
     // MARK: - Trigonometric
 
-    // sin(0) = 0, sin(π/2) = 1
-    func testSin() {
-        let values = [0.0, Double.pi / 2]
-        let result = values.sin()
-        XCTAssertEqual(result[0], 0.0, accuracy: tolerance)
-        XCTAssertEqual(result[1], 1.0, accuracy: tolerance)
-    }
+    // Covers sin, cos, and tan at canonical angles
+    func testTrigonometric() {
+        // sin(0) = 0, sin(π/2) = 1
+        let sinResult = [0.0, Double.pi / 2].sin()
+        XCTAssertEqual(sinResult[0], 0.0, accuracy: tolerance)
+        XCTAssertEqual(sinResult[1], 1.0, accuracy: tolerance)
 
-    // cos(0) = 1, cos(π) = -1
-    func testCos() {
-        let values = [0.0, Double.pi]
-        let result = values.cos()
-        XCTAssertEqual(result[0], 1.0, accuracy: tolerance)
-        XCTAssertEqual(result[1], -1.0, accuracy: tolerance)
-    }
+        // cos(0) = 1, cos(π) = -1
+        let cosResult = [0.0, Double.pi].cos()
+        XCTAssertEqual(cosResult[0], 1.0, accuracy: tolerance)
+        XCTAssertEqual(cosResult[1], -1.0, accuracy: tolerance)
 
-    // tan(0) = 0, tan(π/4) = 1
-    func testTan() {
-        let values = [0.0, Double.pi / 4]
-        let result = values.tan()
-        XCTAssertEqual(result[0], 0.0, accuracy: tolerance)
-        XCTAssertEqual(result[1], 1.0, accuracy: tolerance)
+        // tan(0) = 0, tan(π/4) = 1
+        let tanResult = [0.0, Double.pi / 4].tan()
+        XCTAssertEqual(tanResult[0], 0.0, accuracy: tolerance)
+        XCTAssertEqual(tanResult[1], 1.0, accuracy: tolerance)
     }
 
     // MARK: - Logarithmic and Exponential
 
-    // ln(1) = 0, ln(e) = 1
-    func testLog() {
-        let values = [1.0, M_E]
-        let result = values.log()
-        XCTAssertEqual(result[0], 0.0, accuracy: tolerance)
-        XCTAssertEqual(result[1], 1.0, accuracy: tolerance)
-    }
+    // Covers natural log, log10, and exp at canonical values
+    func testLogarithmsAndExp() {
+        // ln(1) = 0, ln(e) = 1
+        let lnResult = [1.0, M_E].log()
+        XCTAssertEqual(lnResult[0], 0.0, accuracy: tolerance)
+        XCTAssertEqual(lnResult[1], 1.0, accuracy: tolerance)
 
-    // log10(1) = 0, log10(100) = 2
-    func testLog10() {
-        let values = [1.0, 100.0]
-        let result = values.log10()
-        XCTAssertEqual(result[0], 0.0, accuracy: tolerance)
-        XCTAssertEqual(result[1], 2.0, accuracy: tolerance)
-    }
+        // log10(1) = 0, log10(100) = 2
+        let log10Result = [1.0, 100.0].log10()
+        XCTAssertEqual(log10Result[0], 0.0, accuracy: tolerance)
+        XCTAssertEqual(log10Result[1], 2.0, accuracy: tolerance)
 
-    // exp(0) = 1, exp(1) = e
-    func testExp() {
-        let values = [0.0, 1.0]
-        let result = values.exp()
-        XCTAssertEqual(result[0], 1.0, accuracy: tolerance)
-        XCTAssertEqual(result[1], M_E, accuracy: tolerance)
+        // exp(0) = 1, exp(1) = e
+        let expResult = [0.0, 1.0].exp()
+        XCTAssertEqual(expResult[0], 1.0, accuracy: tolerance)
+        XCTAssertEqual(expResult[1], M_E, accuracy: tolerance)
     }
 
     // MARK: - Square Root and Square
@@ -115,25 +103,16 @@ final class ArrayElementwiseTests: XCTestCase {
 
     // MARK: - Rounding
 
-    // floor rounds down
-    func testFloor() {
-        let values = [1.2, 2.8, -1.5, 3.0]
-        let result = values.floor()
-        XCTAssertEqual(result, [1.0, 2.0, -2.0, 3.0])
-    }
+    // Covers floor, ceil, and round across positive, negative, and integer values
+    func testRounding() {
+        // floor rounds down
+        XCTAssertEqual([1.2, 2.8, -1.5, 3.0].floor(), [1.0, 2.0, -2.0, 3.0])
 
-    // ceil rounds up
-    func testCeil() {
-        let values = [1.2, 2.8, -1.5, 3.0]
-        let result = values.ceil()
-        XCTAssertEqual(result, [2.0, 3.0, -1.0, 3.0])
-    }
+        // ceil rounds up
+        XCTAssertEqual([1.2, 2.8, -1.5, 3.0].ceil(), [2.0, 3.0, -1.0, 3.0])
 
-    // round rounds to nearest
-    func testRound() {
-        let values = [1.2, 2.5, 2.8, -1.5]
-        let result = values.round()
-        XCTAssertEqual(result, [1.0, 3.0, 3.0, -2.0])
+        // round rounds to nearest
+        XCTAssertEqual([1.2, 2.5, 2.8, -1.5].round(), [1.0, 3.0, 3.0, -2.0])
     }
 
     // MARK: - Empty Arrays

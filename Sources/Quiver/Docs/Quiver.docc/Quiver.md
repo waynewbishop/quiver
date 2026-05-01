@@ -42,6 +42,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
 - <doc:Statistics-Primer>
+- <doc:Inferential-Statistics-Primer>
 - <doc:Machine-Learning-Primer>
 - <doc:Numerical-Literacy>
 - <doc:Concurrency-Primer>
@@ -61,8 +62,16 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Vectors
 - <doc:Vector-Operations>
 - <doc:Vector-Projections>
-- <doc:Boolean-Masking>
+
+### Statistics
 - <doc:Statistical-Operations>
+- <doc:Frequency-Tables>
+- <doc:Working-With-Distributions>
+- <doc:Boolean-Masking>
+
+### Algebra
+- <doc:Fraction>
+- <doc:Polynomials>
 
 ### Matrices
 - <doc:Matrix-Operations>
@@ -103,7 +112,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Utilities
 - <doc:Model-Persistence>
-- <doc:Fraction>
 
 ### Supporting Types
 - ``LogDeterminant``
@@ -111,3 +119,5 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - ``Classifier``
 - ``AggregationMethod``
 - ``MatrixError``
+- ``Distributions``
+- ``Polynomial``

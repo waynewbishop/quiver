@@ -8,9 +8,9 @@ Naive Bayes is one of the simplest and most effective classification algorithms.
 
 ### How Gaussian classification works
 
-The **Gaussian** in Gaussian Naive Bayes refers to the probability density function (PDF) — the mathematical formula that defines the bell curve of a normal distribution. Given a feature value, a class mean, and a class variance, the PDF answers the question: How likely is this feature value if the sample belongs to this class?
+The **Gaussian** in Gaussian Naive Bayes refers to the probability density function (PDF) — the mathematical formula that defines the bell curve of a normal distribution. Given a feature value, a class mean, and a class variance, the PDF answers the question: How likely is this feature value if the sample belongs to this class? See <doc:Working-With-Distributions> for the public `Distributions.normal` API the model uses internally.
 
-During prediction, the model evaluates the Gaussian PDF for every feature against every class. It then combines these likelihoods with the class prior probabilities (how common each class is in the training data) to determine which class best explains the observed features. The class with the highest combined score wins.
+During prediction, the model evaluates the Gaussian PDF for every feature against every class. It then combines these likelihoods with the class prior probabilities (how common each class is in the training data) to determine which class best explains the observed features. The class with the highest combined score wins. Class priors are themselves a frequency table over the labels — see <doc:Frequency-Tables>.
 
 ![Naive Bayes Process](diagram-naive-bayes)
 
@@ -54,6 +54,19 @@ let predictions = model.predict(newSamples)
 ```
 
 For deeper inspection, `predictLogProbabilities(_:)` returns the raw log-probabilities for each class, which is useful for understanding how confident the model is in each prediction.
+
+When the caller needs **calibrated probabilities** rather than the raw log-space values — for cost-sensitive decisions, threshold tuning, or downstream probabilistic reasoning — `predictProbabilities(_:)` applies the softmax transform and returns probabilities that sum to `1.0` across classes for each row:
+
+```swift
+import Quiver
+
+// Calibrated probabilities for two new samples
+let probs = model.predictProbabilities([[2.0, 2.5], [5.5, 7.0]])
+// probs[0] sums to 1.0 across classes, ditto probs[1]
+// Each value at probs[i][c] is P(class = classes[c] | features[i])
+```
+
+The output ordering matches the model's `classes` array. The argmax of each row is identical to what `predict(_:)` would return — `predictProbabilities` adds calibrated confidence on top of the same decision.
 
 ### The full pipeline
 
@@ -140,7 +153,7 @@ for group in results {
 
 Each `Classification` result conforms to `Sequence` — the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives you its data points directly, just like iterating an `Array`.
 
-> Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy()`, `classificationReport()`, or `confusionMatrix()`.
+> Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy`, `classificationReport`, or `confusionMatrix`.
 
 ### Safe by design
 
@@ -179,7 +192,11 @@ Naive Bayes multiplies together one probability for every feature in every class
 
 ### Related
 - <doc:Machine-Learning-Primer>
+- <doc:Working-With-Distributions>
+- <doc:Feature-Scaling>
+- <doc:Pipeline>
 - ``GaussianNaiveBayes/predictLogProbabilities(_:)``
+- ``GaussianNaiveBayes/predictProbabilities(_:)``
 
 ### Data Splitting
 - ``Swift/Array/trainTestSplit(testRatio:seed:)``

@@ -32,7 +32,7 @@ import Quiver
 }
 ```
 
-The `magnitude` property measures how long the vector is, specifically the distance from the origin to the point `[3, 4]`. The `normalized` property divides each element by that magnitude, producing a unit vector that preserves direction but has a length of exactly 1. The `asFractions()` method shows the result as rational numbers, which is useful for verifying exact values.
+The `magnitude` property measures how long the vector is, specifically the distance from the origin to the point `[3, 4]`. The `normalized` property divides each element by that magnitude, producing a unit vector that preserves direction but has a length of exactly 1. The `asFractions` method shows the result as rational numbers, which is useful for verifying exact values.
 
 ### Multiple experiments in one file
 

@@ -200,90 +200,80 @@ final class VectorOperationsTests: XCTestCase {
 
     // MARK: - Matrix Multiplication Tests
 
-    func testMatmul2x2() {
+    // Covers 2x2, 3x3, non-square, identity, and integer matrix multiplication
+    func testMatmulShapes() {
+        // 2x2
         let a = [[1.0, 2.0], [3.0, 4.0]]
         let b = [[5.0, 6.0], [7.0, 8.0]]
-        let result = a.multiplyMatrix(b)
-        XCTAssertEqual(result, [[19.0, 22.0], [43.0, 50.0]])
-    }
+        XCTAssertEqual(a.multiplyMatrix(b), [[19.0, 22.0], [43.0, 50.0]])
 
-    func testMatmulIdentityMatrix() {
+        // Identity preserves the input matrix
         let identity = [[1.0, 0.0], [0.0, 1.0]]
         let matrix = [[3.0, 4.0], [5.0, 6.0]]
         XCTAssertEqual(identity.multiplyMatrix(matrix), matrix)
-    }
 
-    func testMatmulNonSquareMatrices() {
         // (2×3) × (3×2) → (2×2)
-        let a = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
-        let b = [[7.0, 8.0], [9.0, 10.0], [11.0, 12.0]]
-        let result = a.multiplyMatrix(b)
-        XCTAssertEqual(result, [[58.0, 64.0], [139.0, 154.0]])
-    }
+        let nonSquareA = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+        let nonSquareB = [[7.0, 8.0], [9.0, 10.0], [11.0, 12.0]]
+        XCTAssertEqual(nonSquareA.multiplyMatrix(nonSquareB), [[58.0, 64.0], [139.0, 154.0]])
 
-    func testMatmulRotationComposition() {
-        // Two 90° rotations = 180° rotation
-        let rotate90 = [[0.0, -1.0], [1.0, 0.0]]
-        let result = rotate90.multiplyMatrix(rotate90)
-        XCTAssertEqual(result[0][0], -1.0, accuracy: 1e-10)
-        XCTAssertEqual(result[0][1], 0.0, accuracy: 1e-10)
-        XCTAssertEqual(result[1][0], 0.0, accuracy: 1e-10)
-        XCTAssertEqual(result[1][1], -1.0, accuracy: 1e-10)
-    }
-
-    func testMatmulNonCommutative() {
-        let a = [[1.0, 2.0], [3.0, 4.0]]
-        let b = [[5.0, 6.0], [7.0, 8.0]]
-        XCTAssertNotEqual(a.multiplyMatrix(b), b.multiplyMatrix(a))
-    }
-
-    func testMatmulTransformComposition() {
-        // Compose rotation → scaling, verify matches sequential application
-        let rotate = [[0.707, -0.707], [0.707, 0.707]]
-        let scale = [[2.0, 0.0], [0.0, 3.0]]
-        let composed = scale.multiplyMatrix(rotate)
-
-        let vector = [1.0, 0.0]
-        let result = composed.transform(vector)
-
-        let step1 = rotate.transform(vector)
-        let step2 = scale.transform(step1)
-
-        XCTAssertEqual(result[0], step2[0], accuracy: 1e-10)
-        XCTAssertEqual(result[1], step2[1], accuracy: 1e-10)
-    }
-
-    func testMatmul3x3() {
-        let a = [
+        // 3x3
+        let a3 = [
             [1.0, 2.0, 3.0],
             [4.0, 5.0, 6.0],
             [7.0, 8.0, 9.0]
         ]
-        let b = [
+        let b3 = [
             [9.0, 8.0, 7.0],
             [6.0, 5.0, 4.0],
             [3.0, 2.0, 1.0]
         ]
-        let result = a.multiplyMatrix(b)
-        XCTAssertEqual(result, [
+        XCTAssertEqual(a3.multiplyMatrix(b3), [
             [30.0, 24.0, 18.0],
             [84.0, 69.0, 54.0],
             [138.0, 114.0, 90.0]
         ])
+
+        // Integer matrices
+        let intA = [[1, 2], [3, 4]]
+        let intB = [[5, 6], [7, 8]]
+        XCTAssertEqual(intA.multiplyMatrix(intB), [[19, 22], [43, 50]])
     }
 
-    func testMatmulWithIntegers() {
-        let a = [[1, 2], [3, 4]]
-        let b = [[5, 6], [7, 8]]
-        XCTAssertEqual(a.multiplyMatrix(b), [[19, 22], [43, 50]])
+    // Matrix multiplication is non-commutative and composes transformations
+    func testMatmulProperties() {
+        // Non-commutative
+        let a = [[1.0, 2.0], [3.0, 4.0]]
+        let b = [[5.0, 6.0], [7.0, 8.0]]
+        XCTAssertNotEqual(a.multiplyMatrix(b), b.multiplyMatrix(a))
+
+        // Two 90° rotations = 180° rotation
+        let rotate90 = [[0.0, -1.0], [1.0, 0.0]]
+        let composed = rotate90.multiplyMatrix(rotate90)
+        XCTAssertEqual(composed[0][0], -1.0, accuracy: 1e-10)
+        XCTAssertEqual(composed[0][1], 0.0, accuracy: 1e-10)
+        XCTAssertEqual(composed[1][0], 0.0, accuracy: 1e-10)
+        XCTAssertEqual(composed[1][1], -1.0, accuracy: 1e-10)
+
+        // Composing transformations matches sequential application
+        let rotate = [[0.707, -0.707], [0.707, 0.707]]
+        let scale = [[2.0, 0.0], [0.0, 3.0]]
+        let combined = scale.multiplyMatrix(rotate)
+        let vector = [1.0, 0.0]
+        let result = combined.transform(vector)
+        let step1 = rotate.transform(vector)
+        let step2 = scale.transform(step1)
+        XCTAssertEqual(result[0], step2[0], accuracy: 1e-10)
+        XCTAssertEqual(result[1], step2[1], accuracy: 1e-10)
     }
 
     // MARK: - TopIndices Tests
 
-    func testTopIndicesBasic() {
+    // Covers basic ordering, edge cases, duplicates, and label overload
+    func testTopIndices() {
+        // Basic — descending by score with index preserved
         let scores = [0.3, 0.9, 0.1, 0.7, 0.5]
         let top3 = scores.topIndices(k: 3)
-
         XCTAssertEqual(top3.count, 3)
         XCTAssertEqual(top3[0].index, 1)
         XCTAssertEqual(top3[0].score, 0.9)
@@ -291,89 +281,71 @@ final class VectorOperationsTests: XCTestCase {
         XCTAssertEqual(top3[1].score, 0.7)
         XCTAssertEqual(top3[2].index, 4)
         XCTAssertEqual(top3[2].score, 0.5)
-    }
 
-    func testTopIndicesEdgeCases() {
-        // More than available
-        let scores = [0.3, 0.9]
-        let top5 = scores.topIndices(k: 5)
-        XCTAssertEqual(top5.count, 2)
+        // Requesting more than available returns the full array
+        XCTAssertEqual([0.3, 0.9].topIndices(k: 5).count, 2)
 
-        // Empty array
-        let empty: [Double] = []
-        XCTAssertEqual(empty.topIndices(k: 3).count, 0)
+        // Empty array returns no entries
+        XCTAssertEqual([Double]().topIndices(k: 3).count, 0)
 
-        // Duplicates
+        // Duplicates preserved in order
         let dups = [0.5, 0.9, 0.5, 0.9, 0.3]
-        let top3 = dups.topIndices(k: 3)
-        XCTAssertEqual(top3[0].score, 0.9)
-        XCTAssertEqual(top3[1].score, 0.9)
-    }
+        let topDups = dups.topIndices(k: 3)
+        XCTAssertEqual(topDups[0].score, 0.9)
+        XCTAssertEqual(topDups[1].score, 0.9)
 
-    func testTopIndicesWithLabels() {
-        let scores = [0.3, 0.9, 0.1, 0.7]
+        // Label overload pairs scores with labels
         let words = ["the", "cat", "dog", "sat"]
-
-        let predictions = scores.topIndices(k: 2, labels: words)
-
-        XCTAssertEqual(predictions.count, 2)
-        XCTAssertEqual(predictions[0].label, "cat")
-        XCTAssertEqual(predictions[0].score, 0.9, accuracy: 0.001)
-        XCTAssertEqual(predictions[1].label, "sat")
-        XCTAssertEqual(predictions[1].score, 0.7, accuracy: 0.001)
+        let labeled = [0.3, 0.9, 0.1, 0.7].topIndices(k: 2, labels: words)
+        XCTAssertEqual(labeled.count, 2)
+        XCTAssertEqual(labeled[0].label, "cat")
+        XCTAssertEqual(labeled[0].score, 0.9, accuracy: 0.001)
+        XCTAssertEqual(labeled[1].label, "sat")
+        XCTAssertEqual(labeled[1].score, 0.7, accuracy: 0.001)
     }
 
     // MARK: - FindDuplicates Tests
 
-    func testFindDuplicatesBasic() {
-        let documents = [
+    // Covers single match, no matches, multiple pairs, and threshold sensitivity
+    func testFindDuplicates() {
+        // Exact duplicate gets flagged
+        let docs = [
             [0.8, 0.6, 0.9],
-            [0.8, 0.6, 0.9],  // Exact duplicate of first
+            [0.8, 0.6, 0.9],
             [0.1, 0.2, 0.1]
         ]
+        let single = docs.findDuplicates(threshold: 0.95)
+        XCTAssertEqual(single.count, 1)
+        XCTAssertEqual(single[0].index1, 0)
+        XCTAssertEqual(single[0].index2, 1)
+        XCTAssertEqual(single[0].similarity, 1.0, accuracy: 1e-10)
 
-        let duplicates = documents.findDuplicates(threshold: 0.95)
-
-        XCTAssertEqual(duplicates.count, 1)
-        XCTAssertEqual(duplicates[0].index1, 0)
-        XCTAssertEqual(duplicates[0].index2, 1)
-        XCTAssertEqual(duplicates[0].similarity, 1.0, accuracy: 1e-10)
-    }
-
-    func testFindDuplicatesNoDuplicates() {
-        let documents = [
+        // Orthogonal vectors produce no duplicates
+        let orthogonal = [
             [1.0, 0.0, 0.0],
             [0.0, 1.0, 0.0],
             [0.0, 0.0, 1.0]
         ]
-        XCTAssertEqual(documents.findDuplicates(threshold: 0.95).count, 0)
-    }
+        XCTAssertEqual(orthogonal.findDuplicates(threshold: 0.95).count, 0)
 
-    func testFindDuplicatesMultiplePairs() {
-        let documents = [
+        // Multiple duplicate pairs are all reported
+        let multi = [
             [1.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],  // Duplicate of 0
+            [1.0, 0.0, 0.0],
             [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],  // Duplicate of 2
+            [0.0, 1.0, 0.0],
             [0.0, 0.0, 1.0]
         ]
+        let multiResult = multi.findDuplicates(threshold: 0.99)
+        XCTAssertEqual(multiResult.count, 2)
+        let pairs = [(multiResult[0].index1, multiResult[0].index2), (multiResult[1].index1, multiResult[1].index2)]
+        XCTAssertTrue(pairs.contains { $0 == (0, 1) })
+        XCTAssertTrue(pairs.contains { $0 == (2, 3) })
 
-        let duplicates = documents.findDuplicates(threshold: 0.99)
-        XCTAssertEqual(duplicates.count, 2)
-
-        let allIndices = [(duplicates[0].index1, duplicates[0].index2), (duplicates[1].index1, duplicates[1].index2)]
-        XCTAssertTrue(allIndices.contains { $0 == (0, 1) })
-        XCTAssertTrue(allIndices.contains { $0 == (2, 3) })
-    }
-
-    func testFindDuplicatesCustomThreshold() {
-        let documents = [
-            [0.8, 0.6],
-            [0.7, 0.7],
-        ]
-
-        XCTAssertEqual(documents.findDuplicates(threshold: 0.99).count, 0)
-        XCTAssertEqual(documents.findDuplicates(threshold: 0.90).count, 1)
+        // Threshold sensitivity
+        let close = [[0.8, 0.6], [0.7, 0.7]]
+        XCTAssertEqual(close.findDuplicates(threshold: 0.99).count, 0)
+        XCTAssertEqual(close.findDuplicates(threshold: 0.90).count, 1)
     }
 
     // MARK: - ClusterCohesion Tests
@@ -421,22 +393,18 @@ final class VectorOperationsTests: XCTestCase {
 
     // MARK: - SortedIndices Tests
 
-    func testSortedIndicesBasic() {
-        let values = [40.0, 10.0, 30.0, 20.0]
-        XCTAssertEqual(values.sortedIndices(), [1, 3, 2, 0])
-    }
+    // Covers basic ordering, mapping back to values, duplicates, empty, and already-sorted input
+    func testSortedIndices() {
+        // Basic ordering
+        XCTAssertEqual([40.0, 10.0, 30.0, 20.0].sortedIndices(), [1, 3, 2, 0])
 
-    func testSortedIndicesVerifyMapping() {
+        // Mapping indices back to values produces the sorted array
         let values = [5.0, 2.0, 8.0, 1.0]
-        let sorted = values.sortedIndices().map { values[$0] }
-        XCTAssertEqual(sorted, [1.0, 2.0, 5.0, 8.0])
-    }
+        XCTAssertEqual(values.sortedIndices().map { values[$0] }, [1.0, 2.0, 5.0, 8.0])
 
-    func testSortedIndicesEdgeCases() {
-        // Duplicates
+        // Duplicates preserved
         let dups = [3.0, 1.0, 3.0, 2.0]
-        let sorted = dups.sortedIndices().map { dups[$0] }
-        XCTAssertEqual(sorted, [1.0, 2.0, 3.0, 3.0])
+        XCTAssertEqual(dups.sortedIndices().map { dups[$0] }, [1.0, 2.0, 3.0, 3.0])
 
         // Empty array
         XCTAssertEqual([Double]().sortedIndices(), [])
@@ -473,30 +441,28 @@ final class VectorOperationsTests: XCTestCase {
 
     // MARK: - Matrix Inverse Tests
 
-    func testInverted2x2() throws {
-        let matrix = [[4.0, 7.0], [2.0, 6.0]]
-        let inverse = try matrix.inverted()
+    // Verify A * A^-1 = I across 2x2 and 3x3 matrices
+    func testInverted() throws {
+        // 2x2
+        let m2 = [[4.0, 7.0], [2.0, 6.0]]
+        let inv2 = try m2.inverted()
+        let id2 = m2.multiplyMatrix(inv2)
+        XCTAssertEqual(id2[0][0], 1.0, accuracy: 1e-10)
+        XCTAssertEqual(id2[0][1], 0.0, accuracy: 1e-10)
+        XCTAssertEqual(id2[1][0], 0.0, accuracy: 1e-10)
+        XCTAssertEqual(id2[1][1], 1.0, accuracy: 1e-10)
 
-        // Verify A * A^-1 = I
-        let identity = matrix.multiplyMatrix(inverse)
-        XCTAssertEqual(identity[0][0], 1.0, accuracy: 1e-10)
-        XCTAssertEqual(identity[0][1], 0.0, accuracy: 1e-10)
-        XCTAssertEqual(identity[1][0], 0.0, accuracy: 1e-10)
-        XCTAssertEqual(identity[1][1], 1.0, accuracy: 1e-10)
-    }
-
-    func testInverted3x3() throws {
-        let matrix = [
+        // 3x3
+        let m3 = [
             [1.0, 2.0, 3.0],
             [0.0, 1.0, 4.0],
             [5.0, 6.0, 0.0]
         ]
-        let inverse = try matrix.inverted()
-        let identity = matrix.multiplyMatrix(inverse)
-
+        let inv3 = try m3.inverted()
+        let id3 = m3.multiplyMatrix(inv3)
         for i in 0..<3 {
             for j in 0..<3 {
-                XCTAssertEqual(identity[i][j], i == j ? 1.0 : 0.0, accuracy: 1e-10)
+                XCTAssertEqual(id3[i][j], i == j ? 1.0 : 0.0, accuracy: 1e-10)
             }
         }
     }
@@ -552,22 +518,17 @@ final class VectorOperationsTests: XCTestCase {
 
     // MARK: - Condition Number Tests
 
-    func testConditionNumberIdentity() {
-        let identity = [[1.0, 0.0], [0.0, 1.0]]
-        XCTAssertEqual(identity.conditionNumber, 1.0, accuracy: 1e-10)
-    }
+    // Covers identity, diagonal, singular, and scale invariance
+    func testConditionNumber() {
+        // Identity has condition number 1
+        XCTAssertEqual([[1.0, 0.0], [0.0, 1.0]].conditionNumber, 1.0, accuracy: 1e-10)
 
-    func testConditionNumberSingular() {
-        let singular = [[1.0, 2.0], [2.0, 4.0]]
-        XCTAssertTrue(singular.conditionNumber.isInfinite)
-    }
+        // Diagonal matrix — ratio of largest to smallest eigenvalue
+        XCTAssertEqual([[2.0, 0.0], [0.0, 8.0]].conditionNumber, 4.0, accuracy: 1e-10)
 
-    func testConditionNumberDiagonal() {
-        let matrix = [[2.0, 0.0], [0.0, 8.0]]
-        XCTAssertEqual(matrix.conditionNumber, 4.0, accuracy: 1e-10)
-    }
+        // Singular matrix has infinite condition number
+        XCTAssertTrue([[1.0, 2.0], [2.0, 4.0]].conditionNumber.isInfinite)
 
-    func testConditionNumberScaling() {
         // Scaling by a constant should not change condition number
         let matrix = [[4.0, 1.0], [1.0, 3.0]]
         let scaled = [[8.0, 2.0], [2.0, 6.0]]

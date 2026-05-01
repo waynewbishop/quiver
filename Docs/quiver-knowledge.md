@@ -170,6 +170,20 @@ let flat = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 flat.reshaped(rows: 2, columns: 3)   // back to 2x3 (non-optional)
 ```
 
+## Linear Systems
+
+```swift
+// 2x +  y = 5
+//  x + 3y = 10
+let A = [[2.0, 1.0],
+         [1.0, 3.0]]
+let b = [5.0, 10.0]
+
+A.solve(b)   // [1.0, 3.0]?
+```
+
+`solve(_:)` returns `x` such that `A · x = b`, computed by inverting `A` and applying the inverse to `b`. Returns `nil` if `A` is not square, has inconsistent row lengths, the row count disagrees with `b.count`, or `A` is singular. Near-singular matrices (condition number above roughly `10¹⁰`) return a non-nil value that may be numerically unreliable — check `A.conditionNumber` before trusting the result.
+
 ## Array Generation
 
 All called on `[Double]` (not `[[Double]]`), even for 2D:
@@ -246,6 +260,48 @@ let vectors: [[Double]] = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 if let mv = vectors.meanVector() { print(mv) }   // [Double]?
 if let avg = vectors.averaged() { print(avg) }   // [Double]?
 ```
+
+### Resampling and confidence intervals:
+
+```swift
+let scores = [88.0, 72.0, 95.0, 81.0, 90.0, 76.0, 84.0, 91.0]
+
+// Resampled distribution of any statistic (sampling with replacement)
+let medians = scores.resampled(iterations: 1000, seed: 42) { resample in
+    resample.median() ?? 0.0
+}
+
+// Percentile-based confidence interval from a resampled distribution
+if let ci = medians.percentileCI(level: 0.95) {
+    print(ci.lower, ci.upper)   // 2.5th and 97.5th percentiles
+}
+```
+
+`resampled` returns the distribution of a statistic across `iterations` resamples (the technique known in statistics as the bootstrap). Pair it with `percentileCI(level:)` to turn that distribution into a confidence interval. Both use Quiver's seeded generator — same seed, same result.
+
+## Probability Distributions
+
+`Distributions` is a stateless namespace for probability density, cumulative density, log-density, and quantile functions. Every function returns `Double?` and produces `nil` for out-of-domain input (`std <= 0`, `p` outside `(0, 1)`, non-finite results) — matching Quiver's existing pattern for `mean`, `variance`, etc.
+
+```swift
+// Probability density at the mean of a standard normal
+Distributions.normal.pdf(x: 0, mean: 0, std: 1)        // ≈ 0.3989
+
+// Log-density (numerically stable for tail values or repeated multiplication)
+Distributions.normal.logPDF(x: 4, mean: 0, std: 1)     // ≈ -8.919
+
+// Cumulative probability P(X <= x)
+Distributions.normal.cdf(x: 1.96, mean: 0, std: 1)     // ≈ 0.975
+
+// Quantile (inverse CDF) — the 95% critical value
+Distributions.normal.quantile(p: 0.975, mean: 0, std: 1)  // ≈ 1.96
+```
+
+The quantile uses the Beasley-Springer-Moro rational approximation — roughly 7-decimal accuracy in the body of the distribution, 4-decimal in the tails. Values closer than `1e-15` to `0` or `1` return `nil`.
+
+`Distributions.t` and `Distributions.chiSquared` are reserved namespaces — no functions yet.
+
+`GaussianNaiveBayes` uses `Distributions.normal.logPDF` internally; the public exposure lets other callers reuse the same well-tested implementation.
 
 ## Similarity and Clustering
 
@@ -397,6 +453,47 @@ Fraction(0.333)              // auto-detect: 333/1000 or similar
 [[0.5, 0.25]].asFractions()  // [[Fraction]]
 ```
 
+## Polynomial Type
+
+`Polynomial` represents a single-variable polynomial `a₀ + a₁x + a₂x² + ... + aₙxⁿ` as ordered coefficients in a `[Double]`. Element `i` is the coefficient of `xⁱ` — constant term first, ascending powers after. Value type, `Codable`, `Equatable`, `Sendable`.
+
+```swift
+// 2x² + 3x + 1
+let p = Polynomial([1, 3, 2])
+
+p.coefficients      // [1.0, 3.0, 2.0]
+p.degree            // 2
+p.description       // "2x² + 3x + 1"
+
+// Evaluation uses Horner's method (numerically stable)
+p(2)                // 15.0 — single point
+p([0, 1, 2, 3])     // [1.0, 6.0, 15.0, 28.0] — vectorized for plotting
+
+// Calculus and canonicalization
+p.derivative()      // 4x + 3
+p.trimmed()         // strips trailing zero coefficients
+
+// Arithmetic
+let q = Polynomial([4, -3, -2])
+p + q               // term-by-term addition
+p * q               // polynomial multiplication (convolution)
+3.0 * p             // scalar broadcast
+```
+
+### Polynomial fitting
+
+```swift
+let x = [1.0, 2.0, 3.0, 4.0, 5.0]
+let y = [6.0, 15.0, 28.0, 45.0, 66.0]   // 2x² + 3x + 1
+
+if let p = [Double].polyfit(x: x, y: y, degree: 2) {
+    p.coefficients   // ≈ [1.0, 3.0, 2.0]
+    p(6)             // ≈ 91.0
+}
+```
+
+`polyfit` builds a Vandermonde-style design matrix and defers to `LinearRegression` to solve the normal equation. For `degree: 1` the result matches `LinearRegression.fit(features: x, targets: y)` exactly. For `degree: 0` the polynomial collapses to the mean of `y`. Returns `nil` on mismatched lengths, fewer points than `degree + 1`, negative degree, or an ill-conditioned system.
+
 ## Info and Debugging
 
 ```swift
@@ -522,7 +619,8 @@ print(gnb)  // GaussianNaiveBayes: 2 classes, 2 features
 
 gnb.predict(testX)                    // [Int] — raw labels for evaluation pipelines
 gnb.classify(testX)                   // [Classification] — grouped by predicted label
-gnb.predictLogProbabilities(testX)    // [[Double]]
+gnb.predictLogProbabilities(testX)    // [[Double]] — unnormalized log-probabilities
+gnb.predictProbabilities(testX)       // [[Double]] — calibrated probabilities, each row sums to 1.0
 gnb.featureCount                      // Int
 gnb.classes                           // [ClassStats]
 
@@ -936,8 +1034,10 @@ Simplest effective classifier. Assumes features are conditionally independent gi
 - **Fit:** `GaussianNaiveBayes.fit(features: trainX, labels: trainY)` — learns per-class means, variances, and priors.
 - **Predict:** `model.predict(testX)` → `[Int]` — raw labels for evaluation pipelines.
 - **Classify:** `model.classify(testX)` → `[Classification]` — groups inputs by predicted label, same pattern as KNN.
-- **Log probabilities:** `model.predictLogProbabilities(testX)` → `[[Double]]` — one row per sample, one column per class.
+- **Log probabilities:** `model.predictLogProbabilities(testX)` → `[[Double]]` — one row per sample, one column per class. Unnormalized.
+- **Probabilities:** `model.predictProbabilities(testX)` → `[[Double]]` — softmax of the log-probabilities, each row sums to 1.0. Use this for cost-sensitive decisions or threshold tuning rather than just the argmax label from `predict`.
 - **Inspect:** `model.classes` → `[ClassStats]` with `.label`, `.prior`, `.means`, `.variances`, `.count`. Each `ClassStats` conforms to `CustomStringConvertible`: `print(stats)` shows `Class 0: prior 50.0%, means [...], N samples`.
+- **Internal:** Uses `Distributions.normal.logPDF` for per-feature log-densities — the same public function callers can reach directly.
 - **When to use:** Baseline classifier. Fast training. Works well with small datasets. Good first model before trying more complex approaches.
 
 ### K-Nearest Neighbors
@@ -977,7 +1077,7 @@ Fits a line (or hyperplane) to continuous data using the normal equation.
 Measure model performance after prediction.
 
 - **Classification:** `predictions.confusionMatrix(actual: truth)` → `ConfusionMatrix` with `.truePositives`, `.falsePositives`, `.trueNegatives`, `.falseNegatives`, `.accuracy` (non-optional), `.precision` (optional), `.recall` (optional), `.f1Score` (optional). Conforms to `Equatable` and `CustomStringConvertible`.
-- **Classification report:** `predictions.classificationReport(actual: truth)` → per-class precision, recall, F1, and support with accuracy, macro avg, and weighted avg. Matches sklearn's `classification_report()` format.
+- **Classification report:** `predictions.classificationReport(actual: truth)` → per-class precision, recall, F1, and support with accuracy, macro avg, and weighted avg.
 - **Standalone:** `predictions.accuracy(actual:)`, `.precision(actual:)`, `.recall(actual:)`, `.f1Score(actual:)`.
 - **Regression:** `predicted.rSquared(actual:)` (1.0 = perfect), `.meanSquaredError(actual:)`, `.rootMeanSquaredError(actual:)`.
 

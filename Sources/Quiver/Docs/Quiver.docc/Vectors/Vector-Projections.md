@@ -12,7 +12,7 @@ Imagine standing in sunlight. Your shadow on the ground is a projection — it s
 
 Vector projection works the same way. Given a vector and a reference direction, the **scalar projection** measures how far the vector reaches along that direction, which is the length of the shadow. The **vector projection** gives that shadow as a vector, pointing along the reference direction with the measured length. Together they answer: "how much of this vector is aligned with that direction?"
 
-![K-Means Process](diagram-vector-projection)
+![Vector b projected onto vector a, showing the parallel component along a and the orthogonal component perpendicular to it](diagram-vector-projection)
 
 ### What the orthogonal component measures
 
@@ -119,7 +119,9 @@ The normal equation used in linear regression — θ = (X'X)⁻¹X'y — is a pr
 
 The intuition built here carries directly into that context. The prediction is the parallel component — the part of the target that the features can explain. The residual error is the orthogonal component — the part the features cannot reach. The best-fit model is the one where the error is perpendicular to every feature, meaning no feature can reduce it further.
 
-For a full treatment of the normal equation and how Quiver solves it, see <doc:Linear-Regression>.
+Polynomial regression generalizes the same projection. `polyfit(x:y:degree:)` projects the target vector `y` onto the column space spanned by `[1, x, x², ..., xⁿ]` — a Vandermonde-style basis whose powers replace the raw features of linear regression. The geometry is identical; only the columns change.
+
+For a full treatment of the normal equation and how Quiver solves it, see <doc:Linear-Regression>. For the `Polynomial` value type and `polyfit`, see <doc:Polynomials>.
 
 ## Topics
 

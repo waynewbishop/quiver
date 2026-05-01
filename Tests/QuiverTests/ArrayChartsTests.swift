@@ -56,26 +56,21 @@ final class ArrayChartsTests: XCTestCase {
 
     // MARK: - Distribution Tests
 
+    // Covers uniform binning and the constant-input collapse case
     func testHistogram() {
-        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-        let result = data.histogram(bins: 5)
-
+        // Uniform input — each bin gets 2 values
+        let uniform = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        let result = uniform.histogram(bins: 5)
         XCTAssertEqual(result.count, 5)
-        // Each bin should have 2 values
-        XCTAssertEqual(result[0].count, 2)
-        XCTAssertEqual(result[1].count, 2)
-        XCTAssertEqual(result[2].count, 2)
-        XCTAssertEqual(result[3].count, 2)
-        XCTAssertEqual(result[4].count, 2)
-    }
+        for bin in result {
+            XCTAssertEqual(bin.count, 2)
+        }
 
-    func testHistogramSingleValue() {
-        let data = [5.0, 5.0, 5.0]
-        let result = data.histogram(bins: 3)
-
-        XCTAssertEqual(result.count, 1)
-        XCTAssertEqual(result[0].midpoint, 5.0)
-        XCTAssertEqual(result[0].count, 3)
+        // Constant input collapses to a single bin at the value's midpoint
+        let constant = [5.0, 5.0, 5.0].histogram(bins: 3)
+        XCTAssertEqual(constant.count, 1)
+        XCTAssertEqual(constant[0].midpoint, 5.0)
+        XCTAssertEqual(constant[0].count, 3)
     }
 
     func testQuartiles() throws {
@@ -238,40 +233,35 @@ final class ArrayChartsTests: XCTestCase {
 
     // MARK: - Downsampling Tests
 
+    // Covers downsampling with both mean and sum aggregation
     func testDownsample() {
-        let hourlyData = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
-        let result = hourlyData.downsample(factor: 3, using: .mean)
+        // Mean over factor of 3
+        let hourly = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
+        let mean = hourly.downsample(factor: 3, using: .mean)
+        XCTAssertEqual(mean.count, 4)
+        XCTAssertEqual(mean[0], 2.0, accuracy: 1e-10)   // (1+2+3)/3
+        XCTAssertEqual(mean[1], 5.0, accuracy: 1e-10)   // (4+5+6)/3
+        XCTAssertEqual(mean[2], 8.0, accuracy: 1e-10)   // (7+8+9)/3
+        XCTAssertEqual(mean[3], 11.0, accuracy: 1e-10)  // (10+11+12)/3
 
-        XCTAssertEqual(result.count, 4)
-        XCTAssertEqual(result[0], 2.0, accuracy: 1e-10)   // (1+2+3)/3
-        XCTAssertEqual(result[1], 5.0, accuracy: 1e-10)   // (4+5+6)/3
-        XCTAssertEqual(result[2], 8.0, accuracy: 1e-10)   // (7+8+9)/3
-        XCTAssertEqual(result[3], 11.0, accuracy: 1e-10)  // (10+11+12)/3
-    }
-
-    func testDownsampleSum() {
-        let data = [10.0, 20.0, 30.0, 40.0]
-        let result = data.downsample(factor: 2, using: .sum)
-
-        XCTAssertEqual(result.count, 2)
-        XCTAssertEqual(result[0], 30.0)  // 10 + 20
-        XCTAssertEqual(result[1], 70.0)  // 30 + 40
+        // Sum over factor of 2
+        let sum = [10.0, 20.0, 30.0, 40.0].downsample(factor: 2, using: .sum)
+        XCTAssertEqual(sum.count, 2)
+        XCTAssertEqual(sum[0], 30.0)  // 10 + 20
+        XCTAssertEqual(sum[1], 70.0)  // 30 + 40
     }
 
     // MARK: - Edge Cases
 
-    func testEmptyArray() {
+    // Empty and single-element inputs across the API surface
+    func testBoundaryInputs() {
         let empty: [Double] = []
-
         XCTAssertEqual(empty.rollingMean(window: 3), [])
         XCTAssertTrue(empty.histogram(bins: 5).isEmpty)
         XCTAssertNil(empty.quartiles())
         XCTAssertEqual(empty.asPercentages(), [])
-    }
 
-    func testSingleElement() {
         let single = [5.0]
-
         XCTAssertEqual(single.rollingMean(window: 1), [5.0])
         XCTAssertEqual(single.asPercentages(), [100.0])  // Single element is 100% of total
     }

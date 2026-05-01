@@ -4,15 +4,15 @@ Train an ordinary least squares regression model.
 
 ## Overview
 
-Linear regression finds the best-fit line (or hyperplane) through training data by minimizing the sum of squared residuals. Unlike classification models that predict discrete categories, regression models predict continuous values like prices, temperatures, scores, or any numerical quantity.
+Linear regression finds the best-fit line (or hyperplane — the same idea extended to more than two dimensions) through training data by minimizing the sum of squared residuals. Unlike classification models that predict discrete categories, regression models predict continuous values like prices, temperatures, scores, or any numerical quantity.
 
-![K-Means Process](diagram-linear-regression)
+![Scatter plot of training points with the fitted regression line passing through them](diagram-linear-regression)
 
 ### How it works
 
 Linear regression models the relationship between features and a target as a linear equation: ŷ = θ₀ + θ₁x₁ + θ₂x₂ + ... + θₙxₙ. The goal is to find the coefficients θ that minimize the total squared error between predicted and actual values.
 
-Quiver solves this using the **normal equation** θ = (X'X)⁻¹X'y, which gives an exact closed-form solution. This approach uses the matrix operations already available in Quiver (transposition, multiplication, and inversion) rather than iterative gradient descent. The result is a precise answer computed in a single pass.
+Quiver solves this using the **normal equation** θ = (X'X)⁻¹X'y, which gives an exact closed-form solution. This approach uses the matrix operations already available in Quiver (transposition, multiplication, and inversion) rather than iterative gradient descent — repeatedly nudging the coefficients in the direction that reduces error. The result is a precise answer computed in a single pass.
 
 ### Fitting a model
 
@@ -168,6 +168,27 @@ print("R²: \(r2)")
 `Panel` is entirely optional. The regression model accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for details.
 
 > Tip: When scaling is part of the workflow, `Pipeline` bundles the scaler and model into a single value type. It scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
+
+### Polynomial regression
+
+Linear regression handles the form `y = θ₀ + θ₁x` — a straight line through the data. **Polynomial regression** is the natural extension: `y = θ₀ + θ₁x + θ₂x² + ... + θₙxⁿ` — a curve through the data. Quiver exposes it as `[Double].polyfit(x:y:degree:)`, which fits a polynomial of the given degree by ordinary least squares:
+
+```swift
+import Quiver
+
+// Underlying truth: 2x² + 3x + 1, evaluated at x = 1...5
+let x = [1.0, 2.0, 3.0, 4.0, 5.0]
+let y = [6.0, 15.0, 28.0, 45.0, 66.0]
+
+if let p = [Double].polyfit(x: x, y: y, degree: 2) {
+    p.coefficients   // ≈ [1.0, 3.0, 2.0]  — recovers a₀, a₁, a₂
+    p(6)             // ≈ 91.0              — predicted value at a new x
+}
+```
+
+Under the hood, `polyfit` builds a Vandermonde-style design matrix whose row `i` contains `[x[i], x[i]², ..., x[i]ⁿ]` and defers to `LinearRegression.fit` to solve the normal equation. The intercept of the fitted regression becomes the polynomial's constant term, and each weight becomes the next-higher-power coefficient. Same OLS math, same coefficients we would get from passing `[x, x², ..., xⁿ]` directly into `LinearRegression.fit` — `polyfit` is the convenience layer that handles the design-matrix construction and packages the result as a `Polynomial` value.
+
+> Tip: For the full `Polynomial` type — evaluation, arithmetic, derivatives, coefficient ordering — see <doc:Polynomials>.
 
 ### When the normal equation fails
 

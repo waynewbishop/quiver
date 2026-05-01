@@ -127,4 +127,22 @@ final class StandardScalerTests: XCTestCase {
         let scaler3 = StandardScaler.fit(features: [[0.0, 0.0], [10.0, 10.0]])
         XCTAssertNotEqual(scaler1, scaler3)
     }
+
+    // MARK: - Codable
+
+    // Round-trip preserves equality and transformation output
+    func testStandardScalerCodable() throws {
+        let features: [[Double]] = [
+            [1.0, 100.0], [2.0, 200.0], [3.0, 300.0], [4.0, 400.0]
+        ]
+        let scaler = StandardScaler.fit(features: features)
+
+        let data = try JSONEncoder().encode(scaler)
+        let decoded = try JSONDecoder().decode(StandardScaler.self, from: data)
+        XCTAssertEqual(scaler, decoded)
+
+        // Transformation output matches after decode
+        let testInput: [[Double]] = [[2.5, 250.0]]
+        XCTAssertEqual(scaler.transform(testInput), decoded.transform(testInput))
+    }
 }

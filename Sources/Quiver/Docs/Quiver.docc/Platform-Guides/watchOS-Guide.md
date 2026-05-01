@@ -6,7 +6,7 @@ Live sensor processing and in-session summaries on Apple Watch with Quiver.
 
 Apps on Apple Watch work with data the moment it arrives. A workout view smooths a noisy heart-rate stream into a stable display. A sleep tracker groups motion samples into stages while the user is still asleep. A focus-mode app classifies ambient motion into walking, sitting, or driving. A weather complication folds an hourly forecast into a single number that fits on a watch face. Each new sample arrives within a few seconds of the last one, and the computation has to keep up.
 
-Quiver fits this reality by running entirely in-process as pure Swift, with no bridging layer and no external dependencies. Rolling windows of `mean()` and `std()` smooth a live sensor stream without dropping samples. `KNearestNeighbors` classifies the current window against a small set of labeled patterns the app shipped with. `Pipeline` keeps the scaler and the classifier as one matched pair, so the same transformation applied during fitting applies during prediction. Because every Quiver model is `Sendable`, the fitted state crosses task boundaries during an `HKWorkoutSession` without locks or copies.
+Quiver fits this reality by running entirely in-process as pure Swift, with no bridging layer and no external dependencies. Rolling windows of `mean` and `std` smooth a live sensor stream without dropping samples. `KNearestNeighbors` classifies the current window against a small set of labeled patterns the app shipped with. `Pipeline` keeps the scaler and the classifier as one matched pair, so the same transformation applied during fitting applies during prediction. Because every Quiver model is `Sendable`, the fitted state crosses task boundaries during an `HKWorkoutSession` without locks or copies.
 
 ### Live sensor streams and rolling windows
 
@@ -96,9 +96,3 @@ The `buffer = window` copy before the detached task captures a snapshot of the c
 
 > Tip: The `guard window.count == 60` check means the model is only refitted when there is enough fresh data to be meaningful. Refitting on a half-full window produces unstable clusters and wastes battery.
 
-### See also
-
-- <doc:watchOS-Patterns> — Effort regimes, personal baselines, training cadence, and sizing models for the wrist
-- <doc:Concurrency-Primer> — Swift Concurrency patterns for training off the main thread
-- <doc:Machine-Learning-Primer> — Core vocabulary for Quiver's ML workflows
-- <doc:Feature-Scaling> — Min-max normalization for multi-signal classification
