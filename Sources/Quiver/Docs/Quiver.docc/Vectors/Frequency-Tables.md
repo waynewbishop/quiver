@@ -4,7 +4,7 @@ Counting how often values appear and turning counts into probabilities.
 
 ## Overview
 
-Frequency is the bridge between raw observations and probability. Before any model fits, before any inference test runs, we usually want to know a simpler thing: how often does each value show up in the data? A frequency table answers that question by listing every distinct value alongside the number of times it appears, or — once we divide by the total — alongside the fraction of the dataset it represents. This is the most elementary form of statistical reduction, and it is the building block underneath class priors, histograms, and any analysis that treats categories as data.
+Frequency is the bridge between raw observations and probability. Before any model fits, we usually want to know how often each value shows up in the data. A **frequency table** answers this question by listing every distinct value alongside the number of times it appears, or — once we divide by the total — alongside the fraction of the dataset it represents. This is the most elementary form of statistical reduction, and it is the building block underneath class priors, histograms, and any analysis that treats categories as data.
 
 A short list of quiz outcomes makes the idea concrete. Suppose six students took a three-tier rubric and we recorded each result as `1`, `2`, or `3`:
 
@@ -62,7 +62,7 @@ outcomes.frequencyDistribution()
 // 0.5 + 0.333... + 0.166... = 1.0
 ```
 
-The same number wears two names depending on what we are claiming. As a description of the data we already have, `0.5` is the **frequency** of the value `1.0` — three out of six observations matched. As a forecast about what we would draw next from this same distribution, the same `0.5` is a **probability**. Frequency is the empirical fact; probability is the inference we draw from it. Both methods compute counts as `count / total` with no Bessel correction, because we are summarizing the observations in hand rather than estimating an underlying parameter.
+The same number wears two names depending on what we are claiming. As a description of the data we already have, `0.5` is the **frequency** of the value `1.0` — three out of six observations matched. As a forecast about what we would draw next from this same distribution, the same `0.5` is a **probability**. Frequency is the empirical fact; probability is the inference we draw from it. Both methods compute counts as `count / total` with no small-sample correction, because we are summarizing the observations in hand rather than estimating a population parameter.
 
 ### Building the priors a classifier needs
 
@@ -83,7 +83,7 @@ labels.frequencyDistribution()
 // [0.0: 0.333..., 1.0: 0.5, 2.0: 0.166...]
 ```
 
-The dictionary above is the complete prior table for this training set. The same number appears as `prior:` in the per-class statistics a fitted Gaussian Naive Bayes model reports. Computing it directly with `frequencyDistribution()` lets us inspect class balance before fitting — a `0.166...` prior on virginica means it is the smaller class, which is information worth knowing before deciding whether to stratify a split or rebalance the data. See <doc:Naive-Bayes> for how the same priors flow into prediction.
+The dictionary above is the complete prior table for this training set. When we later train a classifier, the same number appears as `prior:` in the per-class statistics a fitted Gaussian Naive Bayes model reports. Computing it directly with `frequencyDistribution()` lets us inspect class balance before fitting — a `0.166...` prior on virginica means it is the smaller class, which is information worth knowing before deciding whether to stratify a split or rebalance the data. See <doc:Naive-Bayes> for how the same priors flow into prediction.
 
 ## Topics
 

@@ -18,10 +18,9 @@ import Foundation
 /// Probability distributions exposed as a stateless namespace.
 ///
 /// `Distributions` groups the probability density, cumulative density, and quantile
-/// functions for several named distributions. Each nested type is a case-less enum
-/// acting as its own namespace — `Distributions.normal`, `Distributions.t`, and
-/// `Distributions.chiSquared`. Callers reach the functions by their distribution
-/// name, keeping every call site self-documenting.
+/// functions for named distributions. Each nested type is a case-less enum acting
+/// as its own namespace — for example, `Distributions.normal`. Callers reach the
+/// functions by their distribution name, keeping every call site self-documenting.
 ///
 /// The functions are stateless. A typical call passes the distribution parameters
 /// directly: `Distributions.normal.cdf(x: 1.96, mean: 0, std: 1)`. There is no
@@ -239,11 +238,4 @@ public enum Distributions: Sendable {
         }
     }
 
-    /// Student's t-distribution functions.
-    public enum t: Sendable {
-    }
-
-    /// Chi-squared distribution functions.
-    public enum chiSquared: Sendable {
-    }
 }

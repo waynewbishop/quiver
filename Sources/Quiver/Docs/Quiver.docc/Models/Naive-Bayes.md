@@ -8,9 +8,9 @@ Naive Bayes is one of the simplest and most effective classification algorithms.
 
 ### How Gaussian classification works
 
-The **Gaussian** in Gaussian Naive Bayes refers to the probability density function (PDF) — the mathematical formula that defines the bell curve of a normal distribution. Given a feature value, a class mean, and a class variance, the PDF answers the question: How likely is this feature value if the sample belongs to this class?
+The **Gaussian** in Gaussian Naive Bayes refers to the probability density function (PDF) — the mathematical formula that defines the bell curve of a normal distribution. Given a feature value, a class mean, and a class variance, the PDF answers the question: How likely is this feature value if the sample belongs to this class? See <doc:Working-With-Distributions> for the public `Distributions.normal` API the model uses internally.
 
-During prediction, the model evaluates the Gaussian PDF for every feature against every class. It then combines these likelihoods with the class prior probabilities (how common each class is in the training data) to determine which class best explains the observed features. The class with the highest combined score wins.
+During prediction, the model evaluates the Gaussian PDF for every feature against every class. It then combines these likelihoods with the class prior probabilities (how common each class is in the training data) to determine which class best explains the observed features. The class with the highest combined score wins. Class priors are themselves a frequency table over the labels — see <doc:Frequency-Tables>.
 
 ![Naive Bayes Process](diagram-naive-bayes)
 
@@ -192,6 +192,9 @@ Naive Bayes multiplies together one probability for every feature in every class
 
 ### Related
 - <doc:Machine-Learning-Primer>
+- <doc:Working-With-Distributions>
+- <doc:Feature-Scaling>
+- <doc:Pipeline>
 - ``GaussianNaiveBayes/predictLogProbabilities(_:)``
 - ``GaussianNaiveBayes/predictProbabilities(_:)``
 

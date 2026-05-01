@@ -21,7 +21,7 @@ let sizes = revenues.scaled(to: 10.0...50.0)
 
 // Z-score standardization (mean=0, std=1) for comparing distributions
 let standardized = revenues.standardized()
-// [-1.29, -0.04, -0.76, 1.58, 0.50]
+// [-1.29, -0.04, -0.75, 1.58, 0.50]
 
 // Convert to percentages of total (for pie/donut charts)
 let shares = revenues.asPercentages()

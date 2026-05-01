@@ -135,7 +135,7 @@ let mask2 = data.outlierMask(threshold: 3.0, mean: mean, std: std)
 
 ### Resampling and inference
 
-The `resampled(iterations:seed:statistic:)` method estimates the variability of any statistic by drawing many resamples from the original data with replacement and recomputing the statistic on each resample. Pair it with `percentileCI(level:)` on the resulting distribution to read off a percentile confidence interval. The two methods are designed to compose — resample a statistic, then take the percentile interval of the result. For the conceptual treatment of resampling and what a percentile interval means, see <doc:Statistics-Primer>.
+The `resampled(iterations:seed:statistic:)` method estimates the variability of any statistic by drawing many resamples from the original data with replacement and recomputing the statistic on each resample. Pair it with `percentileCI(level:)` on the resulting distribution to read off a percentile confidence interval. The two methods are designed to compose — resample a statistic, then take the percentile interval of the result. For the conceptual treatment of resampling, sampling theory, and what a percentile interval means, see <doc:Inferential-Statistics-Primer>.
 
 ```swift
 import Quiver
@@ -208,3 +208,6 @@ if let documentVector = wordEmbeddings.meanVector() {
 - <doc:Train-Test-Split>
 - <doc:Vector-Operations>
 - <doc:Fourier-Transform>
+- <doc:Frequency-Tables>
+- <doc:Working-With-Distributions>
+- <doc:Inferential-Statistics-Primer>

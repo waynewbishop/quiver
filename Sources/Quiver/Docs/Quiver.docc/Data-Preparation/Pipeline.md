@@ -40,12 +40,17 @@ let pipeline = Pipeline(scaler: scaler, model: model)
 
 Pass raw, unscaled features. Pipeline applies the scaler internally:
 
+Without Pipeline, scaling and prediction are two separate calls — easy to forget the first:
+
 ```swift
-// Without Pipeline — two calls, easy to forget the first
 let scaled = scaler.transform([[2, 3], [5, 7]])
 let predictions = model.predict(scaled)
+// [0, 1]
+```
 
-// With Pipeline — one call, scaling is automatic
+With Pipeline, the scaler is applied automatically:
+
+```swift
 let predictions = pipeline.predict([[2, 3], [5, 7]])
 // [0, 1]
 ```

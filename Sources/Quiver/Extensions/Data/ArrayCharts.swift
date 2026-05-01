@@ -647,7 +647,7 @@ public extension Array where Element: FloatingPoint {
             let total = result.values.reduce(Element.zero, +)
             if total != .zero {
                 for key in result.keys {
-                    result[key] = (result[key]! / total) * Element(100)
+                    result[key] = ((result[key] ?? .zero) / total) * Element(100)
                 }
             }
         }

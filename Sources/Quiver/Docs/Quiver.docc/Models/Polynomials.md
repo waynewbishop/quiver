@@ -98,7 +98,7 @@ if let p = [Double].polyfit(x: x, y: y, degree: 2) {
 }
 ```
 
-Because `polyfit` is built on `LinearRegression.fit`, calling `polyfit(degree: 1)` returns the same line that `LinearRegression.fit(features: x, targets: y)` would — two doors to the same math. Higher degrees fit curves that linear regression cannot. The function returns `nil` when the inputs are invalid (mismatched lengths, fewer points than `degree + 1`, negative degree) or when the underlying linear system is ill-conditioned.
+Because `polyfit` is built on <doc:Linear-Regression>, calling `polyfit(degree: 1)` returns the same line that `LinearRegression.fit(features: x, targets: y)` would — two doors to the same math. Higher degrees fit curves that linear regression cannot. The function returns `nil` when the inputs are invalid (mismatched lengths, fewer points than `degree + 1`, negative degree) or when the underlying linear system is ill-conditioned.
 
 > Tip: For the conceptual background on least squares — projection onto a column space — see <doc:Vector-Projections>. Polynomial regression projects `y` onto the column space spanned by `[1, x, x², ..., xⁿ]`.
 
@@ -149,4 +149,8 @@ The `degree` property reports the highest power with a non-zero coefficient rega
 
 ### Fitting
 - ``Swift/Array/polyfit(x:y:degree:)``
+
+### Related
+- <doc:Linear-Regression>
+- <doc:Vector-Projections>
 

@@ -65,6 +65,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Statistics
 - <doc:Statistical-Operations>
+- <doc:Frequency-Tables>
 - <doc:Working-With-Distributions>
 - <doc:Boolean-Masking>
 

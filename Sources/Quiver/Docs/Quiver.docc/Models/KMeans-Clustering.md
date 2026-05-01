@@ -222,3 +222,4 @@ This is useful for unit tests, debugging, and verifying that a pipeline produces
 - <doc:Machine-Learning-Primer>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:Feature-Scaling>
+- <doc:Pipeline>

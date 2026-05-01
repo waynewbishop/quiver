@@ -161,3 +161,15 @@ let split = balanced.stratifiedSplit(
 
 The method auto-detects which classes are smaller and generates new samples by interpolating between existing points in vector space. For multi-class data, every class below the largest count is oversampled independently. Call `oversample` before `stratifiedSplit` so that both the training and test sets contain enough examples from every class.
 
+## Topics
+
+### Splitting
+- ``Swift/Array/trainTestSplit(testRatio:seed:)``
+- ``Swift/Array/stratifiedSplit(labels:testRatio:seed:)``
+- ``Swift/Array/oversample(labels:)``
+
+### Related
+- <doc:Pipeline>
+- <doc:Feature-Scaling>
+- <doc:Machine-Learning-Primer>
+

@@ -239,6 +239,7 @@ Nearest Neighbors struggles with large datasets (prediction scans every training
 
 ### Related
 - <doc:Pipeline>
+- <doc:Feature-Scaling>
 - <doc:Machine-Learning-Primer>
 - <doc:Naive-Bayes>
 - <doc:Linear-Regression>
