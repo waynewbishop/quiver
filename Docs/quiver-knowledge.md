@@ -324,6 +324,32 @@ scores.topIndices(k: 2, labels: ["A", "B", "C", "D", "E"])    // [(label, score)
 scores.sortedIndices()                                          // [Int] (argsort)
 ```
 
+## Embedding Dictionary Search
+
+```swift
+let king  = [0.9, 0.2, 0.8, 0.7]
+let queen = [0.3, 0.9, 0.8, 0.7]
+let man   = [0.8, 0.1, 0.2, 0.6]
+let woman = [0.2, 0.8, 0.2, 0.6]
+
+let embeddings: [String: [Double]] = [
+    "king":  king,
+    "queen": queen,
+    "man":   man,
+    "woman": woman
+]
+
+// Rank dictionary entries by cosine similarity to a query vector.
+// Returns [(rank: Int, word: String, score: Double)] sorted by score descending.
+embeddings.nearest(to: queryVector, k: 5)
+
+// Analogy lookup — king - man + woman should land near queen
+let target = king.subtract(man).add(woman)
+embeddings.nearest(to: target, k: 1)  // [(1, "queen", 1.0)]
+```
+
+Entries whose vector dimension does not match the query are silently skipped. Zero-magnitude vectors score 0.0 (perpendicular by convention). Default k = 5.
+
 ## Broadcasting
 
 ### Scalar (named methods):
@@ -434,7 +460,7 @@ vectors.heatmapData(labels:)   // [(x, y, value)] for RectangleMark
 
 ```swift
 "Hello World! This is a test.".tokenize()   // ["hello", "world", "this", "is", "a", "test"]
-"Hello, World!".tokenize(strippingPunctuation: false)  // ["hello,", "world!"]
+"Hello, World!".tokenize(removingPunctuation: false)  // ["hello,", "world!"]
 
 let embeddings: [String: [Double]] = ["hello": [0.1, 0.2], ...]
 tokens.embed(using: embeddings)   // [[Double]] — vectors for known words
@@ -971,7 +997,7 @@ Measure how related two vectors are using cosine similarity and distance metrics
 
 Find information by meaning, not keywords. Full pipeline: tokenize → embed → average → compare.
 
-1. **Tokenize:** `"Running Shoes".tokenize()` → `["running", "shoes"]`. Lowercases, splits on whitespace, and strips punctuation by default. Pass `strippingPunctuation: false` to keep punctuation.
+1. **Tokenize:** `"Running Shoes".tokenize()` → `["running", "shoes"]`. Lowercases, splits on whitespace, and removes punctuation by default. Pass `removingPunctuation: false` to keep punctuation.
 2. **Embed:** `tokens.embed(using: embeddings)` → `[[Double]]`. Looks up each token in a `[String: [Double]]` dictionary. Unknown words silently skipped.
 3. **Average:** `vectors.meanVector()` → `[Double]?`. Combines word vectors into one document vector.
 4. **Compare:** `docVectors.cosineSimilarities(to: queryVector)` → `[Double]`. Rank by similarity.

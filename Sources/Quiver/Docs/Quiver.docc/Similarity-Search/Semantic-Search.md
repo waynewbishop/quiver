@@ -61,7 +61,7 @@ The subtraction `king.subtract(man)` isolates the "royalty" component by removin
 
 ## Tokenizing text
 
-The first step in any text pipeline converts raw text into individual words. Quiver's `tokenize` method lowercases, splits on whitespace, and strips punctuation — producing clean tokens that match embedding dictionary keys:
+The first step in any text pipeline converts raw text into individual words. Quiver's `tokenize` method lowercases, splits on whitespace, and removes punctuation — producing clean tokens that match embedding dictionary keys:
 
 ```swift
 import Quiver
@@ -75,12 +75,12 @@ let reviewTokens = review.tokenize()
 // ["great", "shoes", "lightweight", "comfortable", "and", "fast"]
 ```
 
-Lowercasing ensures that "Running" and "running" map to the same vector. Punctuation stripping ensures that "shoes!" and "shoes," both match the dictionary key "shoes" — without this, punctuated words would silently miss their embeddings. Contractions like "don't" preserve their interior apostrophe.
+Lowercasing ensures that "Running" and "running" map to the same vector. Punctuation removal ensures that "shoes!" and "shoes," both match the dictionary key "shoes" — without this, punctuated words would silently miss their embeddings. Contractions like "don't" preserve their interior apostrophe.
 
-To keep punctuation attached to tokens (for example, when token boundaries carry meaning), pass `strippingPunctuation: false`:
+To keep punctuation attached to tokens (for example, when token boundaries carry meaning), pass `removingPunctuation: false`:
 
 ```swift
-let raw = "Hello, world!".tokenize(strippingPunctuation: false)
+let raw = "Hello, world!".tokenize(removingPunctuation: false)
 // ["hello,", "world!"]
 ```
 
@@ -110,9 +110,40 @@ let queryVectors = queryTokens.embed(using: embeddings)
 //  [0.6, 0.9, 0.4, 0.1]]   shoes
 ```
 
-Words like "for" that don't appear in the dictionary are silently skipped. Common words like "the," "for," and "is" often carry little semantic weight, so filtering them out can improve results. Because `tokenize` strips punctuation by default, input like "Comfortable, Running Shoes!" produces clean tokens that match dictionary keys directly — no manual cleanup required.
+Words like "for" that don't appear in the dictionary are silently skipped. Common words like "the," "for," and "is" often carry little semantic weight, so filtering them out can improve results. Because `tokenize` removes punctuation by default, input like "Comfortable, Running Shoes!" produces clean tokens that match dictionary keys directly — no manual cleanup required.
 
 > Note: The `embed(using:)` method accepts any `[String: [Double]]` dictionary. How that dictionary is built — whether from a pre-trained model, a custom training pipeline, or a server-side API — is entirely up to the developer.
+
+## Searching the embedding dictionary
+
+Once an embedding dictionary is in hand, `nearest(to:k:)` ranks every word against a query vector and returns the top matches. The method composes cosine similarity, sorting, and ranking into a single call — the same operation that would otherwise take three or four chained calls.
+
+```swift
+import Quiver
+
+let king  = [0.9, 0.2, 0.8, 0.7]
+let queen = [0.3, 0.9, 0.8, 0.7]
+let man   = [0.8, 0.1, 0.2, 0.6]
+let woman = [0.2, 0.8, 0.2, 0.6]
+
+let embeddings: [String: [Double]] = [
+    "king":  king,
+    "queen": queen,
+    "man":   man,
+    "woman": woman
+]
+
+// king - man + woman should land closest to queen
+let target = king.subtract(man).add(woman)
+
+let results = embeddings.nearest(to: target, k: 2)
+// [(rank: 1, word: "queen", score: 1.0),
+//  (rank: 2, word: "king",  score: 0.79)]
+```
+
+Each result carries a 1-based rank, the matching word, and the cosine similarity score. Entries whose vector dimension does not match the query are skipped silently, which makes the method forgiving when the dictionary mixes embeddings from different sources.
+
+> Tip: For ranked search across an array of document vectors rather than a string-keyed dictionary, use `cosineSimilarities(to:)` followed by `topIndices(k:labels:)`. The dictionary form is a convenience for the embedding-table case where the keys are already the labels.
 
 ## Building document vectors
 

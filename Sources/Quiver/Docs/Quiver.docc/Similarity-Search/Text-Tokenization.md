@@ -10,7 +10,7 @@ The two methods compose to produce a `[[Double]]` from raw text — one inner ar
 
 ### Tokenizing strings
 
-The `tokenize(strippingPunctuation:)` method on `String` lowercases the input, splits on whitespace and newlines, removes empty tokens, and — by default — strips leading and trailing punctuation from each token. The defaults are tuned for embedding lookups, where punctuated forms like `"shoes!"` and `"shoes,"` would otherwise miss their dictionary key:
+The `tokenize(removingPunctuation:)` method on `String` lowercases the input, splits on whitespace and newlines, removes empty tokens, and — by default — removes leading and trailing punctuation from each token. The defaults are tuned for embedding lookups, where punctuated forms like `"shoes!"` and `"shoes,"` would otherwise miss their dictionary key:
 
 ```swift
 import Quiver
@@ -20,11 +20,11 @@ let tokens = query.tokenize()
 // ["comfortable", "running", "shoes"]
 
 // Punctuation preserved when it carries meaning
-let raw = "Hello, world!".tokenize(strippingPunctuation: false)
+let raw = "Hello, world!".tokenize(removingPunctuation: false)
 // ["hello,", "world!"]
 ```
 
-Punctuation stripping operates on the boundaries of each token, so interior characters survive. Contractions like `"don't"` keep their apostrophe because the apostrophe is not at either end after the initial trim.
+Punctuation removal operates on the boundaries of each token, so interior characters survive. Contractions like `"don't"` keep their apostrophe because the apostrophe is not at either end after the initial trim.
 
 > Note: `tokenize` does not stem, lemmatize, or remove stop words. It is a literal split-and-clean step, leaving any vocabulary or normalization decisions to the caller.
 
