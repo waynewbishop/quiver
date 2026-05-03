@@ -105,6 +105,8 @@ print("RMSE: \(rmse)")  // in the same units as the target
 
 ### The full pipeline
 
+> Tip: To run this pipeline against a real regression dataset instead of inline samples, the Quiver Notebook ships `Dataset.californiaHousing` (20,640 rows of 1990 census data, target column `median_house_value`). See <doc:Notebook-Datasets>.
+
 A typical workflow combines data splitting, model fitting, and evaluation:
 
 ```swift

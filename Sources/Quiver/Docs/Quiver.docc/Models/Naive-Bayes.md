@@ -195,6 +195,7 @@ Naive Bayes multiplies together one probability for every feature in every class
 - <doc:Working-With-Distributions>
 - <doc:Feature-Scaling>
 - <doc:Pipeline>
+- <doc:Notebook-Datasets>
 - ``GaussianNaiveBayes/predictLogProbabilities(_:)``
 - ``GaussianNaiveBayes/predictProbabilities(_:)``
 

@@ -192,6 +192,8 @@ print("Sports cluster quality: \(Int(sportsCohesion * 100))%")
 
 ### Semantic search
 
+> Tip: For real word vectors to test these patterns against, the Quiver Notebook ships `Dataset.glove50d` — 5,000 GloVe word embeddings ready to load by name. See <doc:Notebook-Datasets>.
+
 Find relevant content by comparing the meaning of a query against a collection of documents. Unlike keyword search, semantic search surfaces results based on conceptual similarity — a query for "running shoes" can match documents about "athletic footwear" if their embeddings are close.
 
 ```swift

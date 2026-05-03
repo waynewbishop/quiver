@@ -124,3 +124,5 @@ Everything up to this point has been about describing the data we already have. 
 
 A different kind of question shows up the moment we start treating our data as evidence about something larger. An A/B test in an iOS app captures session times for the few thousand users who happened to land in the variant group — but the product decision rides on every user who will ever touch that flow. A week of accelerometer readings from one watch reflects one wearer's gait, but we want a threshold that will work for the next wearer too. In each case the dataset in hand is a sample, and the thing we actually care about is the population the sample came from. **Inferential statistics** is the toolkit for reasoning across that gap. See <doc:Inferential-Statistics-Primer> for sampling theory, hypothesis testing, confidence intervals, and resampling.
 
+> Tip: For a course teaching descriptive or inferential statistics in Swift, the <doc:Quiver-Notebook-For-Classrooms> page covers the classroom adoption model — clone-and-run distribution, custom assignment files, and pinning a release for a semester.
+
