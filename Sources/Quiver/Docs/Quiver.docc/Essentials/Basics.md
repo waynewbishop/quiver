@@ -68,6 +68,12 @@ Every Quiver model follows the same shape: `fit` takes the training data, `predi
 
 For the full conceptual frame — features, labels, training, evaluation, overfitting — see <doc:Machine-Learning-Primer>. For the individual models, see <doc:Linear-Regression>, <doc:Nearest-Neighbors-Classification>, and <doc:KMeans-Clustering>.
 
+### Coding with Quiver
+
+The <doc:Quiver-Notebook> is a browser editor that opens with `Quiver` and `Foundation` already imported, plus a small library of teaching datasets ready to load. Best for students learning the API, instructors preparing lectures, or quick experiments before deciding whether an idea is worth keeping.
+
+For shipping code into an iOS, watchOS, visionOS, or Vapor app, add Quiver as a Swift package dependency and import it directly in the project's source files. The Notebook is where a model gets built and tested against real data; the app is where the finished model goes to run. Snippets carry over unchanged — the same `[Double]` arrays and the same `fit`/`predict` methods work in both places.
+
 ### Where to go from here
 
-The three pillars above sit on top of a few practical concerns that come up the moment we work with real data. Floating-point arithmetic does not always behave the way decimal math does — `0.1 + 0.2` is not exactly `0.3`, and <doc:Numerical-Literacy> covers when to worry and when not to. Turning Quiver's output into a Swift Chart is the next step for most apps, and <doc:Data-Visualization> shows the patterns. For working through any of this interactively while we learn, <doc:Usage> walks through the `#Playground` macro that lets us see results inline as we type, and <doc:Quiver-Notebook> covers the no-Xcode browser environment that runs the same code without a project.
+The three pillars above sit on top of a few practical concerns that come up the moment we work with real data. Floating-point arithmetic does not always behave the way decimal math does — `0.1 + 0.2` is not exactly `0.3`, and <doc:Numerical-Literacy> covers when to worry and when not to. Turning Quiver's output into a Swift Chart is the next step for most apps, and <doc:Data-Visualization> shows the patterns.

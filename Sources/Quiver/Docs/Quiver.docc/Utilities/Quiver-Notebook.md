@@ -1,22 +1,35 @@
 # Quiver Notebook
 
-Writing and running Swift in a web browser, with Quiver ready to use.
+A browser-based Swift IDE for testing and evaluating Quiver models.
 
 ## Overview
 
-The Quiver Notebook is the fastest way to try a Quiver idea — a vector calculation, a statistical check, a model fit without setting up a project. Clone a repository and a browser tab opens with `Quiver`, `Foundation`, and a small library of teaching datasets ready to use. Nothing else needs to be installed beyond the Swift CLI.
+The Quiver Notebook provides a fast, lightweight environment for learning Quiver and for prototyping. Established as a standalone web-based IDE, it serves two audiences: students who want to learn statistics, linear algebra, and machine learning in Swift, and developers who want a quick iteration loop for testing and building their own models.
+
+To start, clone the repository and a browser opens with `Quiver`, `Foundation`, and a small library of teaching datasets ready to use. Nothing else needs to be installed beyond the Swift CLI.
 
 > Tip: The Notebook lives in its own repository on GitHub. This page covers how to start it, how snippets fit alongside the rest of Quiver, and what the Notebook adds beyond a plain Swift project. For the bundled teaching datasets, see <doc:Notebook-Datasets>.
 
 ### Setting up locally
 
-The Notebook runs on the Swift command-line toolchain, which is not preinstalled on macOS. Confirm Swift 5.9 or newer is available before cloning:
+The Notebook runs on the Swift command-line toolchain. The lightest way to get Swift on macOS is **swiftly**, Swift's official toolchain installer. It runs as a normal Mac installer and does not require Homebrew or Xcode.
 
-```bash
-swift --version
-```
+1. Download the installer: [swiftly-1.1.1.pkg](https://download.swift.org/swiftly/darwin/swiftly-1.1.1.pkg)
+2. Double-click the downloaded file and follow the prompts.
+3. Open a new terminal tab and run:
 
-If the command is missing or older than 5.9, the toolchain is a free download from [swift.org/install](https://www.swift.org/install/). Xcode is not required — the standalone toolchain is enough. Once Swift is in place, we clone and run:
+   ```bash
+   ~/.swiftly/bin/swiftly init
+   ```
+
+   This downloads the latest Swift toolchain into your home folder and configures your shell.
+4. Confirm the install:
+
+   ```bash
+   swift --version
+   ```
+
+Once Swift is in place, clone and run:
 
 ```bash
 git clone https://github.com/waynewbishop/quiver-notebook
@@ -30,11 +43,11 @@ Then open `http://localhost:8080` in a browser. The first launch compiles the li
 
 ### Writing and running snippets
 
-The editor opens with `Quiver`, `Structures`, and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter (or Ctrl+Enter on Linux) to compile and run, and output appears in the pane below the editor. The editor auto-saves to the browser's local storage, so refreshing the page does not lose code.
+The editor opens with `Quiver` and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter (or Ctrl+Enter on Linux) to compile and run, and output appears in the pane below the editor. The editor auto-saves to the browser's local storage, so refreshing the page does not lose code.
 
 > Tip: Cmd+Enter triggers a full Swift compile of the entire editor contents, not a cell-by-cell evaluation. Compile errors stop the run, and there is no shared state between runs — every snippet is its own complete program.
 
-Two libraries cover the ground a typical lesson needs. Quiver provides the numerical and machine-learning surface — vectors, matrices, statistics, and models. Structures provides the classic data structures that appear in algorithms courses: heaps, tries, graphs, stacks, queues, and binary search trees. The Notebook deliberately scopes itself to these two packages, so students see the same surface every time they open it.
+The Notebook scopes itself deliberately to Quiver — vectors, matrices, statistics, and models — so students see the same surface every time they open the editor. There is no plugin system and no extra package configuration to learn.
 
 ### A first snippet
 

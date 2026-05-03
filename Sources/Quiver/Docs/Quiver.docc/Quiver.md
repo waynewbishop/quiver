@@ -35,7 +35,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Essentials
 - <doc:Installation>
 - <doc:Basics>
-- <doc:Usage>
 - <doc:How-It-Works>
 
 ### Conceptual Guides
@@ -109,12 +108,13 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:KMeans-Clustering>
 - <doc:Evaluation-Metrics>
 - <doc:Activation-Functions>
+- <doc:Model-Persistence>
 
 ### Utilities
-- <doc:Model-Persistence>
 - <doc:Quiver-Notebook>
 - <doc:Notebook-Datasets>
 - <doc:Quiver-Notebook-For-Classrooms>
+- <doc:Xcode-Playground>
 
 ### Supporting Types
 - ``LogDeterminant``

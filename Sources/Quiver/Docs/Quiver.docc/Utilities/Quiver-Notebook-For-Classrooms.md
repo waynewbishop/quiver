@@ -22,7 +22,7 @@ The Notebook is the right tool for:
 
 **Educators** preparing lectures or assignments can fork the repository, drop custom example files into the `examples/` folder, and distribute the URL to a class. The bundled stack covers enough ground for an applied linear algebra unit, an introductory descriptive statistics segment, and an applied regression module — material that fits inside an existing course rather than replacing one. A short supervised learning survey covering k-nearest neighbors, k-means, and Naive Bayes also fits comfortably in a few weeks.
 
-**Students** working through a course, textbook, or self-study get a Swift environment that does numerical work without installing additional binaries, configuring system packages, or downloading datasets separately. One clone and one command produce a working editor with Quiver, Structures, Foundation, and the bundled datasets already wired in.
+**Students** working through a course, textbook, or self-study get a Swift environment that does numerical work without installing additional binaries, configuring system packages, or downloading datasets separately. One clone and one command produce a working editor with Quiver, Foundation, and the bundled datasets already wired in.
 
 **iOS and Apple-platform developers** prototyping a model or testing an idea get a focused editor without a project workspace. Code that runs here compiles unchanged on any Apple platform — including iOS, watchOS, visionOS, and Vapor server-side targets.
 
@@ -71,7 +71,7 @@ cd cs180-quiver-notebook
 swift run
 ```
 
-The first launch takes a minute or two while Swift fetches Quiver, Structures, and the editor framework. Subsequent runs start in seconds, and a class running in an air-gapped lab can clone-and-build once on a connected machine, then redistribute the fully built directory.
+The first launch takes a minute or two while Swift fetches Quiver and the editor framework. Subsequent runs start in seconds, and a class running in an air-gapped lab can clone-and-build once on a connected machine, then redistribute the fully built directory.
 
 ### Pinning a version for a semester
 
@@ -85,7 +85,7 @@ To hold a course on a specific release across a semester, do not pull from the N
 
 The privacy story is covered in detail in <doc:Quiver-Notebook>. The short version for adoption decisions: nothing leaves the machine. The local server only accepts connections from the same machine, and there are no accounts, telemetry endpoints, or analytics calls. Bundled datasets ship with the repository and are read locally; custom CSVs loaded from disk stay local too.
 
-One supported-configuration note: the Notebook is designed for one student per laptop, and runs Swift with the permissions of whoever launched it. Running it on a shared classroom server is not a supported configuration — a multi-user deployment would need sandboxing, resource limits, and per-user isolation that the current scope does not include.
+> Tip: The Notebook is designed for one student per laptop and runs Swift with the permissions of whoever launched it. A shared classroom server is not a supported configuration — a multi-user deployment would need sandboxing, resource limits, and per-user isolation that the current scope does not include.
 
 ### What if port 8080 is in use
 

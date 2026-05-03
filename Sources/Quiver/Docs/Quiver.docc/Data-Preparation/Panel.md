@@ -12,8 +12,6 @@ With Panel, each column gets a name and all rows stay together as a unit. It ser
 
 ### Creating a panel
 
-> Tip: Most real `Panel` values come from a dataset rather than from inline literals. The Quiver Notebook's bundled datasets (`Dataset.iris`, `Dataset.titanic`, and others) return a `Panel` directly via `toPanel()`. See <doc:Notebook-Datasets>.
-
 Build a panel from an ordered list of named columns. All columns must have the same number of elements:
 
 ```swift

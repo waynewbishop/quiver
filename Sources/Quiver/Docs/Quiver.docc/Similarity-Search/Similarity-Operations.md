@@ -62,8 +62,6 @@ let v1 = [3.0, 4.0]
 let unitVector = v1.normalized  // [0.6, 0.8]
 ```
 
-> Tip: For normalized vectors (magnitude = 1), dot product equals cosine similarity.
-
 ## Cosine similarity
 
 Cosine similarity measures the angle between vectors, ranging from -1 (opposite) to 1 (identical). It focuses on direction rather than magnitude.
@@ -192,7 +190,7 @@ print("Sports cluster quality: \(Int(sportsCohesion * 100))%")
 
 ### Semantic search
 
-> Tip: For real word vectors to test these patterns against, the Quiver Notebook ships `Dataset.glove50d` — 5,000 GloVe word embeddings ready to load by name. See <doc:Notebook-Datasets>.
+> Tip: **The Quiver Notebook** ships 5,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector. See <doc:Notebook-Datasets>.
 
 Find relevant content by comparing the meaning of a query against a collection of documents. Unlike keyword search, semantic search surfaces results based on conceptual similarity — a query for "running shoes" can match documents about "athletic footwear" if their embeddings are close.
 

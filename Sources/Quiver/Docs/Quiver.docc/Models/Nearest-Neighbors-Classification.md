@@ -119,8 +119,6 @@ let model = KNearestNeighbors.fit(
 
 ### The full pipeline
 
-> Tip: The inline iris-shaped data below has a real counterpart — `Dataset.iris` in the Quiver Notebook returns the original 150 Anderson/Fisher samples with the same four features and species labels. See <doc:Notebook-Datasets>.
-
 A typical workflow combines data splitting, optional scaling, model fitting, and evaluation:
 
 ```swift
