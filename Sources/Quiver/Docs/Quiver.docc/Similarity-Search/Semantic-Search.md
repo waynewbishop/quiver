@@ -10,9 +10,7 @@ Semantic search finds information by comparing **meaning** rather than matching 
 
 ## Words as vectors
 
-The core idea behind semantic search is that words can be represented as arrays of numbers — vectors — where each dimension captures some aspect of the word's meaning. When words share similar contexts in language, their vectors point in similar directions.
-
-Consider how we might represent a small vocabulary. Words related to athletics cluster together, while unrelated words sit far apart:
+Semantic search begins with the idea that words can be represented as arrays of numbers — vectors — where each dimension captures some aspect of the word's meaning. Words that share similar contexts in language end up with vectors that point in similar directions. The example below sketches a small vocabulary in which words related to athletics cluster together while unrelated words sit far apart:
 
 > Important: The vector values throughout this article are hypothetical, chosen to illustrate the math. In practice, these values could come from a trained language model, a domain-specific dataset (e.g. home prices versus property features), or any source that maps items to numeric vectors.
 
@@ -35,7 +33,7 @@ The similarity score tells us "running" and "jogging" are nearly interchangeable
 
 ## Vector arithmetic captures relationships
 
-What makes word vectors accurate is that arithmetic on them captures semantic relationships.
+Word vectors do more than encode similarity — they also encode relationships that show up under arithmetic. Subtracting one vector from another isolates the dimensions that differ between them; adding a third vector reintroduces a different attribute. This is what makes the classic `king − man + woman ≈ queen` analogy hold.
 
 ```swift
 import Quiver
@@ -55,7 +53,7 @@ result.cosineOfAngle(with: queen)  // ~1.0
 result.cosineOfAngle(with: king)   // ~0.79
 ```
 
-The subtraction `king.subtract(man)` isolates the "royalty" component by removing the "male" direction. Adding `woman` reintroduces a gender direction, landing at "female royalty." This works because word vectors encode semantic properties as geometric directions — the same directions our similarity operations measure.
+The subtraction isolates the "royalty" component by removing the "male" direction. Adding the woman vector reintroduces a gender direction, landing at "female royalty." Word vectors encode semantic properties as geometric directions, and similarity operations measure those directions directly.
 
 > Note: The element-wise arithmetic shown here relies on Quiver's vector methods. See <doc:Vector-Operations> for the full set of vector operations available on arrays.
 
@@ -86,9 +84,9 @@ let raw = "Hello, world!".tokenize(removingPunctuation: false)
 
 ## Looking up embeddings
 
-With tokens in hand, we convert each word to its vector representation using `embed(using:)`. This method looks up each token in a dictionary and returns only the vectors for words it finds — unknown words are automatically filtered out:
+The `embed(using:)` method converts an array of tokens into an array of vectors. It looks up each token in a dictionary keyed by string and returns only the vectors for tokens it finds — unknown tokens are filtered out automatically:
 
-> Tip: The hand-built embeddings dictionary below illustrates the shape, but real word vectors come from a trained model. The Quiver Notebook ships `Dataset.glove50d` — 5,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector — for working through this pipeline against actual embeddings. See <doc:Notebook-Datasets>.
+> Tip: **The Quiver Notebook** ships 5,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector. See <doc:Notebook-Datasets>.
 
 ```swift
 import Quiver
@@ -149,7 +147,7 @@ Each result carries a 1-based rank, the matching word, and the cosine similarity
 
 ## Building document vectors
 
-Each document now has multiple word vectors — one per recognized token. To compare documents, we need a single vector per document. The `meanVector` method averages all word vectors element-by-element, producing one vector that captures the overall meaning:
+The `meanVector` method collapses an array of token vectors into a single vector by averaging element-by-element. Each document is now represented by one vector that blends the meaning of every recognized token:
 
 ```swift
 // Using queryVectors from the previous example
@@ -167,7 +165,7 @@ The averaged vector blends the athletic meaning of "running" with the product me
 
 ## Ranking results
 
-With document vectors in hand, we use batch cosine similarity to rank all documents against a query, then extract the top matches. Here is the complete pipeline:
+The `cosineSimilarities(to:)` method scores every document vector against a query vector in one call. Pairing it with `topIndices(k:labels:)` returns the highest-scoring documents in ranked order:
 
 ```swift
 // Using queryVector and docVectors built from the previous steps
@@ -181,7 +179,7 @@ for result in results {
 }
 ```
 
-The pipeline chains together five Quiver operations: `tokenize`, `embed(using:)`, `meanVector`, `cosineSimilarities(to:)`, and `topIndices(k:labels:)`.
+The full pipeline chains five Quiver methods in order: `tokenize`, `embed(using:)`, `meanVector`, `cosineSimilarities(to:)`, and `topIndices(k:labels:)`.
 
 > Tip: For large collections, pre-compute and store document vectors rather than recalculating them for each query. Only the query vector needs to be built at search time.
 

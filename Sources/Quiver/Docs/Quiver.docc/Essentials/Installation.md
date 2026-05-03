@@ -56,4 +56,4 @@ let result = a.dot(b)
 print(result) // 32.0
 ```
 
-> Tip: For an Xcode-free way to try Quiver, the <doc:Quiver-Notebook> runs Swift snippets in a browser tab with `Quiver` and `Foundation` already imported. Clone the `quiver-notebook` repository, run `swift run`, and start writing code without configuring a project.
+> Tip: For learning Quiver and prototyping models against bundled teaching datasets, the <doc:Quiver-Notebook> runs Swift snippets in a browser tab with `Quiver` and `Foundation` already imported. Best for students, instructors, and developers building models before dropping them into an app.

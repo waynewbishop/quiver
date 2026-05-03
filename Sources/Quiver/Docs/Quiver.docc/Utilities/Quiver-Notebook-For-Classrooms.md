@@ -85,7 +85,7 @@ To hold a course on a specific release across a semester, do not pull from the N
 
 The privacy story is covered in detail in <doc:Quiver-Notebook>. The short version for adoption decisions: nothing leaves the machine. The local server only accepts connections from the same machine, and there are no accounts, telemetry endpoints, or analytics calls. Bundled datasets ship with the repository and are read locally; custom CSVs loaded from disk stay local too.
 
-One supported-configuration note: the Notebook is designed for one student per laptop, and runs Swift with the permissions of whoever launched it. Running it on a shared classroom server is not a supported configuration — a multi-user deployment would need sandboxing, resource limits, and per-user isolation that the current scope does not include.
+> Tip: The Notebook is designed for one student per laptop and runs Swift with the permissions of whoever launched it. A shared classroom server is not a supported configuration — a multi-user deployment would need sandboxing, resource limits, and per-user isolation that the current scope does not include.
 
 ### What if port 8080 is in use
 

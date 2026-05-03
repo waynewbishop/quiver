@@ -1,6 +1,6 @@
 # Quiver Notebook
 
-Writing and running Swift in a web browser, with Quiver ready to use.
+A browser-based Swift IDE for testing and evaluating Quiver models.
 
 ## Overview
 
@@ -10,11 +10,22 @@ The [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) provides 
 
 The Notebook runs on the Swift command-line toolchain and requires macOS 15 (Sequoia) or newer with Swift 5.9 or newer. The lightest way to get Swift on macOS is **swiftly**, Swift's official toolchain installer. It runs as a normal Mac installer and does not require Homebrew or Xcode.
 
-```bash
-swift --version
-```
+1. Download the installer: [swiftly-1.1.1.pkg](https://download.swift.org/swiftly/darwin/swiftly-1.1.1.pkg)
+2. Double-click the downloaded file and follow the prompts.
+3. Open a new terminal tab and run:
 
-If the command is missing or older than 5.9, the toolchain is a free download from [swift.org/install](https://www.swift.org/install/). Xcode is not required — the standalone toolchain is enough. Once Swift is in place, we clone and run:
+   ```bash
+   ~/.swiftly/bin/swiftly init
+   ```
+
+   This downloads the latest Swift toolchain into your home folder and configures your shell.
+4. Confirm the install:
+
+   ```bash
+   swift --version
+   ```
+
+Once Swift is in place, clone and run:
 
 ```bash
 git clone https://github.com/waynewbishop/quiver-notebook
