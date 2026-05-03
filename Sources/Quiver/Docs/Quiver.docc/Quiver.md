@@ -112,6 +112,9 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Utilities
 - <doc:Model-Persistence>
+- <doc:Quiver-Notebook>
+- <doc:Notebook-Datasets>
+- <doc:Quiver-Notebook-For-Classrooms>
 
 ### Supporting Types
 - ``LogDeterminant``
