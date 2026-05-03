@@ -201,3 +201,5 @@ For a full treatment of these metrics and the `ConfusionMatrix` type, see <doc:E
 
 > Tip: Start simple: Naive Bayes for classification, Linear Regression for continuous targets, Nearest Neighbors when the decision boundary is nonlinear, K-Means for unlabeled data. The evaluation techniques in the previous section tell us whether our choice is working.
 
+> Tip: For a course adopting Quiver, the <doc:Quiver-Notebook-For-Classrooms> page covers the fork-and-distribute model, adding custom assignments to the `examples/` folder, and pinning a specific Quiver release for the duration of a semester.
+

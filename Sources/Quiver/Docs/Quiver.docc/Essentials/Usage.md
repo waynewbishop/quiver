@@ -143,3 +143,5 @@ import Quiver
 For the full Fourier API — spectrum computation, windowing, phase analysis, and real-world applications — see <doc:Fourier-Transform>.
 
 > Tip: The [Quiver Cookbook](https://github.com/waynewbishop/quiver-cookbook) has interactive recipes that run as `#Playground` macros in Xcode. Each recipe solves a single problem — from computing distance to training a classifier — in under 30 lines.
+
+> Tip: For an Xcode-free interactive workflow, the <doc:Quiver-Notebook> runs the same Swift code in a browser tab. Useful for classroom labs, machines without Xcode installed, and quickly trying a snippet without creating a project.

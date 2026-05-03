@@ -145,3 +145,5 @@ a.distance(to: b)  // √((4-1)² + (6-2)²) = √25 = 5.0
 
 `Distance` is what connects linear algebra to machine learning. Quiver's models use distance to find the most similar training examples, group data points together, and rank how related two arrays are. The <doc:Machine-Learning-Primer> explores each of these models and how they apply these concepts.
 
+> Tip: For a course teaching applied linear algebra in Swift, the <doc:Quiver-Notebook-For-Classrooms> page covers the classroom adoption model — every student runs the same environment from one `swift run`, with no per-machine setup.
+

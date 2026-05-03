@@ -55,3 +55,5 @@ let b: [Double] = [4, 5, 6]
 let result = a.dot(b)
 print(result) // 32.0
 ```
+
+> Tip: For an Xcode-free way to try Quiver, the <doc:Quiver-Notebook> runs Swift snippets in a browser tab with `Quiver` and `Foundation` already imported. Clone the `quiver-notebook` repository, run `swift run`, and start writing code without configuring a project.

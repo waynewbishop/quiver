@@ -88,6 +88,8 @@ let raw = "Hello, world!".tokenize(strippingPunctuation: false)
 
 With tokens in hand, we convert each word to its vector representation using `embed(using:)`. This method looks up each token in a dictionary and returns only the vectors for words it finds — unknown words are automatically filtered out:
 
+> Tip: The hand-built embeddings dictionary below illustrates the shape, but real word vectors come from a trained model. The Quiver Notebook ships `Dataset.glove50d` — 5,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector — for working through this pipeline against actual embeddings. See <doc:Notebook-Datasets>.
+
 ```swift
 import Quiver
 
