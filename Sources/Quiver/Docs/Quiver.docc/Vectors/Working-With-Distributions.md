@@ -31,7 +31,7 @@ let peak = Distributions.normal.pdf(x: 0, mean: 0, std: 1)  // ≈ 0.3989
 let oneSigma = Distributions.normal.pdf(x: 1, mean: 0, std: 1)  // ≈ 0.2420
 ```
 
-> Tip: **The Quiver Notebook** is the right place to sweep `mean` and `std`. Re-evaluating `pdf` and `cdf` with shifted parameters is how the shape of the bell curve moves from a memorized formula to a parameterized object. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to sweep `mean` and `std`. Re-evaluating `pdf` and `cdf` with shifted parameters is how the shape of the bell curve moves from a memorized formula to a parameterized object. See <doc:Quiver-Notebook>.
 
 The **log-density** returns the natural log of the same quantity. Working in log-space is the standard tactic for numerical work that combines many density values together — products become sums, and densities far in the tail (which would round to zero in linear space) stay representable. `GaussianNaiveBayes` calls `Distributions.normal.logPDF` directly during prediction — the same implementation we expose publicly. Any classifier, kernel density estimator, or probabilistic model we write next can use the same well-tested function without reimplementing the math:
 

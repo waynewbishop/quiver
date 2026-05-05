@@ -74,8 +74,6 @@ The <doc:Quiver-Notebook> is a browser editor that opens with `Quiver` and `Foun
 
 For shipping code into an iOS, watchOS, visionOS, or Vapor app, add Quiver as a Swift package dependency and import it directly in the project's source files. The Notebook is where a model gets built and tested against real data; the app is where the finished model goes to run. Snippets carry over unchanged — the same `[Double]` arrays and the same `fit`/`predict` methods work in both places.
 
-> Tip: For worked domain examples — aerospace QC, wind tunnel data, breathing rate from a heartbeat signal — see the <doc:Quiver-Cookbook>.
-
 ### Where to go from here
 
-The three pillars above each have a deeper layer of math underneath them, and that math is the next step for iOS developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and inference. <doc:Linear-Algebra-Primer> extends vectors and dot products into matrices, transformations, and projection. <doc:Machine-Learning-Primer> ties both together — features, labels, training, evaluation, and the trade-offs that decide which model to reach for.
+The three pillars above each have a deeper layer of math underneath them, and that math is the next step for iOS developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and inference. <doc:Linear-Algebra-Primer> extends vectors and dot products into matrices, transformations, and projection. <doc:Machine-Learning-Primer> ties both together — features, labels, training, evaluation, and the trade-offs that decide which model to reach for. Once we have numbers worth showing, <doc:Data-Visualization> covers the aggregation primitives that feed Swift Charts directly.

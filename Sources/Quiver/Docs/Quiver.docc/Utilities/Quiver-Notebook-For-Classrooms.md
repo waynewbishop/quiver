@@ -24,7 +24,7 @@ The Notebook is the right tool for:
 
 **Students** working through a course, textbook, or self-study get a Swift environment that does numerical work without installing additional binaries, configuring system packages, or downloading datasets separately. One clone and one command produce a working editor with Quiver, Structures, Foundation, and the bundled datasets already wired in.
 
-**iOS and Apple-platform developers** prototyping a model or testing an idea get a focused editor without a project workspace. Code that runs here compiles unchanged on any Apple platform — including iOS, watchOS, visionOS, and Vapor server-side targets.
+**Apple-platform developers** prototyping a model or testing an idea get a focused editor without a project workspace. Code that runs here compiles unchanged on any Apple platform — including iOS, watchOS, visionOS, and Vapor server-side targets.
 
 ### Adding your own examples
 
@@ -104,9 +104,3 @@ The active port is logged to the terminal at startup, and the browser tab needs 
 The most direct payoff for a course aimed at Apple-platform engineers: students prototype in the Notebook, then carry the same code into an Xcode project for the app-development unit. There is no separate notebook language and no hidden cell behavior to translate away — the only difference between a snippet here and the same code in an app is that the app writes its own `import Quiver` at the top of each file, where the Notebook supplies that line for us.
 
 For saving a trained model from the Notebook and loading it inside an app, see <doc:Model-Persistence>. For the model APIs themselves, see <doc:Linear-Regression>, <doc:Naive-Bayes>, <doc:Nearest-Neighbors-Classification>, and <doc:KMeans-Clustering>.
-
-### Related
-- <doc:Quiver-Notebook>
-- <doc:Notebook-Datasets>
-- <doc:Model-Persistence>
-- <doc:Panel>
