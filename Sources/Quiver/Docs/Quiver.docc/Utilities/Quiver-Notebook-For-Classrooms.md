@@ -38,9 +38,9 @@ Each example file begins with a `// Title:` comment on the first line, and the t
 // Print descriptive statistics for a small sample of quiz scores.
 
 let scores = [82.0, 91.0, 76.0, 88.0, 95.0, 73.0, 84.0, 90.0]
-print("mean:    ", scores.mean)
-print("std dev: ", scores.standardDeviation)
-print("median:  ", scores.median)
+print("mean:    ", scores.mean() ?? 0)
+print("std dev: ", scores.std() ?? 0)
+print("median:  ", scores.median() ?? 0)
 ```
 
 The bundled examples are numbered (`01-…`, `02-…`) so they appear in the order a course would introduce them. Custom assignments can use the same numbering convention to slot into the sequence, or use a different prefix (`hw1-…`, `lab3-…`) to keep coursework visually separate from the built-in set.

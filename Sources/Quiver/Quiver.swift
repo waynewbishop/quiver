@@ -1,6 +1,6 @@
 import Foundation
 
-/// Quiver: Vector mathematics, numerical computing, and machine learning for Swift
+/// Quiver: A Swift package for statistics, linear algebra, and machine learning
 ///
 /// See the documentation articles for usage examples and API details.
 public enum Quiver {

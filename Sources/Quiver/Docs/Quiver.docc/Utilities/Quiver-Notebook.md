@@ -4,15 +4,11 @@ A browser-based Swift IDE for testing and evaluating Quiver models.
 
 ## Overview
 
-The Quiver Notebook provides a fast, lightweight environment for learning Quiver and for prototyping. Established as a standalone web-based IDE, it serves two audiences: students who want to learn statistics, linear algebra, and machine learning in Swift, and developers who want a quick iteration loop for testing and building their own models.
-
-To start, clone the repository and a browser opens with `Quiver`, `Foundation`, and a small library of teaching datasets ready to use. Nothing else needs to be installed beyond the Swift CLI.
-
-> Tip: The Notebook lives in its own repository on GitHub. This page covers how to start it, how snippets fit alongside the rest of Quiver, and what the Notebook adds beyond a plain Swift project. For the bundled teaching datasets, see <doc:Notebook-Datasets>.
+The [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) provides a fast, lightweight environment for learning Quiver and for prototyping. Established as a standalone web-based IDE, it serves two audiences: students who want to learn statistics, linear algebra, and machine learning in Swift, and developers who want a quick iteration loop for testing and building their own models.
 
 ### Setting up locally
 
-The Notebook runs on the Swift command-line toolchain. The lightest way to get Swift on macOS is **swiftly**, Swift's official toolchain installer. It runs as a normal Mac installer and does not require Homebrew or Xcode.
+The Notebook runs on the Swift command-line toolchain and requires macOS 15 (Sequoia) or newer with Swift 5.9 or newer. The lightest way to get Swift on macOS is **swiftly**, Swift's official toolchain installer. It runs as a normal Mac installer and does not require Homebrew or Xcode.
 
 1. Download the installer: [swiftly-1.1.1.pkg](https://download.swift.org/swiftly/darwin/swiftly-1.1.1.pkg)
 2. Double-click the downloaded file and follow the prompts.
@@ -79,6 +75,10 @@ try data.write(to: modelURL)
 ```
 
 The decoded model behaves identically to the one that was trained — same coefficients, same predictions. See <doc:Model-Persistence> for the full save-and-load workflow, and <doc:Concurrency-Primer> for sharing a decoded model across concurrent code.
+
+### Notebook Datasets
+
+The Notebook ships with a small library of bundled teaching datasets — iris measurements, housing prices, exam scores, and other classics that make it possible to write a working snippet without first hunting for a CSV. Each dataset loads through a single `Dataset.<name>` call and exposes a `toPanel()` method that hands back a named-column table ready for descriptive statistics, train-test splits, or a fitted model. For the full library and the recipes built on top of it, see <doc:Notebook-Datasets>.
 
 ### Pinned releases
 

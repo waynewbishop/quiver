@@ -1,6 +1,6 @@
-# Quiver — Vector mathematics, numerical computing, and machine learning for Swift
+# Quiver — A Swift package for statistics, linear algebra, and machine learning
 
-Quiver expands the Swift ecosystem with a pure, Swift-first approach to vector mathematics and numerical computing. By building directly on Swift's powerful type system and syntax, Quiver creates an intuitive bridge between traditional array operations and advanced mathematical concepts. Built as an extension on the standard `Array` type, the framework embraces Swift's emphasis on readability and expressiveness, offering mathematical operations that feel natural to iOS and macOS developers.
+Quiver expands the Swift ecosystem with a pure, Swift-first approach to statistics, linear algebra, and machine learning. By building directly on Swift's powerful type system and syntax, Quiver creates an intuitive bridge between traditional array operations and advanced mathematical concepts. Built as an extension on the standard `Array` type, the framework embraces Swift's emphasis on readability and expressiveness, offering mathematical operations that feel natural to iOS and macOS developers.
 
 As a pure Swift library with zero external dependencies, Quiver runs on every Apple platform — iOS, macOS, watchOS, tvOS, and visionOS — as well as server-side Swift with frameworks like Vapor, Linux environments, and containerized deployments.
 
