@@ -6,17 +6,7 @@ Adopting the Notebook in a course, workshop, or self-study setting.
 
 The Quiver Notebook gives a class a Swift environment every student can run on their own laptop with one command — no accounts, no shared server, no IT review, and no per-student setup. An instructor distributes the environment by sharing a repository URL, and each student clones it, runs `swift run`, and arrives at the same editor as everyone else. This page covers the configuration choices that come up when adopting the Notebook in a class, a workshop, or a self-study setting.
 
-For starting the Notebook and writing snippets, see <doc:Quiver-Notebook>. For the bundled dataset library, see <doc:Notebook-Datasets>.
-
-### When to reach for the Notebook
-
-The Notebook is the right tool for:
-
-- **Teaching a Swift-based ML course** — a pure-Swift classroom environment that runs on every student's machine.
-- **Running exercises in restricted networks** — classroom labs, exam settings, air-gapped environments.
-- **Student self-study** — anyone reading *Swift Algorithms & Data Structures* who wants to experiment alongside the book.
-- **Prototyping ML for Apple devices** — designing a model in pure Swift before dropping it into an iOS, watchOS, or visionOS app.
-- **Workshops and tutorials** — a shared environment attendees can clone, run, and keep after the session.
+> Tip: For starting the Notebook and writing snippets, see <doc:Quiver-Notebook>. For the bundled dataset library, see <doc:Notebook-Datasets>.
 
 ### Who the Notebook is for
 
@@ -24,7 +14,7 @@ The Notebook is the right tool for:
 
 **Students** working through a course, textbook, or self-study get a Swift environment that does numerical work without installing additional binaries, configuring system packages, or downloading datasets separately. One clone and one command produce a working editor with Quiver, Foundation, and the bundled datasets already wired in.
 
-**iOS and Apple-platform developers** prototyping a model or testing an idea get a focused editor without a project workspace. Code that runs here compiles unchanged on any Apple platform — including iOS, watchOS, visionOS, and Vapor server-side targets.
+**Apple-platform developers** prototyping a model or testing an idea get a focused editor without a project workspace. Code that runs here compiles unchanged on any Apple platform — including iOS, watchOS, visionOS, and Vapor server-side targets.
 
 ### Adding your own examples
 
@@ -104,9 +94,3 @@ The active port is logged to the terminal at startup, and the browser tab needs 
 The most direct payoff for a course aimed at Apple-platform engineers: students prototype in the Notebook, then carry the same code into an Xcode project for the app-development unit. There is no separate notebook language and no hidden cell behavior to translate away — the only difference between a snippet here and the same code in an app is that the app writes its own `import Quiver` at the top of each file, where the Notebook supplies that line for us.
 
 For saving a trained model from the Notebook and loading it inside an app, see <doc:Model-Persistence>. For the model APIs themselves, see <doc:Linear-Regression>, <doc:Naive-Bayes>, <doc:Nearest-Neighbors-Classification>, and <doc:KMeans-Clustering>.
-
-### Related
-- <doc:Quiver-Notebook>
-- <doc:Notebook-Datasets>
-- <doc:Model-Persistence>
-- <doc:Panel>

@@ -39,7 +39,7 @@ Then open `http://localhost:8080` in a browser. The first launch compiles the li
 
 ### Writing and running snippets
 
-The editor opens with `Quiver` and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter (or Ctrl+Enter on Linux) to compile and run, and output appears in the pane below the editor. The editor auto-saves to the browser's local storage, so refreshing the page does not lose code.
+The editor opens with `Quiver` and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter (or Ctrl+Enter on Linux) to compile and run, and output appears in the pane below the editor.
 
 > Tip: Cmd+Enter triggers a full Swift compile of the entire editor contents, not a cell-by-cell evaluation. Compile errors stop the run, and there is no shared state between runs — every snippet is its own complete program.
 
@@ -60,9 +60,11 @@ print(iris.description)
 print("shape:", panel.shape)
 ```
 
-A short note on a Swift detail visible in this snippet: `guard let` checks that the dataset loaded successfully. If the file is missing or unreadable, the `else` branch runs and we call `exit(0)` to end the program cleanly. (Inside an Xcode project the same check would `return` from a function — in the Notebook there is no enclosing function, so `exit(0)` is the equivalent.)
+The `guard let` checks that the dataset loaded successfully. If the file is missing or unreadable, the `else` branch runs and we call `exit(0)` to end the program cleanly. (Inside an Xcode project the same check would `return` from a function — in the Notebook there is no enclosing function, so `exit(0)` is the equivalent.)
 
 Once we have a `Panel`, the rest of Quiver is one method call away. We can ask for descriptive statistics, split the data into training and test sets, or pull selected columns into a matrix for a model to learn from. See <doc:Panel> for the full surface and <doc:Train-Test-Split> for the partitioning method.
+
+> Experiment: Open any of the bundled examples and edit it. The editor auto-saves to the browser as we type, so refreshing the page or closing and reopening the tab preserves work in progress.
 
 ### Carrying snippets into an app
 

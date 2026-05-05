@@ -64,6 +64,40 @@ A **hypothesis test** is a structured way to decide whether the data we observed
 
 For an A/B test on session times, the null hypothesis is "the variant's population mean equals the control baseline of 240 seconds." The alternative is "the variant's population mean differs from 240 seconds." Our sample mean is `250.0`. The question is whether a gap of 10 seconds is large enough, given the standard error, to be evidence that the populations actually differ, or whether a gap that size could plausibly arise by chance from random sampling alone.
 
+```swift
+import Foundation
+import Quiver
+
+let sessionSeconds = [245.0, 252.0, 238.0, 261.0, 247.0,
+                      255.0, 249.0, 258.0, 244.0, 251.0]
+
+let baseline = 240.0
+let alpha = 0.05
+
+if let sampleMean = sessionSeconds.mean(),
+   let sampleStd = sessionSeconds.std(ddof: 1) {
+
+    let n = Double(sessionSeconds.count)
+    let standardError = sampleStd / sqrt(n)
+
+    // Test statistic: how many standard errors does the sample mean
+    // sit from the hypothesized population mean?
+    let z = (sampleMean - baseline) / standardError    // ≈ 4.57
+
+    // Two-tailed p-value: probability, under the null, of seeing a
+    // sample mean at least this far from 240 in either direction.
+    if let cdf = Distributions.normal.cdf(x: abs(z), mean: 0, std: 1) {
+        let pValue = 2 * (1 - cdf)                     // ≈ 0.000005
+        let reject = pValue < alpha
+        print("z: \(z), p: \(pValue), reject null: \(reject)")
+    }
+}
+```
+
+The z-statistic of ~4.57 means the sample mean of 250 sits more than four standard errors above the hypothesized population mean of 240. Under the null, a gap that large would happen roughly five times in a million. The p-value is far below alpha, so we reject the null — the data is not consistent with a population mean of 240.
+
+> Note: With only ten observations, the parametric z-test is using the normal approximation outside its comfort zone — the t-distribution would be the more appropriate reference here, and for samples below the n ≥ 30 rule of thumb the bootstrap confidence interval shown later in this primer is the more honest tool. The z-test is included as a teachable mechanical example; production A/B analyses on small samples should prefer resampling.
+
 #### Type I and Type II errors
 
 Hypothesis tests can produce two kinds of mistakes. A **Type I error** is rejecting the null when it is true: a false alarm. A **Type II error** is failing to reject the null when the alternative is true: a missed detection. Setting alpha to `0.05` caps the Type I error rate at five percent. The Type II error rate depends on sample size, true effect size, and how strict alpha is.
@@ -103,7 +137,7 @@ let resampledMeans = sample.resampled(iterations: 1000, seed: 42) { resample in
 
 The closure receives a fresh resample on each iteration. Returning `mean` makes the resampled distribution reflect the variability of the sample mean. Returning `median` would give the resampled distribution of the median instead. Any statistic the closure can compute on a `[Double]` is fair game: a quartile, a difference of group means, a ratio. The resampling framework does not need to know the math behind the statistic.
 
-> Tip: **The Quiver Notebook** is the right surface for resampling. Run the snippet, change the seed, and re-run. The resampled distribution shifts, the percentile interval moves slightly, and the variability the math describes becomes visible in the output pane. The `seed` parameter pins the randomness, so the same seed produces identical resamples every time. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right surface for resampling. Run the snippet, change the seed, and re-run. The resampled distribution shifts, the percentile interval moves slightly, and the variability the math describes becomes visible in the output pane. The `seed` parameter pins the randomness, so the same seed produces identical resamples every time. See <doc:Quiver-Notebook>.
 
 ### Confidence intervals from resampling
 
@@ -126,7 +160,7 @@ if let ci = resampledMeans.percentileCI(level: 0.95) {
 
 The interval `[~246, ~254]` answers the same question a parametric confidence interval would: given this sample of ten session times, the population mean is plausibly somewhere in that range. The control baseline of `240` sits clearly outside the interval, which is the resampling counterpart of rejecting the null. The width of the interval communicates how precise the estimate is. A narrower interval means the sample is informative; a wider interval means the data leaves the population mean less constrained.
 
-> Important: A 95% confidence interval does not mean "there is a 95% probability the population mean lies in this interval." The population mean is a fixed number, not a random variable; it either lies in the interval or it does not. The 95% refers to the procedure: if we were to repeat the experiment many times, computing a fresh 95% interval each time, about 95% of those intervals would contain the true population mean. The claim is about how the procedure performs across many repetitions, not about this one interval. The misinterpretation is common enough that it shows up in published research, so the right way to talk about a confidence interval in a product review is "we estimate the mean is around 250, plausibly between 246 and 254," not "there is a 95% chance the true mean is between 246 and 254."
+> Important: A 95% confidence interval is not "a 95% probability the population mean lies in this interval." The population mean is fixed; the 95% describes the *procedure* — repeated many times, about 95% of the intervals it produces would contain the true mean. In practice, say "we estimate the mean is around 250, plausibly between 246 and 254," not "there is a 95% chance the true mean is between 246 and 254."
 
 The percentile interval is the simplest of the resampling-based interval methods. It is appropriate when the resampled distribution looks roughly symmetric around the original sample statistic, which is the common case for sample means and medians on data without extreme skew. More elaborate constructions, like bias-corrected and accelerated intervals, exist for skewed distributions, but the plain percentile interval is the right starting point and it is what Quiver ships today.
 
