@@ -1,4 +1,4 @@
-# Quiver — A Swift package for vector mathematics, numerical computing, and machine learning.
+# Quiver — A Swift package for statistics, linear algebra, and machine learning.
 
 Complete reference for the Quiver Swift package. Upload this file to a Claude Project or conversation to get accurate assistance with Quiver code.
 

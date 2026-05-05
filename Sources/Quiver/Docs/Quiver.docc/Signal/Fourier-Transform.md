@@ -8,19 +8,19 @@ The [Cooley-Tukey](https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algori
 
 ### Signal processing and Quiver
 
-Everything in Quiver up to this point — linear regression, rolling means, K-Nearest Neighbors, K-Means — operates in the time domain. These tools measure values at each point and ask how those values relate to their neighbors: trends, clusters, distances, predictions. The Fourier transform operates in the frequency domain. It measures the signal itself and reveals which repeating cycles are hidden inside it. This is a fundamentally different kind of question, and it is the reason signal processing exists as its own discipline.
+Everything in Quiver up to this point — [linear regression](<doc:Linear-Regression>), rolling means, [K-Nearest Neighbors](<doc:Nearest-Neighbors-Classification>), [K-Means](<doc:KMeans-Clustering>) — operates in the time domain. These tools measure values at each point and ask how those values relate to their neighbors: trends, clusters, distances, predictions. The Fourier transform operates in the frequency domain. It measures the signal itself and reveals which repeating cycles are hidden inside it. This is a fundamentally different kind of question, and it is the reason signal processing exists as its own discipline.
 
-The connection to Quiver's existing surface is direct. Underneath, the [Discrete Fourier Transform](https://en.wikipedia.org/wiki/Discrete_Fourier_transform) is matrix multiplication: given a signal vector `x`, the output `X` is the product `F · x`, where `F` is a matrix of complex roots of unity. The FFT is the discovery that this particular matrix has enough internal structure to be factored into sparse sub-matrices, reducing the cost from `O(n²)` to `O(n log n)`. The same matrix operations Quiver already provides — transposition, element-wise arithmetic, magnitude — are the primitives the algorithm is built from.
+The connection to Quiver's existing surface is direct. Underneath, the [Discrete Fourier Transform](https://en.wikipedia.org/wiki/Discrete_Fourier_transform) is [matrix multiplication](<doc:Matrix-Operations>): given a signal vector `x`, the output `X` is the product `F · x`, where `F` is a matrix of complex roots of unity. The FFT is the discovery that this particular matrix has enough internal structure to be factored into sparse sub-matrices, reducing the cost from `O(n²)` to `O(n log n)`. The same matrix operations Quiver already provides — transposition, element-wise arithmetic, magnitude — are the primitives the algorithm is built from.
 
 ### On-device frequency analysis
 
-For iOS and watchOS developers, the Fourier transform opens a category of questions that time-domain tools cannot answer. A `rollingMean` smooths a noisy heart rate signal but cannot identify which underlying rhythm is driving the oscillation. A `LinearRegression` fits a trend line through sensor data but cannot detect a periodic pattern that repeats every 4 seconds.
+For iOS and watchOS developers, the Fourier transform opens a category of questions that time-domain tools cannot answer. A `rollingMean` smooths a noisy heart rate signal but cannot identify which underlying rhythm is driving the oscillation. A [`LinearRegression`](<doc:Linear-Regression>) fits a trend line through sensor data but cannot detect a periodic pattern that repeats every 4 seconds.
 
 The Fourier transform answers these directly: given a stream of accelerometer readings during a run, it identifies the stride frequency. Given a window of R-R intervals at rest, it extracts the breathing rate. Given a vibration signal from an industrial sensor, it isolates the frequency of a failing bearing. These are on-device computations that run in milliseconds on the same `[Double]` arrays that feed Quiver's classifiers and regression models.
 
 ### The intersection with machine learning
 
-The Fourier transform is not a machine learning model. There is no `fit` method, no `predict` method, and no trained state. It is a pure mathematical transform: an array goes in, an array of frequency amplitudes comes out. Its value in a machine learning pipeline is as a feature engineering step. A dominant frequency extracted from an accelerometer window becomes a new column in a feature vector. A spectral entropy value computed from a heart rate signal becomes a measure of how irregular the rhythm is. These Fourier-derived features feed into `KNearestNeighbors`, `KMeans`, or `GaussianNaiveBayes` as additional inputs, giving the classifier information about periodicity that time-domain features alone cannot provide.
+The Fourier transform is not a machine learning model. There is no `fit` method, no `predict` method, and no trained state. It is a pure mathematical transform: an array goes in, an array of frequency amplitudes comes out. Its value in a machine learning pipeline is as a feature engineering step. A dominant frequency extracted from an accelerometer window becomes a new column in a feature vector. A spectral entropy value computed from a heart rate signal becomes a measure of how irregular the rhythm is. These Fourier-derived features feed into [`KNearestNeighbors`](<doc:Nearest-Neighbors-Classification>), [`KMeans`](<doc:KMeans-Clustering>), or [`GaussianNaiveBayes`](<doc:Naive-Bayes>) as additional inputs, giving the classifier information about periodicity that time-domain features alone cannot provide.
 
 ### How it works
 
@@ -55,9 +55,15 @@ let signal = [Double].sineWave(frequency: 440.0, sampleRate: sampleRate, count: 
 // Compute the frequency spectrum
 let magnitudes  = signal.fourierMagnitudeHalf()
 let frequencies = signal.fourierFrequenciesHalf(sampleRate: sampleRate)
+
+// Inspect the spectrum as a named-column table
+let spectrum = Panel(["frequency": frequencies, "magnitude": magnitudes])
+print(spectrum.summary())
 ```
 
-> Tip: Each frequency bin spans `sampleRate / N` Hz, where N is the padded signal length. Longer signals produce narrower bins and finer frequency resolution. If two frequencies are closer together than this bin width, they will merge into a single peak.
+The `summary()` readout shows the mean, standard deviation, min, max, and quartiles for each column — useful for spotting whether the magnitude column has a single dominant peak (a high max relative to the mean) or distributed energy across many bins.
+
+> Tip: Try this in the <doc:Quiver-Notebook>. Paste the snippet, change the `frequency` argument to `sineWave` from 440 Hz to a different value, and re-run — the peak in `magnitudes` moves to match. Watching the peak shift in real time is the fastest way to build intuition for what the Fourier transform is doing.
 
 ### Positive-frequency half
 
@@ -109,14 +115,14 @@ let rrSignal = [Double].sineWave(
 // frequency-domain HRV analysis, because the large baseline (1000ms)
 // would otherwise dominate the spectrum
 let signalMean = rrSignal.mean() ?? 0.0
-let centered = rrSignal.subtract([Double](repeating: signalMean, count: rrSignal.count))
+let centered = rrSignal - signalMean
 
 // Extract the dominant frequency and convert to breaths per minute
 let dominant = centered.fourierDominantFrequency(sampleRate: sampleRate, windowed: true)
 let breathsPerMinute = (dominant ?? 0) * 60.0  // 15.0
 ```
 
-This technique is common in wearable health devices where direct respiratory measurement is impractical.
+This technique is common in wearable health devices where direct respiratory measurement is impractical. For end-to-end patterns covering session lifecycle, sensor streams, and on-device inference, see <doc:watchOS-Guide>.
 
 ### Phase and inverse transform
 
