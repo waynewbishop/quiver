@@ -47,7 +47,7 @@ public struct ConfidenceInterval: Equatable, Codable, Sendable {
 /// silently meaningless. ``LinearRegression/summary(features:targets:level:)``
 /// throws `MatrixError.singular` in that case rather than returning a struct full
 /// of corrupted numbers — matching the existing throwing contract on
-/// ``LinearRegression/fit(features:targets:intercept:)``.
+/// ``LinearRegression``'s `fit` methods.
 public struct RegressionSummary: Equatable, Codable, Sendable {
 
     /// The fitted coefficient vector. When the model has an intercept the first

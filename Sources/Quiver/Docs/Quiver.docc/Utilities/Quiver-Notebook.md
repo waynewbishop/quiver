@@ -32,7 +32,7 @@ Then open `http://localhost:8080` in a browser. The first launch compiles the li
 
 The editor opens with `Quiver`, `Structures`, and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter (or Ctrl+Enter on Linux) to compile and run, and output appears in the pane below the editor. The editor auto-saves to the browser's local storage, so refreshing the page does not lose code.
 
-> Tip: Cmd+Enter triggers a full Swift compile of the entire editor contents, not a cell-by-cell evaluation. Compile errors stop the run, and there is no shared state between runs — every snippet is its own complete program.
+> Note: Cmd+Enter triggers a full Swift compile of the entire editor contents, not a cell-by-cell evaluation. Compile errors stop the run, and there is no shared state between runs — every snippet is its own complete program.
 
 Two libraries cover the ground a typical lesson needs. Quiver provides the numerical and machine-learning surface — vectors, matrices, statistics, and models. Structures provides the classic data structures that appear in algorithms courses: heaps, tries, graphs, stacks, queues, and binary search trees. The Notebook deliberately scopes itself to these two packages, so students see the same surface every time they open it.
 

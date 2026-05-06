@@ -22,7 +22,7 @@ let data = Panel([
 
 Here, `creditScore` and `balance` are features, the information the model receives as input. `approved` is the label, the outcome we want the model to learn to predict. The model never sees the label at prediction time; it must infer the answer from the features alone.
 
-> Tip: A good mental model is features = question, label = answer. We train the model on many question-answer pairs, then ask it new questions and check whether it gives the right answers.
+> Note: A good mental model is features = question, label = answer. We train the model on many question-answer pairs, then ask it new questions and check whether it gives the right answers.
 
 ### Training and test data
 

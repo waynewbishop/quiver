@@ -6,7 +6,7 @@ Implementing semantic search through tokenization, embeddings, and cosine simila
 
 Semantic search finds information by comparing **meaning** rather than matching keywords. A traditional keyword search for "running shoes" would miss a document titled "athletic footwear" because the words don't match — even though the concepts are nearly identical. Semantic search solves this by representing words and phrases as numeric [vectors](<doc:Linear-Algebra-Primer>), where similar meanings occupy nearby positions in multidimensional space. Comparing those vectors with cosine similarity reveals relationships that keyword matching cannot.
 
-> Tip: This article builds on concepts from <doc:Similarity-Operations> and <doc:Vector-Operations>. Familiarity with cosine similarity and the dot product will help, but the examples are self-contained.
+> Note: This article builds on concepts from <doc:Similarity-Operations> and <doc:Vector-Operations>. Familiarity with cosine similarity and the dot product will help, but the examples are self-contained.
 
 ## Words as vectors
 
@@ -31,7 +31,7 @@ running.cosineOfAngle(with: computer)  // ~0.47 (unrelated concepts)
 
 The similarity score tells us "running" and "jogging" are nearly interchangeable, while "running" and "computer" share little in common. This is what makes semantic search possible — comparing vectors is effectively comparing meaning.
 
-> Tip: Cosine similarity measures **direction**, not magnitude — a word vector scaled to any length still produces the same similarity score. For details on why this matters, see the `normalization` discussion in <doc:Similarity-Operations>.
+> Note: Cosine similarity measures **direction**, not magnitude — a word vector scaled to any length still produces the same similarity score. For details on why this matters, see the normalization discussion in <doc:Similarity-Operations>.
 
 ## Vector arithmetic captures relationships
 
@@ -57,7 +57,7 @@ result.cosineOfAngle(with: king)   // ~0.79
 
 The subtraction `king.subtract(man)` isolates the "royalty" component by removing the "male" direction. Adding `woman` reintroduces a gender direction, landing at "female royalty." This works because word vectors encode semantic properties as geometric directions — the same directions our similarity operations measure.
 
-> Tip: The element-wise arithmetic used here (`king.subtract(man).add(woman)`) relies on Quiver's vector methods. See <doc:Vector-Operations> for the full set of vector operations available on arrays.
+> Note: The element-wise arithmetic shown here relies on Quiver's vector methods. See <doc:Vector-Operations> for the full set of vector operations available on arrays.
 
 ## Tokenizing text
 
@@ -163,7 +163,7 @@ guard let documentVector = queryVectors.meanVector() else {
 
 The averaged vector blends the athletic meaning of "running" with the product meaning of "shoes" and the quality meaning of "comfortable." Documents with similar averages will score highest.
 
-> Tip: The `meanVector` method returns an optional — it returns `nil` if the array is empty or if vectors have inconsistent dimensions. See <doc:Statistical-Operations> for additional aggregation operations on vector collections.
+> Note: The `meanVector` method returns an optional — it returns `nil` if the array is empty or if vectors have inconsistent dimensions. See <doc:Statistical-Operations> for additional aggregation operations on vector collections.
 
 ## Ranking results
 

@@ -23,7 +23,7 @@ salaries.mean()    // 77.5 — pulled upward by the outlier
 salaries.median()  // 59.0 — describes the typical member
 ```
 
-> Tip: When the mean and median disagree by a lot, the distribution is skewed. Reach for the median when a few extreme values would otherwise dominate the mean.
+> Note: When the mean and median disagree by a lot, the distribution is skewed. Reach for the median when a few extreme values would otherwise dominate the mean.
 
 ### Describing the spread
 
@@ -43,7 +43,7 @@ scores.variance()  // 39.23 — the same information in squared units
 
 A low standard deviation means the values cluster tightly around the mean. A high standard deviation means they are scattered. Two classrooms with the same average test score can tell completely different stories once the standard deviation is known.
 
-> Tip: See <doc:Statistical-Operations> for the full API and parameter options.
+> Note: See <doc:Statistical-Operations> for the full API and parameter options.
 
 ### The five-number summary
 

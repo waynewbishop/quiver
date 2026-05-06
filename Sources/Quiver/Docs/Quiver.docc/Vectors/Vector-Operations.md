@@ -6,7 +6,7 @@ Transform arrays into mathematical vectors with magnitude, direction, and spatia
 
 Quiver provides a comprehensive set of vector operations that treat `arrays` as mathematical **vectors**, enabling calculations like `magnitude`, `normalization`, dot products, and angle measurements. For the conceptual foundations behind these operations, see <doc:Linear-Algebra-Primer>. 
 
-> Tip: Vector operations are essential for graphics programming, physics simulations, machine learning algorithms, and any application that deals with spatial data or mathematical modeling. For a comprehensive introduction to vector mathematics, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
+> Note: Vector operations are essential for graphics programming, physics simulations, machine learning algorithms, and any application that deals with spatial data or mathematical modeling. For a comprehensive introduction to vector mathematics, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
 
 ### Basic vector properties
 
@@ -47,7 +47,7 @@ v1.angleInDegrees(with: v2)  // 90.0 degrees
 
 These angle functions work with vectors of any dimension. The `cosineOfAngle(with:)` method returns the raw cosine value, while `angle(with:)` applies `acos` to produce the angle in radians.
 
-> Tip: The dot product is zero when vectors are perpendicular.
+> Note: The dot product is zero when vectors are perpendicular.
 
 ### Distance
 
@@ -115,7 +115,7 @@ if let documentVector = wordVectors.averaged() {
 }
 ```
 
-> Tip: For a complete walkthrough of the embedding-to-search pipeline, see <doc:Semantic-Search>.
+> Note: For a complete walkthrough of the embedding-to-search pipeline, see <doc:Semantic-Search>.
 
 Subtraction also gives displacement — the vector from one point to another. A player at `[100, 200]` and an enemy at `[130, 170]` have displacement `[100, 200].subtract([130, 170])` = `[-30, 30]`. The `magnitude` of that displacement is the distance between them. Addition combines forces or velocities — a boat moving at `[3, 0]` in a current of `[0, 2]` has actual velocity `[3, 0].add([0, 2])` = `[3, 2]`.
 
@@ -134,7 +134,7 @@ let transformed = vector.transformedBy(matrix)  // [-2.0, 1.0]
 let transformed2 = matrix.transform(vector)     // [-2.0, 1.0]
 ```
 
-> Tip: Use `matrix.transform(vector)` to emphasize the matrix acting on the vector, matching mathematical notation Mv = w. Use `vector.transformedBy(matrix)` to emphasize the vector being transformed.
+> Note: Use `matrix.transform(vector)` to emphasize the matrix acting on the vector, matching mathematical notation Mv = w. Use `vector.transformedBy(matrix)` to emphasize the vector being transformed.
 
 Matrix transformations are powerful tools for implementing rotations, scaling, and other geometric operations.
 

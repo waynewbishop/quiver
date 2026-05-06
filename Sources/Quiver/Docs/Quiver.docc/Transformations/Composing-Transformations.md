@@ -8,7 +8,7 @@ Individual transformations like rotation and scaling are useful, but real applic
 
 Understanding transformation composition is fundamental to graphics pipelines, animation systems, and any application that chains coordinate system changes.
 
-> Tip: For geometric intuition about how transformations compose, including visual examples of rotation, scaling, and chained operations, see [Matrix Transformations](https://waynewbishop.github.io/swift-algorithms/22-matrix-transformations.html) in Swift Algorithms & Data Structures.
+> Note: For geometric intuition about how transformations compose, including visual examples of rotation, scaling, and chained operations, see [Matrix Transformations](https://waynewbishop.github.io/swift-algorithms/22-matrix-transformations.html) in Swift Algorithms & Data Structures.
 
 ## Matrix multiplication
 

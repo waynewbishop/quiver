@@ -18,7 +18,7 @@ During prediction, the model evaluates the Gaussian PDF for every feature agains
 
 The `fit(features:labels:)` static method learns class statistics from training data and returns a ready-to-use model. There is no separate unfitted state — the returned struct is immediately usable.
 
-> Tip: Classification models predict discrete categories, so labels are `[Int]` — each integer represents a class (e.g., `0` for denied, `1` for approved). To predict continuous values like prices or temperatures, a regression model is needed instead. See <doc:Machine-Learning-Primer> for more on the distinction.
+> Note: Classification models predict discrete categories, so labels are `[Int]` — each integer represents a class (e.g., `0` for denied, `1` for approved). To predict continuous values like prices or temperatures, a regression model is needed instead. See <doc:Machine-Learning-Primer> for more on the distinction.
 
 ```swift
 import Quiver
@@ -171,7 +171,7 @@ Each `Classification` result conforms to `Sequence` — the same Swift protocol 
 
 Naive Bayes multiplies together one probability for every feature in every class. With many features, these probabilities become extremely small numbers that can round to zero, causing the model to stop distinguishing between classes. Quiver handles this internally by working with logarithms, which keeps the arithmetic accurate regardless of how many features the data contains.
 
-> Tip: The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
+> Note: The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
 
 ## Topics
 

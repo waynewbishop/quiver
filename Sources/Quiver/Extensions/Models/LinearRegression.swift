@@ -207,10 +207,10 @@ public struct LinearRegression: Regressor, Codable, CustomStringConvertible, Equ
     /// matrix is unreliable and standard errors would be silently meaningless.
     /// `summary` throws `MatrixError.singular` in that case rather than returning
     /// a struct full of corrupted numbers — matching the existing throwing
-    /// contract on ``fit(features:targets:intercept:)``.
+    /// contract on the `fit` methods.
     ///
     /// - Parameters:
-    ///   - features: The same `[[Double]]` design matrix passed to ``fit(features:targets:intercept:)``.
+    ///   - features: The same `[[Double]]` design matrix passed to `fit`.
     ///   - targets: The same target vector passed to `fit`.
     ///   - level: Confidence level for ``RegressionSummary/confidenceIntervals``,
     ///     in `(0, 1)`. Defaults to `0.95`.

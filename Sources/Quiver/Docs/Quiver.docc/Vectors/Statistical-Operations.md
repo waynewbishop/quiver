@@ -41,7 +41,7 @@ matrix.size         // 6
 matrix.transposed() // [[1.0, 4.0], [2.0, 5.0], [3.0, 6.0]]
 ```
 
-> Tip: For a deeper look at shape, size, and dimension operations, see <doc:Shape-And-Size>.
+> Note: For a deeper look at shape, size, and dimension operations, see <doc:Shape-And-Size>.
 
 ### Aggregation functions
 
@@ -173,7 +173,7 @@ if let documentVector = wordEmbeddings.meanVector() {
 }
 ```
 
-> Tip: The `meanVector` method is a key step in building semantic search systems — it combines multiple word vectors into a single document vector for similarity comparison. See <doc:Semantic-Search> for a complete walkthrough.
+> Note: The `meanVector` method is a key step in building semantic search systems — it combines multiple word vectors into a single document vector for similarity comparison. See <doc:Semantic-Search> for a complete walkthrough.
 
 ## Topics
 
