@@ -133,6 +133,10 @@ let mask2 = data.outlierMask(threshold: 3.0, mean: mean, std: std)
 
 > Important: When all values are identical (zero standard deviation), `outlierMask` defaults the standard deviation to `1.0` and no values are flagged as outliers.
 
+The choice of threshold is a calibration decision: too low and ordinary variation gets flagged as anomalous, too high and real outliers slip through.
+
+> Experiment: **The Quiver Notebook** is the right place to calibrate outlier thresholds. Sweep `threshold` from 1.0 to 3.0 — the flagged count shrinks, and the cut-off where useful signals stop being treated as outliers becomes obvious. See <doc:Quiver-Notebook>.
+
 ### Resampling and inference
 
 The `resampled(iterations:seed:statistic:)` method estimates the variability of any statistic by drawing many resamples from the original data with replacement and recomputing the statistic on each resample. Pair it with `percentileCI(level:)` on the resulting distribution to read off a percentile confidence interval. The two methods are designed to compose — resample a statistic, then take the percentile interval of the result. For the conceptual treatment of resampling, sampling theory, and what a percentile interval means, see <doc:Inferential-Statistics-Primer>.

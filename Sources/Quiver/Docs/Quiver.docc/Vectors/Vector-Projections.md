@@ -74,6 +74,8 @@ let wasted = push.orthogonalComponent(to: ramp)
 let work = useful.magnitude * ramp.magnitude
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to watch the geometry of projection. Sweep the angle of `push` relative to `ramp` from 0° to 90° — the useful component shrinks to nothing while the wasted component grows to full magnitude. The decomposition is exact, not an approximation. See <doc:Quiver-Notebook>.
+
 This same decomposition applies anywhere a force acts at an angle: wind on a sail, gravity on a slope, thrust on an orbital trajectory.
 
 **Reflecting off a surface.** When a ball bounces off a wall, the component along the surface normal reverses direction while the component along the surface stays the same. The reflection formula uses projection directly:

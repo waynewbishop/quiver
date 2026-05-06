@@ -62,6 +62,8 @@ outcomes.frequencyDistribution()
 // 0.5 + 0.333... + 0.166... = 1.0
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to see priors form from data. Swap the outcomes array for one with different class proportions and re-run — the probabilities recompute and the prior distribution shifts. The same mechanism feeds class priors in Naive Bayes. See <doc:Quiver-Notebook>.
+
 The same number wears two names depending on what we are claiming. As a description of the data we already have, `0.5` is the **frequency** of the value `1.0` — three out of six observations matched. As a forecast about what we would draw next from this same distribution, the same `0.5` is a **probability**. Frequency is the empirical fact; probability is the inference we draw from it. Both methods compute counts as `count / total` with no small-sample correction, because we are summarizing the observations in hand rather than estimating a population parameter.
 
 ### Building the priors a classifier needs

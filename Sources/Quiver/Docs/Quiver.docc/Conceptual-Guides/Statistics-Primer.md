@@ -41,6 +41,8 @@ scores.std()       // 6.26 — a typical score is ~6 points from the mean
 scores.variance()  // 39.23 — the same information in squared units
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to see why median resists outliers. Append one extreme value to `scores` and re-run — mean and standard deviation move noticeably, median barely budges. The robustness claim becomes a visible difference. See <doc:Quiver-Notebook>.
+
 A low standard deviation means the values cluster tightly around the mean. A high standard deviation means they are scattered. Two classrooms with the same average test score can tell completely different stories once the standard deviation is known.
 
 > Note: See <doc:Statistical-Operations> for the full API and parameter options.

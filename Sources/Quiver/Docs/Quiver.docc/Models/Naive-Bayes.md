@@ -66,6 +66,8 @@ let probs = model.predictProbabilities([[2.0, 2.5], [5.5, 7.0]])
 // Each value at probs[i][c] is P(class = classes[c] | features[i])
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to watch a single feature steer a prediction. Hold every other feature fixed, sweep one through its range, and watch the class probability move — Naive Bayes treats each feature as independent evidence, and the snippet makes that visible. See <doc:Quiver-Notebook>.
+
 The output ordering matches the model's `classes` array. The argmax of each row is identical to what `predict(_:)` would return — `predictProbabilities` adds calibrated confidence on top of the same decision.
 
 ### The full pipeline
