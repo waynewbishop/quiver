@@ -32,6 +32,8 @@ print(model)
 // LinearRegression: 1 feature, intercept: 38000.00, slope: 110.00
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to see outlier leverage. Push one entry of `targets` far above the rest, re-fit, and compare R² and the slope — the line bends to chase the outlier and the metric drops. See <doc:Quiver-Notebook>.
+
 For single-feature regression, `fit` accepts a flat `[Double]` array directly — no need to wrap each value in `[[Double]]`. Multi-feature regression uses the standard `fit(features: [[Double]], targets:)` form shown below.
 
 ### Making predictions

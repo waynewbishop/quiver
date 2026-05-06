@@ -101,6 +101,8 @@ let flagged = features.maskedWithIndices(by: valid.not)
 // [(index: 2, value: 150.0), (index: 5, value: -10.0)]
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to see boolean masking as filtering. Change the comparison threshold and re-run — the mask's true count shifts, and the array passed through `masked(by:)` shrinks or grows to match. See <doc:Quiver-Notebook>.
+
 The `maskedWithIndices(by:)` method is useful when we need to know *which* elements matched — for example, annotating outlier points on a chart with their day number or labeling flagged values in a report.
 
 This integrates directly with `Panel`. When filtering a `Panel`, the same mask applies to every column simultaneously, keeping rows aligned across all features:

@@ -52,6 +52,8 @@ let rotate45 = [
 [1.0, 0.0].transformedBy(rotate45)   // [0.707, 0.707] — 45° between x and y axes
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to watch rotation as a continuous transformation. Sweep the angle from 0° through 360° and watch the transformed vector trace the unit circle — at 90° the components swap, at 180° they flip sign. See <doc:Quiver-Notebook>.
+
 A clockwise rotation is the transpose of its counterclockwise counterpart, which mirrors the off-diagonal signs.
 
 ```swift

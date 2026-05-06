@@ -74,6 +74,8 @@ let similarity = v1.cosineOfAngle(with: v2)
 // 1.0 - identical direction despite different magnitudes
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to confirm that cosine ignores magnitude. Scale one vector by 10× and re-run — the cosine score stays identical while the Euclidean distance jumps. The invariance is why cosine is used for embeddings. See <doc:Quiver-Notebook>.
+
 Mathematically, cosine similarity is the dot product divided by the product of the magnitudes — `cos(θ) = (v · w) / (||v|| × ||w||)`.
 
 > Important: `cosineOfAngle(with:)` returns `0.0` if either vector has zero magnitude. Check for zero vectors before interpreting results.

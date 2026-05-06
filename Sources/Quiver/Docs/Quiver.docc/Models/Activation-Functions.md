@@ -18,6 +18,8 @@ let probs = logits.softMax()
 // [0.659, 0.242, 0.099] — sums to 1.0
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to see how softMax redistributes mass. Push one logit from 1.0 to 3.0 and watch the corresponding probability jump while the others shrink — the output still sums to 1.0, which is what makes softMax a probability distribution rather than a score. See <doc:Quiver-Notebook>.
+
 Quiver uses the numerically stable variant, which subtracts the maximum value before exponentiation. This prevents overflow when working with large scores — for example, `[1000, 1001, 1002]` computes correctly instead of producing infinity:
 
 ```swift

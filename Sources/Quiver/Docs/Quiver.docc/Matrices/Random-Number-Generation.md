@@ -44,6 +44,8 @@ let temperatures = [Double].random(7, in: -10.0...40.0)
 let data = [Double].random(3, 4, in: 0.0...100.0)
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to separate range from seed. Change `in:` from 0...1 to -5...5 and re-run — the values fill the new interval, mean and standard deviation adapt, and a fixed seed reproduces the sequence exactly. See <doc:Quiver-Notebook>.
+
 ### Normal distribution
 
 Generate values from a Gaussian (bell curve) distribution using the Box-Muller transform:

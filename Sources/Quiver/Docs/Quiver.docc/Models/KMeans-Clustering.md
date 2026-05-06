@@ -43,6 +43,8 @@ print(model)           // KMeans: 2 clusters, 6 points, converged in N iteration
 print(model.labels)    // [0, 0, 0, 1, 1, 1] — individual properties still accessible
 ```
 
+> Experiment: **The Quiver Notebook** is the right surface for sweeping the cluster count. Re-fit the snippet with k from 2 to 6, then change the seed and re-run — when the cluster assignments shift between seeds, the data does not yet have k natural groups. See <doc:Quiver-Notebook>.
+
 Because centroids start at random positions, a single run can converge on a poor clustering — two groups split left-right instead of top-bottom, for example. The `bestFit` method solves this by running the algorithm multiple times, each with a different seed, and returning the model with the lowest inertia:
 
 ```swift

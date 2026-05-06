@@ -66,6 +66,8 @@ let scaled = scaler.transform(features)
 // [[-1.0], [0.0], [1.0]]
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to confirm that feature scaling preserves shape. Change the `range` from 0...1 to -1...1 and re-run — the output bounds shift to fill the new interval, and the relative spacing between values is unchanged. See <doc:Quiver-Notebook>.
+
 ### Constant columns
 
 If a feature column has the same value for every training sample, scaling would otherwise require dividing by zero — by the standard deviation for `StandardScaler`, or by the column's range for `FeatureScaler`. Both scalers handle this case automatically without any special handling from the caller. `StandardScaler` maps constant columns to zero. `FeatureScaler` maps constant columns to the lower bound of the target range.

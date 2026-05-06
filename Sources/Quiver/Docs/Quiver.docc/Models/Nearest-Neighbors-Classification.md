@@ -47,6 +47,8 @@ let predictions = model.predict(newSamples)
 // [0, 1]
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to see how `k` shapes the decision. Pick a query point near a class boundary and sweep `k` from 1 to 9 — the predicted label flips when `k` is small and stabilizes as `k` grows, exactly as the bias–variance trade-off predicts. See <doc:Quiver-Notebook>.
+
 ### Choosing k
 
 The parameter `k` determines how many training vectors the algorithm consults when classifying a new point. After measuring the distance from the new sample to every training vector, the algorithm selects the `k` closest ones and uses their labels to vote on the prediction. A higher `k` means more vectors influence the decision, while a lower `k` means fewer, potentially just one, determine the outcome.

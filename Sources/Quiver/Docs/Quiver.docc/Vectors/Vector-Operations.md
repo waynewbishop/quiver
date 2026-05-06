@@ -45,9 +45,9 @@ v1.angle(with: v2)        // π/2 radians (90 degrees)
 v1.angleInDegrees(with: v2)  // 90.0 degrees
 ```
 
-These angle functions work with vectors of any dimension. The `cosineOfAngle(with:)` method returns the raw cosine value, while `angle(with:)` applies `acos` to produce the angle in radians.
+These angle functions work with vectors of any dimension. The `cosineOfAngle(with:)` method returns the raw cosine value, while `angle(with:)` applies `acos` to produce the angle in radians. The dot product is zero when vectors are perpendicular, which is why a 90° angle produces a cosine of zero.
 
-> Note: The dot product is zero when vectors are perpendicular.
+> Experiment: **The Quiver Notebook** is the right place to trace cosine similarity geometrically. Hold one vector fixed and rotate the other from aligned to perpendicular to opposite — the score moves through 1.0 → 0 → −1, mapping the angle directly to a number. See <doc:Quiver-Notebook>.
 
 ### Distance
 

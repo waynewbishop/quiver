@@ -105,6 +105,8 @@ let result3 = matrix + 10.0
 let result4 = (matrix - 5.0) / 2.0
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to see broadcasting as uniform scaling. Multiply the matrix by 0.5, then by 5.0, and compare — every element scales by the same factor and the matrix structure holds. The cost is a single pass over the elements, not a broadcast-then-multiply. See <doc:Quiver-Notebook>.
+
 The operator syntax is recommended for new code as it improves readability. The method-based syntax remains available for compatibility and for cases requiring custom operations via closures.
 
 ### Array-to-array operations
@@ -197,8 +199,6 @@ let customRowOperation = matrix.broadcast(withRowVector: rowVector) { matrixElem
 ```
 
 > Important: In the closure, the first parameter always represents the element from the array/matrix, and the second parameter represents the scalar value or the corresponding element from the broadcast vector.
-
-> Tip: Choose descriptive parameter names in closures that reflect the specific operation being performed, rather than using generic names like "a" and "b".
 
 ### Use cases
 
