@@ -6,7 +6,7 @@ Reason from a sample to the population it came from, with hypothesis tests, conf
 
 Descriptive statistics summarize a dataset we already have. Inferential statistics treats that dataset as a sample of something larger and asks what the sample lets us say about the population behind it. This primer covers samples versus populations, the sampling distribution of the mean, the Central Limit Theorem, hypothesis testing, p-values, confidence intervals, resampling, and effect size. Together, these are the conceptual machinery behind every A/B test, every significance claim, and every "we estimate the mean is around 250, plausibly between 246 and 254" sentence in a product review.
 
-> Tip: This article assumes familiarity with mean, standard deviation, and z-scores. See <doc:Statistics-Primer> for the descriptive vocabulary the methods here build on.
+> Note: This article assumes familiarity with mean, standard deviation, and z-scores. See <doc:Statistics-Primer> for the descriptive vocabulary the methods here build on.
 
 ### Samples and populations
 
@@ -35,7 +35,7 @@ Imagine drawing the same-sized sample from the population over and over again. E
 
 The remarkable fact about this distribution has a name. The **Central Limit Theorem** says that when we average many independent observations, the distribution of the sample mean approaches a normal (bell-shaped) distribution regardless of the population's shape, as long as the population has finite variance. Skewed populations, bimodal populations, populations with strange tails: once we average enough of them, the sample mean is approximately normal. Almost every method in this primer rests on this single fact. It means we do not need to know the shape of the population; we only need a sample large enough for the theorem to apply, and the math we use on the sample mean is allowed to assume the bell-shaped behavior of a normal distribution.
 
-> Tip: A common rule of thumb is that samples of size 30 or more are usually large enough for the Central Limit Theorem to give a good approximation. Smaller samples can still be analyzed, but the t-distribution is the right tool when we cannot rely on a large sample.
+> Note: A common rule of thumb is that samples of size 30 or more are usually large enough for the Central Limit Theorem to give a good approximation. Smaller samples can still be analyzed, but the t-distribution is the right tool when we cannot rely on a large sample.
 
 ### The standard error
 
@@ -118,7 +118,7 @@ A second common mistake is treating `p < 0.05` as an on-off switch: true or fals
 
 Inferential statistics has two broad strategies. One is **parametric**: assume a reference distribution like the normal or the t, plug in a closed-form formula, and read off a p-value or interval. The other is **resampling**: let the data itself describe the variability of the estimate, by drawing many resamples and watching how much the statistic moves from one resample to the next. Quiver exposes the resampling tool as `resampled(iterations:seed:statistic:)` on `[Double]`.
 
-> Tip: In the statistics literature this technique is known as the *bootstrap*.
+> Note: In the statistics literature this technique is known as the *bootstrap*.
 
 The idea is direct. Given a sample of size `n`, draw a resample of the same size *with replacement*, meaning the same value can appear multiple times in the resample, and some original values will be missing. Compute the statistic of interest on that resample. Repeat thousands of times. The collection of resampled statistics approximates the sampling distribution we cannot observe directly.
 
@@ -181,7 +181,7 @@ let p = Distributions.normal.cdf(x: 1.96, mean: 0, std: 1)        // ≈ 0.975
 
 For a sample mean and standard error, the rough recipe is `mean ± 1.96 × standardError` for a 95% interval, and `2 × (1 − cdf(|z|))` for a two-tailed p-value of an observed `z = (mean − hypothesizedMean) / standardError`. This works well when the sample is large (a common rule of thumb is `n ≥ 30`) and the population is not pathologically skewed. For smaller samples, resampling is the more honest tool because it does not require the normal approximation to hold.
 
-> Tip: See <doc:Working-With-Distributions> for the full normal-distribution API and worked examples of `cdf`, `quantile`, `pdf`, and `logPDF`.
+> Note: See <doc:Working-With-Distributions> for the full normal-distribution API and worked examples of `cdf`, `quantile`, `pdf`, and `logPDF`.
 
 ### Effect size and practical significance
 

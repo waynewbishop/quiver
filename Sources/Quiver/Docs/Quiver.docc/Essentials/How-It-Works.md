@@ -22,7 +22,7 @@ position.magnitude  // 5.0
 
 An **extension** in Swift adds new methods, computed properties, and initializers to a type that already exists, even one we did not write. The capability is added directly to the type, and every instance gains it automatically.
 
-> Tip: To learn more about Swift's type system, generics, and protocol-oriented architecture see [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/), the companion book to this framework.
+> Note: To learn more about Swift's type system, generics, and protocol-oriented architecture see [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/), the companion book to this framework.
 
 Here is a simple extension that adds a `doubled` property to `Int`:
 
@@ -38,7 +38,7 @@ value.doubled  // 10
 
 Swift's standard library uses this same mechanism extensively. Methods like `.sorted()`, `.reversed()`, and `.contains()` are all added to `Array` through extensions; they are not part of the core array definition. Quiver follows the same pattern to add numerical operations.
 
-> Tip: Extensions can add new functionality to a type, but they cannot override or modify existing behavior. Quiver's extensions are purely additive; they never change how `Array` already works.
+> Note: Extensions can add new functionality to a type, but they cannot override or modify existing behavior. Quiver's extensions are purely additive; they never change how `Array` already works.
 
 ### Constrained extensions
 
@@ -88,7 +88,7 @@ Each failed call is caught before the code ever runs. The compiler tells us exac
 
 Swift's type system also encodes dimensionality. The compiler distinguishes between `[Double]` (a vector) and `[[Double]]` (a matrix) at compile time, so there is no need for a runtime property to query how many dimensions an array has; the type signature already tells us. Quiver's `.shape` property is constrained to nested arrays, so calling it on a flat `[Double]` is a compile-time error, not a runtime surprise.
 
-> Tip: For a detailed look at `.shape`, `.size`, and working with matrix dimensions, see <doc:Shape-And-Size>.
+> Note: For a detailed look at `.shape`, `.size`, and working with matrix dimensions, see <doc:Shape-And-Size>.
 
 #### Named tuples as return types
 
@@ -158,7 +158,7 @@ Because `fit` is the only way to create a model, the compiler makes it impossibl
 
 Models are also immutable. Once created, their coefficients, centroids, and learned parameters cannot change. This eliminates an entire category of bugs where a model is accidentally retrained or modified between predictions.
 
-> Tip: Models also conform to `Codable`. Because every stored property is a basic Swift type (arrays of numbers, integers, and booleans), the compiler auto-synthesizes JSON encoding and decoding. A model trained once can be saved to disk and loaded on the next app launch without retraining. See <doc:Model-Persistence> for platform-specific guidance.
+> Note: Models also conform to `Codable`. Because every stored property is a basic Swift type (arrays of numbers, integers, and booleans), the compiler auto-synthesizes JSON encoding and decoding. A model trained once can be saved to disk and loaded on the next app launch without retraining. See <doc:Model-Persistence> for platform-specific guidance.
 
 ### Clean output by default
 
@@ -186,7 +186,7 @@ if let ratio = labels.imbalanceRatio(), ratio > 3.0 {
 
 The threshold is up to the developer. The diagnostic lives on the data, not on the model. This keeps models focused on computation while giving developers the information they need to make informed decisions about their training pipeline.
 
-> Tip: Class imbalance applies to classification problems where labels are discrete categories (`[Int]`), not regression problems where targets are continuous values (`[Double]`). `imbalanceRatio` is available on `[Int]` arrays only; the type system enforces this distinction at compile time.
+> Note: Class imbalance applies to classification problems where labels are discrete categories (`[Int]`), not regression problems where targets are continuous values (`[Double]`). `imbalanceRatio` is available on `[Int]` arrays only; the type system enforces this distinction at compile time.
 
 ### A focused, intentional scope
 

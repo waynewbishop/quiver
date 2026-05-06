@@ -6,7 +6,7 @@ Adopting the Notebook in a course, workshop, or self-study setting.
 
 The Quiver Notebook gives a class a Swift environment every student can run on their own laptop with one command — no accounts, no shared server, no IT review, and no per-student setup. An instructor distributes the environment by sharing a repository URL, and each student clones it, runs `swift run`, and arrives at the same editor as everyone else. This page covers the configuration choices that come up when adopting the Notebook in a class, a workshop, or a self-study setting.
 
-> Tip: For starting the Notebook and writing snippets, see <doc:Quiver-Notebook>. For the bundled dataset library, see <doc:Notebook-Datasets>.
+> Note: For starting the Notebook and writing snippets, see <doc:Quiver-Notebook>. For the bundled dataset library, see <doc:Notebook-Datasets>.
 
 ### Who the Notebook is for
 

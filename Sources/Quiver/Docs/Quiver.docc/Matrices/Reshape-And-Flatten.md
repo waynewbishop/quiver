@@ -6,7 +6,7 @@ Convert between one-dimensional vectors and two-dimensional matrices.
 
 Reshaping changes the dimensions of an array without altering its data. A 1D vector of 12 elements can become a 3×4 matrix, a 2×6 matrix, or any other shape where the total element count stays the same. Flattening is the reverse — collapsing a matrix back into a single vector. These operations are fundamental to data preparation, where raw data often needs to be reorganized into the shape that an algorithm expects.
 
-> Tip: For a conceptual introduction to matrices and their representations, see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
+> Note: For a conceptual introduction to matrices and their representations, see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
 
 ### Reshaping vectors to matrices
 

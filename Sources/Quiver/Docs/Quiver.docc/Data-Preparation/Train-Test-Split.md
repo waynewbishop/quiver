@@ -6,7 +6,7 @@ Splitting arrays into training and testing subsets with reproducible, class-bala
 
 Training a model on the same data used to evaluate it produces misleadingly optimistic results. The standard practice is to split data into two partitions — a [training set](<doc:Machine-Learning-Primer>) the model learns from and a test set held back for evaluation. Quiver provides `trainTestSplit(testRatio:seed:)` as an extension on `Array`, making this fundamental operation available on any array type.
 
-> Tip: For an introduction to matrices as structured datasets — where rows represent samples and columns represent features — see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
+> Note: For an introduction to matrices as structured datasets — where rows represent samples and columns represent features — see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
 
 ### Basic usage
 

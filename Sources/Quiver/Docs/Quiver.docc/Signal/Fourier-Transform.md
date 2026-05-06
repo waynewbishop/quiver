@@ -26,7 +26,7 @@ The Fourier transform is not a machine learning model. There is no `fit` method,
 
 Quiver uses the Cooley-Tukey radix-2 algorithm, a divide-and-conquer approach that computes the Discrete Fourier Transform in `O(n log n)` time. The algorithm splits the signal into even-indexed and odd-indexed samples, recurses on each half, and combines the results using complex sine and cosine values called twiddle factors — values that rotate each odd-indexed contribution by the correct angle so it aligns with the corresponding frequency bin in the output. The recursion has the same structure as Quicksort — both algorithms split their input in half at each level and recombine in `O(n)` work per level, producing the recurrence `T(n) = 2T(n/2) + O(n)`. Unlike Quicksort, the FFT always splits exactly in half, so its `O(n log n)` is a guaranteed worst case, not an average.
 
-> Tip: For a full walkthrough of how this divide-and-conquer recurrence produces `O(n log n)` performance, see [Chapter 5 — Advanced Sorting](https://waynewbishop.github.io/swift-algorithms/05-advanced-sorting.html) in *Swift Algorithms & Data Structures*.
+> Note: For a full walkthrough of how this divide-and-conquer recurrence produces `O(n log n)` performance, see [Chapter 5 — Advanced Sorting](https://waynewbishop.github.io/swift-algorithms/05-advanced-sorting.html) in *Swift Algorithms & Data Structures*.
 
 ### Preparing the input
 
@@ -69,7 +69,7 @@ The `summary()` readout shows the mean, standard deviation, min, max, and quarti
 
 For real-valued signals, the upper half of the Fourier output is a mirror of the lower half and carries no additional information. The `fourierMagnitudeHalf` and `fourierFrequenciesHalf(sampleRate:)` methods return only the positive-frequency half — the range from 0 Hz up to the Nyquist frequency. These are the methods to use when plotting a spectrum or extracting features.
 
-> Tip: The `Half` variants return `count / 2` elements. Both arrays are indexed identically, so they can be passed directly to Swift Charts as parallel x and y values.
+> Note: The `Half` variants return `count / 2` elements. Both arrays are indexed identically, so they can be passed directly to Swift Charts as parallel x and y values.
 
 ### Dominant frequency
 

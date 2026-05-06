@@ -41,7 +41,7 @@ Then open `http://localhost:8080` in a browser. The first launch compiles the li
 
 The editor opens with `Quiver` and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter (or Ctrl+Enter on Linux) to compile and run, and output appears in the pane below the editor.
 
-> Tip: Cmd+Enter triggers a full Swift compile of the entire editor contents, not a cell-by-cell evaluation. Compile errors stop the run, and there is no shared state between runs — every snippet is its own complete program.
+> Note: Cmd+Enter triggers a full Swift compile of the entire editor contents, not a cell-by-cell evaluation. Compile errors stop the run, and there is no shared state between runs — every snippet is its own complete program.
 
 The Notebook scopes itself deliberately to Quiver — vectors, matrices, statistics, and models — so students see the same surface every time they open the editor. There is no plugin system and no extra package configuration to learn.
 

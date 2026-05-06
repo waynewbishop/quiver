@@ -16,7 +16,7 @@ For each new sample, the algorithm measures the **distance** from that sample to
 
 Nearest Neighbors relies on the same `distance(to:)` operation used throughout Quiver's vector mathematics. This is Euclidean distance — the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². The same function powers centroid assignment in `KMeans` and similarity operations in <doc:Similarity-Operations>. Understanding this single linear algebra concept, that vectors are points in space and distance measures how far apart they are, unlocks classification, clustering, and similarity search simultaneously.
 
-> Tip: Distance builds on vector subtraction. Each (aᵢ − bᵢ) term is one element of the difference vector. For a deeper look at how vector arithmetic works geometrically, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
+> Note: Distance builds on vector subtraction. Each (aᵢ − bᵢ) term is one element of the difference vector. For a deeper look at how vector arithmetic works geometrically, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
 
 ### Fitting a model
 
@@ -90,7 +90,7 @@ let model = KNearestNeighbors.fit(
 )
 ```
 
-> Tip: Cosine similarity measures how closely two vectors point in the same direction, so a high score means similar. **Cosine distance** flips this: `1 − similarity`, so a low score means similar. Nearest Neighbors uses the distance form because the algorithm looks for the smallest values to find the closest neighbors. For more on cosine similarity, see <doc:Similarity-Operations>.
+> Note: Cosine similarity measures how closely two vectors point in the same direction, so a high score means similar. **Cosine distance** flips this: `1 − similarity`, so a low score means similar. Nearest Neighbors uses the distance form because the algorithm looks for the smallest values to find the closest neighbors. For more on cosine similarity, see <doc:Similarity-Operations>.
 
 ### Vote weighting
 

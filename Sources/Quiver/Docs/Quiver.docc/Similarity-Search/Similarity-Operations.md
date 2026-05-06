@@ -216,7 +216,7 @@ let results = scores.topIndices(k: 2, labels: ["Athletic Footwear", "Cooking Rec
 
 The `topIndices(k:labels:)` method pairs each score with its original label and a 1-based rank, making it straightforward to map similarity results back to content.
 
-> Tip: For a complete pipeline that starts from raw text — including tokenization, embedding lookup, and document vector averaging — see <doc:Semantic-Search>.
+> Note: For a complete pipeline that starts from raw text — including tokenization, embedding lookup, and document vector averaging — see <doc:Semantic-Search>.
 
 ## Topics
 

@@ -18,7 +18,7 @@ Quiver solves this using the **normal equation** θ = (X'X)⁻¹X'y, which gives
 
 The `fit(features:targets:intercept:)` static method computes the optimal coefficients and returns a ready-to-use model. There is no separate unfitted state, so the returned struct is immediately usable.
 
-> Tip: Regression models predict continuous `Double` values, so targets are `[Double]`. To predict discrete categories like "approved" or "denied", use a classification model instead. See <doc:Machine-Learning-Primer> for more on the distinction.
+> Note: Regression models predict continuous `Double` values, so targets are `[Double]`. To predict discrete categories like "approved" or "denied", use a classification model instead. See <doc:Machine-Learning-Primer> for more on the distinction.
 
 ```swift
 import Quiver
@@ -188,7 +188,7 @@ if let p = [Double].polyfit(x: x, y: y, degree: 2) {
 
 Under the hood, `polyfit` builds a Vandermonde-style design matrix whose row `i` contains `[x[i], x[i]², ..., x[i]ⁿ]` and defers to `LinearRegression.fit` to solve the normal equation. The intercept of the fitted regression becomes the polynomial's constant term, and each weight becomes the next-higher-power coefficient. Same OLS math, same coefficients we would get from passing `[x, x², ..., xⁿ]` directly into `LinearRegression.fit` — `polyfit` is the convenience layer that handles the design-matrix construction and packages the result as a `Polynomial` value.
 
-> Tip: For the full `Polynomial` type — evaluation, arithmetic, derivatives, coefficient ordering — see <doc:Polynomials>.
+> Note: For the full `Polynomial` type — evaluation, arithmetic, derivatives, coefficient ordering — see <doc:Polynomials>.
 
 ### When the normal equation fails
 
@@ -208,7 +208,7 @@ let redundant: [[Double]] = [[1.0, 2.0], [1.0, 2.0]]
 redundant.determinant  // 0.0 → fit will throw MatrixError.singular
 ```
 
-> Tip: A singular matrix means the determinant is zero, because the features collapse into a lower-dimensional space and the equation has no unique solution. For a deeper look at what determinants measure and why singularity matters, see <doc:Determinants-Primer>.
+> Note: A singular matrix means the determinant is zero, because the features collapse into a lower-dimensional space and the equation has no unique solution. For a deeper look at what determinants measure and why singularity matters, see <doc:Determinants-Primer>.
 
 ### Safe by design
 

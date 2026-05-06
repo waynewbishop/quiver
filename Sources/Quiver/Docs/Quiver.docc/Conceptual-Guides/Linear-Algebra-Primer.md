@@ -14,7 +14,7 @@ Linear algebra is also the mathematical foundation of machine learning. Quiver's
 
 As programmers, we work with `Array` types constantly, storing coordinates, pixel values, sensor readings, and feature scores. In linear algebra, these same arrays are called **vectors**. The difference is not in the data structure but in what we can do with it. Once we treat an `Array` as a vector, we gain access to operations that measure its length, its direction, and its relationship to other arrays.
 
-> Tip: For details on how Quiver extends the Swift `Array` see <doc:How-It-Works>.
+> Note: For details on how Quiver extends the Swift `Array` see <doc:How-It-Works>.
 
 Consider the arrays we already use every day. An array tracking wind speed and bearing captures both "how much" and "which way". An array of RGB values describes a color as a point in three-dimensional space. An array of customer preferences across product features places that customer at a specific location in a multidimensional space. These can all be considered vectors.
 
@@ -83,7 +83,7 @@ product1.cosineOfAngle(with: product2)  // ~0.999 (very similar)
 
 This separation of direction from magnitude is why cosine similarity powers recommendation engines, search ranking, and duplicate detection. Two customer profiles with identical preferences but different engagement levels point in the same direction. Cosine similarity scores them as nearly identical, while the raw dot product would not.
 
-> Tip: Learn the mathematics behind dot product, cosine similarity, and matrix multiplication in [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/20-vectors.html).
+> Note: Learn the mathematics behind dot product, cosine similarity, and matrix multiplication in [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/20-vectors.html).
 
 ### What matrices do
 
@@ -141,7 +141,7 @@ a.magnitude  // √(1² + 2²) = √5 ≈ 2.24
 a.distance(to: b)  // √((4-1)² + (6-2)²) = √25 = 5.0
 ```
 
-> Tip: Distance builds on vector subtraction — each (aᵢ − bᵢ) term is one element of the difference vector. The `magnitude` of that difference vector is the distance between the two points.
+> Note: Distance builds on vector subtraction — each (aᵢ − bᵢ) term is one element of the difference vector. The `magnitude` of that difference vector is the distance between the two points.
 
 `Distance` is what connects linear algebra to machine learning. Quiver's models use distance to find the most similar training examples, group data points together, and rank how related two arrays are. The <doc:Machine-Learning-Primer> explores each of these models and how they apply these concepts.
 

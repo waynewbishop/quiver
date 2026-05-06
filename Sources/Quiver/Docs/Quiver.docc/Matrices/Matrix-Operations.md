@@ -6,7 +6,7 @@ Work with two-dimensional arrays (matrices) using element-wise arithmetic and tr
 
 A **matrix** is a rectangular grid of numbers arranged in rows and columns. While a `vector` is a single list of numbers representing a point or direction in space, a matrix is a collection of multiple vectors organized together. Quiver extends Swift's `Array` type to support matrix operations on nested arrays. Matrices represent tabular data, transformations, and multi-dimensional datasets. For the mathematical foundations, see <doc:Linear-Algebra-Primer>. 
 
-> Tip: For detailed coverage of matrix concepts with visualizations and examples, see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
+> Note: For detailed coverage of matrix concepts with visualizations and examples, see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
 
 ### Creating matrices
 

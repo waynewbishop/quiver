@@ -6,7 +6,7 @@ Apply transformations to vectors using matrices.
 
 Matrices transform vectors through multiplication. A transformation matrix modifies a vector's position, orientation, or scale in space. Common transformations include rotation, scaling, reflection, and shearing. Understanding how matrices act on vectors is the foundation for graphics programming, physics simulations, and machine learning pipelines.
 
-> Tip: For geometric intuition about how transformations work, including basis vectors, coordinate systems, and visual examples, see [Matrix Transformations](https://waynewbishop.github.io/swift-algorithms/22-matrix-transformations.html) in Swift Algorithms & Data Structures.
+> Note: For geometric intuition about how transformations work, including basis vectors, coordinate systems, and visual examples, see [Matrix Transformations](https://waynewbishop.github.io/swift-algorithms/22-matrix-transformations.html) in Swift Algorithms & Data Structures.
 
 ## Basic usage
 
