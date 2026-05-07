@@ -19,28 +19,24 @@ final class MatrixArithmeticTests: XCTestCase {
 
     // MARK: - Matrix Element-wise Operations
 
-    func testMatrixAddition() {
-        let m1 = [[1.0, 2.0], [3.0, 4.0]]
-        let m2 = [[5.0, 6.0], [7.0, 8.0]]
-        XCTAssertEqual(m1.add(m2), [[6.0, 8.0], [10.0, 12.0]])
-    }
-
-    func testMatrixSubtraction() {
-        let m1 = [[5.0, 7.0], [9.0, 11.0]]
-        let m2 = [[1.0, 2.0], [3.0, 4.0]]
-        XCTAssertEqual(m1.subtract(m2), [[4.0, 5.0], [6.0, 7.0]])
-    }
-
-    func testMatrixMultiplication() {
-        let m1 = [[2.0, 3.0], [4.0, 5.0]]
-        let m2 = [[3.0, 2.0], [1.0, 2.0]]
-        XCTAssertEqual(m1.multiply(m2), [[6.0, 6.0], [4.0, 10.0]])
-    }
-
-    func testMatrixDivision() {
-        let m1 = [[6.0, 8.0], [10.0, 12.0]]
-        let m2 = [[2.0, 4.0], [5.0, 3.0]]
-        XCTAssertEqual(m1.divide(m2), [[3.0, 2.0], [2.0, 4.0]])
+    // Element-wise add, subtract, multiply, divide on matrices
+    func testMatrixElementwiseArithmetic() {
+        XCTAssertEqual(
+            [[1.0, 2.0], [3.0, 4.0]].add([[5.0, 6.0], [7.0, 8.0]]),
+            [[6.0, 8.0], [10.0, 12.0]]
+        )
+        XCTAssertEqual(
+            [[5.0, 7.0], [9.0, 11.0]].subtract([[1.0, 2.0], [3.0, 4.0]]),
+            [[4.0, 5.0], [6.0, 7.0]]
+        )
+        XCTAssertEqual(
+            [[2.0, 3.0], [4.0, 5.0]].multiply([[3.0, 2.0], [1.0, 2.0]]),
+            [[6.0, 6.0], [4.0, 10.0]]
+        )
+        XCTAssertEqual(
+            [[6.0, 8.0], [10.0, 12.0]].divide([[2.0, 4.0], [5.0, 3.0]]),
+            [[3.0, 2.0], [2.0, 4.0]]
+        )
     }
 
     // MARK: - Matrix Scalar Broadcasting

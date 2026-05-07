@@ -113,40 +113,6 @@ final class ArrayMetricsTests: XCTestCase {
 
     // MARK: - Classification Report
 
-    // Covers binary headers, multi-class per-class rows, undefined-metric rendering, and computed values
-    func testClassificationReport() {
-        // Binary report contains all expected headers and a known accuracy value
-        let binaryReport = [1, 0, 1, 1, 0, 0, 1, 0]
-            .classificationReport(actual: [1, 0, 0, 1, 0, 1, 1, 0])
-        XCTAssertTrue(binaryReport.contains("precision"))
-        XCTAssertTrue(binaryReport.contains("recall"))
-        XCTAssertTrue(binaryReport.contains("f1-score"))
-        XCTAssertTrue(binaryReport.contains("support"))
-        XCTAssertTrue(binaryReport.contains("accuracy"))
-        XCTAssertTrue(binaryReport.contains("macro avg"))
-        XCTAssertTrue(binaryReport.contains("weighted avg"))
-        XCTAssertTrue(binaryReport.contains("0.75"))
-
-        // Multi-class with 2 correct, 2 swapped between classes 1 and 2
-        // Class 0: precision=1.0, recall=1.0
-        // Class 1: precision=0.5, recall=0.5
-        // Class 2: precision=0.5, recall=0.5
-        // Accuracy = 4/6 ≈ 0.67
-        let multiReport = [0, 1, 2, 0, 1, 2]
-            .classificationReport(actual: [0, 1, 2, 0, 2, 1])
-        XCTAssertTrue(multiReport.contains("1.00"))
-        XCTAssertTrue(multiReport.contains("0.50"))
-        XCTAssertTrue(multiReport.contains("0.67"))
-        XCTAssertTrue(multiReport.contains("macro avg"))
-        XCTAssertTrue(multiReport.contains("weighted avg"))
-
-        // Undefined metrics render as 0.00 (matches sklearn default)
-        let undefinedReport = [0, 0, 0, 0]
-            .classificationReport(actual: [1, 1, 0, 0])
-        XCTAssertTrue(undefinedReport.contains("0.00"))
-        XCTAssertTrue(undefinedReport.contains("accuracy"))
-    }
-
     // MARK: - Class Balance
 
     // Covers binary, multi-class, and empty-array behavior

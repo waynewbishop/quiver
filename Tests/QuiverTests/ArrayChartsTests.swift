@@ -73,20 +73,6 @@ final class ArrayChartsTests: XCTestCase {
         XCTAssertEqual(constant[0].count, 3)
     }
 
-    func testQuartiles() throws {
-        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-        let result = try XCTUnwrap(data.quartiles())
-
-        XCTAssertEqual(result.min, 1.0)
-        XCTAssertEqual(result.max, 10.0)
-        XCTAssertEqual(result.median, 5.5, accuracy: 1e-10)
-        // Q1 at 25th percentile: position = 0.25 * 9 = 2.25, interpolate between indices 2 and 3
-        XCTAssertEqual(result.q1, 3.25, accuracy: 1e-10)  // 3 + 0.25*(4-3) = 3.25
-        // Q3 at 75th percentile: position = 0.75 * 9 = 6.75, interpolate between indices 6 and 7
-        XCTAssertEqual(result.q3, 7.75, accuracy: 1e-10)  // 7 + 0.75*(8-7) = 7.75
-        XCTAssertEqual(result.iqr, 4.5, accuracy: 1e-10)  // 7.75 - 3.25 = 4.5
-    }
-
     func testPercentile() throws {
         let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
 

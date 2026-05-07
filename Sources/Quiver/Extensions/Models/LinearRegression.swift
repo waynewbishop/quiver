@@ -170,7 +170,7 @@ public struct LinearRegression: Regressor, Codable, CustomStringConvertible, Equ
     ///     features: [[1.0], [2.0], [3.0]],
     ///     targets: [2.0, 4.0, 6.0]
     /// )
-    /// let trendX = Array.linspace(start: 0.0, end: 4.0, count: 50)
+    /// let trendX = [Double].linspace(start: 0.0, end: 4.0, count: 50)
     /// let trendY = model.predict(trendX)
     /// ```
     ///

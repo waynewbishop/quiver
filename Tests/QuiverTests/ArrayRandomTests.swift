@@ -41,20 +41,19 @@ final class ArrayRandomTests: XCTestCase {
 
     // MARK: - Custom Range Tests
 
-    func testRandom1DCustomRange() {
-        let result = [Double].random(100, in: -5.0...5.0)
-        XCTAssertEqual(result.count, 100)
-        for value in result {
+    // 1D and 2D random doubles in a custom range produce values in bounds
+    func testRandomCustomRange() {
+        let result1D = [Double].random(100, in: -5.0...5.0)
+        XCTAssertEqual(result1D.count, 100)
+        for value in result1D {
             XCTAssertGreaterThanOrEqual(value, -5.0)
             XCTAssertLessThanOrEqual(value, 5.0)
         }
-    }
 
-    func testRandom2DCustomRange() {
-        let result = [Double].random(3, 4, in: 10.0...20.0)
-        XCTAssertEqual(result.count, 3)
-        XCTAssertEqual(result[0].count, 4)
-        for row in result {
+        let result2D = [Double].random(3, 4, in: 10.0...20.0)
+        XCTAssertEqual(result2D.count, 3)
+        XCTAssertEqual(result2D[0].count, 4)
+        for row in result2D {
             for value in row {
                 XCTAssertGreaterThanOrEqual(value, 10.0)
                 XCTAssertLessThanOrEqual(value, 20.0)
@@ -85,30 +84,27 @@ final class ArrayRandomTests: XCTestCase {
 
     // MARK: - Random Integer Tests
 
-    func testRandomInt1D() {
-        let result = [Int].random(100, in: 0..<10)
-        XCTAssertEqual(result.count, 100)
-        for value in result {
+    // 1D, 2D, and negative-range int generation all produce values in bounds
+    func testRandomInt() {
+        let result1D = [Int].random(100, in: 0..<10)
+        XCTAssertEqual(result1D.count, 100)
+        for value in result1D {
             XCTAssertGreaterThanOrEqual(value, 0)
             XCTAssertLessThan(value, 10)
         }
-    }
 
-    func testRandomInt2D() {
-        let result = [Int].random(3, 4, in: 1..<7)
-        XCTAssertEqual(result.count, 3)
-        XCTAssertEqual(result[0].count, 4)
-        for row in result {
+        let result2D = [Int].random(3, 4, in: 1..<7)
+        XCTAssertEqual(result2D.count, 3)
+        XCTAssertEqual(result2D[0].count, 4)
+        for row in result2D {
             for value in row {
                 XCTAssertGreaterThanOrEqual(value, 1)
                 XCTAssertLessThan(value, 7)
             }
         }
-    }
 
-    func testRandomIntNegativeRange() {
-        let result = [Int].random(50, in: -10..<0)
-        for value in result {
+        let negative = [Int].random(50, in: -10..<0)
+        for value in negative {
             XCTAssertGreaterThanOrEqual(value, -10)
             XCTAssertLessThan(value, 0)
         }
