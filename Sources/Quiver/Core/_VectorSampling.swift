@@ -13,35 +13,6 @@
 
 import Foundation
 
-// MARK: - Seeded Random Number Generator
-
-/// A deterministic random number generator that produces the same sequence for a given seed.
-///
-/// Swift's built-in `SystemRandomNumberGenerator` is intentionally non-reproducible.
-/// Apple provides the `RandomNumberGenerator` protocol so we can plug in our own
-/// when reproducibility is required — such as generating identical train/test splits
-/// across multiple calls.
-///
-/// Uses the xorshift64 algorithm: three XOR-shift operations on a `UInt64` value.
-/// Same seed always produces the same sequence of numbers.
-internal struct SeededRandomNumberGenerator: RandomNumberGenerator {
-    private var state: UInt64
-
-    /// Creates a generator seeded with the given value.
-    init(seed: UInt64) {
-        // A zero state would produce all zeros, so we default to 1
-        self.state = seed == 0 ? 1 : seed
-    }
-
-    /// Returns the next random UInt64 by scrambling the internal state.
-    mutating func next() -> UInt64 {
-        state ^= state << 13
-        state ^= state >> 7
-        state ^= state << 17
-        return state
-    }
-}
-
 // MARK: - Sampling Operations
 
 /// Internal namespace for sampling operations that work on any element type.
