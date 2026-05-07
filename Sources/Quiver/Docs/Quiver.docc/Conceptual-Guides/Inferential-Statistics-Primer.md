@@ -4,13 +4,13 @@ Reason from a sample to the population it came from, with hypothesis tests, conf
 
 ## Overview
 
-Descriptive statistics summarize a dataset we already have. Inferential statistics treats that dataset as a sample of something larger and asks what the sample lets us say about the population behind it. This primer covers samples versus populations, the sampling distribution of the mean, the Central Limit Theorem, hypothesis testing, p-values, confidence intervals, resampling, and effect size. Together, these are the conceptual machinery behind every A/B test, every significance claim, and every "we estimate the mean is around 250, plausibly between 246 and 254" sentence in a product review.
+Descriptive statistics summarize a dataset we already have. Inferential statistics treats that dataset as a sample of something larger and asks what the sample lets us say about the population behind it.
 
 > Note: This article assumes familiarity with mean, standard deviation, and z-scores. See <doc:Statistics-Primer> for the descriptive vocabulary the methods here build on.
 
 ### Samples and populations
 
-A **population** is the full set of values we care about: every user who will ever take the onboarding flow, every step the watch will ever record, every crash report the app will ever produce. A **sample** is the subset we actually observe. Inferential statistics asks what the sample lets us say about the population, and how confident we can be in saying it.
+A **population** is the full set of values we care about while a **sample** is the subset we actually observe. Inferential statistics asks what the sample lets us say about the population, and how confident we can be in saying it.
 
 The catch is that any single sample is one of many possible samples we could have drawn. A different week of users would have produced a slightly different mean session time. A different watch session would have produced a slightly different step rhythm. Inferential statistics is built around that variability, not in spite of it.
 
