@@ -4,7 +4,7 @@ Pairing the Quiver reference with Claude as a study companion for the math and c
 
 ## Overview
 
-The Quiver knowledge file is special Markdown document that captures the Quiver's API surface, design principles, and validation status in one place. Uploaded into a conversation with Claude, it becomes a study companion — a place to ask questions about the math behind a method, the meaning of a result, or the reasoning behind a Quiver design choice. The book, the cookbook, and documentation is where Claude is taught.
+The Quiver knowledge file is a special Markdown document that captures Quiver's API surface, design principles, and validation status in one place. Uploaded into a conversation with Claude, it becomes a study companion — a place to ask questions about the math behind a method, the meaning of a result, or the reasoning behind a Quiver design choice. The book, the cookbook, and the documentation are where Claude is taught.
 
 ### What Claude is
 
@@ -27,7 +27,7 @@ The knowledge file lives in the main Quiver repository. Clone the repo and the f
 git clone https://github.com/waynewbishop/quiver.git
 ```
 
-The file is at `Docs/quiver-knowledge.md`. A new copy ships with each Quiver release, so re-cloning or pulling the latest version keeps the reference aligned with the API the other framework utilities.
+The file is at `Docs/quiver-knowledge.md`. A new copy ships with each Quiver release, so re-cloning or pulling the latest version keeps the reference aligned with the API and the other framework utilities.
 
 ### A statistics question
 

@@ -10,7 +10,7 @@ Learning Quiver through domain problems in science, engineering, and math.
 
 ### A wind tunnel example
 
-This receipe trains a `LinearRegression` model on six wind tunnel measurements of a NACA 2412 airfoil and predicts the lift `coefficient` at an angle the tunnel did not test:
+This recipe trains a `LinearRegression` model on six wind tunnel measurements of a NACA 2412 airfoil and predicts the lift `coefficient` at an angle the tunnel did not test:
 
 ```swift
 import Playgrounds
