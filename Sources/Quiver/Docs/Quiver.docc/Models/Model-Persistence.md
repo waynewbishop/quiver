@@ -62,7 +62,7 @@ Distance-based models like `KNearestNeighbors` and `KMeans` measure how far apar
 
 When scaling is used, the scaler and model become a matched pair. The model's learned distances and boundaries exist in the scaled coordinate space, so every future input must be scaled using the same min and max values from training. Losing the scaler means new inputs land in a different coordinate space, producing incorrect predictions with no error or warning.
 
-> Tip: `LinearRegression` and `GaussianNaiveBayes` do not require scaling — regression coefficients compensate for different magnitudes mathematically, and Naive Bayes evaluates each feature independently. For these models, the scaler is optional and the model can be persisted on its own.
+> Note: `LinearRegression` and `GaussianNaiveBayes` do not require scaling — regression coefficients compensate for different magnitudes mathematically, and Naive Bayes evaluates each feature independently. For these models, the scaler is optional and the model can be persisted on its own.
 
 ### Persisting a full pipeline
 
@@ -124,7 +124,7 @@ let classifier = try await loadClassifier(from: modelURL)
 
 This is the natural pattern for apps that load a pre-trained model at startup: decode it off the main thread, hand the result to the view layer, and start predicting. The fitted model behaves the same whether it was just trained or just decoded — immutable, thread-safe, and ready to use.
 
-> Tip: For the full set of concurrency patterns — training inside a task, long-running fits, and SwiftUI integration — see <doc:Concurrency-Primer>.
+> Note: For the full set of concurrency patterns — training inside a task, long-running fits, and SwiftUI integration — see <doc:Concurrency-Primer>.
 
 ### Where to store the encoded bytes
 

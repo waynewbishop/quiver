@@ -55,3 +55,5 @@ let b: [Double] = [4, 5, 6]
 let result = a.dot(b)
 print(result) // 32.0
 ```
+
+> Tip: For learning Quiver and prototyping models against bundled teaching datasets, the <doc:Quiver-Notebook> runs Swift snippets in a browser tab with `Quiver` and `Foundation` already imported. Best for students, instructors, and developers building models before dropping them into an app.

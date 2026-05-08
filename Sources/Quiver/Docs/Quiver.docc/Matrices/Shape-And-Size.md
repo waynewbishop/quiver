@@ -6,7 +6,7 @@ Inspect the dimensions and element count of two-dimensional arrays.
 
 Every matrix has a shape — a row count and a column count — that defines its structure. Knowing a matrix's shape is essential before performing operations like addition, multiplication, or reshaping, because these operations impose constraints on how dimensions must align. Quiver provides two computed properties that make dimensional inspection straightforward: `.shape` for the row-column structure and `.size` for the total element count.
 
-> Tip: For a conceptual introduction to matrices and their representations, see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
+> Note: For a conceptual introduction to matrices and their representations, see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
 
 ### One-dimensional arrays
 

@@ -18,7 +18,7 @@ During prediction, the model evaluates the Gaussian PDF for every feature agains
 
 The `fit(features:labels:)` static method learns class statistics from training data and returns a ready-to-use model. There is no separate unfitted state — the returned struct is immediately usable.
 
-> Tip: Classification models predict discrete categories, so labels are `[Int]` — each integer represents a class (e.g., `0` for denied, `1` for approved). To predict continuous values like prices or temperatures, a regression model is needed instead. See <doc:Machine-Learning-Primer> for more on the distinction.
+> Note: Classification models predict discrete categories, so labels are `[Int]` — each integer represents a class (e.g., `0` for denied, `1` for approved). To predict continuous values like prices or temperatures, a regression model is needed instead. See <doc:Machine-Learning-Primer> for more on the distinction.
 
 ```swift
 import Quiver
@@ -65,6 +65,8 @@ let probs = model.predictProbabilities([[2.0, 2.5], [5.5, 7.0]])
 // probs[0] sums to 1.0 across classes, ditto probs[1]
 // Each value at probs[i][c] is P(class = classes[c] | features[i])
 ```
+
+> Experiment: **The Quiver Notebook** is the right place to watch a single feature steer a prediction. Hold every other feature fixed, sweep one through its range, and watch the class probability move — Naive Bayes treats each feature as independent evidence, and the snippet makes that visible. See <doc:Quiver-Notebook>.
 
 The output ordering matches the model's `classes` array. The argmax of each row is identical to what `predict(_:)` would return — `predictProbabilities` adds calibrated confidence on top of the same decision.
 
@@ -171,7 +173,7 @@ Each `Classification` result conforms to `Sequence` — the same Swift protocol 
 
 Naive Bayes multiplies together one probability for every feature in every class. With many features, these probabilities become extremely small numbers that can round to zero, causing the model to stop distinguishing between classes. Quiver handles this internally by working with logarithms, which keeps the arithmetic accurate regardless of how many features the data contains.
 
-> Tip: The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
+> Note: The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
 
 ## Topics
 
@@ -195,6 +197,7 @@ Naive Bayes multiplies together one probability for every feature in every class
 - <doc:Working-With-Distributions>
 - <doc:Feature-Scaling>
 - <doc:Pipeline>
+- <doc:Notebook-Datasets>
 - ``GaussianNaiveBayes/predictLogProbabilities(_:)``
 - ``GaussianNaiveBayes/predictProbabilities(_:)``
 

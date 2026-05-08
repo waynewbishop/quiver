@@ -238,7 +238,7 @@ The determinant and matrix inversion are not just abstract concepts — they pow
 
 If the feature vectors are linearly dependent — for example, temperature in both Celsius and Fahrenheit — the matrix `X'X` becomes singular (`determinant = 0`) and the inversion fails. That is why `fit` throws `MatrixError.singular`. This is the determinant telling us that the features do not contain enough independent information to solve the problem.
 
-> Tip: The same math used in <doc:Matrix-Transformations> to rotate and scale points is what `LinearRegression` applies to find coefficients. The difference is context: in graphics we transform geometry, in regression we solve for the line that best fits the data.
+> Note: The same math used in <doc:Matrix-Transformations> to rotate and scale points is what `LinearRegression` applies to find coefficients. The difference is context: in graphics we transform geometry, in regression we solve for the line that best fits the data.
 
 ### Putting it all together
 

@@ -4,9 +4,9 @@ Represent, evaluate, differentiate, and fit single-variable polynomials.
 
 ## Overview
 
-A **polynomial** is an expression of the form `a₀ + a₁x + a₂x² + ... + aₙxⁿ` — a linear combination of powers of a single variable. Polynomials describe trajectories, model curved trends in data, approximate complicated functions on a small interval, and underpin a great deal of numerical computing. Quiver's `Polynomial` type is a value type that stores those coefficients and provides evaluation, arithmetic, differentiation, and least-squares fitting in one place.
+A **polynomial** is an expression of the form `a₀ + a₁x + a₂x² + ... + aₙxⁿ`, a linear combination of powers of a single variable. Polynomials describe trajectories, model curved trends in data, approximate complicated functions on a small interval, and underpin a great deal of numerical computing. Quiver's `Polynomial` type is a value type that stores those coefficients and provides evaluation, arithmetic, differentiation, and least-squares fitting in one place.
 
-The coefficients are stored in **ascending order of power** — `coefficients[0]` is the constant term, `coefficients[1]` is the linear term, `coefficients[2]` is the quadratic term, and so on. This matches the convention used in numerical computing libraries that work with polynomials as flat coefficient arrays. The string representation reverses the order to match human convention, rendering the highest-degree term first.
+The coefficients are stored in **ascending order of power**: `coefficients[0]` is the constant term, `coefficients[1]` is the linear term, `coefficients[2]` is the quadratic term, and so on. This matches the convention used in numerical computing libraries that work with polynomials as flat coefficient arrays. The string representation reverses the order to match human convention, rendering the highest-degree term first.
 
 ```swift
 import Quiver
@@ -22,7 +22,7 @@ String(describing: p)   // "2x² + 3x + 1"
 
 ### Evaluating polynomials
 
-`Polynomial` adopts Swift's `callAsFunction` so the value behaves like a Swift function. Calling `p(x)` evaluates the polynomial at a single `Double`; calling `p(xs)` on a `[Double]` evaluates at every point in the array, which is the right shape for plotting. Internally the evaluation uses **Horner's method** — rewriting `a₀ + a₁x + a₂x² + ... + aₙxⁿ` as `a₀ + x·(a₁ + x·(a₂ + ... + x·aₙ))` to avoid repeated `pow(x, k)` calls and the precision loss that comes with them:
+`Polynomial` adopts Swift's `callAsFunction` so the value behaves like a Swift function. Calling `p(x)` evaluates the polynomial at a single `Double`; calling `p(xs)` on a `[Double]` evaluates at every point in the array, which is the right shape for plotting. Internally the evaluation uses **Horner's method**, rewriting `a₀ + a₁x + a₂x² + ... + aₙxⁿ` as `a₀ + x·(a₁ + x·(a₂ + ... + x·aₙ))` to avoid repeated `pow(x, k)` calls and the precision loss that comes with them:
 
 ```swift
 import Quiver
@@ -41,7 +41,7 @@ p(xs)                   // [3.0, 0.0, 1.0, 6.0, 15.0]
 
 ### Polynomial arithmetic
 
-Polynomials add, subtract (via scalar negation), and multiply naturally. Addition pads the shorter coefficient array with zeros and adds element-wise; multiplication is the discrete convolution of the two coefficient arrays — the coefficient at index `k` of the product is `Σ lhs[i] · rhs[k - i]` over all valid `i`. Scalar multiplication scales every coefficient by the same factor:
+Polynomials add, subtract (via scalar negation), and multiply naturally. Addition pads the shorter coefficient array with zeros and adds element-wise; multiplication is the discrete convolution of the two coefficient arrays, where the coefficient at index `k` of the product is `Σ lhs[i] · rhs[k - i]` over all valid `i`. Scalar multiplication scales every coefficient by the same factor:
 
 ```swift
 import Quiver
@@ -79,11 +79,11 @@ p.derivative()(1)               // 7.0  — slope of p at x = 1
 Polynomial([5]).derivative()    // Polynomial([0])
 ```
 
-The derivative is a polynomial in its own right, so it composes with everything else — call `derivative` again for the second derivative, evaluate it at a grid of points, add it to another polynomial, or take its own derivative.
+The derivative is a polynomial in its own right, so it composes with everything else: call `derivative` again for the second derivative, evaluate it at a grid of points, add it to another polynomial, or take its own derivative.
 
 ### Fitting polynomials to data
 
-`[Double].polyfit(x:y:degree:)` is the least-squares counterpart to `LinearRegression.fit`. Given parallel `x` and `y` arrays and a target `degree`, it returns the polynomial of that degree that best fits the data in the ordinary-least-squares sense — the polynomial whose values minimize the sum of squared residuals against `y`. Internally `polyfit` builds a Vandermonde-style design matrix whose row `i` contains `[x[i], x[i]², ..., x[i]ⁿ]`, then defers to `LinearRegression.fit` to solve the normal equation:
+`[Double].polyfit(x:y:degree:)` is the least-squares counterpart to `LinearRegression.fit`. Given parallel `x` and `y` arrays and a target `degree`, it returns the polynomial of that degree that best fits the data in the ordinary-least-squares sense, the polynomial whose values minimize the sum of squared residuals against `y`. Internally `polyfit` builds a Vandermonde-style design matrix whose row `i` contains `[x[i], x[i]², ..., x[i]ⁿ]`, then defers to `LinearRegression.fit` to solve the normal equation:
 
 ```swift
 import Quiver
@@ -98,13 +98,15 @@ if let p = [Double].polyfit(x: x, y: y, degree: 2) {
 }
 ```
 
-Because `polyfit` is built on <doc:Linear-Regression>, calling `polyfit(degree: 1)` returns the same line that `LinearRegression.fit(features: x, targets: y)` would — two doors to the same math. Higher degrees fit curves that linear regression cannot. The function returns `nil` when the inputs are invalid (mismatched lengths, fewer points than `degree + 1`, negative degree) or when the underlying linear system is ill-conditioned.
+> Experiment: **The Quiver Notebook** is the right surface for watching polynomial fits go wrong. Sweep the degree from 1 to 8 and re-evaluate — R² on the training rows keeps rising, but the curve starts to chase noise between points. The gap between training fit and out-of-sample behaviour is why holdout matters. See <doc:Quiver-Notebook>.
 
-> Tip: For the conceptual background on least squares — projection onto a column space — see <doc:Vector-Projections>. Polynomial regression projects `y` onto the column space spanned by `[1, x, x², ..., xⁿ]`.
+Because `polyfit` is built on <doc:Linear-Regression>, calling `polyfit(degree: 1)` returns the same line that `LinearRegression.fit(features: x, targets: y)` would. Two doors to the same math. Higher degrees fit curves that linear regression cannot. The function returns `nil` when the inputs are invalid (mismatched lengths, fewer points than `degree + 1`, negative degree) or when the underlying linear system is ill-conditioned.
+
+> Note: For the conceptual background on least squares (projection onto a column space) see <doc:Vector-Projections>. Polynomial regression projects `y` onto the column space spanned by `[1, x, x², ..., xⁿ]`.
 
 ### Coefficient ordering and trimming
 
-Quiver stores coefficients in ascending order of power because that is the order arithmetic operations produce naturally and the order numerical solvers consume. The string description uses descending order — the highest-degree term first — because that matches how humans write polynomials. Both views describe the same value:
+Quiver stores coefficients in ascending order of power because that is the order arithmetic operations produce naturally and the order numerical solvers consume. The string description uses descending order, with the highest-degree term first, because that matches how humans write polynomials. Both views describe the same value:
 
 ```swift
 import Quiver
@@ -114,7 +116,7 @@ p.coefficients              // [1.0, 3.0, 2.0]   — ascending: a₀, a₁, a₂
 String(describing: p)        // "2x² + 3x + 1"     — descending, human-readable
 ```
 
-Two polynomial values are `Equatable` when their coefficient arrays match exactly. Operations like `+` and `*` may introduce trailing zeros — a polynomial of degree two added to its negative is mathematically zero, but the resulting array may still carry trailing zeros that survive the addition. `trimmed` returns the canonical form by stripping trailing zeros, which is the right call before comparing two polynomials for equality:
+Two polynomial values are `Equatable` when their coefficient arrays match exactly. Operations like `+` and `*` may introduce trailing zeros. A polynomial of degree two added to its negative is mathematically zero, but the resulting array may still carry trailing zeros that survive the addition. `trimmed` returns the canonical form by stripping trailing zeros, which is the right call before comparing two polynomials for equality:
 
 ```swift
 import Quiver
@@ -126,7 +128,7 @@ a == b                       // false — coefficient arrays differ in length
 a.trimmed() == b             // true  — canonical forms match
 ```
 
-The `degree` property reports the highest power with a non-zero coefficient regardless of trailing zeros, so `Polynomial([1, 2, 0])` reports a degree of `1`, not `2`. The zero polynomial — `Polynomial([0])` — has degree `0` by convention, the same as any other constant.
+The `degree` property reports the highest power with a non-zero coefficient regardless of trailing zeros, so `Polynomial([1, 2, 0])` reports a degree of `1`, not `2`. The zero polynomial, `Polynomial([0])`, has degree `0` by convention, the same as any other constant.
 
 ## Topics
 

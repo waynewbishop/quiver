@@ -23,7 +23,7 @@ salaries.mean()    // 77.5 — pulled upward by the outlier
 salaries.median()  // 59.0 — describes the typical member
 ```
 
-> Tip: When the mean and median disagree by a lot, the distribution is skewed. Reach for the median when a few extreme values would otherwise dominate the mean.
+> Note: When the mean and median disagree by a lot, the distribution is skewed. Reach for the median when a few extreme values would otherwise dominate the mean.
 
 ### Describing the spread
 
@@ -41,9 +41,11 @@ scores.std()       // 6.26 — a typical score is ~6 points from the mean
 scores.variance()  // 39.23 — the same information in squared units
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to see why median resists outliers. Append one extreme value to `scores` and re-run — mean and standard deviation move noticeably, median barely budges. The robustness claim becomes a visible difference. See <doc:Quiver-Notebook>.
+
 A low standard deviation means the values cluster tightly around the mean. A high standard deviation means they are scattered. Two classrooms with the same average test score can tell completely different stories once the standard deviation is known.
 
-> Tip: See <doc:Statistical-Operations> for the full API and parameter options.
+> Note: See <doc:Statistical-Operations> for the full API and parameter options.
 
 ### The five-number summary
 
@@ -123,4 +125,6 @@ See <doc:Boolean-Masking> for the full mask-and-filter pattern.
 Everything up to this point has been about describing the data we already have. We computed the mean of a list of salaries, the spread of a list of test scores, the unusual days in a month of spending. Those are summaries. They are correct by construction — the mean of the list is the mean of the list, with no uncertainty involved.
 
 A different kind of question shows up the moment we start treating our data as evidence about something larger. An A/B test in an iOS app captures session times for the few thousand users who happened to land in the variant group — but the product decision rides on every user who will ever touch that flow. A week of accelerometer readings from one watch reflects one wearer's gait, but we want a threshold that will work for the next wearer too. In each case the dataset in hand is a sample, and the thing we actually care about is the population the sample came from. **Inferential statistics** is the toolkit for reasoning across that gap. See <doc:Inferential-Statistics-Primer> for sampling theory, hypothesis testing, confidence intervals, and resampling.
+
+> Tip: For a course teaching descriptive or inferential statistics in Swift, the <doc:Quiver-Notebook-For-Classrooms> page covers the classroom adoption model — clone-and-run distribution, custom assignment files, and pinning a release for a semester.
 

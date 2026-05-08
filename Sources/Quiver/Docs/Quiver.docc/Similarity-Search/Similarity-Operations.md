@@ -62,8 +62,6 @@ let v1 = [3.0, 4.0]
 let unitVector = v1.normalized  // [0.6, 0.8]
 ```
 
-> Tip: For normalized vectors (magnitude = 1), dot product equals cosine similarity.
-
 ## Cosine similarity
 
 Cosine similarity measures the angle between vectors, ranging from -1 (opposite) to 1 (identical). It focuses on direction rather than magnitude.
@@ -75,6 +73,8 @@ let v2 = [0.4, 0.3, 0.0]
 let similarity = v1.cosineOfAngle(with: v2)
 // 1.0 - identical direction despite different magnitudes
 ```
+
+> Experiment: **The Quiver Notebook** is the right place to confirm that cosine ignores magnitude. Scale one vector by 10× and re-run — the cosine score stays identical while the Euclidean distance jumps. The invariance is why cosine is used for embeddings. See <doc:Quiver-Notebook>.
 
 Mathematically, cosine similarity is the dot product divided by the product of the magnitudes — `cos(θ) = (v · w) / (||v|| × ||w||)`.
 
@@ -192,6 +192,8 @@ print("Sports cluster quality: \(Int(sportsCohesion * 100))%")
 
 ### Semantic search
 
+> Tip: **The Quiver Notebook** ships 5,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector. See <doc:Notebook-Datasets>.
+
 Find relevant content by comparing the meaning of a query against a collection of documents. Unlike keyword search, semantic search surfaces results based on conceptual similarity — a query for "running shoes" can match documents about "athletic footwear" if their embeddings are close.
 
 ```swift
@@ -216,7 +218,7 @@ let results = scores.topIndices(k: 2, labels: ["Athletic Footwear", "Cooking Rec
 
 The `topIndices(k:labels:)` method pairs each score with its original label and a 1-based rank, making it straightforward to map similarity results back to content.
 
-> Tip: For a complete pipeline that starts from raw text — including tokenization, embedding lookup, and document vector averaging — see <doc:Semantic-Search>.
+> Note: For a complete pipeline that starts from raw text — including tokenization, embedding lookup, and document vector averaging — see <doc:Semantic-Search>.
 
 ## Topics
 

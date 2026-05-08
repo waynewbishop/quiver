@@ -36,6 +36,8 @@ cm.recall          // Optional(0.75)
 cm.f1Score         // Optional(0.75)
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to see why we report precision and recall rather than accuracy alone. Flip a few correct predictions to wrong ones and watch the metrics move in different directions — false positives hurt precision, false negatives hurt recall, and the F1 score lands between them. See <doc:Quiver-Notebook>.
+
 ### Type safety over silent failures
 
 In some ML libraries, computing precision when the model predicts no positives silently returns 0.0. This hides a critical problem — the model is not making any positive predictions at all. A precision of 0.0 could mean "every positive prediction was wrong" or "no positive predictions were made," and the only way to tell the difference is manual inspection.

@@ -175,7 +175,7 @@ let outlierTimes = timestamps.masked(by: valid.not)
 
 The two arrays — normal and outlier — are parallel arrays ready for separate chart series. Normal readings can render as one color and outliers as another, making anomalies visually distinct without any manual filtering logic.
 
-> Tip: For more on boolean comparisons, logical operators, and masking, see <doc:Boolean-Masking>.
+> Note: For more on boolean comparisons, logical operators, and masking, see <doc:Boolean-Masking>.
 
 ### Visualizing machine learning results
 

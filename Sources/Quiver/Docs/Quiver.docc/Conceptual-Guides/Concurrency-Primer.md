@@ -8,7 +8,7 @@ Swift Concurrency is the language's built-in way to run work without blocking th
 
 This primer covers the core patterns — training a model inside a task, keeping long-running fits off the main thread, and updating a SwiftUI view when training completes.
 
-> Tip: New to Quiver's machine learning workflow? Start with <doc:Machine-Learning-Primer> for core vocabulary like features, `labels`, `fit`, and `predict` before diving into the concurrency patterns below.
+> Note: New to Quiver's machine learning workflow? Start with <doc:Machine-Learning-Primer> for core vocabulary like features, `labels`, `fit`, and `predict` before diving into the concurrency patterns below.
 
 ### What Sendable means for Quiver
 
@@ -31,7 +31,7 @@ The reason this works comes back to how Quiver builds its models. Every property
 
 The same property applies to `predict`. A fitted model can be called from any number of concurrent tasks without serialization, because prediction is a pure read against immutable properties — the model computes an answer from its stored parameters and returns, without touching any shared state along the way.
 
-> Tip: Because models are also `Codable` and `Equatable`, the same value semantics that make them safe to share also make them easy to save, load, and compare. See <doc:Machine-Learning-Primer> for the full picture of how Quiver's models are designed.
+> Note: Because models are also `Codable` and `Equatable`, the same value semantics that make them safe to share also make them easy to save, load, and compare. See <doc:Machine-Learning-Primer> for the full picture of how Quiver's models are designed.
 
 ### Training inside a task
 

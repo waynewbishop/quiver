@@ -16,13 +16,13 @@ The algorithm starts by placing `k` centroids at random positions, then repeats 
 
 Because initial centroid positions are random, different starting positions can produce different clusterings — the `seed` parameter ensures reproducible results. The `bestFit` method runs multiple initializations automatically and returns the model with the lowest inertia, avoiding poor outcomes caused by unlucky starting positions.
 
-> Tip: A **centroid** is simply the average position of a group of points. If three customers have spending scores of [10, 20, 30] and incomes of [40, 50, 60], their centroid is [20, 50] — the mean of each column. K-Means uses centroids to represent the "center" of each cluster.
+> Note: A **centroid** is simply the average position of a group of points. If three customers have spending scores of [10, 20, 30] and incomes of [40, 50, 60], their centroid is [20, 50] — the mean of each column. K-Means uses centroids to represent the "center" of each cluster.
 
 ### The distance connection
 
 At its core, K-Means relies on the same `distance(to:)` operation used throughout Quiver's vector mathematics. This is Euclidean distance — the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². The same function powers nearest-neighbor search in `KNearestNeighbors` and similarity operations in <doc:Similarity-Operations>. 
 
-> Tip: Distance builds on vector subtraction — each (aᵢ − bᵢ) term is one element of the difference vector. For a deeper look at how vector arithmetic works geometrically, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
+> Note: Distance builds on vector subtraction — each (aᵢ − bᵢ) term is one element of the difference vector. For a deeper look at how vector arithmetic works geometrically, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
 
 ### Fitting a model
 
@@ -42,6 +42,8 @@ let model = KMeans.fit(data: data, k: 2, seed: 42)
 print(model)           // KMeans: 2 clusters, 6 points, converged in N iterations
 print(model.labels)    // [0, 0, 0, 1, 1, 1] — individual properties still accessible
 ```
+
+> Experiment: **The Quiver Notebook** is the right surface for sweeping the cluster count. Re-fit the snippet with k from 2 to 6, then change the seed and re-run — when the cluster assignments shift between seeds, the data does not yet have k natural groups. See <doc:Quiver-Notebook>.
 
 Because centroids start at random positions, a single run can converge on a poor clustering — two groups split left-right instead of top-bottom, for example. The `bestFit` method solves this by running the algorithm multiple times, each with a different seed, and returning the model with the lowest inertia:
 
