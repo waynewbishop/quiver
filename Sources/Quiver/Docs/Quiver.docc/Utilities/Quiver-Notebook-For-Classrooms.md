@@ -22,7 +22,7 @@ The Notebook is the right tool for:
 
 **Educators** preparing lectures or assignments can fork the repository, drop custom example files into the `examples/` folder, and distribute the URL to a class. The bundled stack covers enough ground for an applied linear algebra unit, an introductory descriptive statistics segment, and an applied regression module — material that fits inside an existing course rather than replacing one. A short supervised learning survey covering k-nearest neighbors, k-means, and Naive Bayes also fits comfortably in a few weeks.
 
-**Students** working through a course, textbook, or self-study get a Swift environment that does numerical work without installing additional binaries, configuring system packages, or downloading datasets separately. One clone and one command produce a working editor with Quiver, Structures, Foundation, and the bundled datasets already wired in.
+**Students** working through a course, textbook, or self-study get a Swift environment that does numerical work without installing additional binaries, configuring system packages, or downloading datasets separately. One clone and one command produce a working editor with Quiver, Foundation, and the bundled datasets already wired in.
 
 **Apple-platform developers** prototyping a model or testing an idea get a focused editor without a project workspace. Code that runs here compiles unchanged on any Apple platform — including iOS, watchOS, visionOS, and Vapor server-side targets.
 
@@ -71,7 +71,7 @@ cd cs180-quiver-notebook
 swift run
 ```
 
-The first launch takes a minute or two while Swift fetches Quiver, Structures, and the editor framework. Subsequent runs start in seconds, and a class running in an air-gapped lab can clone-and-build once on a connected machine, then redistribute the fully built directory.
+The first launch takes a minute or two while Swift fetches Quiver and compiles the editor. Subsequent runs start in seconds, and a class running in an air-gapped lab can clone-and-build once on a connected machine, then redistribute the fully built directory.
 
 ### Pinning a version for a semester
 

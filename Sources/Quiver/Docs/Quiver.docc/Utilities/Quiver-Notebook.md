@@ -32,7 +32,7 @@ The editor opens with `Quiver` and `Foundation` already imported, so a working s
 
 > Note: Cmd+Enter triggers a full Swift compile of the entire editor contents, not a cell-by-cell evaluation. Compile errors stop the run, and there is no shared state between runs — every snippet is its own complete program.
 
-Two libraries cover the ground a typical lesson needs. Quiver provides the numerical and machine-learning surface — vectors, matrices, statistics, and models. Structures provides the classic data structures that appear in algorithms courses: heaps, tries, graphs, stacks, queues, and binary search trees. The Notebook deliberately scopes itself to these two packages, so students see the same surface every time they open it.
+Quiver provides the numerical and machine-learning surface — vectors, matrices, statistics, and models. The Notebook deliberately scopes itself to this one package, so students see the same surface every time they open it.
 
 ### A first snippet
 
