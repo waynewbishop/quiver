@@ -402,3 +402,39 @@ public extension Array where Element == Double {
         return (lower: lower, upper: upper)
     }
 }
+
+// MARK: - Mode
+
+public extension Array where Element: Hashable {
+    /// Returns the most frequently occurring value(s) in the array.
+    ///
+    /// The mode is the third measure of central tendency alongside `mean()` and `median()`.
+    /// Unlike those measures, mode works on any `Hashable` type — integers, strings, booleans,
+    /// or doubles — making it useful for categorical data where averaging is undefined.
+    ///
+    /// When multiple values tie for the highest frequency, all tied values are returned.
+    /// When every value occurs exactly once, the entire array is returned (every value is
+    /// tied for first). An empty input returns an empty array.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let diceRolls = [1, 3, 3, 5, 6, 3, 2]
+    /// diceRolls.mode()                          // [3]
+    ///
+    /// let ratings = [4, 5, 4, 3, 5, 4, 5]
+    /// ratings.mode()                            // [4, 5]  — bimodal
+    ///
+    /// let responses = ["yes", "no", "yes", "maybe"]
+    /// responses.mode()                          // ["yes"]
+    /// ```
+    ///
+    /// - Complexity: O(*n*) where *n* is the number of elements.
+    /// - Returns: An array of all values tied for highest frequency. Empty if input is empty.
+    func mode() -> [Element] {
+        let counts = Dictionary(grouping: self, by: { $0 }).mapValues(\.count)
+        guard let maxCount = counts.values.max() else { return [] }
+        return counts.filter { $0.value == maxCount }.map(\.key)
+    }
+}

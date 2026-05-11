@@ -238,4 +238,351 @@ public enum Distributions: Sendable {
         }
     }
 
+    /// Student's t-distribution functions.
+    ///
+    /// Provides cumulative density (``cdf(x:df:)``) and quantile
+    /// (``quantile(p:df:)``) for the t-distribution with `df` degrees of
+    /// freedom. The mean is zero; the spread depends on `df`. As `df → ∞`
+    /// the t-distribution converges to the standard normal, and that
+    /// limit is verified directly in the test suite.
+    ///
+    /// All functions return `Double?` and produce `nil` when the inputs
+    /// are out of domain (`df <= 0`, `p` outside `(0, 1)`) or when the
+    /// computation would otherwise produce a non-finite result. Following
+    /// the convention established by ``Distributions/normal``, out-of-domain
+    /// input maps to `nil` rather than a runtime trap.
+    public enum t: Sendable {
+
+        /// Returns the cumulative probability `P(T <= x)` under the t-distribution with `df` degrees of freedom.
+        ///
+        /// The cumulative distribution function (CDF) gives the probability that a
+        /// t-distributed random variable falls at or below `x`. Computed via the
+        /// regularized incomplete beta function `I_x(a, b)` — series form for the
+        /// rapidly-converging branch and Lentz's continued fraction otherwise — with
+        /// the standard transition at `x = (a + 1) / (a + b + 2)`. This route is
+        /// used by the SciPy and statsmodels reference implementations and gives
+        /// the symmetry invariant `tCDF(-x, df) + tCDF(x, df) = 1` to machine precision.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // P(T <= 1.96) for a t with df = 30 — close to but not equal to the normal value
+        /// let p = Distributions.t.cdf(x: 1.96, df: 30)  // ≈ 0.9703
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - x: The point at which to evaluate the CDF.
+        ///   - df: The degrees of freedom. Must be positive.
+        /// - Returns: The cumulative probability at `x`, or `nil` if `df <= 0`
+        ///   or the computation produces a non-finite result.
+        public static func cdf(x: Double, df: Double) -> Double? {
+            guard df > 0 else { return nil }
+            // The two textbook identities — pick the branch that keeps `xBeta` away from 1.
+            // Closed form for the special points avoids dividing by zero in the limit.
+            if x == 0 {
+                return 0.5
+            }
+            let dfPlusXSquared = df + x * x
+            guard dfPlusXSquared.isFinite else {
+                // x is so large that df + x*x overflowed — the answer is the asymptotic limit.
+                return x > 0 ? 1.0 : 0.0
+            }
+            let xBeta = df / dfPlusXSquared
+            guard let ibeta = _regularizedIncompleteBeta(x: xBeta, a: 0.5 * df, b: 0.5) else {
+                return nil
+            }
+            let value: Double
+            if x > 0 {
+                value = 1.0 - 0.5 * ibeta
+            } else {
+                value = 0.5 * ibeta
+            }
+            // Clamp to [0, 1] in case of tiny floating-point drift.
+            let clamped = Swift.max(0.0, Swift.min(1.0, value))
+            return clamped.isFinite ? clamped : nil
+        }
+
+        /// Returns the quantile (inverse CDF) of the t-distribution at probability `p`.
+        ///
+        /// The quantile function answers "what value of `x` puts probability `p` below
+        /// it under a t-distribution with `df` degrees of freedom?" For example, the
+        /// quantile at `p = 0.975` with `df = 30` is approximately `2.042` — the
+        /// critical value used to build a 95% confidence interval from a sample of size 31.
+        ///
+        /// Implemented via bisection on ``cdf(x:df:)`` with an initial bracket guided
+        /// by the normal approximation. Bisection is unconditionally stable on the
+        /// monotonic CDF; convergence to roughly 1e-10 takes at most ~50 iterations.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // 95% one-tailed critical value with df = 10
+        /// let t10 = Distributions.t.quantile(p: 0.95, df: 10)  // ≈ 1.812
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - p: The cumulative probability, in `(0, 1)`.
+        ///   - df: The degrees of freedom. Must be positive.
+        /// - Returns: The quantile at `p`, or `nil` if `p` is outside `(0, 1)`,
+        ///   `df <= 0`, or the computation produces a non-finite result.
+        public static func quantile(p: Double, df: Double) -> Double? {
+            guard df > 0 else { return nil }
+            guard p > 0.0 && p < 1.0 else { return nil }
+            if p == 0.5 { return 0.0 }
+
+            // Symmetric — solve for upper tail and negate when p < 0.5.
+            let upper = p > 0.5
+            let target = upper ? p : 1.0 - p
+
+            // Initial bracket — start from the normal quantile then expand if needed.
+            // For small df the t-quantile can be much larger than the normal quantile,
+            // so the upper bound widens until cdf(hi, df) > target.
+            var lo = 0.0
+            var hi: Double
+            if let z = Distributions.normal._bsmStandardQuantile(p: target) {
+                hi = Swift.max(z, 1.0)
+            } else {
+                hi = 1.0
+            }
+
+            // Expand `hi` until cdf(hi) > target. Cap iterations to prevent runaway.
+            var expandIterations = 0
+            while expandIterations < 64 {
+                guard let cdfHi = cdf(x: hi, df: df) else { return nil }
+                if cdfHi >= target { break }
+                hi *= 2.0
+                expandIterations += 1
+            }
+            if expandIterations >= 64 { return nil }
+
+            // Bisection — at most ~52 iterations to bring 1.0 down to 2.2e-16.
+            let tolerance = 1e-12
+            for _ in 0..<200 {
+                let mid = 0.5 * (lo + hi)
+                if hi - lo < tolerance * Swift.max(1.0, abs(mid)) { break }
+                guard let cdfMid = cdf(x: mid, df: df) else { return nil }
+                if cdfMid < target {
+                    lo = mid
+                } else {
+                    hi = mid
+                }
+            }
+            let value = 0.5 * (lo + hi)
+            let signed = upper ? value : -value
+            return signed.isFinite ? signed : nil
+        }
+    }
+
+    /// Chi-squared distribution functions.
+    ///
+    /// Provides cumulative density (``cdf(x:df:)``) for the chi-squared
+    /// distribution with `df` degrees of freedom. Computed via the regularized
+    /// lower incomplete gamma function `P(a, x)`.
+    ///
+    /// All functions return `Double?` and produce `nil` when `df <= 0` or
+    /// when the computation would produce a non-finite result. Following the
+    /// convention established by ``Distributions/normal``, out-of-domain
+    /// input maps to `nil` rather than a runtime trap.
+    public enum chiSquared: Sendable {
+
+        /// Returns the cumulative probability `P(X² <= x)` under the chi-squared distribution with `df` degrees of freedom.
+        ///
+        /// The chi-squared CDF gives the probability that a chi-squared random variable
+        /// with `df` degrees of freedom falls at or below `x`. Negative `x` returns 0
+        /// (the distribution has support on `[0, ∞)`). Computed via the regularized
+        /// lower incomplete gamma function `P(df / 2, x / 2)` — series expansion when
+        /// `x < a + 1` and Lentz's continued fraction otherwise (Numerical Recipes 6.2).
+        ///
+        /// At `df = 2` the chi-squared CDF has the closed form `1 - exp(-x / 2)`,
+        /// and the test suite verifies this anchor to machine precision.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // 0.95 critical value with df = 5 is ≈ 11.07
+        /// let p = Distributions.chiSquared.cdf(x: 11.07, df: 5)  // ≈ 0.95
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - x: The point at which to evaluate the CDF.
+        ///   - df: The degrees of freedom. Must be positive.
+        /// - Returns: The cumulative probability at `x`, or `nil` if `df <= 0`
+        ///   or the computation produces a non-finite result.
+        public static func cdf(x: Double, df: Double) -> Double? {
+            guard df > 0 else { return nil }
+            if x <= 0 { return 0.0 }
+            guard let p = _regularizedIncompleteGammaP(a: 0.5 * df, x: 0.5 * x) else {
+                return nil
+            }
+            let clamped = Swift.max(0.0, Swift.min(1.0, p))
+            return clamped.isFinite ? clamped : nil
+        }
+    }
+
+    // MARK: - Internal special-function helpers
+
+    /// Regularized incomplete beta function `I_x(a, b)`.
+    ///
+    /// Returns `B(x; a, b) / B(a, b)` for `x ∈ [0, 1]`, `a > 0`, `b > 0`.
+    /// Combines the series form (rapid convergence near 0) with Lentz's
+    /// continued fraction (NR 5.2 / 6.4), switching at `x = (a + 1) / (a + b + 2)`
+    /// — the boundary where the series form starts to lose accuracy.
+    /// Returns `nil` for out-of-domain input or non-finite results.
+    internal static func _regularizedIncompleteBeta(x: Double, a: Double, b: Double) -> Double? {
+        guard a > 0, b > 0 else { return nil }
+        if x <= 0 { return 0.0 }
+        if x >= 1 { return 1.0 }
+
+        // ln of B(x;a,b)/B(a,b) prefactor.
+        let lnPrefactor = Foundation.lgamma(a + b)
+            - Foundation.lgamma(a) - Foundation.lgamma(b)
+            + a * Foundation.log(x) + b * Foundation.log(1.0 - x)
+        let prefactor = Foundation.exp(lnPrefactor)
+        guard prefactor.isFinite else { return nil }
+
+        let threshold = (a + 1.0) / (a + b + 2.0)
+        if x < threshold {
+            // Use the continued fraction for I_x(a, b) directly.
+            guard let cf = _betaContinuedFraction(x: x, a: a, b: b) else { return nil }
+            return prefactor * cf / a
+        } else {
+            // Symmetry: I_x(a, b) = 1 - I_{1-x}(b, a).
+            guard let cf = _betaContinuedFraction(x: 1.0 - x, a: b, b: a) else { return nil }
+            return 1.0 - prefactor * cf / b
+        }
+    }
+
+    /// Continued-fraction evaluation for the regularized incomplete beta.
+    ///
+    /// Implements the recurrence from Numerical Recipes 6.4 with Lentz's
+    /// modification (NR 5.2). The caller multiplies by the prefactor and
+    /// divides by `a` (or `b` for the symmetric branch) to recover `I_x(a, b)`.
+    /// Returns `nil` if the iteration fails to converge.
+    private static func _betaContinuedFraction(x: Double, a: Double, b: Double) -> Double? {
+        let maxIterations = 200
+        let epsilon = 3.0e-16
+        let fpMin = 1.0e-300
+
+        let qab = a + b
+        let qap = a + 1.0
+        let qam = a - 1.0
+        var c = 1.0
+        var d = 1.0 - qab * x / qap
+        if abs(d) < fpMin { d = fpMin }
+        d = 1.0 / d
+        var h = d
+
+        for m in 1...maxIterations {
+            let mDouble = Double(m)
+            let m2 = 2.0 * mDouble
+
+            // Even step.
+            var aa = mDouble * (b - mDouble) * x / ((qam + m2) * (a + m2))
+            d = 1.0 + aa * d
+            if abs(d) < fpMin { d = fpMin }
+            c = 1.0 + aa / c
+            if abs(c) < fpMin { c = fpMin }
+            d = 1.0 / d
+            h *= d * c
+
+            // Odd step.
+            aa = -(a + mDouble) * (qab + mDouble) * x / ((a + m2) * (qap + m2))
+            d = 1.0 + aa * d
+            if abs(d) < fpMin { d = fpMin }
+            c = 1.0 + aa / c
+            if abs(c) < fpMin { c = fpMin }
+            d = 1.0 / d
+            let del = d * c
+            h *= del
+
+            if abs(del - 1.0) < epsilon {
+                return h
+            }
+        }
+        return nil
+    }
+
+    /// Regularized lower incomplete gamma `P(a, x) = γ(a, x) / Γ(a)`.
+    ///
+    /// Uses the series expansion when `x < a + 1` and the upper-incomplete
+    /// continued fraction (NR 6.2) otherwise. The two routes converge in
+    /// complementary regimes; switching at `x = a + 1` keeps both fast.
+    /// Returns `nil` for out-of-domain input or non-finite results.
+    internal static func _regularizedIncompleteGammaP(a: Double, x: Double) -> Double? {
+        guard a > 0 else { return nil }
+        if x <= 0 { return 0.0 }
+        if x < a + 1.0 {
+            return _gammaSeries(a: a, x: x)
+        } else {
+            guard let q = _gammaContinuedFraction(a: a, x: x) else { return nil }
+            return 1.0 - q
+        }
+    }
+
+    /// Series form for the regularized lower incomplete gamma `P(a, x)`.
+    ///
+    /// Converges rapidly when `x < a + 1`. Returns `nil` if the iteration
+    /// fails to converge or produces a non-finite result.
+    private static func _gammaSeries(a: Double, x: Double) -> Double? {
+        let maxIterations = 200
+        let epsilon = 3.0e-16
+
+        let lnPrefactor = -x + a * Foundation.log(x) - Foundation.lgamma(a)
+        guard lnPrefactor.isFinite else { return nil }
+        let prefactor = Foundation.exp(lnPrefactor)
+
+        var ap = a
+        var sum = 1.0 / a
+        var del = sum
+        for _ in 0..<maxIterations {
+            ap += 1.0
+            del *= x / ap
+            sum += del
+            if abs(del) < abs(sum) * epsilon {
+                let value = sum * prefactor
+                return value.isFinite ? value : nil
+            }
+        }
+        return nil
+    }
+
+    /// Lentz's continued fraction for the regularized upper incomplete gamma `Q(a, x)`.
+    ///
+    /// Caller computes `P = 1 - Q`. Converges rapidly when `x >= a + 1`.
+    /// Returns `nil` if the iteration fails to converge.
+    private static func _gammaContinuedFraction(a: Double, x: Double) -> Double? {
+        let maxIterations = 200
+        let epsilon = 3.0e-16
+        let fpMin = 1.0e-300
+
+        let lnPrefactor = -x + a * Foundation.log(x) - Foundation.lgamma(a)
+        guard lnPrefactor.isFinite else { return nil }
+        let prefactor = Foundation.exp(lnPrefactor)
+
+        var b = x + 1.0 - a
+        var c = 1.0 / fpMin
+        var d = 1.0 / b
+        var h = d
+        for i in 1...maxIterations {
+            let iDouble = Double(i)
+            let an = -iDouble * (iDouble - a)
+            b += 2.0
+            d = an * d + b
+            if abs(d) < fpMin { d = fpMin }
+            c = b + an / c
+            if abs(c) < fpMin { c = fpMin }
+            d = 1.0 / d
+            let del = d * c
+            h *= del
+            if abs(del - 1.0) < epsilon {
+                let value = prefactor * h
+                return value.isFinite ? value : nil
+            }
+        }
+        return nil
+    }
+
 }

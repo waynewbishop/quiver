@@ -181,4 +181,162 @@ public struct LinearRegression: Regressor, Codable, CustomStringConvertible, Equ
             "Single-feature predict requires a model trained on 1 feature, got \(featureCount)")
         return predict(values.map { [$0] })
     }
+
+    /// Builds a typed inference summary — coefficients, standard errors,
+    /// t-statistics, p-values, confidence intervals, R², adjusted R² — for the
+    /// model evaluated on the training data that produced it.
+    ///
+    /// The summary covers everything downstream callers need to interpret a
+    /// regression fit. It mirrors the output of `statsmodels.OLS.fit().summary()`:
+    /// per-coefficient inference plus the goodness-of-fit summary.
+    ///
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let model = try LinearRegression.fit(features: X, targets: y)
+    /// let report = try model.summary(features: X, targets: y)
+    ///
+    /// print(report)                  // human-readable table
+    /// report.coefficients[1]         // weight on the first feature
+    /// report.pValues[1]              // two-tailed p-value for that weight
+    /// report.confidenceIntervals[1]  // (lower, upper) at the chosen level
+    /// ```
+    ///
+    /// **Singular `X'X` (Li Chen Flag 2).** When the design matrix is singular
+    /// or near-singular, the inverse used to compute the variance–covariance
+    /// matrix is unreliable and standard errors would be silently meaningless.
+    /// `summary` throws `MatrixError.singular` in that case rather than returning
+    /// a struct full of corrupted numbers — matching the existing throwing
+    /// contract on ``fit(features:targets:intercept:)``.
+    ///
+    /// - Parameters:
+    ///   - features: The same `[[Double]]` design matrix passed to ``fit(features:targets:intercept:)``.
+    ///   - targets: The same target vector passed to `fit`.
+    ///   - level: Confidence level for ``RegressionSummary/confidenceIntervals``,
+    ///     in `(0, 1)`. Defaults to `0.95`.
+    /// - Returns: A typed ``RegressionSummary`` value.
+    /// - Throws: `MatrixError.singular` when `X'X` cannot be inverted.
+    public func summary(
+        features: [[Double]],
+        targets: [Double],
+        level: Double = 0.95
+    ) throws -> RegressionSummary {
+        precondition(!features.isEmpty, "Features array must not be empty")
+        precondition(features.count == targets.count,
+            "Features and targets must have the same number of samples")
+        precondition(level > 0.0 && level < 1.0,
+            "Confidence level must be in (0, 1), got \(level)")
+
+        // Build design matrix X (with leading ones column when intercept is enabled).
+        let X: [[Double]]
+        if hasIntercept {
+            X = features.map { row in [1.0] + row }
+        } else {
+            X = features
+        }
+        precondition(X[0].count == coefficients.count,
+            "Feature count in summary input does not match the fitted model")
+
+        let n = X.count
+        let p = coefficients.count
+        let df = n - p
+        precondition(df > 0,
+            "Need more samples than coefficients to compute residual statistics; n=\(n), p=\(p)")
+
+        // (X'X)^-1 — throws `MatrixError.singular` when the matrix is rank-deficient.
+        let Xt = X.transposed()
+        let XtX = Xt.multiplyMatrix(X)
+        let XtX_inv = try XtX.inverted()
+
+        // Residuals and residual variance.
+        let predictions = _Regression.predict(
+            features: features,
+            coefficients: coefficients,
+            intercept: hasIntercept
+        )
+        var rss = 0.0
+        for i in 0..<n {
+            let r = targets[i] - predictions[i]
+            rss += r * r
+        }
+        let sigma2 = rss / Double(df)
+        let residualSE = Foundation.sqrt(sigma2)
+
+        // Standard errors from sqrt(σ² · diag(XtX^-1)).
+        var standardErrors = [Double](repeating: 0.0, count: p)
+        for i in 0..<p {
+            let variance = sigma2 * XtX_inv[i][i]
+            standardErrors[i] = variance >= 0 ? Foundation.sqrt(variance) : .nan
+        }
+
+        // t-statistics and two-tailed p-values via Distributions.t.cdf.
+        var tStats = [Double](repeating: 0.0, count: p)
+        var pValues = [Double](repeating: 0.0, count: p)
+        for i in 0..<p {
+            let se = standardErrors[i]
+            if se > 0 {
+                tStats[i] = coefficients[i] / se
+            } else {
+                tStats[i] = .nan
+            }
+            // Two-tailed p-value: 2 · (1 - tCDF(|t|, df)).
+            // The absolute value is critical — symmetry of t makes this work.
+            let absT = abs(tStats[i])
+            if let upper = Distributions.t.cdf(x: absT, df: Double(df)) {
+                let p = 2.0 * (1.0 - upper)
+                pValues[i] = Swift.max(0.0, Swift.min(1.0, p))
+            } else {
+                pValues[i] = .nan
+            }
+        }
+
+        // Confidence intervals at the requested level.
+        let alpha = 1.0 - level
+        guard let tCrit = Distributions.t.quantile(p: 1.0 - alpha / 2.0, df: Double(df)) else {
+            // Should not happen for the default level — but guard anyway.
+            throw MatrixError.singular
+        }
+        var cis = [ConfidenceInterval](repeating: ConfidenceInterval(lower: 0, upper: 0), count: p)
+        for i in 0..<p {
+            let half = tCrit * standardErrors[i]
+            cis[i] = ConfidenceInterval(
+                lower: coefficients[i] - half,
+                upper: coefficients[i] + half
+            )
+        }
+
+        // R² and adjusted R².
+        var targetMean = 0.0
+        for value in targets { targetMean += value }
+        targetMean /= Double(n)
+        var tss = 0.0
+        for value in targets {
+            let diff = value - targetMean
+            tss += diff * diff
+        }
+        let r2 = tss > 0 ? (1.0 - rss / tss) : 0.0
+        // Statsmodels convention: adj R² = 1 - (1 - R²) · (n - 1) / (n - p).
+        // Here `p` is the total number of fitted parameters (intercept counted
+        // when fitted), which is what `coefficients.count` already gives us.
+        let adjR2: Double
+        if df > 0 {
+            adjR2 = 1.0 - (1.0 - r2) * Double(n - 1) / Double(df)
+        } else {
+            adjR2 = .nan
+        }
+
+        return RegressionSummary(
+            coefficients: coefficients,
+            standardErrors: standardErrors,
+            tStatistics: tStats,
+            pValues: pValues,
+            confidenceIntervals: cis,
+            rSquared: r2,
+            adjustedRSquared: adjR2,
+            n: n,
+            degreesOfFreedom: df,
+            residualStandardError: residualSE,
+            confidenceLevel: level
+        )
+    }
 }
