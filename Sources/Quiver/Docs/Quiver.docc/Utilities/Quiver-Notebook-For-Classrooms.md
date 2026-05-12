@@ -13,14 +13,14 @@ The Quiver Notebook gives a class a Swift environment every student can run on t
 The Notebook is the right tool for:
 
 - **Teaching a Swift-based ML course** — a pure-Swift classroom environment that runs on every student's machine.
-- **Running exercises in restricted networks** — classroom labs, exam settings, air-gapped environments.
+- **Running exercises locally** — classroom labs and self-study where each student runs the Notebook on their own laptop.
 - **Student self-study** — anyone reading *Swift Algorithms & Data Structures* who wants to experiment alongside the book.
 - **Prototyping ML for Apple devices** — designing a model in pure Swift before dropping it into an iOS, watchOS, or visionOS app.
 - **Workshops and tutorials** — a shared environment attendees can clone, run, and keep after the session.
 
 ### Who the Notebook is for
 
-**Educators** preparing lectures or assignments can fork the repository, drop custom example files into the `examples/` folder, and distribute the URL to a class. The bundled stack covers enough ground for an applied linear algebra unit, an introductory descriptive statistics segment, and an applied regression module — material that fits inside an existing course rather than replacing one. A short supervised learning survey covering k-nearest neighbors, k-means, and Naive Bayes also fits comfortably in a few weeks.
+**Educators** preparing lectures or assignments can fork the repository, drop custom example files into the `examples-custom/` folder, and distribute the URL to a class. The bundled stack covers enough ground for an applied linear algebra unit, an introductory descriptive statistics segment, and an applied regression module — material that fits inside an existing course. A short supervised learning survey covering k-nearest neighbors, k-means, and Naive Bayes also fits comfortably in a few weeks.
 
 **Students** working through a course, textbook, or self-study get a Swift environment that does numerical work without installing additional binaries, configuring system packages, or downloading datasets separately. One clone and one command produce a working editor with Quiver, Foundation, and the bundled datasets already wired in.
 
@@ -28,7 +28,7 @@ The Notebook is the right tool for:
 
 ### Adding your own examples
 
-The Notebook's left sidebar is populated by reading every `.swift` file in the `examples/` directory at startup. An instructor extends the list by dropping new files into that folder — there is no plugin system, no manifest, and no rebuild required. Refresh the browser tab and the new entries appear.
+The Notebook's left sidebar is populated by reading every `.swift` file in two directories: `examples/` for the bundled snippets that ship with the repository, and `examples-custom/` for files added by an instructor. An instructor extends the list by dropping new files into `examples-custom/` — there is no plugin system, no manifest, and no rebuild required. Restart `swift run` to pick up newly added files. Custom entries appear in the sidebar after the bundled set, using the title from each file's `// Title:` comment.
 
 Each example file begins with a `// Title:` comment on the first line, and the text after the colon becomes the sidebar label that students see:
 
@@ -47,7 +47,7 @@ The bundled examples are numbered (`01-…`, `02-…`) so they appear in the ord
 
 ### Distributing the Notebook to a class
 
-The recommended distribution model is fork-and-clone. An instructor forks the `quiver-notebook` repository to a course-specific copy, adds custom examples, optionally locks down a particular Quiver release, and shares the fork's URL with students. Each student clones once, runs `swift run`, and arrives at the same environment as everyone else in the class.
+The recommended distribution model is fork-and-clone. A *fork* is a personal copy of a GitHub repository under your own account; on github.com, click the **Fork** button in the upper right of the `quiver-notebook` page. An instructor forks the `quiver-notebook` repository to a course-specific copy, adds custom examples, optionally locks down a particular Quiver release, and shares the fork's URL with students. Each student clones once, runs `swift run`, and arrives at the same environment as everyone else in the class.
 
 A typical fork preparation looks like this:
 
@@ -55,10 +55,10 @@ A typical fork preparation looks like this:
 git clone https://github.com/your-org/cs180-quiver-notebook
 cd cs180-quiver-notebook
 
-cp ~/lectures/week3-pca.swift examples/30-week3-pca.swift
-cp ~/lectures/week4-knn.swift examples/40-week4-knn.swift
+cp ~/lectures/week3-pca.swift examples-custom/30-week3-pca.swift
+cp ~/lectures/week4-knn.swift examples-custom/40-week4-knn.swift
 
-git add examples/
+git add examples-custom/
 git commit -m "Week 3 and 4 lecture examples"
 git push
 ```
@@ -71,23 +71,31 @@ cd cs180-quiver-notebook
 swift run
 ```
 
-The first launch takes a minute or two while Swift fetches Quiver and compiles the editor. Subsequent runs start in seconds, and a class running in an air-gapped lab can clone-and-build once on a connected machine, then redistribute the fully built directory.
+The first launch takes a minute or two while Swift compiles the Notebook and pre-warms the snippet sandbox. The sandbox depends on Quiver, so the first launch downloads Quiver from GitHub. Subsequent runs start in seconds.
 
 ### Pinning a version for a semester
 
 A pinned version means every student in the class is running identical code — the same APIs, the same behavior, the same examples — for the duration of a course. The Notebook ships with a specific Quiver release locked in by its package manifest, so every clone resolves to the same known-good version. The footer of the editor displays the active version, which makes it easy to confirm before an exam or graded assignment.
 
+To pin Quiver to a specific version for the duration of a course, edit the `Package.swift` in the Notebook repository and change the Quiver dependency from a range to an exact version:
+
+```swift
+.package(url: "https://github.com/waynewbishop/quiver", .exact("1.1.0"))
+```
+
+After saving the file, run `swift package resolve` to record the pinned version in `Package.resolved`. Every student who clones the repository will then build against the same Quiver version, regardless of what gets released during the semester.
+
 To hold a course on a specific release across a semester, do not pull from the Notebook's `main` branch until the course is over. New Quiver releases are bundled and pushed to `main` on the upstream repository — staying on the fork's locked manifest keeps the environment frozen until the instructor is ready to move forward.
 
-> Important: `swift package update` resolves dependencies past the pinned versions in the manifest. Avoid running it during a course unless the goal is explicitly to upgrade Quiver — the regular `swift run` and `swift build` commands respect the pin.
+> Note: `swift package update` resolves dependencies to newer versions that satisfy the manifest's version requirements. For range requirements like `from: "1.1.0"`, this can move to any 1.x release. For exact requirements like `.exact("1.1.0")`, the version is fixed and `swift package update` has no effect. The regular `swift run` and `swift build` commands respect whichever requirement is in the manifest.
 
 ### Privacy and network behavior
 
-The privacy story is covered in detail in <doc:Quiver-Notebook>. The short version for adoption decisions: nothing leaves the machine. The local server only accepts connections from the same machine, and there are no accounts, telemetry endpoints, or analytics calls. Bundled datasets ship with the repository and are read locally; custom CSVs loaded from disk stay local too.
+Code and data live on the student's machine. The server binds to the loopback address and accepts connections from that machine alone. Bundled datasets ship inside the repository and load from disk. Custom CSVs load from a path the student provides, also from disk. At page load the browser fetches the Monaco editor from `cdnjs.cloudflare.com` so the editing surface renders; the fetch is one-way, and schools that restrict CDN access can allow that host or vendor Monaco into the repository. There are no accounts, telemetry, or analytics anywhere in the stack.
 
 > Tip: The Notebook is designed for one student per laptop and runs Swift with the permissions of whoever launched it. A shared classroom server is not a supported configuration — a multi-user deployment would need sandboxing, resource limits, and per-user isolation that the current scope does not include.
 
-### What if port 8080 is in use
+### Changing the default port
 
 The Notebook listens on port `8080` by default. If another process is already using that port — common on machines that also run a local development server — we set the `PORT` environment variable before launching:
 
@@ -98,6 +106,12 @@ PORT=8090 swift run
 The active port is logged to the terminal at startup, and the browser tab needs to point at the same one (`http://localhost:8090` for the example above). Any unused TCP port works.
 
 > Tip: Changing the port does not change the bind address. The server still listens only on `127.0.0.1` and refuses connections from elsewhere on the network — a custom port is a convenience choice, not a way to expose the Notebook to other machines.
+
+### Troubleshooting
+
+#### Merge conflict after upgrading the Notebook
+
+When custom example files are committed into the fork, pulling future upstream Notebook updates may produce a merge conflict on `examples-custom/README.md` if the upstream README has changed. This affects only the README — the custom `.swift` files in `examples-custom/` are never modified by upstream changes, so the conflict is limited to one file. Resolve it by keeping the upstream version of the README (the only file the upstream Notebook owns inside `examples-custom/`), then continue the pull.
 
 ### Carrying student work into apps
 

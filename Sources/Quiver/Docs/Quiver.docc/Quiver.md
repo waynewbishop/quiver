@@ -116,6 +116,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Quiver-Notebook-For-Classrooms>
 - <doc:Quiver-Cookbook>
 - <doc:Quiver-Knowledge-File>
+- <doc:Xcode-Playground>
 
 ### Supporting Types
 - ``LogDeterminant``
