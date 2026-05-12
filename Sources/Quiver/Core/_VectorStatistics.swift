@@ -120,21 +120,27 @@ extension _Vector where Element: FloatingPoint {
     }
     
     /// Calculates the variance of all elements in the vector
-    func variance(ddof: Int = 0) -> Element? {
+    func variance(ddof: Int = 1) -> Element? {
         guard elements.count > ddof else { return nil }
-        
+
         guard let mean = self.mean() else { return nil }
-        
+
         let squaredDifferences = elements.map { ($0 - mean) * ($0 - mean) }
         let sum = squaredDifferences.reduce(Element.zero, +)
-        
+
         return sum / Element(elements.count - ddof)
     }
-    
+
     /// Calculates the standard deviation of all elements in the vector
-    func std(ddof: Int = 0) -> Element? {
+    func standardDeviation(ddof: Int = 1) -> Element? {
         guard let variance = self.variance(ddof: ddof) else { return nil }
         return variance.squareRoot()
     }
-    
+
+    /// Calculates the standard error of the mean for the elements in the vector
+    func standardError(ddof: Int = 1) -> Element? {
+        guard let std = self.standardDeviation(ddof: ddof) else { return nil }
+        return std / Element(elements.count).squareRoot()
+    }
+
 }

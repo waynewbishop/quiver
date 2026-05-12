@@ -20,7 +20,7 @@ import Foundation
 /// `Panel` is provided by the Quiver framework to give names to columns of `[Double]`
 /// data while keeping rows aligned. It does not replace Quiver's array and matrix
 /// operations — it organizes them. Each column is a standard `[Double]` that supports
-/// all existing Quiver vector operations like `.mean()`, `.std()`, `.isGreaterThan(_:)`,
+/// all existing Quiver vector operations like `.mean()`, `.standardDeviation()`, `.isGreaterThan(_:)`,
 /// and boolean masking.
 ///
 /// Use `Panel` when working with multi-feature datasets where column identity
@@ -175,7 +175,7 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
     /// Returns the values for the named column as a Quiver vector.
     ///
     /// The returned array supports all Quiver vector operations — `.mean()`,
-    /// `.std()`, `.isGreaterThan(_:)`, boolean masking, and so on.
+    /// `.standardDeviation()`, `.isGreaterThan(_:)`, boolean masking, and so on.
     ///
     /// - Parameter column: The column name to look up.
     /// - Returns: The column's values as `[Double]`.
@@ -422,7 +422,7 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
             // Build a ColumnSummary directly so empty columns still appear in the table
             // with zeros, matching the previous `String`-returning behavior.
             let mean = col.mean() ?? 0.0
-            let std = col.std() ?? 0.0
+            let std = col.standardDeviation() ?? 0.0
             let q = col.quartiles()
             columnSummaries[name] = ColumnSummary(
                 count: col.count,

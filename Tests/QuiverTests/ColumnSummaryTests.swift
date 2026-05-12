@@ -15,8 +15,8 @@ final class ColumnSummaryTests: XCTestCase {
         XCTAssertEqual(s.q1, 3.25, accuracy: 1e-10)
         XCTAssertEqual(s.q3, 7.75, accuracy: 1e-10)
         XCTAssertEqual(s.iqr, 4.5, accuracy: 1e-10)
-        // Population std for 1..10
-        XCTAssertEqual(s.std, 2.8722813232690143, accuracy: 1e-10)
+        // Sample std for 1..10
+        XCTAssertEqual(s.std, 3.0276503540974917, accuracy: 1e-10)
     }
 
     func testReturnsNilOnEmptyArray() {

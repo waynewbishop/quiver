@@ -68,11 +68,11 @@ final class ArrayRandomTests: XCTestCase {
         let result1D = [Double].randomNormal(1000)
         XCTAssertEqual(result1D.count, 1000)
         XCTAssertEqual(result1D.mean()!, 0.0, accuracy: 0.2)
-        XCTAssertEqual(result1D.std()!, 1.0, accuracy: 0.2)
+        XCTAssertEqual(result1D.standardDeviation()!, 1.0, accuracy: 0.2)
 
         let custom = [Double].randomNormal(1000, mean: 5.0, std: 2.0)
         XCTAssertEqual(custom.mean()!, 5.0, accuracy: 0.3)
-        XCTAssertEqual(custom.std()!, 2.0, accuracy: 0.3)
+        XCTAssertEqual(custom.standardDeviation()!, 2.0, accuracy: 0.3)
 
         let result2D = [Double].randomNormal(3, 4)
         XCTAssertEqual(result2D.count, 3)

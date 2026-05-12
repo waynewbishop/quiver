@@ -5,8 +5,8 @@ import Foundation
 /// Returned by `[Double].summary()` and used as the per-column inner type of
 /// `PanelSummary`. All statistics are computed once at construction time and
 /// stored as properties — subsequent reads do not recompute. The standard
-/// deviation uses population variance (`ddof: 0`), matching the default of
-/// `[Double].std()`.
+/// deviation uses sample variance (`ddof: 1`), matching the default of
+/// `[Double].standardDeviation()`.
 public struct ColumnSummary: Equatable, Codable, Sendable {
 
     /// The number of values in the source column.
@@ -15,7 +15,7 @@ public struct ColumnSummary: Equatable, Codable, Sendable {
     /// The arithmetic mean.
     public let mean: Double
 
-    /// The population standard deviation (`ddof: 0`).
+    /// The sample standard deviation (`ddof: 1`).
     public let std: Double
 
     /// The smallest value.
@@ -132,7 +132,7 @@ public extension Array where Element == Double {
     func summary() -> ColumnSummary? {
         guard !isEmpty else { return nil }
         guard let meanValue = mean(),
-              let stdValue = std(),
+              let stdValue = standardDeviation(),
               let q = quartiles() else {
             return nil
         }

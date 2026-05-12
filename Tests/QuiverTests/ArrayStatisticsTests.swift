@@ -34,14 +34,14 @@ final class ArrayStatisticsTests: XCTestCase {
         XCTAssertEqual(a.argMax(), 2)
     }
 
-    // Covers mean, median, variance, std
+    // Covers mean, median, variance, standardDeviation
     func testCentralTendencyAndDispersion() throws {
         let a = [1.0, 2.0, 3.0, 4.0, 5.0]
         XCTAssertEqual(a.mean(), 3.0)
-        XCTAssertEqual(a.variance(), 2.0)
+        XCTAssertEqual(a.variance(), 2.5)
 
-        let std = try XCTUnwrap(a.std())
-        XCTAssertEqual(std, sqrt(2.0), accuracy: 1e-10)
+        let std = try XCTUnwrap(a.standardDeviation())
+        XCTAssertEqual(std, sqrt(2.5), accuracy: 1e-10)
 
         let b = [1.0, 5.0, 3.0, 4.0, 2.0]
         XCTAssertEqual(b.median(), 3.0)
@@ -61,13 +61,13 @@ final class ArrayStatisticsTests: XCTestCase {
     func testOutlierMaskPreCalculatedStats() {
         let data = [4.0, 7.0, 2.0, 9.0, 3.0, 35.0, 5.0]
 
-        guard let mean = data.mean(), let std = data.std() else {
+        guard let mean = data.mean(), let std = data.standardDeviation() else {
             XCTFail("Unable to calculate statistics")
             return
         }
 
         let mask1 = data.outlierMask(threshold: 2.0)
-        let mask2 = data.outlierMask(threshold: 2.0, mean: mean, std: std)
+        let mask2 = data.outlierMask(threshold: 2.0, mean: mean, standardDeviation: std)
         XCTAssertEqual(mask1, mask2)
     }
 

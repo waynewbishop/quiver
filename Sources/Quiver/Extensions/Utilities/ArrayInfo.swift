@@ -64,7 +64,7 @@ public extension Array where Element: FloatingPoint {
     ///
     /// This overload provides richer output for floating-point arrays by including key
     /// statistical measures alongside the element preview. The standard deviation uses
-    /// population statistics (ddof: 0).
+    /// sample statistics (ddof: 1).
     ///
     /// Example:
     /// ```swift
@@ -98,7 +98,7 @@ public extension Array where Element: FloatingPoint {
             if let mean = self.mean() {
                 result += "Mean: \(mean)\n"
             }
-            if let std = self.std() {
+            if let std = self.standardDeviation() {
                 result += "Std: \(std)\n"
             }
             if let min = self.min() {
@@ -167,7 +167,7 @@ public extension Array where Element == [Double] {
             if let mean = flat.mean() {
                 result += "Mean: \(mean)\n"
             }
-            if let std = flat.std() {
+            if let std = flat.standardDeviation() {
                 result += "Std: \(std)\n"
             }
             if let min = flat.min() {

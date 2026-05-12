@@ -312,7 +312,7 @@ final class PanelTests: XCTestCase {
         let zAge = zPanel["age"]
 
         XCTAssertEqual(zAge.mean() ?? .nan, 0.0, accuracy: 1e-10)
-        XCTAssertEqual(zAge.std() ?? .nan, 1.0, accuracy: 1e-10)
+        XCTAssertEqual(zAge.standardDeviation() ?? .nan, 1.0, accuracy: 1e-10)
     }
 
     // standardized leaves other columns unchanged

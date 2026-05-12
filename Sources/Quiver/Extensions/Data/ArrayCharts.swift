@@ -578,7 +578,7 @@ public extension Array where Element: FloatingPoint {
     /// - Returns: Array of z-score standardized values, or empty array if standard deviation is zero
     func standardized() -> [Element] {
         guard !isEmpty else { return [] }
-        guard let meanVal = mean(), let stdVal = std() else {
+        guard let meanVal = mean(), let stdVal = standardDeviation() else {
             return []
         }
 
