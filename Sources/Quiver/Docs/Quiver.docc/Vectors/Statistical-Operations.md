@@ -24,7 +24,7 @@ print(matrix.info())
 // Size: 6
 // Type: Double.Type
 // Mean: 3.5
-// Std: 1.707825127659933
+// Std: 1.8708286933869707
 // Min: 1.0
 // Max: 6.0
 //
@@ -78,23 +78,23 @@ if let mean = responseTimes.mean(), let median = responseTimes.median() {
 
 ### Dispersion and variation
 
-`variance` and `std` measure how far values spread from the mean. The `ddof` parameter (Delta Degrees of Freedom) selects between population statistics (`ddof: 0`, the default) and sample statistics (`ddof: 1`). For the conceptual background on variance and standard deviation, see <doc:Statistics-Primer>.
+`variance` and `standardDeviation` measure how far values spread from the mean. The `ddof` parameter (Delta Degrees of Freedom) selects between sample statistics (`ddof: 1`, the default) and population statistics (`ddof: 0`). For the conceptual background on variance and standard deviation, see <doc:Statistics-Primer>.
 
 ```swift
 import Quiver
 
 let data = [4.0, 7.0, 2.0, 9.0, 3.0]
 
-// Population statistics (default, ddof: 0)
-if let variance = data.variance(), let std = data.std() {
-    print(variance)  // 6.8
-    print(std)       // 2.61
+// Sample statistics (default, ddof: 1) — matches the formula in introductory statistics textbooks
+if let variance = data.variance(), let spread = data.standardDeviation() {
+    print(variance)  // 8.5
+    print(spread)    // 2.92
 }
 
-// Sample statistics (ddof: 1) for data representing a subset
-if let sampleVar = data.variance(ddof: 1), let sampleStd = data.std(ddof: 1) {
-    print(sampleVar)  // 8.5
-    print(sampleStd)  // 2.92
+// Population statistics (ddof: 0) for a complete dataset
+if let popVar = data.variance(ddof: 0), let popSpread = data.standardDeviation(ddof: 0) {
+    print(popVar)     // 6.8
+    print(popSpread)  // 2.61
 }
 ```
 
@@ -125,10 +125,10 @@ let mask = data.outlierMask(threshold: 2.0)
 let outliers = data.masked(by: mask)  // [35.0]
 
 // Pre-calculate statistics when processing multiple arrays against the same baseline
-guard let mean = data.mean(), let std = data.std() else {
+guard let mean = data.mean(), let std = data.standardDeviation() else {
     fatalError("Unable to calculate statistics for empty array")
 }
-let mask2 = data.outlierMask(threshold: 3.0, mean: mean, std: std)
+let mask2 = data.outlierMask(threshold: 3.0, mean: mean, standardDeviation: std)
 ```
 
 > Important: When all values are identical (zero standard deviation), `outlierMask` defaults the standard deviation to `1.0` and no values are flagged as outliers.
@@ -193,7 +193,8 @@ if let documentVector = wordEmbeddings.meanVector() {
 
 ### Dispersion measures
 - ``Swift/Array/variance(ddof:)``
-- ``Swift/Array/std(ddof:)``
+- ``Swift/Array/standardDeviation(ddof:)``
+- ``Swift/Array/standardError(ddof:)``
 
 ### Cumulative statistics
 - ``Swift/Array/cumulativeSum()``

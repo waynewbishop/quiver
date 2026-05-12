@@ -43,9 +43,9 @@ The `magnitude` property is calculated using the Pythagorean theorem extended to
 
 Every vector has a position in **vector space** — a coordinate system where each element in the `Array` represents a dimension. A 2D vector is a point on a flat plane. A 3D vector is a point in a cube. An `Array` with hundreds of elements is a point in a space we can't visualize, but the math works exactly the same way.
 
-This is the key idea behind all of Quiver's operations. Vector space is what makes it possible to treat completely different things — flowers, documents, products, sensor readings — with the same mathematics. As long as we can describe something as an `Array` of numbers, it has a position in vector space. And once something has a position, we can measure how far it is from anything else — which is exactly what machine learning algorithms do.
+This is the idea behind all of Quiver's operations. Vector space is what makes it possible to treat completely different things — flowers, documents, products, sensor readings — with the same mathematics. As long as we can describe something as an `Array` of numbers, it has a position in vector space. And once something has a position, we can measure how far it is from anything else — which is exactly what machine learning algorithms do.
 
-### Distance, direction, and meaning
+### Distance and direction as meaning
 
 Two product feature vectors that are close together in vector space represent similar products. A cluster of data points near each other form a natural group. The math doesn't care what the numbers represent — it only cares about position, distance, and direction.
 
@@ -126,7 +126,7 @@ The method returns `nil` when the matrix is singular — the same condition that
 
 ### From arrays to algorithms
 
-Linear algebra isn't just math exercises — these concepts are the building blocks for ML models in Quiver. The key concept connecting them is **distance** — the measurement of how far apart two points sit in vector space.
+Linear algebra isn't just math exercises — these concepts are the building blocks for ML models in Quiver. The thread connecting them is **distance** — the measurement of how far apart two points sit in vector space.
 
 Both `magnitude` and `distance(to:)` use the Pythagorean theorem, but they measure different things. Think of `magnitude` as the answer to "how far is this point from the origin" — it measures a single vector's length. `distance(to:)` answers a broader version of the same question — how far apart are any two points — by subtracting one vector from the other and computing the length of the difference.
 

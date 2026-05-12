@@ -23,16 +23,16 @@ import Foundation
 /// functions by their distribution name, keeping every call site self-documenting.
 ///
 /// The functions are stateless. A typical call passes the distribution parameters
-/// directly: `Distributions.normal.cdf(x: 1.96, mean: 0, std: 1)`. There is no
+/// directly: `Distributions.normal.cdf(x: 1.96, mean: 0, standardDeviation: 1)`. There is no
 /// "fitted distribution" object to construct, no shared state to mis-configure,
 /// and every call site is self-documenting.
 public enum Distributions: Sendable {
 
     /// Normal distribution functions.
     ///
-    /// Provides probability density (``pdf(x:mean:std:)``), log-density
-    /// (``logPDF(x:mean:std:)``), cumulative density (``cdf(x:mean:std:)``),
-    /// and quantile (``quantile(p:mean:std:)``) for the normal distribution
+    /// Provides probability density (``pdf(x:mean:standardDeviation:)``), log-density
+    /// (``logPDF(x:mean:standardDeviation:)``), cumulative density (``cdf(x:mean:standardDeviation:)``),
+    /// and quantile (``quantile(p:mean:standardDeviation:)``) for the normal distribution
     /// with the given mean and standard deviation.
     ///
     /// All functions return `Double?` and produce `nil` when `std <= 0`, when
@@ -51,7 +51,7 @@ public enum Distributions: Sendable {
         /// line, peaks at the mean, and integrates to 1.0 over its full support.
         ///
         /// For numerically demanding work — multiplying many densities together,
-        /// or evaluating a density far in the tail — prefer ``logPDF(x:mean:std:)``,
+        /// or evaluating a density far in the tail — prefer ``logPDF(x:mean:standardDeviation:)``,
         /// which returns the natural log of the same quantity and avoids underflow.
         ///
         /// Example:
@@ -59,16 +59,16 @@ public enum Distributions: Sendable {
         /// import Quiver
         ///
         /// // Density at the mean of a standard normal
-        /// let peak = Distributions.normal.pdf(x: 0, mean: 0, std: 1)  // ≈ 0.3989
+        /// let peak = Distributions.normal.pdf(x: 0, mean: 0, standardDeviation: 1)  // ≈ 0.3989
         /// ```
         ///
         /// - Parameters:
         ///   - x: The point at which to evaluate the density.
         ///   - mean: The distribution mean (μ).
-        ///   - std: The distribution standard deviation (σ). Must be positive.
-        /// - Returns: The probability density at `x`, or `nil` if `std <= 0`.
-        public static func pdf(x: Double, mean: Double, std: Double) -> Double? {
-            guard let logValue = logPDF(x: x, mean: mean, std: std) else { return nil }
+        ///   - standardDeviation: The distribution standard deviation (σ). Must be positive.
+        /// - Returns: The probability density at `x`, or `nil` if `standardDeviation <= 0`.
+        public static func pdf(x: Double, mean: Double, standardDeviation: Double) -> Double? {
+            guard let logValue = logPDF(x: x, mean: mean, standardDeviation: standardDeviation) else { return nil }
             let value = Foundation.exp(logValue)
             return value.isFinite ? value : nil
         }
@@ -86,17 +86,17 @@ public enum Distributions: Sendable {
         /// import Quiver
         ///
         /// // log-density 4σ from the mean
-        /// let lp = Distributions.normal.logPDF(x: 4, mean: 0, std: 1)  // ≈ -8.919
+        /// let lp = Distributions.normal.logPDF(x: 4, mean: 0, standardDeviation: 1)  // ≈ -8.919
         /// ```
         ///
         /// - Parameters:
         ///   - x: The point at which to evaluate the log-density.
         ///   - mean: The distribution mean (μ).
-        ///   - std: The distribution standard deviation (σ). Must be positive.
-        /// - Returns: The natural log of the density at `x`, or `nil` if `std <= 0`.
-        public static func logPDF(x: Double, mean: Double, std: Double) -> Double? {
-            guard std > 0 else { return nil }
-            let variance = std * std
+        ///   - standardDeviation: The distribution standard deviation (σ). Must be positive.
+        /// - Returns: The natural log of the density at `x`, or `nil` if `standardDeviation <= 0`.
+        public static func logPDF(x: Double, mean: Double, standardDeviation: Double) -> Double? {
+            guard standardDeviation > 0 else { return nil }
+            let variance = standardDeviation * standardDeviation
             let diff = x - mean
             let value = -0.5 * (Foundation.log(2.0 * .pi) + Foundation.log(variance) + (diff * diff) / variance)
             return value.isFinite ? value : nil
@@ -114,17 +114,17 @@ public enum Distributions: Sendable {
         /// import Quiver
         ///
         /// // P(Z <= 1.96) for a standard normal
-        /// let p = Distributions.normal.cdf(x: 1.96, mean: 0, std: 1)  // ≈ 0.975
+        /// let p = Distributions.normal.cdf(x: 1.96, mean: 0, standardDeviation: 1)  // ≈ 0.975
         /// ```
         ///
         /// - Parameters:
         ///   - x: The point at which to evaluate the CDF.
         ///   - mean: The distribution mean (μ).
-        ///   - std: The distribution standard deviation (σ). Must be positive.
-        /// - Returns: The cumulative probability at `x`, or `nil` if `std <= 0`.
-        public static func cdf(x: Double, mean: Double, std: Double) -> Double? {
-            guard std > 0 else { return nil }
-            let z = (x - mean) / std
+        ///   - standardDeviation: The distribution standard deviation (σ). Must be positive.
+        /// - Returns: The cumulative probability at `x`, or `nil` if `standardDeviation <= 0`.
+        public static func cdf(x: Double, mean: Double, standardDeviation: Double) -> Double? {
+            guard standardDeviation > 0 else { return nil }
+            let z = (x - mean) / standardDeviation
             let value = 0.5 * (1.0 + Foundation.erf(z / Foundation.sqrt(2.0)))
             return value.isFinite ? value : nil
         }
@@ -132,7 +132,7 @@ public enum Distributions: Sendable {
         /// Returns the quantile (inverse CDF) of the normal distribution at probability `p`.
         ///
         /// The quantile function answers the question "what value of `x` puts probability
-        /// `p` below it?" It is the inverse of ``cdf(x:mean:std:)``. For example, the
+        /// `p` below it?" It is the inverse of ``cdf(x:mean:standardDeviation:)``. For example, the
         /// quantile at `p = 0.975` of a standard normal is approximately `1.96` — the
         /// critical value used to build a 95% confidence interval.
         ///
@@ -141,7 +141,7 @@ public enum Distributions: Sendable {
         /// elsewhere. Accuracy is roughly 7 decimals in the body of the distribution
         /// and 4 decimals deep in the tails — the documented limit of BSM.
         ///
-        /// Out-of-domain input maps to `nil`: `p <= 0`, `p >= 1`, or `std <= 0`.
+        /// Out-of-domain input maps to `nil`: `p <= 0`, `p >= 1`, or `standardDeviation <= 0`.
         /// This includes `p = 1e-15` and `p = 1 - 1e-15` — values past the BSM
         /// representable range.
         ///
@@ -150,23 +150,23 @@ public enum Distributions: Sendable {
         /// import Quiver
         ///
         /// // 95% critical value for a standard normal
-        /// let z = Distributions.normal.quantile(p: 0.975, mean: 0, std: 1)  // ≈ 1.96
+        /// let z = Distributions.normal.quantile(p: 0.975, mean: 0, standardDeviation: 1)  // ≈ 1.96
         /// ```
         ///
         /// - Parameters:
         ///   - p: The cumulative probability, in `(0, 1)`.
         ///   - mean: The distribution mean (μ).
-        ///   - std: The distribution standard deviation (σ). Must be positive.
+        ///   - standardDeviation: The distribution standard deviation (σ). Must be positive.
         /// - Returns: The quantile at `p`, or `nil` if `p` is outside `(0, 1)`,
-        ///   `p <= 1e-15` or `p >= 1 - 1e-15`, or `std <= 0`.
-        public static func quantile(p: Double, mean: Double, std: Double) -> Double? {
-            guard std > 0 else { return nil }
+        ///   `p <= 1e-15` or `p >= 1 - 1e-15`, or `standardDeviation <= 0`.
+        public static func quantile(p: Double, mean: Double, standardDeviation: Double) -> Double? {
+            guard standardDeviation > 0 else { return nil }
             guard p > 0.0 && p < 1.0 else { return nil }
             // BSM is not numerically stable at the extreme tails; treat values
             // closer than 1e-15 to 0 or 1 as out-of-domain.
             guard p > 1e-15 && p < 1.0 - 1e-15 else { return nil }
             guard let z = _bsmStandardQuantile(p: p) else { return nil }
-            let value = mean + std * z
+            let value = mean + standardDeviation * z
             return value.isFinite ? value : nil
         }
 

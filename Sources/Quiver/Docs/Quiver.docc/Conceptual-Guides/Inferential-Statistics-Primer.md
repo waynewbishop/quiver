@@ -24,7 +24,7 @@ let sessionSeconds = [245.0, 252.0, 238.0, 261.0, 247.0,
                       255.0, 249.0, 258.0, 244.0, 251.0]
 
 sessionSeconds.mean()         // 250.0 — the sample mean
-sessionSeconds.std(ddof: 1)   // ~6.91 — the sample standard deviation
+sessionSeconds.standardDeviation()   // ~6.91 — the sample standard deviation
 ```
 
 The sample mean of `250.0` is a fact about these ten users. Whether the population mean is also near `250.0`, or whether the gap from a known control baseline is real, is the question inferential statistics answers.
@@ -51,12 +51,12 @@ let sessionSeconds = [245.0, 252.0, 238.0, 261.0, 247.0,
                       255.0, 249.0, 258.0, 244.0, 251.0]
 
 let n = Double(sessionSeconds.count)
-if let sampleStd = sessionSeconds.std(ddof: 1) {  // ~6.91
+if let sampleStd = sessionSeconds.standardDeviation() {  // ~6.91
     let standardError = sampleStd / sqrt(n)       // ~2.19
 }
 ```
 
-> Important: Standard error uses the sample standard deviation, which divides by `n - 1`. Quiver's `std` defaults to `ddof: 0` (population). For inferential work, always pass `ddof: 1`. A test built on `std` without `ddof: 1` will compile, run, and produce a number. Just the wrong one.
+> Note: Standard error uses the sample standard deviation, which divides by `n - 1`. Quiver's `standardDeviation()` and `standardError()` default to this — `ddof: 1` is the sample formula every inferential calculation in this primer assumes. For population statistics on a complete dataset, pass `ddof: 0` explicitly.
 
 ### Hypothesis testing
 
@@ -75,7 +75,7 @@ let baseline = 240.0
 let alpha = 0.05
 
 if let sampleMean = sessionSeconds.mean(),
-   let sampleStd = sessionSeconds.std(ddof: 1) {
+   let sampleStd = sessionSeconds.standardDeviation() {
 
     let n = Double(sessionSeconds.count)
     let standardError = sampleStd / sqrt(n)
@@ -86,7 +86,7 @@ if let sampleMean = sessionSeconds.mean(),
 
     // Two-tailed p-value: probability, under the null, of seeing a
     // sample mean at least this far from 240 in either direction.
-    if let cdf = Distributions.normal.cdf(x: abs(z), mean: 0, std: 1) {
+    if let cdf = Distributions.normal.cdf(x: abs(z), mean: 0, standardDeviation: 1) {
         let pValue = 2 * (1 - cdf)                     // ≈ 0.000005
         let reject = pValue < alpha
         print("z: \(z), p: \(pValue), reject null: \(reject)")
@@ -173,10 +173,10 @@ import Foundation
 import Quiver
 
 // Large-sample approximation: 95% critical value on a standard normal
-let z = Distributions.normal.quantile(p: 0.975, mean: 0, std: 1)  // ≈ 1.96
+let z = Distributions.normal.quantile(p: 0.975, mean: 0, standardDeviation: 1)  // ≈ 1.96
 
 // And the cumulative probability for a given z-statistic
-let p = Distributions.normal.cdf(x: 1.96, mean: 0, std: 1)        // ≈ 0.975
+let p = Distributions.normal.cdf(x: 1.96, mean: 0, standardDeviation: 1)        // ≈ 0.975
 ```
 
 For a sample mean and standard error, the rough recipe is `mean ± 1.96 × standardError` for a 95% interval, and `2 × (1 − cdf(|z|))` for a two-tailed p-value of an observed `z = (mean − hypothesizedMean) / standardError`. This works well when the sample is large (a common rule of thumb is `n ≥ 30`) and the population is not pathologically skewed. For smaller samples, resampling is the more honest tool because it does not require the normal approximation to hold.
@@ -199,7 +199,7 @@ let sample = [245.0, 252.0, 238.0, 261.0, 247.0,
 let hypothesizedMean = 240.0
 
 if let mean = sample.mean(),                  // 250.0
-   let sampleStd = sample.std(ddof: 1) {       // ~6.91
+   let sampleStd = sample.standardDeviation() {       // ~6.91
     let effectSize = (mean - hypothesizedMean) / sampleStd
     // ~1.45 — a large effect
 }

@@ -33,7 +33,7 @@ This rounding behavior is the source of most floating-point surprises. A test th
 
 ### Where Quiver protects us
 
-The most common way for floating-point error to dominate a result is by subtracting two numbers that are nearly equal. Each input has 15–17 significant digits, but when we subtract them the leading digits cancel and only the noisy trailing digits remain. The textbook formula for variance — `mean(x²) − mean(x)²` — falls into this trap whenever the mean is large compared to the spread of the data. Quiver's `variance` and `std` use a different formulation that subtracts the mean before squaring, avoiding the cancellation entirely. Calling `variance` on a tightly clustered dataset returns the right answer; rolling our own from the textbook formula often does not.
+The most common way for floating-point error to dominate a result is by subtracting two numbers that are nearly equal. Each input has 15–17 significant digits, but when we subtract them the leading digits cancel and only the noisy trailing digits remain. The textbook formula for variance — `mean(x²) − mean(x)²` — falls into this trap whenever the mean is large compared to the spread of the data. Quiver's `variance` and `standardDeviation` use a different formulation that subtracts the mean before squaring, avoiding the cancellation entirely. Calling `variance` on a tightly clustered dataset returns the right answer; rolling our own from the textbook formula often does not.
 
 The same care extends to iterative algorithms. KMeans recomputes cluster centroids by averaging the points assigned to each cluster, then reassigns points to the nearest centroid. After many iterations on a large dataset, those centroid coordinates have been summed and divided enough times that small rounding errors could drift the result. Quiver works in squared distance internally to avoid unnecessary `sqrt` operations, uses stable summation for centroid updates, and compares positions with a tolerance during convergence checks. Two runs on the same data with the same seed return identical results.
 
@@ -53,7 +53,7 @@ values.reduce(0, +)
 
 The notation `1e16` is Swift's shorthand for `1 × 10¹⁶` — the `e` reads as "times ten to the," so `1e-9` is `0.000000001` and `1e16` is ten quadrillion. When we add `1.0` to `1e16`, the `1.0` is so much smaller than `1e16` that it falls below the precision of the result. The `1.0` is effectively lost. Then we subtract `1e16`, leaving `0`, and add the final `1.0` to get `1.0`. The true answer in exact arithmetic is `2.0`.
 
-This is why Quiver's aggregation functions — `mean`, `sum`, `std` — are deliberate about the order in which they accumulate values. For most well-behaved data the order does not matter, but Quiver does not assume the input is well-behaved.
+This is why Quiver's aggregation functions — `mean`, `sum`, `standardDeviation` — are deliberate about the order in which they accumulate values. For most well-behaved data the order does not matter, but Quiver does not assume the input is well-behaved.
 
 ### When precision matters
 
@@ -67,5 +67,5 @@ When any of those conditions hold, the path forward is to check `.conditionNumbe
 
 The goal of this primer is not to make every developer an expert in floating-point arithmetic. The goal is to recognize the warning signs early enough to ask the right question. When a result looks suspicious — a variance of zero on data that clearly varies, an inverted matrix that produces nonsense, two runs of the same algorithm that disagree by an amount that grows with the dataset size — the cause is often numerical, and the fix is often a different formulation of the same calculation.
 
-Quiver's API is designed so that the default path is the numerically sound path. Calling `variance` is correct. Calling `std` is correct. Inverting a well-conditioned matrix is correct. The places where we need to think — when to check `.conditionNumber`, when to use a tolerance instead of `==`, when to worry about summation order — are the places where the underlying mathematics demands thought, not the places where the API has cut corners.
+Quiver's API is designed so that the default path is the numerically sound path. Calling `variance` is correct. Calling `standardDeviation` is correct. Inverting a well-conditioned matrix is correct. The places where we need to think — when to check `.conditionNumber`, when to use a tolerance instead of `==`, when to worry about summation order — are the places where the underlying mathematics demands thought, not the places where the API has cut corners.
 

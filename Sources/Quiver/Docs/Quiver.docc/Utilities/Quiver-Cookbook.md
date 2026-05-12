@@ -4,7 +4,7 @@ Learning Quiver through domain problems in science, engineering, and math.
 
 ## Overview
 
-[The Quiver Cookbook](https://github.com/waynewbishop/quiver-cookbook) is a collection of single-file recipes that simulate various technical scenarios from different domains. Every recipe uses the `Playground` macro from Xcode 26+, which evaluates the file in the Canvas.
+[The Quiver Cookbook](https://github.com/waynewbishop/quiver-cookbook) is a collection of single-file recipes that work through scenarios from aerospace, sports analytics, finance, sensor processing, and applied mathematics. Every recipe uses the `Playground` macro from Xcode 26+, which evaluates the file in the Canvas.
 
 > Important: The `Playground` macro is not the same as a `.playground` file. Traditional `Playground` files run in a separate sandbox and cannot import Swift packages. The playground macro compiles as part of the project, with full access to SPM dependencies including Quiver.
 
@@ -41,7 +41,7 @@ The Canvas shows the fitted slope at roughly 0.11 per degree — the published v
 
 > Note: NACA stands for the National Advisory Committee for Aeronautics — a U.S. federal agency founded in 1915 that ran wind tunnel research on airfoils for decades. It was dissolved in 1958 when its assets, staff, and facilities became the core of the newly created NASA.
 
-### Can Swift drive a car?
+### Driving a car with Swift
 
 A second recipe takes a different domain — sensor-driven decision making — and the same recipe shape. Given speed, distance to an obstacle, and lane offset, a [K-Nearest Neighbors model](<doc:Nearest-Neighbors-Classification>) votes on whether to accelerate, maintain, brake, or steer:
 
@@ -84,15 +84,15 @@ import Quiver
 }
 ```
 
-The Canvas prints a sequence of decisions that shift from `Accelerate` to `Maintain` to `Brake` to `Steer` as the simulated obstacle gets closer — no hardcoded thresholds, no if-else cascade, just the nearest training examples voting. Clearly, this is not a self-driving car but a playful simulation. Real autonomous vehicles use neural networks processing camera feeds, lidar, and radar. But the underlying question is the same — given what the sensors see right now, what should the car do next?
+The Canvas prints a sequence of decisions that shift from `Accelerate` to `Maintain` to `Brake` to `Steer` as the simulated obstacle gets closer — no hardcoded thresholds, no if-else cascade, just the nearest training examples voting. This is not a self-driving car — it is a playful simulation. Real autonomous vehicles use neural networks processing camera feeds, lidar, and radar. But the underlying question is the same — given what the sensors see right now, what should the car do next?
 
-### The recipes, organized by domain
+### The recipes organized by domain
 
 **Engineering and physical systems.** Recipes that turn a sensor reading or physical measurement into a decision or prediction. [Naive Bayes](<doc:Naive-Bayes>) classifies wing panel rivets against ±0.030″ tolerances. [Linear regression](<doc:Linear-Regression>) on NACA airfoil data recovers the published slope of about 0.11 per degree. [K-Means](<doc:KMeans-Clustering>) clusters a delivery driver's stops into geographic zones, and [KNN](<doc:Nearest-Neighbors-Classification>) classifies decisions from simulated driving sensor data.
 
 **Athletics and motion.** Recipes that work on the kind of signal a watch or phone records every second. KNN combines heart rate, cadence, pace, and grade into a single effort label. The [Fourier transform](<doc:Fourier-Transform>) pulls breaths per minute from heart-rate variability and a runner's cadence from an accelerometer stream. A finite-difference derivative converts an elevation track into a grade signal — sensor in, useful number out.
 
-**Math made tangible.** Recipes that put textbook mathematics to work on problems you can hold. A 2×2 [rotation matrix](<doc:Matrix-Transformations>) spins a vector around the origin. A [matrix inverse](<doc:Matrix-Operations>) backs out two unknown product prices from two equations. [Polynomial regression](<doc:Polynomials>) recovers the coefficients of `2x² + 3x + 1`, and analytic derivatives produce position, velocity, and acceleration in three calls. [Bootstrap resampling](<doc:Inferential-Statistics-Primer>) produces a 95% confidence interval with no closed-form assumption.
+**Math made tangible.** Recipes that put textbook mathematics to work on problems we can hold in mind concretely. A 2×2 [rotation matrix](<doc:Matrix-Transformations>) spins a vector around the origin. A [matrix inverse](<doc:Matrix-Operations>) backs out two unknown product prices from two equations. [Polynomial regression](<doc:Polynomials>) recovers the coefficients of `2x² + 3x + 1`, and analytic derivatives produce position, velocity, and acceleration in three calls. [Bootstrap resampling](<doc:Inferential-Statistics-Primer>) produces a 95% confidence interval with no closed-form assumption.
 
 > Tip: The remaining recipes cover vectors and similarity, descriptive statistics, model evaluation, data preparation, pipelines, and probability — the foundations the domain examples are built on.
 

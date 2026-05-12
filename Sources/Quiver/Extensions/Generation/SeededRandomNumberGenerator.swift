@@ -33,7 +33,7 @@ import Foundation
 ///
 /// ```swift
 /// var rng = SeededRandomNumberGenerator(seed: 42)
-/// let data = [Double].randomNormal(1_000, mean: 100, std: 15, using: &rng)
+/// let data = [Double].randomNormal(1_000, mean: 100, standardDeviation: 15, using: &rng)
 /// let shuffled = data.shuffled(using: &rng)
 /// ```
 ///

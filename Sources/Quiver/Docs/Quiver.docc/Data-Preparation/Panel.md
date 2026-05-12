@@ -8,7 +8,7 @@ Panel takes a matrix of rows and pivots it into named columns, where each column
 
 With Panel, each column gets a name and all rows stay together as a unit. It serves as a lightweight container for labeled column data, scoped to Quiver's numeric focus.
 
-> Important: `Panel` does not replace Quiver's array and matrix operations — it organizes them. Each column is a standard `[Double]` that supports Quiver vector operations like `.mean()`, `.std()`, and boolean masking.
+> Important: `Panel` does not replace Quiver's array and matrix operations — it organizes them. Each column is a standard `[Double]` that supports Quiver vector operations like `.mean()`, `.standardDeviation()`, and boolean masking.
 
 ### Creating a panel
 
@@ -39,8 +39,8 @@ let athletes = Panel(matrix: results, columns: ["speed", "jumpHeight"])
 if let avgSpeed = athletes["speed"].mean() {
     print(avgSpeed)  // 8.27
 }
-if let stdJump = athletes["jumpHeight"].std() {
-    print(stdJump)  // 0.21
+if let jumpSpread = athletes["jumpHeight"].standardDeviation() {
+    print(jumpSpread)  // 0.25
 }
 ```
 
@@ -192,10 +192,10 @@ print(data.head())
 // 4     42.0   95000.0  78.0
 
 print(data.summary())
-// Prints count, mean, std, min, and max for each column
+// Prints count, mean, standard deviation, min, and max for each column
 ```
 
-`Print` shows the structure. `Shape` returns dimensions as a named tuple, matching the matrix API. `Head` displays row data in tabular format. `Summary` provides per-column statistics. By default, `head` shows up to 10 rows — pass a count to limit the output:
+`print` shows the structure. `shape` returns dimensions as a named tuple, matching the matrix API. `head` displays row data in tabular format. `summary` provides per-column statistics. By default, `head` shows up to 10 rows — pass a count to limit the output:
 
 ```swift
 print(data.head(n: 3))
@@ -238,6 +238,43 @@ let predictions = model.predict(testScaled)
 ```
 
 > Tip: `Panel` is a convenience, not a requirement. Every Quiver classifier accepts standard `[[Double]]` matrices and `[Int]` label arrays directly. `Panel` simply keeps columns named and rows aligned — use it when that organization helps, skip it when raw arrays are simpler.
+
+### Charting Panel data with Swift Charts
+
+Swift Charts iterates data and emits one mark per row, and the columns of a Panel slot in directly. The chart-side code asks for two things: an iterable collection and a stable identifier per element. Panel provides both — the row count is known, and each column reads as a parallel `[Double]`:
+
+```swift
+import Charts
+import Quiver
+import SwiftUI
+
+struct WorkoutTrendChart: View {
+    let workouts: Panel
+
+    var body: some View {
+        Chart {
+            ForEach(0..<workouts.rowCount, id: \.self) { row in
+                LineMark(
+                    x: .value("Week", workouts["week"][row]),
+                    y: .value("Heart Rate", workouts["heartRate"][row])
+                )
+            }
+        }
+    }
+}
+```
+
+For categorical aggregations — total revenue per region, mean response time per endpoint, count of events per day — the natural starting point is `groupedData(by:using:)` on a `[Double]` column, which returns sorted `(category, value)` tuples that map straight to a `BarMark`:
+
+```swift
+let sales: [Double]   = [120.0, 95.0, 140.0, 110.0, 85.0, 130.0]
+let regions: [String] = ["North", "South", "North", "South", "South", "North"]
+
+let chartData = sales.groupedData(by: regions, using: .sum)
+// [(category: "North", value: 390.0), (category: "South", value: 290.0)]
+```
+
+The grouping happens once, in Quiver. The chart receives sorted, labeled tuples and renders them — no `Dictionary` to flatten on the chart side, no second pass to deduplicate categories. The full catalog of chart-ready transformations — stacked series, percentile ranks, scaled-to-range outputs, downsampled signals — is documented in <doc:Data-Visualization>.
 
 ### Design scope
 

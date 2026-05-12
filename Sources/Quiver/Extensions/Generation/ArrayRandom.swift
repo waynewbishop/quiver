@@ -145,11 +145,11 @@ public extension Array where Element == Double {
     /// - Parameters:
     ///   - count: The number of random values to generate (must be non-negative)
     ///   - mean: The center of the distribution (default 0.0)
-    ///   - std: The standard deviation controlling spread (default 1.0, must be non-negative)
+    ///   - standardDeviation: The standard deviation controlling spread (default 1.0, must be non-negative)
     /// - Returns: An array of normally distributed random doubles
-    static func randomNormal(_ count: Int, mean: Double = 0.0, std: Double = 1.0) -> [Double] {
+    static func randomNormal(_ count: Int, mean: Double = 0.0, standardDeviation: Double = 1.0) -> [Double] {
         var rng = SystemRandomNumberGenerator()
-        return randomNormal(count, mean: mean, std: std, using: &rng)
+        return randomNormal(count, mean: mean, standardDeviation: standardDeviation, using: &rng)
     }
 
     /// Creates a 1D array of random values from a normal (Gaussian) distribution, drawing from the given generator.
@@ -157,19 +157,19 @@ public extension Array where Element == Double {
     /// - Parameters:
     ///   - count: The number of random values to generate (must be non-negative)
     ///   - mean: The center of the distribution (default 0.0)
-    ///   - std: The standard deviation controlling spread (default 1.0, must be non-negative)
+    ///   - standardDeviation: The standard deviation controlling spread (default 1.0, must be non-negative)
     ///   - generator: The random number generator to draw from
     /// - Returns: An array of normally distributed random doubles
-    static func randomNormal<G: RandomNumberGenerator>(_ count: Int, mean: Double = 0.0, std: Double = 1.0, using generator: inout G) -> [Double] {
+    static func randomNormal<G: RandomNumberGenerator>(_ count: Int, mean: Double = 0.0, standardDeviation: Double = 1.0, using generator: inout G) -> [Double] {
         precondition(count >= 0, "Count must be non-negative")
-        precondition(std >= 0, "Standard deviation must be non-negative")
+        precondition(standardDeviation >= 0, "Standard deviation must be non-negative")
         var result = [Double]()
         result.reserveCapacity(count)
         while result.count < count {
             let (z1, z2) = _boxMullerPair(using: &generator)
-            result.append(mean + z1 * std)
+            result.append(mean + z1 * standardDeviation)
             if result.count < count {
-                result.append(mean + z2 * std)
+                result.append(mean + z2 * standardDeviation)
             }
         }
         return result
@@ -181,11 +181,11 @@ public extension Array where Element == Double {
     ///   - rows: The number of rows (must be positive)
     ///   - columns: The number of columns (must be positive)
     ///   - mean: The center of the distribution (default 0.0)
-    ///   - std: The standard deviation controlling spread (default 1.0, must be non-negative)
+    ///   - standardDeviation: The standard deviation controlling spread (default 1.0, must be non-negative)
     /// - Returns: A matrix of normally distributed random doubles
-    static func randomNormal(_ rows: Int, _ columns: Int, mean: Double = 0.0, std: Double = 1.0) -> [[Double]] {
+    static func randomNormal(_ rows: Int, _ columns: Int, mean: Double = 0.0, standardDeviation: Double = 1.0) -> [[Double]] {
         var rng = SystemRandomNumberGenerator()
-        return randomNormal(rows, columns, mean: mean, std: std, using: &rng)
+        return randomNormal(rows, columns, mean: mean, standardDeviation: standardDeviation, using: &rng)
     }
 
     /// Creates a 2D array of random values from a normal (Gaussian) distribution, drawing from the given generator.
@@ -194,13 +194,13 @@ public extension Array where Element == Double {
     ///   - rows: The number of rows (must be positive)
     ///   - columns: The number of columns (must be positive)
     ///   - mean: The center of the distribution (default 0.0)
-    ///   - std: The standard deviation controlling spread (default 1.0, must be non-negative)
+    ///   - standardDeviation: The standard deviation controlling spread (default 1.0, must be non-negative)
     ///   - generator: The random number generator to draw from
     /// - Returns: A matrix of normally distributed random doubles
-    static func randomNormal<G: RandomNumberGenerator>(_ rows: Int, _ columns: Int, mean: Double = 0.0, std: Double = 1.0, using generator: inout G) -> [[Double]] {
+    static func randomNormal<G: RandomNumberGenerator>(_ rows: Int, _ columns: Int, mean: Double = 0.0, standardDeviation: Double = 1.0, using generator: inout G) -> [[Double]] {
         precondition(rows > 0 && columns > 0, "Dimensions must be positive")
-        precondition(std >= 0, "Standard deviation must be non-negative")
-        return (0..<rows).map { _ in randomNormal(columns, mean: mean, std: std, using: &generator) }
+        precondition(standardDeviation >= 0, "Standard deviation must be non-negative")
+        return (0..<rows).map { _ in randomNormal(columns, mean: mean, standardDeviation: standardDeviation, using: &generator) }
     }
 }
 
@@ -406,12 +406,12 @@ public extension Array where Element == Float {
     /// - Parameters:
     ///   - count: The number of random values to generate (must be non-negative)
     ///   - mean: The center of the distribution (default 0.0)
-    ///   - std: The standard deviation controlling spread (default 1.0, must be non-negative)
+    ///   - standardDeviation: The standard deviation controlling spread (default 1.0, must be non-negative)
     /// - Returns: An array of normally distributed random floats
-    static func randomNormal(_ count: Int, mean: Float = 0.0, std: Float = 1.0) -> [Float] {
+    static func randomNormal(_ count: Int, mean: Float = 0.0, standardDeviation: Float = 1.0) -> [Float] {
         precondition(count >= 0, "Count must be non-negative")
-        precondition(std >= 0, "Standard deviation must be non-negative")
-        return [Double].randomNormal(count, mean: Double(mean), std: Double(std)).map { Float($0) }
+        precondition(standardDeviation >= 0, "Standard deviation must be non-negative")
+        return [Double].randomNormal(count, mean: Double(mean), standardDeviation: Double(standardDeviation)).map { Float($0) }
     }
 
     /// Creates a 2D array of random values from a normal (Gaussian) distribution.
@@ -420,12 +420,12 @@ public extension Array where Element == Float {
     ///   - rows: The number of rows (must be positive)
     ///   - columns: The number of columns (must be positive)
     ///   - mean: The center of the distribution (default 0.0)
-    ///   - std: The standard deviation controlling spread (default 1.0, must be non-negative)
+    ///   - standardDeviation: The standard deviation controlling spread (default 1.0, must be non-negative)
     /// - Returns: A matrix of normally distributed random floats
-    static func randomNormal(_ rows: Int, _ columns: Int, mean: Float = 0.0, std: Float = 1.0) -> [[Float]] {
+    static func randomNormal(_ rows: Int, _ columns: Int, mean: Float = 0.0, standardDeviation: Float = 1.0) -> [[Float]] {
         precondition(rows > 0 && columns > 0, "Dimensions must be positive")
-        precondition(std >= 0, "Standard deviation must be non-negative")
-        return [Double].randomNormal(rows, columns, mean: Double(mean), std: Double(std)).map { $0.map { Float($0) } }
+        precondition(standardDeviation >= 0, "Standard deviation must be non-negative")
+        return [Double].randomNormal(rows, columns, mean: Double(mean), standardDeviation: Double(standardDeviation)).map { $0.map { Float($0) } }
     }
 }
 

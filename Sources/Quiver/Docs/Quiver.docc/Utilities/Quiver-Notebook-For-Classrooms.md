@@ -39,7 +39,7 @@ Each example file begins with a `// Title:` comment on the first line, and the t
 
 let scores = [82.0, 91.0, 76.0, 88.0, 95.0, 73.0, 84.0, 90.0]
 print("mean:    ", scores.mean() ?? 0)
-print("std dev: ", scores.std() ?? 0)
+print("std dev: ", scores.standardDeviation() ?? 0)
 print("median:  ", scores.median() ?? 0)
 ```
 

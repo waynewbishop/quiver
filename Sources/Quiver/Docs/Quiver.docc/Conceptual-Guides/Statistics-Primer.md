@@ -36,9 +36,9 @@ The middle tells us where the dataset is centered. It says nothing about how tig
 ```swift
 let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0]
 
-scores.mean()      // 78.375
-scores.std()       // 6.26 — a typical score is ~6 points from the mean
-scores.variance()  // 39.23 — the same information in squared units
+scores.mean()              // 78.375
+scores.standardDeviation() // 6.70 — a typical score is ~7 points from the mean
+scores.variance()          // 44.84 — the same information in squared units
 ```
 
 > Experiment: **The Quiver Notebook** is the right place to see why median resists outliers. Append one extreme value to `scores` and re-run — mean and standard deviation move noticeably, median barely budges. The robustness claim becomes a visible difference. See <doc:Quiver-Notebook>.
@@ -73,9 +73,9 @@ Mean and standard deviation by themselves are summaries. They describe what the 
 
 Consider a list of quiz scores: `68, 72, 75, 77, 80, 82, 85, 88`. The average is around 78, and somebody got a 95. A z-score turns the informal question of how unusual 95 is into a number.
 
-The calculation has two steps. First, find the distance from the mean: `95 − 78 = 17`. The value sits 17 points above average. Second, compare that distance to the typical spread of the other scores. If most scores sit within 5 points of the average, being 17 above is wildly unusual. If most scores bounce around by 30 points, 17 is barely noteworthy. The measure of typical spread is the standard deviation. In this dataset, the standard deviation is about 6. Dividing the distance from the mean by the standard deviation gives the z-score: `17 / 6 ≈ 2.8`.
+The calculation has two steps. First, find the distance from the mean: `95 − 78 ≈ 17`. The value sits about 17 points above average. Second, compare that distance to the typical spread of the other scores. If most scores sit within 5 points of the average, being 17 above is wildly unusual. If most scores bounce around by 30 points, 17 is barely noteworthy. The measure of typical spread is the standard deviation. In this dataset, the standard deviation is about 6.7. Dividing the distance from the mean by the standard deviation gives the z-score: `17 / 6.7 ≈ 2.5`.
 
-A z-score of 2.8 means the value is 2.8 standard deviations away from the average. The units are standard deviations, not points or dollars or seconds. This is the key idea behind z-scores. They strip away the original unit and replace it with a universal ruler that works the same way across every dataset, every domain, and every scale of measurement.
+A z-score of 2.5 means the value is 2.5 standard deviations away from the average. The units are standard deviations, not points or dollars or seconds. This is the key idea behind z-scores. They strip away the original unit and replace it with a universal ruler that works the same way across every dataset, every domain, and every scale of measurement.
 
 ```swift
 let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0, 95.0]
@@ -83,7 +83,7 @@ let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0, 95.0]
 // Convert every value to its z-score
 let zScores = scores.standardized()
 
-// The 95 appears as ≈ 1.87 standard deviations above the mean
+// The 95 appears as ≈ 1.77 standard deviations above the mean
 // (the mean and standard deviation shift slightly once we include it)
 ```
 

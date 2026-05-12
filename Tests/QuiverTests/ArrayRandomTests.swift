@@ -70,7 +70,7 @@ final class ArrayRandomTests: XCTestCase {
         XCTAssertEqual(result1D.mean()!, 0.0, accuracy: 0.2)
         XCTAssertEqual(result1D.standardDeviation()!, 1.0, accuracy: 0.2)
 
-        let custom = [Double].randomNormal(1000, mean: 5.0, std: 2.0)
+        let custom = [Double].randomNormal(1000, mean: 5.0, standardDeviation: 2.0)
         XCTAssertEqual(custom.mean()!, 5.0, accuracy: 0.3)
         XCTAssertEqual(custom.standardDeviation()!, 2.0, accuracy: 0.3)
 
@@ -78,7 +78,7 @@ final class ArrayRandomTests: XCTestCase {
         XCTAssertEqual(result2D.count, 3)
         XCTAssertEqual(result2D[0].count, 4)
 
-        let zeroStd = [Double].randomNormal(10, mean: 3.0, std: 0.0)
+        let zeroStd = [Double].randomNormal(10, mean: 3.0, standardDeviation: 0.0)
         for value in zeroStd { XCTAssertEqual(value, 3.0) }
     }
 
@@ -182,8 +182,8 @@ final class ArrayRandomTests: XCTestCase {
         var a = SeededRandomNumberGenerator(seed: 7)
         var b = SeededRandomNumberGenerator(seed: 7)
         XCTAssertEqual(
-            [Double].randomNormal(100, mean: 5.0, std: 2.0, using: &a),
-            [Double].randomNormal(100, mean: 5.0, std: 2.0, using: &b)
+            [Double].randomNormal(100, mean: 5.0, standardDeviation: 2.0, using: &a),
+            [Double].randomNormal(100, mean: 5.0, standardDeviation: 2.0, using: &b)
         )
 
         var c = SeededRandomNumberGenerator(seed: 7)
@@ -232,7 +232,7 @@ final class ArrayRandomTests: XCTestCase {
     // (smoke test: check shape and bounds, not exact values, since the system generator is non-reproducible)
     func testRandomUsingSystemMatchesNonSeeded() {
         var sys = SystemRandomNumberGenerator()
-        let viaUsing = [Double].randomNormal(500, mean: 0.0, std: 1.0, using: &sys)
+        let viaUsing = [Double].randomNormal(500, mean: 0.0, standardDeviation: 1.0, using: &sys)
         let nonUsing = [Double].randomNormal(500)
         XCTAssertEqual(viaUsing.count, nonUsing.count)
         // Both samples should have means roughly near 0

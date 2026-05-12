@@ -20,7 +20,7 @@ final class DistributionsTests: XCTestCase {
     // MARK: - Normal CDF — body values
 
     func testNormalCDFAtZero() {
-        guard let v = Distributions.normal.cdf(x: 0, mean: 0, std: 1) else {
+        guard let v = Distributions.normal.cdf(x: 0, mean: 0, standardDeviation: 1) else {
             XCTFail("cdf returned nil"); return
         }
         XCTAssertEqual(v, 0.5, accuracy: 1e-12)
@@ -38,7 +38,7 @@ final class DistributionsTests: XCTestCase {
             ( 4, 0.9999683287581669),
         ]
         for c in cases {
-            guard let actual = Distributions.normal.cdf(x: c.x, mean: 0, std: 1) else {
+            guard let actual = Distributions.normal.cdf(x: c.x, mean: 0, standardDeviation: 1) else {
                 XCTFail("cdf returned nil for x=\(c.x)"); continue
             }
             XCTAssertEqual(actual, c.expected, accuracy: 1e-9, "x=\(c.x)")
@@ -54,7 +54,7 @@ final class DistributionsTests: XCTestCase {
             ( 8, 0.9999999999999993),
         ]
         for c in cases {
-            guard let actual = Distributions.normal.cdf(x: c.x, mean: 0, std: 1) else {
+            guard let actual = Distributions.normal.cdf(x: c.x, mean: 0, standardDeviation: 1) else {
                 XCTFail("cdf returned nil for x=\(c.x)"); continue
             }
             let relErr = abs(actual - c.expected) / abs(c.expected)
@@ -64,7 +64,7 @@ final class DistributionsTests: XCTestCase {
 
     func testNormalCDFAt196() {
         // Canonical 95% one-tailed value
-        guard let actual = Distributions.normal.cdf(x: 1.96, mean: 0, std: 1) else {
+        guard let actual = Distributions.normal.cdf(x: 1.96, mean: 0, standardDeviation: 1) else {
             XCTFail("cdf returned nil"); return
         }
         XCTAssertEqual(actual, 0.9750021048517795, accuracy: 1e-9)
@@ -76,7 +76,7 @@ final class DistributionsTests: XCTestCase {
         var prev: Double = -.infinity
         for k in 0..<20 {
             let x = -3.0 + Double(k) * 0.3
-            guard let v = Distributions.normal.cdf(x: x, mean: 0, std: 1) else {
+            guard let v = Distributions.normal.cdf(x: x, mean: 0, standardDeviation: 1) else {
                 XCTFail("cdf returned nil for x=\(x)"); return
             }
             XCTAssertGreaterThan(v, prev, "monotonicity violated at x=\(x)")
@@ -86,8 +86,8 @@ final class DistributionsTests: XCTestCase {
 
     func testNormalCDFSymmetry() {
         for x in stride(from: 0.0, through: 4.0, by: 0.5) {
-            guard let a = Distributions.normal.cdf(x: x, mean: 0, std: 1),
-                  let b = Distributions.normal.cdf(x: -x, mean: 0, std: 1) else {
+            guard let a = Distributions.normal.cdf(x: x, mean: 0, standardDeviation: 1),
+                  let b = Distributions.normal.cdf(x: -x, mean: 0, standardDeviation: 1) else {
                 XCTFail("cdf returned nil"); return
             }
             XCTAssertEqual(a + b, 1.0, accuracy: 1e-12, "symmetry at x=\(x)")
@@ -96,16 +96,16 @@ final class DistributionsTests: XCTestCase {
 
     func testNormalCDFNonStandard() {
         // For mean=100, std=15, cdf at the mean is 0.5
-        guard let v = Distributions.normal.cdf(x: 100, mean: 100, std: 15) else {
+        guard let v = Distributions.normal.cdf(x: 100, mean: 100, standardDeviation: 15) else {
             XCTFail("cdf returned nil"); return
         }
         XCTAssertEqual(v, 0.5, accuracy: 1e-12)
     }
 
     func testNormalCDFInvalidStd() {
-        XCTAssertNil(Distributions.normal.cdf(x: 0, mean: 0, std: 0))
-        XCTAssertNil(Distributions.normal.cdf(x: 0, mean: 0, std: -1))
-        XCTAssertNil(Distributions.normal.cdf(x: 0, mean: 0, std: -1e-10))
+        XCTAssertNil(Distributions.normal.cdf(x: 0, mean: 0, standardDeviation: 0))
+        XCTAssertNil(Distributions.normal.cdf(x: 0, mean: 0, standardDeviation: -1))
+        XCTAssertNil(Distributions.normal.cdf(x: 0, mean: 0, standardDeviation: -1e-10))
     }
 
     // MARK: - Normal Quantile — body values (5e-7 tolerance)
@@ -119,7 +119,7 @@ final class DistributionsTests: XCTestCase {
             (0.999,   3.090232306167797),
         ]
         for c in cases {
-            guard let actual = Distributions.normal.quantile(p: c.p, mean: 0, std: 1) else {
+            guard let actual = Distributions.normal.quantile(p: c.p, mean: 0, standardDeviation: 1) else {
                 XCTFail("quantile returned nil for p=\(c.p)"); continue
             }
             XCTAssertEqual(actual, c.expected, accuracy: 5e-7, "p=\(c.p)")
@@ -136,7 +136,7 @@ final class DistributionsTests: XCTestCase {
             (1 - 1e-9, 5.997807010047333),
         ]
         for c in cases {
-            guard let actual = Distributions.normal.quantile(p: c.p, mean: 0, std: 1) else {
+            guard let actual = Distributions.normal.quantile(p: c.p, mean: 0, standardDeviation: 1) else {
                 XCTFail("quantile returned nil for p=\(c.p)"); continue
             }
             XCTAssertEqual(actual, c.expected, accuracy: 5e-4, "p=\(c.p)")
@@ -147,9 +147,9 @@ final class DistributionsTests: XCTestCase {
 
     func testNormalQuantileBSMTransitionLower() {
         // Probe across the BSM formula switch region (around p ≈ 0.08)
-        guard let q079 = Distributions.normal.quantile(p: 0.079, mean: 0, std: 1),
-              let q080 = Distributions.normal.quantile(p: 0.080, mean: 0, std: 1),
-              let q081 = Distributions.normal.quantile(p: 0.081, mean: 0, std: 1) else {
+        guard let q079 = Distributions.normal.quantile(p: 0.079, mean: 0, standardDeviation: 1),
+              let q080 = Distributions.normal.quantile(p: 0.080, mean: 0, standardDeviation: 1),
+              let q081 = Distributions.normal.quantile(p: 0.081, mean: 0, standardDeviation: 1) else {
             XCTFail("quantile returned nil"); return
         }
         // Monotonic and approximately equally spaced — no visible step
@@ -162,9 +162,9 @@ final class DistributionsTests: XCTestCase {
     }
 
     func testNormalQuantileBSMTransitionUpper() {
-        guard let q919 = Distributions.normal.quantile(p: 0.919, mean: 0, std: 1),
-              let q920 = Distributions.normal.quantile(p: 0.920, mean: 0, std: 1),
-              let q921 = Distributions.normal.quantile(p: 0.921, mean: 0, std: 1) else {
+        guard let q919 = Distributions.normal.quantile(p: 0.919, mean: 0, standardDeviation: 1),
+              let q920 = Distributions.normal.quantile(p: 0.920, mean: 0, standardDeviation: 1),
+              let q921 = Distributions.normal.quantile(p: 0.921, mean: 0, standardDeviation: 1) else {
             XCTFail("quantile returned nil"); return
         }
         XCTAssertLessThan(q919, q920)
@@ -177,25 +177,25 @@ final class DistributionsTests: XCTestCase {
     // MARK: - Normal Quantile — out of domain
 
     func testNormalQuantileOutOfDomain() {
-        XCTAssertNil(Distributions.normal.quantile(p: 1e-15, mean: 0, std: 1))
-        XCTAssertNil(Distributions.normal.quantile(p: 1e-20, mean: 0, std: 1))
-        XCTAssertNil(Distributions.normal.quantile(p: 0.0, mean: 0, std: 1))
-        XCTAssertNil(Distributions.normal.quantile(p: -0.1, mean: 0, std: 1))
-        XCTAssertNil(Distributions.normal.quantile(p: 1.0, mean: 0, std: 1))
-        XCTAssertNil(Distributions.normal.quantile(p: 1.1, mean: 0, std: 1))
+        XCTAssertNil(Distributions.normal.quantile(p: 1e-15, mean: 0, standardDeviation: 1))
+        XCTAssertNil(Distributions.normal.quantile(p: 1e-20, mean: 0, standardDeviation: 1))
+        XCTAssertNil(Distributions.normal.quantile(p: 0.0, mean: 0, standardDeviation: 1))
+        XCTAssertNil(Distributions.normal.quantile(p: -0.1, mean: 0, standardDeviation: 1))
+        XCTAssertNil(Distributions.normal.quantile(p: 1.0, mean: 0, standardDeviation: 1))
+        XCTAssertNil(Distributions.normal.quantile(p: 1.1, mean: 0, standardDeviation: 1))
     }
 
     func testNormalQuantileInvalidStd() {
-        XCTAssertNil(Distributions.normal.quantile(p: 0.5, mean: 0, std: 0))
-        XCTAssertNil(Distributions.normal.quantile(p: 0.5, mean: 0, std: -1))
+        XCTAssertNil(Distributions.normal.quantile(p: 0.5, mean: 0, standardDeviation: 0))
+        XCTAssertNil(Distributions.normal.quantile(p: 0.5, mean: 0, standardDeviation: -1))
     }
 
     // MARK: - Normal — round-trip cdf(quantile(p)) ≈ p
 
     func testNormalCDFQuantileRoundTrip() {
         for p in [0.1, 0.25, 0.5, 0.75, 0.9] {
-            guard let q = Distributions.normal.quantile(p: p, mean: 0, std: 1),
-                  let backToP = Distributions.normal.cdf(x: q, mean: 0, std: 1) else {
+            guard let q = Distributions.normal.quantile(p: p, mean: 0, standardDeviation: 1),
+                  let backToP = Distributions.normal.cdf(x: q, mean: 0, standardDeviation: 1) else {
                 XCTFail("nil in round trip for p=\(p)"); return
             }
             XCTAssertEqual(backToP, p, accuracy: 1e-6, "round trip at p=\(p)")
@@ -204,7 +204,7 @@ final class DistributionsTests: XCTestCase {
 
     func testNormalQuantileNonStandard() {
         // For mean=100, std=15, quantile at 0.5 is the mean
-        guard let v = Distributions.normal.quantile(p: 0.5, mean: 100, std: 15) else {
+        guard let v = Distributions.normal.quantile(p: 0.5, mean: 100, standardDeviation: 15) else {
             XCTFail("quantile returned nil"); return
         }
         XCTAssertEqual(v, 100.0, accuracy: 1e-9)
@@ -221,7 +221,7 @@ final class DistributionsTests: XCTestCase {
             ( 2,    0.05399096651318806),
         ]
         for c in cases {
-            guard let actual = Distributions.normal.pdf(x: c.x, mean: 0, std: 1) else {
+            guard let actual = Distributions.normal.pdf(x: c.x, mean: 0, standardDeviation: 1) else {
                 XCTFail("pdf returned nil for x=\(c.x)"); continue
             }
             XCTAssertEqual(actual, c.expected, accuracy: 1e-12, "x=\(c.x)")
@@ -230,8 +230,8 @@ final class DistributionsTests: XCTestCase {
 
     func testNormalPDFSymmetry() {
         for x in stride(from: 0.5, through: 4.0, by: 0.5) {
-            guard let a = Distributions.normal.pdf(x: x, mean: 0, std: 1),
-                  let b = Distributions.normal.pdf(x: -x, mean: 0, std: 1) else {
+            guard let a = Distributions.normal.pdf(x: x, mean: 0, standardDeviation: 1),
+                  let b = Distributions.normal.pdf(x: -x, mean: 0, standardDeviation: 1) else {
                 XCTFail("pdf returned nil"); return
             }
             XCTAssertEqual(a, b, accuracy: 1e-15, "pdf symmetry at x=\(x)")
@@ -239,16 +239,16 @@ final class DistributionsTests: XCTestCase {
     }
 
     func testNormalPDFInvalidStd() {
-        XCTAssertNil(Distributions.normal.pdf(x: 0, mean: 0, std: 0))
-        XCTAssertNil(Distributions.normal.pdf(x: 0, mean: 0, std: -1))
+        XCTAssertNil(Distributions.normal.pdf(x: 0, mean: 0, standardDeviation: 0))
+        XCTAssertNil(Distributions.normal.pdf(x: 0, mean: 0, standardDeviation: -1))
     }
 
     // MARK: - Normal logPDF
 
     func testNormalLogPDFEqualsLogPDF() {
         for x in [-2.0, -0.5, 0.0, 0.5, 2.0] {
-            guard let lp = Distributions.normal.logPDF(x: x, mean: 0, std: 1),
-                  let p = Distributions.normal.pdf(x: x, mean: 0, std: 1) else {
+            guard let lp = Distributions.normal.logPDF(x: x, mean: 0, standardDeviation: 1),
+                  let p = Distributions.normal.pdf(x: x, mean: 0, standardDeviation: 1) else {
                 XCTFail("nil at x=\(x)"); return
             }
             XCTAssertEqual(lp, log(p), accuracy: 1e-12, "logPDF == log(pdf) at x=\(x)")
@@ -258,7 +258,7 @@ final class DistributionsTests: XCTestCase {
     func testNormalLogPDFRealisticSmallStd() {
         // Realistic small std (matches GaussianNaiveBayes' internal variance floor of 1e-9 → std ~3e-5).
         // At this scale, log-space arithmetic must stay finite.
-        guard let v = Distributions.normal.logPDF(x: 0, mean: 0, std: 1e-4) else {
+        guard let v = Distributions.normal.logPDF(x: 0, mean: 0, standardDeviation: 1e-4) else {
             XCTFail("logPDF returned nil for std=1e-4"); return
         }
         XCTAssertTrue(v.isFinite, "logPDF should be finite at std=1e-4, got \(v)")
@@ -267,16 +267,16 @@ final class DistributionsTests: XCTestCase {
     func testNormalLogPDFExtremeSmallStdReturnsNil() {
         // At std=1e-300 the computation underflows to NaN. Per the public API contract,
         // the function returns nil rather than silently propagating a non-finite result.
-        XCTAssertNil(Distributions.normal.logPDF(x: 0, mean: 0, std: 1e-300))
+        XCTAssertNil(Distributions.normal.logPDF(x: 0, mean: 0, standardDeviation: 1e-300))
     }
 
     func testNormalPDFExtremeSmallStdReturnsNil() {
-        XCTAssertNil(Distributions.normal.pdf(x: 0, mean: 0, std: 1e-300))
+        XCTAssertNil(Distributions.normal.pdf(x: 0, mean: 0, standardDeviation: 1e-300))
     }
 
     func testNormalLogPDFLargeX() {
         // Large |x|: returns very negative finite value, no overflow
-        guard let v = Distributions.normal.logPDF(x: 1000, mean: 0, std: 1) else {
+        guard let v = Distributions.normal.logPDF(x: 1000, mean: 0, standardDeviation: 1) else {
             XCTFail("logPDF returned nil for x=1000"); return
         }
         XCTAssertTrue(v.isFinite, "logPDF should be finite at x=1000, got \(v)")
@@ -284,8 +284,8 @@ final class DistributionsTests: XCTestCase {
     }
 
     func testNormalLogPDFInvalidStd() {
-        XCTAssertNil(Distributions.normal.logPDF(x: 0, mean: 0, std: 0))
-        XCTAssertNil(Distributions.normal.logPDF(x: 0, mean: 0, std: -1))
+        XCTAssertNil(Distributions.normal.logPDF(x: 0, mean: 0, standardDeviation: 0))
+        XCTAssertNil(Distributions.normal.logPDF(x: 0, mean: 0, standardDeviation: -1))
     }
 
     // MARK: - t-distribution CDF — reference grid (scipy.stats.t.cdf)
@@ -376,7 +376,7 @@ final class DistributionsTests: XCTestCase {
         // incomplete beta is plumbed correctly through the t-distribution.
         for x in stride(from: -3.0, through: 3.0, by: 0.5) {
             guard let tValue = Distributions.t.cdf(x: x, df: 1000),
-                  let nValue = Distributions.normal.cdf(x: x, mean: 0, std: 1) else {
+                  let nValue = Distributions.normal.cdf(x: x, mean: 0, standardDeviation: 1) else {
                 XCTFail("cdf returned nil at x=\(x)"); return
             }
             XCTAssertEqual(

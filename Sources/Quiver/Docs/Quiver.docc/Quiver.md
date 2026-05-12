@@ -95,7 +95,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Data Preparation
 - <doc:Panel>
-- <doc:Panel-and-Charts>
 - <doc:Data-Visualization>
 - <doc:Train-Test-Split>
 - <doc:Feature-Scaling>
