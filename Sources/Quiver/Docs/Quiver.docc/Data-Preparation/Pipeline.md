@@ -112,6 +112,8 @@ let decoded = try JSONDecoder().decode(Pipeline<KNearestNeighbors>.self, from: d
 original == decoded  // true
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to feel why bundling the scaler and model matters. Fit a `Pipeline` on training data and predict on test data — the scaler stored inside the pipeline applies automatically. Now try the wrong approach: fit a fresh `StandardScaler` on the test data, transform the test features through it, and predict. The two prediction sets will disagree, and the second one is wrong — the model learned boundaries in the training scaler's coordinate space, not the test scaler's. Watching the predictions diverge is the fastest way to see what data leakage feels like. See <doc:Quiver-Notebook>.
+
 ## Topics
 
 ### Related types

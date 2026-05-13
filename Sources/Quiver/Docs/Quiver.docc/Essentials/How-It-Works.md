@@ -74,6 +74,19 @@ print(cluster)  // Cluster: center [1.23, 1.97], 3 points
 print(cm)       // TP: 3  FP: 1  TN: 3  FN: 1  (accuracy: 75.0%)
 ```
 
+### Typed summary returns
+
+When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. `Quartiles`, `ColumnSummary`, `PanelSummary`, and `RegressionSummary` are the patterns we will see repeatedly. Each one carries the same four conformances — `Codable`, `Sendable`, `Equatable`, and `CustomStringConvertible` — and each conformance buys something concrete. `Codable` round-trips the value to JSON for persistence or for a network response. `Sendable` lets the same value cross task boundaries without a lock. `Equatable` makes the value comparable in unit tests with a single `==`. `CustomStringConvertible` produces a readable summary when printed.
+
+```swift
+let summary: PanelSummary = panel.summary()
+
+summary.columns["price"]?.mean   // named field, compile-time checked
+print(summary)                   // a formatted table
+```
+
+The alternative — a `[String: Any]` dictionary or a tuple of positional fields — loses every one of those guarantees. Typed summaries keep the call site self-documenting and the downstream code type-safe.
+
 ### A focused and intentional scope
 
 Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. GPU acceleration, automatic differentiation, and distributed training are outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.

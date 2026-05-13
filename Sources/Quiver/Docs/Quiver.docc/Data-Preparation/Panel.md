@@ -17,7 +17,7 @@ Build a panel from an ordered list of named columns. All columns must have the s
 ```swift
 import Quiver
 
-let data = Panel([
+let employees = Panel([
     ("age", [25.0, 30.0, 35.0, 28.0]),
     ("income", [50000.0, 60000.0, 75000.0, 55000.0]),
     ("score", [0.8, 0.6, 0.9, 0.7])
@@ -44,6 +44,25 @@ if let jumpSpread = athletes["jumpHeight"].standardDeviation() {
 }
 ```
 
+### Wrapping a single array as a panel
+
+Sometimes the data already lives in a plain `[Double]` and we want the Panel surface — typed summaries, head printing, charting — without writing the literal constructor. `toPanel()` on `Array where Element == Double` wraps the array in a single-column Panel. By default the column is named `"values"`; pass a string to give it a semantic name:
+
+```swift
+import Quiver
+
+let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0]
+
+// One-shot inspection — the default name is fine
+print(scores.toPanel().summary())
+
+// Named — preferred when the column appears in later prints, charts, or summaries
+let panel = scores.toPanel("scores")
+print(panel.head())
+```
+
+This is the bridge that connects every Quiver vector method to the Panel surface. Any `[Double]` — a sensor stream, a column extracted from another panel, the output of an aggregation — becomes addressable by name and inspectable with `head`, `summary`, and the charting helpers.
+
 ### Column access
 
 Access any column by name with subscript syntax. The returned array is a standard `[Double]` vector, so all Quiver vector operations work immediately:
@@ -51,22 +70,22 @@ Access any column by name with subscript syntax. The returned array is a standar
 ```swift
 import Quiver
 
-let data = Panel([
+let employees = Panel([
     ("age", [25.0, 30.0, 35.0, 28.0]),
     ("income", [50000.0, 60000.0, 75000.0, 55000.0])
 ])
 
 // Access by name — returns a [Double] vector
-if let avgIncome = data["income"].mean() {
+if let avgIncome = employees["income"].mean() {
     print(avgIncome)  // 60000.0
 }
-data["income"].standardized()  // z-scores
+employees["income"].standardized()  // z-scores
 ```
 
 For classification workflows, use `.labels()` to extract a column as `[Int]` for classifiers:
 
 ```swift
-let trainLabels = data.labels("age")  // [25, 30, 35, 28]
+let ages = employees.labels("age")  // [25, 30, 35, 28]
 ```
 
 ### Extracting matrices
@@ -76,20 +95,20 @@ Convert selected columns into a matrix for classifiers, feature scaling, or line
 ```swift
 import Quiver
 
-let data = Panel([
+let cells = Panel([
     ("a", [1.0, 4.0]),
     ("b", [2.0, 5.0]),
     ("c", [3.0, 6.0])
 ])
 
-let all = data.toMatrix()                    // [[1, 2, 3], [4, 5, 6]]
-let selected = data.toMatrix(columns: ["c", "a"])  // [[3, 1], [6, 4]]
+let all = cells.toMatrix()                          // [[1, 2, 3], [4, 5, 6]]
+let selected = cells.toMatrix(columns: ["c", "a"])  // [[3, 1], [6, 4]]
 ```
 
 Once extracted as a matrix, columns are accessible by index using Quiver's `.column(at:)` method. This is useful for linear algebra calculations where column names are no longer needed:
 
 ```swift
-let matrix = data.toMatrix()
+let matrix = cells.toMatrix()
 let secondColumn = matrix.column(at: 1)  // [2.0, 5.0]
 secondColumn.magnitude                   // 5.385...
 ```
@@ -101,23 +120,23 @@ Panel stores everything as `[Double]` columns, but ML models need different shap
 ```swift
 import Quiver
 
-let data = Panel([
+let applications = Panel([
     ("creditScore", [720.0, 650.0, 580.0, 710.0]),
     ("balance",     [15000.0, 78000.0, 42000.0, 8000.0]),
     ("approved",    [1.0, 0.0, 0.0, 1.0])
 ])
 
 // Vector — single column as [Double] for regression targets or statistics
-let balances = data["balance"]              // [15000.0, 78000.0, 42000.0, 8000.0]
+let balances = applications["balance"]              // [15000.0, 78000.0, 42000.0, 8000.0]
 if let avgBalance = balances.mean() {
     print(avgBalance)  // 35750.0
 }
 
 // Integer labels — single column as [Int] for classification labels
-let labels = data.labels("approved")        // [1, 0, 0, 1]
+let labels = applications.labels("approved")        // [1, 0, 0, 1]
 
 // Matrix — multiple columns as [[Double]] for feature input
-let features = data.toMatrix(columns: ["creditScore", "balance"])
+let features = applications.toMatrix(columns: ["creditScore", "balance"])
 // [[720.0, 15000.0], [650.0, 78000.0], [580.0, 42000.0], [710.0, 8000.0]]
 ```
 
@@ -132,13 +151,13 @@ Combine `Panel` with Quiver's boolean comparison operations to filter rows acros
 ```swift
 import Quiver
 
-let data = Panel([
+let samples = Panel([
     ("value", [10.0, 20.0, 30.0, 40.0]),
     ("label", [0.0, 1.0, 0.0, 1.0])
 ])
 
-let mask = data["value"].isGreaterThan(15.0)
-let filtered = data.filtered(where: mask)
+let mask = samples["value"].isGreaterThan(15.0)
+let filtered = samples.filtered(where: mask)
 // filtered["value"] == [20.0, 30.0, 40.0]
 // filtered["label"] == [1.0, 0.0, 1.0]
 ```
@@ -151,14 +170,14 @@ Split a `Panel` into training and testing subsets with a single call. All column
 import Quiver
 
 // 5 samples with two feature columns and a binary label
-let data = Panel([
+let dataset = Panel([
     ("feature1", [1.0, 2.0, 3.0, 4.0, 5.0]),
     ("feature2", [10.0, 20.0, 30.0, 40.0, 50.0]),
     ("label", [0.0, 1.0, 0.0, 1.0, 0.0])
 ])
 
 // Split 80/20 — all columns partitioned by the same rows
-let (train, test) = data.trainTestSplit(testRatio: 0.2, seed: 42)
+let (train, test) = dataset.trainTestSplit(testRatio: 0.2, seed: 42)
 
 // Extract features as a matrix and labels as integers
 let trainFeatures = train.toMatrix(columns: ["feature1", "feature2"])
@@ -169,73 +188,126 @@ This eliminates the need to match seeds across parallel array splits, which is e
 
 ### Inspecting data
 
-Panel provides three levels of detail for inspecting data:
+Panel provides three quick inspections for any new panel:
 
 ```swift
 import Quiver
 
-let data = Panel([
+let employees = Panel([
     ("age", [25.0, 30.0, 35.0, 28.0, 42.0]),
     ("income", [50000.0, 62000.0, 75000.0, 58000.0, 95000.0]),
     ("score", [88.0, 92.0, 85.0, 91.0, 78.0])
 ])
 
-print(data)        // Panel: 3 columns, 5 rows
-print(data.shape)  // (rows: 5, columns: 3)
+print(employees)        // Panel: 3 columns, 5 rows
+print(employees.shape)  // (rows: 5, columns: 3)
 
-print(data.head())
+print(employees.head())
 //        age    income  score
 // 0     25.0   50000.0  88.0
 // 1     30.0   62000.0  92.0
 // 2     35.0   75000.0  85.0
 // 3     28.0   58000.0  91.0
 // 4     42.0   95000.0  78.0
-
-print(data.summary())
-// Prints count, mean, standard deviation, min, and max for each column
 ```
 
-`print` shows the structure. `shape` returns dimensions as a named tuple, matching the matrix API. `head` displays row data in tabular format. `summary` provides per-column statistics. By default, `head` shows up to 10 rows — pass a count to limit the output:
+`print` shows the structure. `shape` returns dimensions as a named tuple, matching the matrix API. `head` displays row data in tabular format and by default shows up to 10 rows — pass a count to limit the output:
 
 ```swift
-print(data.head(n: 3))
+print(employees.head(n: 3))
 //        age    income  score
 // 0     25.0   50000.0  88.0
 // 1     30.0   62000.0  92.0
 // 2     35.0   75000.0  85.0
 ```
 
-> Tip: Use `head` in a Playground to visually verify the data after loading or filtering. Catching a column of unexpected zeros early saves debugging time later.
+The fourth inspection — `summary()` — returns a typed snapshot of per-column statistics and gets its own section below.
 
-### Classification pipeline
+> Experiment: **The Quiver Notebook** is the right place to catch data-quality issues before they propagate. Call `head` after every load or filter step and watch the tabular output update as the panel changes — a column of unexpected zeros is the kind of issue that quietly breaks downstream models if it slips past the eye. See <doc:Quiver-Notebook>.
 
-`Panel` integrates directly with Quiver's [classification](<doc:Machine-Learning-Primer>) workflow. A typical pipeline scales features, fits a classifier on training data, and evaluates predictions — all while keeping columns aligned:
+### Typed column summaries
+
+`summary()` returns a `PanelSummary` — a typed snapshot keyed by column name. The previous String-returning version printed the same table, but every downstream caller had to parse it back into numbers. The typed return removes that round-trip. Each column's statistics live in a `ColumnSummary` value addressable by field, so the same call serves a human reader (via `print`) and a downstream calculation (via property access):
 
 ```swift
 import Quiver
 
-let data = Panel([
+let quiz = Panel([
+    ("score", [60.0, 70.0, 80.0, 90.0, 100.0])
+])
+
+let summary = quiz.summary()
+
+// Reads like a report
+print(summary)
+// column  count  mean      std   min    max
+// -------------------------------------------
+// score       5  80.0  15.8114  60.0  100.0
+
+// Reads like data
+if let score = summary.columns["score"] {
+    score.count    // 5
+    score.mean     // 80.0
+    score.std      // 15.8114... — sample standard deviation, ddof = 1
+    score.min      // 60.0
+    score.q1       // 70.0
+    score.median   // 80.0
+    score.q3       // 90.0
+    score.max      // 100.0
+    score.iqr      // 20.0
+}
+```
+
+The nine fields are the same five-number summary used elsewhere in Quiver — `count`, `mean`, `std`, `min`, `q1`, `median`, `q3`, `max`, `iqr`. `std` is the sample standard deviation; the formula divides by `n - 1`, matching the default of `[Double].standardDeviation()`.
+
+`PanelSummary` and `ColumnSummary` are both `Codable`, `Sendable`, and `Equatable`. Crossing a task boundary, persisting a snapshot to disk, or comparing two snapshots from different runs is a direct conformance call — `JSONEncoder().encode(summary)` for the first, `==` for the third. The `CustomStringConvertible` conformance is what makes `print(summary)` reproduce the formatted table.
+
+For deliverables, `ColumnSummary` and `PanelSummary` both expose `markdownTable()` and `csvRows()` formatters. The Markdown variant pastes cleanly into a PR comment or a stakeholder report. The CSV variant moves a snapshot into a spreadsheet or another tool without intermediate parsing:
+
+```swift
+if let score = summary.columns["score"] {
+    print(score.markdownTable())
+    // | Statistic | Value |
+    // | --- | --- |
+    // | count | 5 |
+    // | mean | 80.0 |
+    // | std | 15.8114 |
+    // ...
+}
+
+print(summary.csvRows())
+// column,count,mean,std,min,max
+// score,5,80.0,15.811388300841896,60.0,100.0
+```
+
+### Classification pipeline
+
+`Panel` integrates directly with Quiver's [classification](<doc:Machine-Learning-Primer>) workflow. A typical pipeline scales features, fits a classifier on training data, and evaluates predictions — all while keeping columns aligned. `Pipeline.fit` bundles the scaler and classifier into a single value, so the scaler trained on the training set is the exact scaler applied at predict time:
+
+```swift
+import Quiver
+
+let loans = Panel([
     ("creditScore", [720.0, 650.0, 580.0, 710.0, 690.0]),
     ("balance", [15000.0, 78000.0, 42000.0, 8000.0, 55000.0]),
     ("approved", [1.0, 0.0, 0.0, 1.0, 1.0])
 ])
 
 // Split preserves row alignment across all columns
-let (train, test) = data.trainTestSplit(testRatio: 0.2, seed: 42)
+let (train, test) = loans.trainTestSplit(testRatio: 0.2, seed: 42)
 let featureColumns = ["creditScore", "balance"]
 
-// Scale features using training data only (prevents data leakage)
-let scaler = FeatureScaler.fit(features: train.toMatrix(columns: featureColumns))
-let trainScaled = scaler.transform(train.toMatrix(columns: featureColumns))
-let testScaled = scaler.transform(test.toMatrix(columns: featureColumns))
-
-// Fit and predict
-let model = GaussianNaiveBayes.fit(
-    features: trainScaled,
+// One call fits the scaler and the classifier together as a Pipeline
+let pipeline = Pipeline.fit(
+    features: train.toMatrix(columns: featureColumns),
     labels: train.labels("approved")
 )
-let predictions = model.predict(testScaled)
+
+// Predict against the test set — the pipeline applies its own scaler first
+let predictions = pipeline.predict(test.toMatrix(columns: featureColumns))
 ```
+
+`Pipeline.fit` takes it from there: it fits a `StandardScaler` on the raw features, applies it, trains the `GaussianNaiveBayes` model on the scaled data, and returns the two as one bundled value. The `predict` call applies the stored scaler before running the model, which is what keeps every prediction in the same coordinate system the model was trained on. For the full Pipeline surface, see <doc:Pipeline>.
 
 > Tip: `Panel` is a convenience, not a requirement. Every Quiver classifier accepts standard `[[Double]]` matrices and `[Int]` label arrays directly. `Panel` simply keeps columns named and rows aligned — use it when that organization helps, skip it when raw arrays are simpler.
 

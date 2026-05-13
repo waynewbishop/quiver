@@ -180,6 +180,8 @@ let AB = A.multiplyMatrix(B)
 let result2 = vertices.map { $0.transformedBy(AB) }
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to feel why order matters in matrix composition. Take `rotate90` and `scale2x` from the example above and compose them both ways — `rotate.multiplyMatrix(scale)` and `scale.multiplyMatrix(rotate)`. Apply each composed matrix to the same vector `[1.0, 0.0]` and print the results side by side. The two final positions are different, and seeing them next to each other is the fastest way to internalize that matrix multiplication is not commutative. See <doc:Quiver-Notebook>.
+
 ## Topics
 
 ### Transformation operations

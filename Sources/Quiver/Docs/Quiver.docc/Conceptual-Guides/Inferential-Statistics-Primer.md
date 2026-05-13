@@ -12,7 +12,7 @@ Descriptive statistics summarize a dataset we already have. Inferential statisti
 
 A **population** is the full set of values we care about while a **sample** is the subset we actually observe. Inferential statistics asks what the sample lets us say about the population, and how confident we can be in saying it.
 
-The catch is that any single sample is one of many possible samples we could have drawn. A different week of users would have produced a slightly different mean session time. A different watch session would have produced a slightly different step rhythm. Inferential statistics is built around that variability, not in spite of it.
+The catch is that any single sample is one of many possible samples we could have drawn. A different week of users would have produced a slightly different mean session time. A different watch session would have produced a slightly different step rhythm. Inferential statistics is built around that variability.
 
 A small sample makes the distinction concrete:
 
@@ -35,28 +35,67 @@ Imagine drawing the same-sized sample from the population over and over again. E
 
 The remarkable fact about this distribution has a name. The **Central Limit Theorem** says that when we average many independent observations, the distribution of the sample mean approaches a normal (bell-shaped) distribution regardless of the population's shape, as long as the population has finite variance. Skewed populations, bimodal populations, populations with strange tails: once we average enough of them, the sample mean is approximately normal. Almost every method in this primer rests on this single fact. It means we do not need to know the shape of the population; we only need a sample large enough for the theorem to apply, and the math we use on the sample mean is allowed to assume the bell-shaped behavior of a normal distribution.
 
+The theorem is easier to trust once we have seen it work. The next snippet builds a heavily skewed population from an exponential distribution, draws a thousand small samples from it, and records the mean of each sample. The population is obviously not bell-shaped — most values cluster near zero, with a long right tail — but the distribution of sample means is:
+
+```swift
+import Quiver
+
+// Build a skewed population with rate = 0.5, so the population mean is 1/0.5 = 2.0.
+// Exponential is asymmetric — most values are small, with a long right tail.
+let population = [Double].randomExponential(10_000, rate: 0.5)
+
+// Draw 1,000 samples of size 50 and record the mean of each.
+let sampleMeans = population.samplingDistributionOfMean(
+    sampleSize: 50,
+    iterations: 1000,
+    seed: 42
+)
+
+// The sampling distribution is approximately normal, centered on the population mean.
+sampleMeans.mean()              // ≈ 2.05  — recovers the population mean
+sampleMeans.standardDeviation() // ≈ 0.29  — the standard error of the mean
+```
+
+The empirical standard error of about `0.29` matches the theoretical prediction: the population standard deviation is `1 / 0.5 = 2.0`, and dividing by `√50` gives `≈ 0.283`. A skewed population produces a bell-shaped sampling distribution, and the math we use from this point on rests on that fact.
+
 > Note: A common rule of thumb is that samples of size 30 or more are usually large enough for the Central Limit Theorem to give a good approximation. Smaller samples can still be analyzed, but the t-distribution is the right tool when we cannot rely on a large sample.
 
 ### The standard error
 
 The sampling distribution has its own spread. That spread has a name, the **standard error** of the mean, and it is the quantity that tells us how precisely the sample mean estimates the population mean. A small standard error means the sample mean changes very little from one hypothetical sample to the next; a large standard error means the sample mean is unstable and a single value should not be trusted on its own.
 
-The formula is simple enough to compute by hand. The standard error equals the sample standard deviation divided by the square root of the sample size. Larger samples produce smaller standard errors, which is the mathematical statement of "more data, more confidence":
+The standard error equals the sample standard deviation divided by the square root of the sample size. Larger samples produce smaller standard errors, which is the mathematical statement of "more data, more confidence." Quiver ships this as `standardError()` on any `[Double]`:
 
 ```swift
-import Foundation
 import Quiver
 
 let sessionSeconds = [245.0, 252.0, 238.0, 261.0, 247.0,
                       255.0, 249.0, 258.0, 244.0, 251.0]
 
-let n = Double(sessionSeconds.count)
-if let sampleStd = sessionSeconds.standardDeviation() {  // ~6.91
-    let standardError = sampleStd / sqrt(n)       // ~2.19
+if let se = sessionSeconds.standardError() {
+    print(se)  // ≈ 2.19
 }
 ```
 
 > Note: Standard error uses the sample standard deviation, which divides by `n - 1`. Quiver's `standardDeviation()` and `standardError()` default to this — `ddof: 1` is the sample formula every inferential calculation in this primer assumes. For population statistics on a complete dataset, pass `ddof: 0` explicitly.
+
+### Small samples and the t-distribution
+
+The Central Limit Theorem promises normality for the sample mean when `n ≥ 30`. Below that threshold the sampling distribution of the mean has heavier tails than the bell curve, because we are estimating both the population mean and the population standard deviation from the same small sample. The **t-distribution** corrects for that uncertainty by widening the reference distribution as the sample shrinks. Quiver gives us the building blocks to use it directly through `Distributions.t.quantile` and `Distributions.t.cdf`:
+
+```swift
+import Quiver
+
+// 95% two-tailed critical value for a sample of size 10 — df = n − 1 = 9
+let tCritical = Distributions.t.quantile(p: 0.975, df: 9)  // ≈ 2.262
+
+// The normal counterpart for comparison
+let zCritical = Distributions.normal.quantile(p: 0.975, mean: 0, standardDeviation: 1)  // ≈ 1.96
+```
+
+The t-critical of about `2.262` is noticeably wider than the normal z-critical of `1.96`. That gap is the penalty for not knowing the population standard deviation in advance. As `df` grows, the t-distribution converges to the normal — at `df = 30` the t-critical is already `2.04`, and by `df = 100` the two are barely distinguishable. A confidence interval built with the t-critical is wider than the same interval built with the normal critical, and the extra width is the honest accounting of small-sample uncertainty.
+
+> Note: For the full t-distribution and chi-squared surface, see <doc:Working-With-Distributions>.
 
 ### Hypothesis testing
 
@@ -64,8 +103,9 @@ A **hypothesis test** is a structured way to decide whether the data we observed
 
 For an A/B test on session times, the null hypothesis is "the variant's population mean equals the control baseline of 240 seconds." The alternative is "the variant's population mean differs from 240 seconds." Our sample mean is `250.0`. The question is whether a gap of 10 seconds is large enough, given the standard error, to be evidence that the populations actually differ, or whether a gap that size could plausibly arise by chance from random sampling alone.
 
+With only ten observations, the small-sample t-distribution is the appropriate reference — the normal approximation rests on `n ≥ 30`. The t-statistic itself is computed the same way as a z-statistic — the difference is which distribution we compare it against:
+
 ```swift
-import Foundation
 import Quiver
 
 let sessionSeconds = [245.0, 252.0, 238.0, 261.0, 247.0,
@@ -75,28 +115,25 @@ let baseline = 240.0
 let alpha = 0.05
 
 if let sampleMean = sessionSeconds.mean(),
-   let sampleStd = sessionSeconds.standardDeviation() {
-
-    let n = Double(sessionSeconds.count)
-    let standardError = sampleStd / sqrt(n)
+   let se = sessionSeconds.standardError() {
 
     // Test statistic: how many standard errors does the sample mean
     // sit from the hypothesized population mean?
-    let z = (sampleMean - baseline) / standardError    // ≈ 4.57
+    let t = (sampleMean - baseline) / se    // ≈ 4.575
 
-    // Two-tailed p-value: probability, under the null, of seeing a
-    // sample mean at least this far from 240 in either direction.
-    if let cdf = Distributions.normal.cdf(x: abs(z), mean: 0, standardDeviation: 1) {
-        let pValue = 2 * (1 - cdf)                     // ≈ 0.000005
+    // Two-tailed p-value from the t-distribution with df = n − 1 = 9
+    let df = Double(sessionSeconds.count - 1)
+    if let cdf = Distributions.t.cdf(x: abs(t), df: df) {
+        let pValue = 2 * (1 - cdf)          // ≈ 0.0013
         let reject = pValue < alpha
-        print("z: \(z), p: \(pValue), reject null: \(reject)")
+        print("t: \(t), p: \(pValue), reject null: \(reject)")
     }
 }
 ```
 
-The z-statistic of ~4.57 means the sample mean of 250 sits more than four standard errors above the hypothesized population mean of 240. Under the null, a gap that large would happen roughly five times in a million. The p-value is far below alpha, so we reject the null — the data is not consistent with a population mean of 240.
+The t-statistic of about `4.575` means the sample mean of 250 sits more than four standard errors above the hypothesized population mean of 240. Under the null, a gap that large would happen roughly thirteen times in ten thousand. The p-value is far below alpha, so we reject the null — the data is not consistent with a population mean of 240.
 
-> Note: With only ten observations, the parametric z-test is using the normal approximation outside its comfort zone — the t-distribution would be the more appropriate reference here, and for samples below the n ≥ 30 rule of thumb the bootstrap confidence interval shown later in this primer is the more honest tool. The z-test is included as a teachable mechanical example; production A/B analyses on small samples should prefer resampling.
+> Note: The same t-statistic compared against the normal distribution would produce a p-value near `0.000005` — roughly 270× smaller than the honest small-sample value. The normal reference is overconfident at this sample size. The conclusion does not change at α = 0.05, but the normal p-value would overstate the strength of the evidence by orders of magnitude. For small samples, always pair the t-statistic with the t-distribution.
 
 #### Type I and Type II errors
 
@@ -163,6 +200,31 @@ The interval `[~246, ~254]` answers the same question a parametric confidence in
 > Important: A 95% confidence interval is not "a 95% probability the population mean lies in this interval." The population mean is fixed; the 95% describes the *procedure* — repeated many times, about 95% of the intervals it produces would contain the true mean. In practice, say "we estimate the mean is around 250, plausibly between 246 and 254," not "there is a 95% chance the true mean is between 246 and 254."
 
 The percentile interval is the simplest of the resampling-based interval methods. It is appropriate when the resampled distribution looks roughly symmetric around the original sample statistic, which is the common case for sample means and medians on data without extreme skew. More elaborate constructions, like bias-corrected and accelerated intervals, exist for skewed distributions, but the plain percentile interval is the right starting point and it is what Quiver ships today.
+
+### The parametric t-interval
+
+The resampling interval makes no assumption about the population's shape — it reads coverage directly off the resampled distribution. The **parametric t-interval** is the classical alternative: assume the population is roughly normal and the sample mean follows the t-distribution, then build the interval as `mean ± t_critical × standardError`. The critical value comes from `Distributions.t.quantile` at the chosen confidence level, with degrees of freedom `n − 1`:
+
+```swift
+import Quiver
+
+let sample = [245.0, 252.0, 238.0, 261.0, 247.0,
+              255.0, 249.0, 258.0, 244.0, 251.0]
+
+if let mean = sample.mean(),
+   let se = sample.standardError() {
+
+    let df = Double(sample.count - 1)
+    if let tCrit = Distributions.t.quantile(p: 0.975, df: df) {
+        let lower = mean - tCrit * se
+        let upper = mean + tCrit * se
+        // 95% CI: [≈ 245.06, ≈ 254.94]
+        print("95% CI: [\(lower), \(upper)]")
+    }
+}
+```
+
+The parametric interval `[~245, ~255]` lands within rounding of the resampled interval `[~246, ~254]` — the two methods agree on data that does not violate the normality assumption. The parametric form is faster to compute (one critical value lookup instead of a thousand resamples) and is the default in most introductory statistics texts. The resampling form is the right tool when the data is skewed or when the statistic is not the sample mean — neither assumption is built into `percentileCI`. Both belong in a working analyst's toolkit; the choice depends on the assumptions the data can support.
 
 ### The normal approximation
 

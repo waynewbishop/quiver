@@ -223,4 +223,131 @@ public extension Array where Element == Double {
         }
         return results
     }
+
+    /// Shared sampling-distribution engine used by the named convenience methods.
+    ///
+    /// Draws `iterations` samples of size `sampleSize` with replacement from `self`,
+    /// applies `statistic` to each sample, and returns the resulting array. The
+    /// random generator is seeded for reproducibility — the same `seed` always
+    /// produces the same array.
+    ///
+    /// `sampleSize` is allowed to exceed `self.count`; sampling with replacement
+    /// makes that mathematically legal.
+    fileprivate func _samplingDistribution(
+        sampleSize: Int,
+        iterations: Int,
+        seed: UInt64,
+        statistic: ([Double]) -> Double
+    ) -> [Double] {
+        guard !self.isEmpty, iterations > 0, sampleSize > 0 else { return [] }
+
+        var rng = SeededRandomNumberGenerator(seed: seed)
+        let n = self.count
+        var results: [Double] = []
+        results.reserveCapacity(iterations)
+
+        var sample = [Double](repeating: 0.0, count: sampleSize)
+        for _ in 0..<iterations {
+            for i in 0..<sampleSize {
+                let index = Int.random(in: 0..<n, using: &rng)
+                sample[i] = self[index]
+            }
+            results.append(statistic(sample))
+        }
+        return results
+    }
+
+    /// Returns the sampling distribution of the sample mean.
+    ///
+    /// Draws `iterations` samples of size `sampleSize` with replacement from `self`,
+    /// computes the mean of each sample, and returns the resulting array of sample
+    /// means. The returned array is itself a `[Double]`, so every Quiver statistical
+    /// operation works on the sampling distribution directly — `mean()` gives the
+    /// average of the sample means, `standardDeviation()` gives the empirical
+    /// standard error.
+    ///
+    /// This is the Central Limit Theorem in code. Even when the source population
+    /// is skewed, the distribution of sample means is approximately normal once
+    /// the sample size is large enough.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let population = [Double].randomExponential(10_000, rate: 0.5)
+    /// let sampleMeans = population.samplingDistributionOfMean(
+    ///     sampleSize: 50, iterations: 1000, seed: 42
+    /// )
+    /// sampleMeans.mean()              // ≈ 2.0
+    /// sampleMeans.standardDeviation() // ≈ 0.28
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
+    ///   - iterations: Number of samples to draw. Defaults to 1,000.
+    ///   - seed: A `UInt64` seed for reproducible sampling.
+    /// - Returns: An array of length `iterations` containing the sample means.
+    ///   Empty if `self` is empty, `iterations <= 0`, or `sampleSize <= 0`.
+    func samplingDistributionOfMean(
+        sampleSize: Int,
+        iterations: Int = 1000,
+        seed: UInt64
+    ) -> [Double] {
+        return _samplingDistribution(
+            sampleSize: sampleSize,
+            iterations: iterations,
+            seed: seed
+        ) { sample in sample.mean() ?? 0.0 }
+    }
+
+    /// Returns the sampling distribution of the sample median.
+    ///
+    /// Draws `iterations` samples of size `sampleSize` with replacement from `self`,
+    /// computes the median of each sample, and returns the resulting array. The
+    /// median's sampling distribution typically has a wider spread than the
+    /// mean's at the same sample size — quantifiable evidence that the mean is
+    /// the more statistically efficient summary on symmetric data.
+    ///
+    /// - Parameters:
+    ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
+    ///   - iterations: Number of samples to draw. Defaults to 1,000.
+    ///   - seed: A `UInt64` seed for reproducible sampling.
+    /// - Returns: An array of length `iterations` containing the sample medians.
+    ///   Empty if `self` is empty, `iterations <= 0`, or `sampleSize <= 0`.
+    func samplingDistributionOfMedian(
+        sampleSize: Int,
+        iterations: Int = 1000,
+        seed: UInt64
+    ) -> [Double] {
+        return _samplingDistribution(
+            sampleSize: sampleSize,
+            iterations: iterations,
+            seed: seed
+        ) { sample in sample.median() ?? 0.0 }
+    }
+
+    /// Returns the sampling distribution of the sample standard deviation.
+    ///
+    /// Draws `iterations` samples of size `sampleSize` with replacement from `self`,
+    /// computes the sample standard deviation (`ddof: 1`) of each, and returns
+    /// the resulting array. Reads as the spread of an estimator: how much the
+    /// sample standard deviation varies from one sample to the next.
+    ///
+    /// - Parameters:
+    ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
+    ///   - iterations: Number of samples to draw. Defaults to 1,000.
+    ///   - seed: A `UInt64` seed for reproducible sampling.
+    /// - Returns: An array of length `iterations` containing the sample standard
+    ///   deviations. Empty if `self` is empty, `iterations <= 0`, or `sampleSize <= 0`.
+    func samplingDistributionOfStandardDeviation(
+        sampleSize: Int,
+        iterations: Int = 1000,
+        seed: UInt64
+    ) -> [Double] {
+        return _samplingDistribution(
+            sampleSize: sampleSize,
+            iterations: iterations,
+            seed: seed
+        ) { sample in sample.standardDeviation() ?? 0.0 }
+    }
 }

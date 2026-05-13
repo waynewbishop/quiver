@@ -161,7 +161,7 @@ guard let documentVector = queryVectors.meanVector() else {
 
 The averaged vector blends the athletic meaning of "running" with the product meaning of "shoes" and the quality meaning of "comfortable." Documents with similar averages will score highest.
 
-> Note: The `meanVector` method returns an optional — it returns `nil` if the array is empty or if vectors have inconsistent dimensions. See <doc:Statistical-Operations> for additional aggregation operations on vector collections.
+> Note: The `meanVector` method returns an optional — it returns `nil` if the array is empty or if vectors have inconsistent dimensions. See <doc:Statistics-Primer> for the broader vocabulary of descriptive statistics the same `[Double]` columns support.
 
 ## Ranking results
 
@@ -182,4 +182,6 @@ for result in results {
 The full pipeline chains five Quiver methods in order: `tokenize`, `embed(using:)`, `meanVector`, `cosineSimilarities(to:)`, and `topIndices(k:labels:)`.
 
 > Tip: For large collections, pre-compute and store document vectors rather than recalculating them for each query. Only the query vector needs to be built at search time.
+
+> Experiment: **The Quiver Notebook** is the right place to watch search-by-meaning surface in real time. Load `Dataset.glove50d`, build a tiny three-document corpus, and rank the docs against a query phrase. Then edit one document — add a synonym, remove a word, replace a noun with a related one — and re-run. The ranking shifts in a way keyword matching would never produce, and that shift is the whole point of embedding-based search. See <doc:Quiver-Notebook>.
 

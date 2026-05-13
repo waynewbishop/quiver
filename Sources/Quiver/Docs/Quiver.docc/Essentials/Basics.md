@@ -29,7 +29,7 @@ responseTimes.outlierMask(threshold: 2.0)  // [false, false, ..., true] — flag
 
 Mean tells us the center. Standard deviation tells us how spread out the values are. Median is a more robust center when there are outliers. The outlier mask flags values that sit far from the rest. A dashboard, a health summary, a feed that highlights the unusual entry — all of them are built from these four ideas.
 
-For the full vocabulary — variance, quartiles, percentiles, z-scores, hypothesis testing — see <doc:Statistics-Primer>. For the complete API, see <doc:Statistical-Operations>.
+For the full vocabulary — variance, quartiles, percentiles, z-scores — see <doc:Statistics-Primer>. For hypothesis testing, confidence intervals, and sampling, see <doc:Inferential-Statistics-Primer>.
 
 ### Treating numbers as positions in space
 

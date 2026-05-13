@@ -44,6 +44,8 @@ struct PersonalBaseline: Codable {
 
 Six Quiver methods turn an array of historical readings into a structured snapshot — `mean` for the center, `standardDeviation` for the typical spread, `standardError` for how precise the estimate of the mean is, and three calls to `percentile` for the breakpoints. The baseline is `Codable` and `Sendable` for free, so it crosses task boundaries during a workout without copies and persists to disk between sessions without ceremony.
 
+The baseline is a snapshot, not a model. The user's fitness, sleep, or focus patterns drift over weeks of training or life changes, so the app should recompute the baseline on a cadence that matches the underlying signal — weekly for a trained runner whose resting heart rate moves with fitness, monthly for a sleep tracker, end-of-session for a focus app where every block updates the history. The shape of the recomputation is identical to the initial build; only the cadence changes.
+
 ### Ranking a sample against history
 
 With a baseline in hand, every new sample becomes a question — where does *this* reading fall in the distribution of the user's history? Two Quiver methods handle the two common shapes of that question. `percentileRank` gives a 0-to-100 position; the baseline's `standardDeviation` lets us compute a z-score.
@@ -78,7 +80,7 @@ let probability = 1 - cdf                                                // 0.01
 
 The whole calculation runs on the watch with no network call and no permissions. A glance complication can show "this reading is in the top 2% of your history" the moment a sample arrives. For the full distribution surface — `Distributions.t`, `Distributions.chiSquared`, and inference helpers — see <doc:Working-With-Distributions>.
 
-> Experiment: Open the <doc:Quiver-Notebook> and try the distribution functions on a small array of recent readings. `Distributions.normal.cdf` turns a z-score into a probability. `Distributions.t.cdf` answers the same question for small samples where the normal assumption is too strong. Trying both side by side on the same data is the fastest way to feel when each one applies.
+> Experiment: **The Quiver Notebook** is the right place to compare the distribution functions side by side. Try `Distributions.normal.cdf` and `Distributions.t.cdf` on the same array of recent readings — the normal turns a z-score into a probability, while the t-distribution answers the same question honestly for small samples where the normal assumption is too strong. Running both is the fastest way to feel when each one applies. See <doc:Quiver-Notebook>.
 
 ### Fitting a classifier once and predicting many times
 

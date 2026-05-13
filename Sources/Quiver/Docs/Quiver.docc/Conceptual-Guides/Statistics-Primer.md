@@ -25,6 +25,22 @@ salaries.median()  // 59.0 — describes the typical member
 
 > Note: When the mean and median disagree by a lot, the distribution is skewed. Reach for the median when a few extreme values would otherwise dominate the mean.
 
+### The mode
+
+Mean and median both ask the data to be numeric. The **mode** does not — it is the value, or values, that appear most often, and it works on anything we can compare for equality. That makes it the natural measure of center for categorical data where averaging is undefined, including strings, booleans, and small integer codes. Quiver exposes `mode()` on `Array where Element: Hashable` and returns `[Element]` so that ties are surfaced rather than hidden. When two values share the highest frequency, both are returned — the result describes a bimodal distribution honestly instead of arbitrarily picking one.
+
+```swift
+import Quiver
+
+let diceRolls = [1, 3, 3, 5, 6, 3, 2]
+diceRolls.mode()                     // [3]
+
+let ratings = [4, 5, 4, 3, 5, 4, 5]
+ratings.mode()                       // [4, 5] — bimodal
+```
+
+Mean is the right summary for numeric data without extreme values. Median is the right summary when a long tail would distort the mean. Mode is the right summary when the values are categories. The three measures answer the same conceptual question — where is the center — from three different angles.
+
 ### Describing the spread
 
 The middle tells us where the dataset is centered. It says nothing about how tightly the values cluster around that center. Two datasets can share the same mean but feel completely different — one tightly grouped, the other scattered. The concept that captures this is **spread**.
@@ -45,8 +61,6 @@ scores.variance()          // 44.84 — the same information in squared units
 
 A low standard deviation means the values cluster tightly around the mean. A high standard deviation means they are scattered. Two classrooms with the same average test score can tell completely different stories once the standard deviation is known.
 
-> Note: See <doc:Statistical-Operations> for the full API and parameter options.
-
 ### The five-number summary
 
 Mean and median describe a single point. They compress the whole dataset into one number, which is useful but loses information. A more complete picture comes from **quartiles** — the four cut points that divide the data into four equal-sized groups.
@@ -57,13 +71,17 @@ The first quartile (Q1) is the value below which 25% of the data sits. The secon
 let responseTimes = [120.0, 145.0, 160.0, 175.0, 180.0, 195.0, 210.0, 320.0]
 
 if let q = responseTimes.quartiles() {
-    print(q.min)     // 120.0
-    print(q.q1)      // 156.25 — 25th percentile
-    print(q.median)  // 177.5 — 50th percentile
-    print(q.q3)      // 198.75 — 75th percentile
-    print(q.max)     // 320.0
+    print(q)
+    // min:    120.0
+    // q1:     156.25
+    // median: 177.5
+    // q3:     198.75
+    // max:    320.0
+    // iqr:    42.5
 }
 ```
+
+The return type is `Quartiles`, a typed value with `min`, `q1`, `median`, `q3`, `max`, and `iqr` as named properties. Read them directly when only one is needed (`q.median`, `q.iqr`), or print the whole value for the full summary.
 
 Quartiles are more robust than mean and standard deviation when the data is skewed, because they describe the distribution by *position* rather than by *distance from a center*. The single slow response at 320ms does not distort Q1 or Q3. For the same reason, box plots — a common visualization in dashboards — draw their boxes at Q1 and Q3 and their whiskers from the min and max.
 
@@ -71,20 +89,19 @@ Quartiles are more robust than mean and standard deviation when the data is skew
 
 Mean and standard deviation by themselves are summaries. They describe what the dataset looks like as a whole. A more practical task often comes up in day-to-day work: measuring how unusual a single value is compared to the others in its dataset. The **z-score** is the tool for this.
 
-Consider a list of quiz scores: `68, 72, 75, 77, 80, 82, 85, 88`. The average is around 78, and somebody got a 95. A z-score turns the informal question of how unusual 95 is into a number.
+Consider a list of nine quiz scores: `68, 72, 75, 77, 80, 82, 85, 88, 95`. The mean is `80.2` and the sample standard deviation is `8.36`. The 95 is the highest score. A z-score turns the informal question of how unusual 95 is into a number.
 
-The calculation has two steps. First, find the distance from the mean: `95 − 78 ≈ 17`. The value sits about 17 points above average. Second, compare that distance to the typical spread of the other scores. If most scores sit within 5 points of the average, being 17 above is wildly unusual. If most scores bounce around by 30 points, 17 is barely noteworthy. The measure of typical spread is the standard deviation. In this dataset, the standard deviation is about 6.7. Dividing the distance from the mean by the standard deviation gives the z-score: `17 / 6.7 ≈ 2.5`.
+The calculation has two steps. First, find the distance from the mean: `95 − 80.2 ≈ 14.8`. The value sits about 15 points above average. Second, compare that distance to the typical spread of the other scores. If most scores sit within 5 points of the average, being 15 above is wildly unusual. If most scores bounce around by 30 points, 15 is barely noteworthy. The measure of typical spread is the standard deviation. Dividing the distance from the mean by the standard deviation gives the z-score: `14.8 / 8.36 ≈ 1.77`.
 
-A z-score of 2.5 means the value is 2.5 standard deviations away from the average. The units are standard deviations, not points or dollars or seconds. This is the key idea behind z-scores. They strip away the original unit and replace it with a universal ruler that works the same way across every dataset, every domain, and every scale of measurement.
+A z-score of 1.77 means the value is 1.77 standard deviations away from the average. The units are standard deviations, not points or dollars or seconds. This is the key idea behind z-scores. They strip away the original unit and replace it with a universal ruler that works the same way across every dataset, every domain, and every scale of measurement.
 
 ```swift
 let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0, 95.0]
 
-// Convert every value to its z-score
+// Convert every value to its z-score against this distribution
 let zScores = scores.standardized()
 
 // The 95 appears as ≈ 1.77 standard deviations above the mean
-// (the mean and standard deviation shift slightly once we include it)
 ```
 
 Rough rules of thumb help interpret a z-score. Values with absolute z-score below 1 are ordinary, within the normal range of variation, covering about 68% of values in a typical distribution. Values between 1 and 2 are somewhat above or below average but not remarkable, covering about another 27%. Values between 2 and 3 are notably unusual and worth investigating, covering about 4.5%. Values above 3 are rare — less than 0.3% of a normal distribution. These percentages describe a true normal distribution and real data will vary, but the categories hold as useful guides. See <doc:Working-With-Distributions> for the `Distributions.normal` API that computes these probabilities exactly.
@@ -126,5 +143,27 @@ Everything up to this point has been about describing the data we already have. 
 
 A different kind of question shows up the moment we start treating our data as evidence about something larger. An A/B test in an iOS app captures session times for the few thousand users who happened to land in the variant group — but the product decision rides on every user who will ever touch that flow. A week of accelerometer readings from one watch reflects one wearer's gait, but we want a threshold that will work for the next wearer too. In each case the dataset in hand is a sample, and the thing we actually care about is the population the sample came from. **Inferential statistics** is the toolkit for reasoning across that gap. See <doc:Inferential-Statistics-Primer> for sampling theory, hypothesis testing, confidence intervals, and resampling.
 
-> Tip: For a course teaching descriptive or inferential statistics in Swift, the <doc:Quiver-Notebook-For-Classrooms> page covers the classroom adoption model — clone-and-run distribution, custom assignment files, and pinning a release for a semester.
+For descriptive statistics across multiple named columns at once, `Panel.summary()` returns a typed `PanelSummary` carrying count, mean, standard deviation, quartiles, min, max, and IQR for every column in a single `Codable` value. The same surface works on a single `[Double]` through `toPanel()` — `scores.toPanel().summary()` returns a one-column `PanelSummary` with all nine fields without writing the literal constructor:
 
+```swift
+import Quiver
+
+let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0]
+
+// Single array — toPanel() bridges into the typed-summary surface
+print(scores.toPanel("scores").summary())
+// column  count     mean     std   min   max
+// ------------------------------------------
+// scores      8  78.3750  6.6962  68.0  88.0
+
+// Multiple named columns — same call, broader output
+let students = Panel([
+    ("score", scores),
+    ("study_hours", [2.0, 3.0, 4.0, 4.0, 5.0, 5.0, 6.0, 7.0])
+])
+print(students.summary())
+// column       count     mean     std   min   max
+// -----------------------------------------------
+// score            8  78.3750  6.6962  68.0  88.0
+// study_hours      8   4.5000  1.6036   2.0   7.0
+```

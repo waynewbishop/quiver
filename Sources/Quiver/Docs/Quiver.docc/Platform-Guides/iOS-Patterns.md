@@ -1,12 +1,12 @@
 # iOS Patterns
 
-Aggregating data for Swift Charts, downsampling long time series, and turning sensor or stored values into arrays Quiver can read.
+Patterns that turn arrays an iOS app already holds into charts and inferential answers.
 
 ## Overview
 
-A finance app wants to render a year of transactions as a donut chart by category. A health app wants to fold thirty days of readings into a weekly trend. A feed wants to highlight the unusual entries without burying the normal ones. Each situation has the same shape — raw values on one side, a Swift Charts view on the other, and a clean answer in between. Quiver gives us the building blocks to compose that answer from the arrays the app already holds. This article shows the pattern across all three.
+A finance app wants to render a year of transactions as a donut chart by category. A health app wants to fold thirty days of readings into a weekly trend. A feed wants to highlight the unusual entries without burying the normal ones. A workout app wants to tell the user whether this week's pace is genuinely faster than last week's or just noise. Each situation has the same shape: raw values on one side, an answer on the other, and a clean piece of math in between. Quiver gives us the building blocks to compose that answer from the arrays the app already holds. This article walks through four patterns that come up repeatedly.
 
-### Feeding aggregated values into Swift Charts
+### Aggregating data for Swift Charts
 
 [Swift Charts](https://developer.apple.com/documentation/charts) is excellent at rendering. It is not particular about where the data comes from or how it has been summarized — by the time a `BarMark`, `SectorMark`, or `PointMark` is constructed, the values already need to be in the right shape. The Quiver side of the pipeline gets the values into that shape. The chart side reads them and renders.
 
@@ -129,6 +129,55 @@ func summarizeHeartRate(samples: [Double]) -> PanelSummary? {
 
 The source — an `HKQuantitySample` query callback, an array of `CMAccelerometerData` readings, a CSV column the user imported, a list of numeric form entries — becomes a `[Double]` once at the boundary. Everything downstream is the same Quiver code that runs on any other input. Decode at the edge, compute in the middle, render at the end.
 
-> Tip: iOS users notice when an app asks for permissions it does not need. Reading from `HKHealthStore` or `CMMotionManager` requires explicit authorization, and the permission prompt happens the first time the app reads. Bundle the read with a clear context — a settings action the user opted into, or the first appearance of a feature that requires it — rather than at app launch.
+> Tip: When the dashboard needs more than a summary — multiple aligned columns, filtering across rows, splitting into train/test subsets, or charting — the full `Panel` surface picks up where `summary()` leaves off. See <doc:Panel> for the type that organizes named columns of `[Double]` data.
+
+### Turning a reading into a percentile
+
+A health dashboard records heart-rate readings over months and wants to tell the user how unusual today's resting reading is. The user's history makes that possible. The mean and standard deviation of past readings define a personal distribution; `Distributions.normal.cdf` turns the current reading into the probability of seeing a value at least that extreme, which the UI can render as "in the top 2% of your history" or similar.
+
+```swift
+import Quiver
+
+// User's historical resting heart rates over the past three months
+let history: [Double] = [/* … */]
+let today: Double = 84
+
+if let mean = history.mean(),
+   let std = history.standardDeviation() {
+    let z = (today - mean) / std
+    if let cdf = Distributions.normal.cdf(x: z, mean: 0, standardDeviation: 1) {
+        let upperTail = 1.0 - cdf
+        let percentLabel = String(format: "Top %.0f%% of your history", upperTail * 100)
+        // Render percentLabel in a glance complication, a SwiftUI Text, or a notification body
+    }
+}
+```
+
+The whole calculation runs on the watch or phone with no network call and no permissions beyond what the app already had to read history. A glance can render "this reading is in the top 2% of your history" the moment a sample arrives.
+
+### Small-sample A/B comparisons inside the app
+
+iOS apps that surface their own analytics often have a sample size of ten or twenty observations, not thousands. A workout app showing the user "is your pace this week genuinely faster than last week, or is the gap just noise?" needs a t-test, not a normal z-test, because the sample is small. `Distributions.t.cdf` produces the honest p-value at small `df`.
+
+```swift
+import Quiver
+
+let thisWeek: [Double] = [/* 8 pace samples */]
+let baseline: Double = 9.5  // user's typical pace from a longer baseline
+
+if let mean = thisWeek.mean(),
+   let se = thisWeek.standardError() {
+    let t = (mean - baseline) / se
+    let df = Double(thisWeek.count - 1)
+    if let cdf = Distributions.t.cdf(x: abs(t), df: df) {
+        let pValue = 2 * (1 - cdf)
+        let label = pValue < 0.05
+            ? "Significantly different from your typical pace"
+            : "Within your typical range"
+    }
+}
+```
+
+> Note: The same calculation against the normal distribution would overstate significance at small `n`. For ten samples the t-distribution gives a p-value roughly five times larger than the normal would, which is the honest accounting of small-sample uncertainty. For the full distribution surface, see <doc:Working-With-Distributions>.
 
 > Experiment: [quiver-demo-ios](https://github.com/waynewbishop/quiver-demo-ios) is a personal-finance dashboard that renders three Swift Charts views from twenty-four hardcoded transactions. Cloning it and changing the `outlierMask` threshold in `FinanceModel.swift` from `1.5` to `1.0` and then to `2.5` shows the scatter's red points expand and contract — the clearest way to feel what a z-score threshold controls.

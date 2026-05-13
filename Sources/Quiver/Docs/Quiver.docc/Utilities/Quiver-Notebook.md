@@ -118,19 +118,11 @@ The `guard let` checks that the dataset loaded successfully. If the file is miss
 
 Once we have a `Panel`, the rest of Quiver is one method call away. We can ask for descriptive statistics, split the data into training and test sets, or pull selected columns into a matrix for a model to learn from. See <doc:Panel> for the full surface and <doc:Train-Test-Split> for the partitioning method.
 
-> Experiment: Open any of the bundled examples and edit it. The editor auto-saves to the browser as we type, so refreshing the page or closing and reopening the tab preserves work in progress.
+> Experiment: **The bundled examples** are the right place to start exploring. Open any one of them and edit it freely — the editor auto-saves to the browser as we type, so refreshing the page or closing and reopening the tab preserves work in progress. See <doc:Notebook-Datasets>.
 
 ### Carrying snippets into an app
 
-A model fitted in the Notebook is an ordinary Swift value, and Quiver's models are `Codable` — a trained model can be saved to disk from the Notebook and read back inside an iOS or watchOS app:
-
-```swift
-let model = try LinearRegression.fit(features: features, targets: targets)
-let data = try JSONEncoder().encode(model)
-try data.write(to: modelURL)
-```
-
-The decoded model behaves identically to the one that was trained — same coefficients, same predictions. See <doc:Model-Persistence> for the full save-and-load workflow, and <doc:Concurrency-Primer> for sharing a decoded model across concurrent code.
+Code written in the Notebook is ordinary Swift. A snippet that fits and uses a Quiver model in the Notebook is the same snippet that fits and uses the model inside an iOS or watchOS app — copy the file into an Xcode project, add Quiver as a dependency, and the code runs unchanged. The Notebook is a place to develop and verify the snippet; the app is where it ships.
 
 ### Notebook Datasets
 

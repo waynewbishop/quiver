@@ -60,5 +60,5 @@ let documentVector = document
 // Optional<[Double]> — nil if no recognized tokens
 ```
 
-From this point, the result is an ordinary `[Double]` and the rest of Quiver applies — `cosineSimilarities(to:)` for ranking against a corpus, `distance(to:)` for nearest-neighbor work, or any other vector operation. The full search example, including building a corpus and ranking results, is in <doc:Semantic-Search>. The aggregation reference for `meanVector` and related summaries is in <doc:Statistical-Operations>.
+From this point, the result is an ordinary `[Double]` and the rest of Quiver applies — `cosineSimilarities(to:)` for ranking against a corpus, `distance(to:)` for nearest-neighbor work, or any other vector operation. The full search example, including building a corpus and ranking results, is in <doc:Semantic-Search>. For the descriptive-statistics vocabulary the same `[Double]` columns support, see <doc:Statistics-Primer>.
 

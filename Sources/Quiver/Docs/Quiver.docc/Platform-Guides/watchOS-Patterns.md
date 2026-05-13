@@ -8,7 +8,7 @@ Quiver gives us the building blocks to compose a single score from a session's w
 
 ### Summing effort and duration into a score
 
-The simplest training-load score is a sum: for each sample, the effort label times the sample interval. A 30-minute steady run at "Moderate" effort accumulates differently from a 30-minute run at "Hard" effort because the effort multiplier differs even though the duration is the same.
+The effort labels below are the outputs of the multi-signal KNN classifier built in <doc:watchOS-Guide> — one integer per sample mapping to easy, moderate, tempo, or hard. The simplest training-load score is a sum: for each sample, the effort label times the sample interval. A 30-minute steady run at "Moderate" effort accumulates differently from a 30-minute run at "Hard" effort because the effort multiplier differs even though the duration is the same.
 
 ```swift
 import Quiver
@@ -24,7 +24,7 @@ func record(effort: Int, deltaTime: Double) {
 
 // At the end of the workout, sum the weighted contribution of every sample
 func rawScore() -> Double {
-    let weighted = zip(efforts, deltaTimes).map { $0 * $1 }
+    let weighted = efforts.multiply(deltaTimes)
     return weighted.sum()
 }
 ```
@@ -51,8 +51,8 @@ The `variance()` call returns the sample variance of the effort labels using the
 For richer variance accounting that ignores the initial warm-up — where effort is rising regardless of workout structure — the same `variance()` call applies to a slice:
 
 ```swift
-// Exclude the first three minutes (≈120 samples at 1.5s cadence)
-let warmupSamples = 120
+// Exclude the first five minutes (≈200 samples at 1.5s cadence)
+let warmupSamples = 200
 let postWarmup = Array(efforts.dropFirst(warmupSamples))
 let postWarmupVariance = postWarmup.variance() ?? 0
 ```
@@ -65,7 +65,7 @@ Workouts produce a load *over time*, not a single number at the end. The cumulat
 import Quiver
 
 // Per-sample weighted contributions, accumulated into a never-decreasing curve
-let weighted = zip(efforts, deltaTimes).map { $0 * $1 }
+let weighted = efforts.multiply(deltaTimes)
 let loadCurve = weighted.cumulativeSum()
 ```
 
@@ -111,7 +111,7 @@ final class TESAggregator {
     func finalize() -> TESResult? {
         guard efforts.count >= 40 else { return nil }   // need enough samples
 
-        let weighted = zip(efforts, deltaTimes).map { $0 * $1 }
+        let weighted = efforts.multiply(deltaTimes)
         let raw = weighted.sum()
         let curve = weighted.cumulativeSum()
 
@@ -130,6 +130,8 @@ final class TESAggregator {
 ```
 
 Five Quiver methods (`sum`, `cumulativeSum`, `variance`, plus two more `sum` calls for the duration computation) do all the math. Everything else is bookkeeping — `pause`/`resume`, the minimum-sample threshold, the result struct that holds the outputs the UI needs.
+
+`pause`/`resume` preserve the variance multiplier correctly across long mid-workout breaks because the aggregator simply stops appending to the `efforts` and `deltaTimes` buffers while paused. The variance is computed over the recorded samples at `finalize()` time, so a traffic-light stop in the middle of a run does not insert a stretch of artificial zeros that would inflate the variance bonus. The break is invisible to the score.
 
 ### What this pattern is and what it is not
 

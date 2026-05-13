@@ -273,6 +273,8 @@ let classNames = ["cat", "dog", "bird", "fish"]
 
 The tallest bar is the model's prediction. The relative heights show how confident the model is — a single dominant bar means high confidence, while similar heights across bars suggest uncertainty.
 
+> Experiment: **The Quiver Notebook** is the right place to see how data preparation shapes a chart's story. Render a histogram from a raw revenue column, then re-render the same chart after applying `standardized()` — same data, centered and scaled. The y-axis numbers move from dollars to standard deviations, but the shape of the distribution stays the same. Try `scaled(to:)` next and watch the bars stretch to a target range. Visualization choices are data-preparation choices in disguise. See <doc:Quiver-Notebook>.
+
 ## Topics
 
 ### Scaling and normalization

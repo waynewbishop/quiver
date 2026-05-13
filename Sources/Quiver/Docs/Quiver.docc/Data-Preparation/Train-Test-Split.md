@@ -161,6 +161,8 @@ let split = balanced.stratifiedSplit(
 
 The method auto-detects which classes are smaller and generates new samples by interpolating between existing points in vector space. For multi-class data, every class below the largest count is oversampled independently. Call `oversample` before `stratifiedSplit` so that both the training and test sets contain enough examples from every class.
 
+> Experiment: **The Quiver Notebook** is the right place to feel why the `seed` parameter matters. Call `trainTestSplit` on the same array three times with three different seeds, then call it three more times with the same seed. The first three produce different partitions; the second three produce identical ones. A reproducible experiment is a re-runnable experiment — that property comes from the seed, not from the data. See <doc:Quiver-Notebook>.
+
 ## Topics
 
 ### Splitting

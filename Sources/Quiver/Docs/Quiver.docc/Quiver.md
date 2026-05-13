@@ -63,7 +63,8 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Vector-Projections>
 
 ### Statistics
-- <doc:Statistical-Operations>
+- <doc:Statistics-Primer>
+- <doc:Inferential-Statistics-Primer>
 - <doc:Frequency-Tables>
 - <doc:Working-With-Distributions>
 - <doc:Boolean-Masking>

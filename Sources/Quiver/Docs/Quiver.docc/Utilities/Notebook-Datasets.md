@@ -167,6 +167,8 @@ print(Dataset.catalog())
 // Dataset.glove50d
 ```
 
+> Experiment: **The Quiver Notebook** is the right place to feel how far the same three-line pattern carries. Run `load → toPanel → head(n: 3)` on `Dataset.iris`, then swap to `Dataset.titanic`, then `Dataset.californiaHousing`, then `Dataset.studentPerformance`. Each call returns a wildly different shape — 150 rows of flower measurements, 889 passengers, 20,640 census districts, 395 students — through the same API. Watching the same snippet describe five datasets is the fastest way to see what `Panel` and `Dataset` are for. See <doc:Quiver-Notebook>.
+
 ### Related
 - <doc:Quiver-Notebook>
 - <doc:Panel>

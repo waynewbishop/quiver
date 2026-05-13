@@ -219,9 +219,31 @@ All called on `[Double]` (not `[[Double]]`), even for 2D:
 [Int].random(5, in: 0..<100)            // Int, half-open range
 
 // Normal distribution
-[Double].randomNormal(5, mean: 0.0, std: 1.0)
-[Double].randomNormal(2, 3, mean: 5.0, std: 2.0)
+[Double].randomNormal(5, mean: 0.0, standardDeviation: 1.0)
+[Double].randomNormal(2, 3, mean: 5.0, standardDeviation: 2.0)
+
+// Exponential distribution (1.2.0) — long right tail, rate = 1/mean
+[Double].randomExponential(1_000, rate: 0.5)        // 1D, mean = 1/rate = 2.0
+[Double].randomExponential(3, 4, rate: 1.0)         // 2D
+
+// Binomial distribution (1.2.0) — count of successes in n Bernoulli trials
+[Double].randomBinomial(1_000, n: 20, p: 0.5)       // 1D
+[Double].randomBinomial(3, 4, n: 10, p: 0.3)        // 2D
 ```
+
+### Reproducible randomness (1.2.0)
+
+`SeededRandomNumberGenerator(seed: UInt64)` is a public struct conforming to `RandomNumberGenerator`. Every Quiver random method has a `using:` overload that accepts an `inout` generator, mirroring the standard library's `Array.shuffled(using:)` pattern:
+
+```swift
+var rng = SeededRandomNumberGenerator(seed: 42)
+let normal = [Double].randomNormal(1_000, mean: 0, standardDeviation: 1, using: &rng)
+let expon  = [Double].randomExponential(1_000, rate: 0.5, using: &rng)
+let bins   = [Double].randomBinomial(1_000, n: 20, p: 0.5, using: &rng)
+let shuf   = [1, 2, 3, 4, 5].shuffled(using: &rng)
+```
+
+The generator is passed by `inout` because each call advances its internal state — passing by value would produce the same numbers on every call. Two runs with the same seed produce identical sequences across the whole Quiver random surface (uniform, normal, exponential, binomial) and the standard library random methods that accept `using:`.
 
 ## Statistical Operations
 
@@ -232,13 +254,19 @@ let data = [3.0, 1.0, 4.0, 1.0, 5.0]
 
 if let avg = data.mean() { print(avg) }           // Double?
 if let mid = data.median() { print(mid) }         // Double?
-if let v = data.variance(ddof: 0) { print(v) }    // Double? (population)
-if let s = data.std(ddof: 1) { print(s) }         // Double? (sample)
-if let q = data.quartiles() { print(q.iqr) }      // tuple?
+if let v = data.variance() { print(v) }           // Double? (sample, default ddof: 1)
+if let s = data.standardDeviation() { print(s) }  // Double? (sample, default ddof: 1)
+if let e = data.standardError() { print(e) }      // Double? (sample, default ddof: 1)
+if let q = data.quartiles() { print(q.iqr) }      // Quartiles?
+if let m = data.mode().first { print(m) }         // [Element] — empty for empty input
 if let lo = data.argMin() { print(lo) }            // Int?
 if let hi = data.argMax() { print(hi) }            // Int?
 if let p = data.percentile(90) { print(p) }        // Double?
 ```
+
+**Critical rule (1.2.0):** `variance(ddof:)`, `standardDeviation(ddof:)`, and `standardError(ddof:)` all default to `ddof: 1` (sample statistics, dividing by `n - 1`). This matches the formula in introductory statistics textbooks. Pass `ddof: 0` explicitly when the array represents an entire population rather than a sample. The 1.2.0 rename from `std()` to `standardDeviation()` shipped with this default flip in the same commit.
+
+`mode()` is defined on `Array where Element: Hashable` and returns `[Element]` (not optional). When multiple values tie for highest frequency, all are returned — bimodal distributions surface honestly. Empty input returns an empty array.
 
 ### Return non-optional:
 
@@ -281,27 +309,95 @@ if let ci = medians.percentileCI(level: 0.95) {
 
 ## Probability Distributions
 
-`Distributions` is a stateless namespace for probability density, cumulative density, log-density, and quantile functions. Every function returns `Double?` and produces `nil` for out-of-domain input (`std <= 0`, `p` outside `(0, 1)`, non-finite results) — matching Quiver's existing pattern for `mean`, `variance`, etc.
+`Distributions` is a stateless namespace for probability density, cumulative density, log-density, and quantile functions. Every function returns `Double?` and produces `nil` for out-of-domain input (`standardDeviation <= 0`, `p` outside `(0, 1)`, non-finite results, negative `df` for `t` or `chiSquared`) — matching Quiver's existing pattern for `mean`, `variance`, etc.
 
 ```swift
 // Probability density at the mean of a standard normal
-Distributions.normal.pdf(x: 0, mean: 0, std: 1)        // ≈ 0.3989
+Distributions.normal.pdf(x: 0, mean: 0, standardDeviation: 1)        // ≈ 0.3989
 
 // Log-density (numerically stable for tail values or repeated multiplication)
-Distributions.normal.logPDF(x: 4, mean: 0, std: 1)     // ≈ -8.919
+Distributions.normal.logPDF(x: 4, mean: 0, standardDeviation: 1)     // ≈ -8.919
 
 // Cumulative probability P(X <= x)
-Distributions.normal.cdf(x: 1.96, mean: 0, std: 1)     // ≈ 0.975
+Distributions.normal.cdf(x: 1.96, mean: 0, standardDeviation: 1)     // ≈ 0.975
 
 // Quantile (inverse CDF) — the 95% critical value
-Distributions.normal.quantile(p: 0.975, mean: 0, std: 1)  // ≈ 1.96
+Distributions.normal.quantile(p: 0.975, mean: 0, standardDeviation: 1)  // ≈ 1.96
 ```
 
 The quantile uses the Beasley-Springer-Moro rational approximation — roughly 7-decimal accuracy in the body of the distribution, 4-decimal in the tails. Values closer than `1e-15` to `0` or `1` return `nil`.
 
-`Distributions.t` and `Distributions.chiSquared` are reserved namespaces — no functions yet.
+### Student's t-distribution
+
+```swift
+// Probability that a t-distributed value with df = 10 falls at or below 2.228
+Distributions.t.cdf(x: 2.228, df: 10)       // ≈ 0.975
+
+// Critical value at p = 0.975 for a 95% confidence interval, df = 10
+Distributions.t.quantile(p: 0.975, df: 10)  // ≈ 2.228
+
+// Same probability under the 95th-percentile cutoff
+Distributions.t.quantile(p: 0.95, df: 10)   // ≈ 1.812
+```
+
+The t-distribution is centered at zero, symmetric, and has heavier tails than the standard normal. As `df` grows, it converges to the normal — at `df = 1000` the two are visually indistinguishable. Used for small-sample inference (`n < 30`) where we estimate both the mean and the standard deviation from the same sample. The classic recipe for a one-sample t-statistic uses `df = n - 1`.
+
+Implementation: regularized incomplete beta function with bisection for the quantile. Verified against the reference test grid in `Tests/QuiverTests/DistributionsTests.swift`.
+
+### Chi-squared distribution
+
+```swift
+// Cumulative probability for a chi-squared value at df = 5
+Distributions.chiSquared.cdf(x: 11.07, df: 5)    // ≈ 0.95
+
+// Same at df = 10
+Distributions.chiSquared.cdf(x: 18.307, df: 10)  // ≈ 0.95
+```
+
+The chi-squared distribution has support on `[0, ∞)` (negative `x` returns `0.0`, not `nil`). Used for variance inference and goodness-of-fit testing — the test statistic for "do observed category counts match expected counts" follows a chi-squared distribution under the null hypothesis. Implementation: regularized lower incomplete gamma function. Closed-form anchor at `df = 2`: `cdf(x, df: 2) = 1 - exp(-x / 2)`.
 
 `GaussianNaiveBayes` uses `Distributions.normal.logPDF` internally; the public exposure lets other callers reuse the same well-tested implementation.
+
+## Inferential Output Types
+
+Quiver methods that return multiple related quantities use typed value types instead of dictionaries or anonymous tuples. Every type below conforms to `Codable`, `Sendable`, `Equatable`, and `CustomStringConvertible`. The conformances buy round-trip persistence to JSON, cross-task safety, equality checks for testing, and readable `print()` output.
+
+### `Quartiles`
+
+Returned by `Array.quartiles()` on `Array where Element: FloatingPoint`. Generic over `T`. Fields: `min`, `q1`, `median`, `q3`, `max`, `iqr`. The five-number summary plus the interquartile range as one value. `print(q)` emits all six labeled values in a single formatted block (`min:`, `q1:`, etc.); read fields directly when only one is needed.
+
+### `ColumnSummary`
+
+Returned by `Array.summary()` on `Array where Element == Double`. Fields: `count` (`Int`), `mean`, `std`, `min`, `q1`, `median`, `q3`, `max`, `iqr` (all `Double`). Computed once at construction time. Format helpers `markdownTable()` and `csvRows()` render the summary for inclusion in PRs, reports, or pipelines.
+
+### `PanelSummary`
+
+Returned by `Panel.summary()`. Fields: `columnNames` (`[String]`), `columns` (`[String: ColumnSummary]`). Per-column statistics across an entire panel in a single value. Iteration order matches `columnNames`.
+
+### `RegressionSummary`
+
+Returned by `LinearRegression.summary(features:targets:confidenceLevel:)`. Throws `MatrixError.singular` if `(XᵀX)` is non-invertible. Fields:
+
+- `coefficients: [Double]` — fitted parameter vector (intercept first if the model was fit with intercept)
+- `standardErrors: [Double]` — standard error for each coefficient
+- `tStatistics: [Double]` — coefficient divided by its standard error
+- `pValues: [Double]` — two-tailed p-value under the null `β = 0`, computed against `Distributions.t.cdf` with the residual degrees of freedom
+- `confidenceIntervals: [ConfidenceInterval]` — `(lower, upper)` band per coefficient at the requested `confidenceLevel` (default `0.95`)
+- `rSquared: Double` — coefficient of determination
+- `adjustedRSquared: Double` — penalized for parameter count, useful for comparing models of different dimensionality
+- `n: Int` — sample size
+- `degreesOfFreedom: Int` — `n − p` where `p` is the number of fitted parameters
+- `residualStandardError: Double` — square root of the residual mean square
+- `confidenceLevel: Double` — the level used to build `confidenceIntervals`
+
+`ConfidenceInterval` is a small `(lower: Double, upper: Double)` value type, also conforming to the standard four protocols.
+
+### `ClassificationReport` and `ClassMetrics`
+
+Returned by `predictions.classificationReport(actual:)` on `[Int]`. Two-tier shape:
+
+- `ClassMetrics`: `label: Int`, `precision: Double?`, `recall: Double?`, `f1Score: Double?`, `support: Int`. Optionals are `nil` when the denominator would be zero (e.g., `precision` is `nil` when the class has no predicted positives).
+- `ClassificationReport`: `perClass: [Int: ClassMetrics]`, `classOrder: [Int]`, `accuracy: Double`, `macroAverage: ClassMetrics`, `weightedAverage: ClassMetrics`, `totalSupport: Int`. `classOrder` preserves the deterministic class ordering for iteration.
 
 ## Similarity and Clustering
 
@@ -792,7 +888,7 @@ Run benchmarks locally: `swift test -c release --filter QuiverStressTests`
 | `mean()` → `Double?` | `sum()` → `Double` |
 | `median()` → `Double?` | `product()` → `Double` |
 | `variance(ddof:)` → `Double?` | `magnitude` → `Double` |
-| `std(ddof:)` → `Double?` | `normalized` → `[Double]` |
+| `standardDeviation(ddof:)` → `Double?` | `normalized` → `[Double]` |
 | `quartiles()` → tuple? | `dot(_:)` → `Double` |
 | `argMin()` → `Int?` | `cosineOfAngle(with:)` → `Double` |
 | `argMax()` → `Int?` | `determinant` → `Double` |
@@ -936,7 +1032,7 @@ Static methods on `[Double]` (or `[Int]`) to create arrays with specific pattern
 Generate random arrays for testing, simulation, and initialization.
 
 - **Uniform:** `[Double].random(5)` (0–1), `[Double].random(5, in: -1.0...1.0)`, `[Double].random(2, 3)` (2D).
-- **Normal:** `[Double].randomNormal(5, mean: 0.0, std: 1.0)`, `[Double].randomNormal(2, 3, mean: 5.0, std: 2.0)` — uses Box-Muller transform.
+- **Normal:** `[Double].randomNormal(5, mean: 0.0, standardDeviation: 1.0)`, `[Double].randomNormal(2, 3, mean: 5.0, standardDeviation: 2.0)` — uses Box-Muller transform.
 - **Integer:** `[Int].random(5, in: 0..<100)` — half-open range.
 - Works with both `Float` and `Double`.
 

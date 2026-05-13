@@ -4,9 +4,7 @@ Presenting statistics, summaries, and derived insights inside iOS apps with Quiv
 
 ## Overview
 
-Most iOS apps already have the data they need to feel intelligent. A fitness app has a year of workouts. A finance app has a month of transactions. A reading app knows what the user has read. The hard part is turning that history into something the screen can show — a trend, a typical range, a flagged outlier, a personalized recommendation.
-
-Quiver is the layer between the data the app already holds and the insights it wants to show. It runs inside the app, no network call, no service. With Quiver an app can summarize what is in a list, highlight the unusual entries, plot a trend that fits the data, group history by category for a chart, and recommend the next item a user is likely to want — all from arrays the app already has.
+Most iOS apps already have the data they need to feel intelligent. Quiver is the layer between the data the app already holds and the insights it wants to show. Overall, the framework runs inside the app, no network call, no service. With Quiver an app can summarize what is in a list, highlight the unusual entries, plot a trend that fits the data, group history by category for a chart, and recommend the next item a user is likely to want — all from arrays the app already has.
 
 ### Loading models when the app launches
 

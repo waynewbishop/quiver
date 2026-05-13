@@ -226,3 +226,5 @@ let result2 = floatMatrix * 2.0
 - **Division**: Divisor cannot contain zero elements
 - **Column access**: Index must be within column count
 
+> Experiment: **The Quiver Notebook** is the right place to feel why the Hadamard / matrix-multiply distinction is the page's load-bearing callout. Build two 2×2 matrices and compute `a.multiply(b)` and `a.multiplyMatrix(b)` side by side. The element-wise version is the input numbers paired up and multiplied; the matrix version is each row of `a` dotted against each column of `b`. The two results look nothing alike, and that is exactly why each operation has its own method name. See <doc:Quiver-Notebook>.
+

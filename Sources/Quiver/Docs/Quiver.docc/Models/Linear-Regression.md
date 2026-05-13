@@ -105,6 +105,74 @@ print("R²: \(r2)")      // closer to 1.0 is better
 print("RMSE: \(rmse)")  // in the same units as the target
 ```
 
+### Inference with RegressionSummary
+
+`rSquared`, `meanSquaredError`, and `rootMeanSquaredError` describe how close the predictions are to the targets. They do not answer the question that determines whether a feature is worth keeping in the model: is the coefficient on this feature different from zero, given the noise in the data, or did we recover a non-zero weight by chance from a sample that happens to lean that way?
+
+`LinearRegression.summary(features:targets:level:)` answers that question. It returns a `RegressionSummary` value carrying everything downstream callers need to interpret a regression fit — the coefficients themselves, one standard error and one t-statistic per coefficient, two-tailed p-values, confidence intervals at the chosen level, R² and adjusted R², the sample size, the residual degrees of freedom, and the residual standard error:
+
+```swift
+import Quiver
+
+// 12 homes — [square footage, bedrooms, age in years]
+let features: [[Double]] = [
+    [1200, 2, 20], [1800, 3, 10], [2400, 4, 5],
+    [1600, 3, 15], [2000, 3, 8],  [2800, 5, 2],
+    [1400, 2, 18], [2200, 4, 6],  [1700, 3, 12],
+    [2600, 4, 3],  [1500, 2, 22], [2100, 3, 7]
+]
+let targets = [180000.0, 260000.0, 350000.0,
+               230000.0, 290000.0, 420000.0,
+               195000.0, 320000.0, 240000.0,
+               380000.0, 175000.0, 295000.0]
+
+let model = try LinearRegression.fit(features: features, targets: targets)
+let report = try model.summary(features: features, targets: targets)
+
+print(report)
+// Linear Regression Summary
+// =========================
+// n = 12, df = 8
+// R²    = 0.9894
+// Adj R² = 0.9854
+// Resid SE = 9584.4677
+//
+// term       coef     std err       t   P>|t|     [95% lo      95% hi]
+// ---------------------------------------------------------------------
+// x0    72972.68   47589.51   1.5334  0.1637  -36768.94   182714.30
+// x1       92.02      21.64   4.2520  0.0028      42.12      141.93
+// x2    17454.85    9363.45   1.8641  0.0993   -4137.30    39047.01
+// x3    -2719.02    1315.04  -2.0676  0.0725   -5751.51      313.47
+```
+
+The output names every regression diagnostic the inference question requires. With `n = 12` and four fitted parameters (intercept + three features), the residual degrees of freedom land at `8` — comfortable for a t-based inference. The `x1` row (square footage) has a p-value of `0.0028` and a 95% confidence interval that excludes zero — strong evidence that square footage genuinely predicts price after accounting for bedrooms and age. The `x2` and `x3` rows (bedrooms and age) have p-values above `0.05` and confidence intervals that straddle zero — their effects are not statistically distinguishable from chance at this sample size, even though their point estimates look meaningful. The intercept `x0` is the predicted price for the hypothetical row of all-zero features — included for completeness, rarely interpretable on its own.
+
+The same value also reads like data. Each field on `RegressionSummary` is a parallel array indexed by coefficient position. When the model fits an intercept, position `0` is the intercept and positions `1...` are the feature weights in the same order they appeared in `features`:
+
+```swift
+report.coefficients[1]         // weight on square footage
+report.standardErrors[1]       // standard error of that weight
+report.tStatistics[1]          // weight / standard error
+report.pValues[1]              // two-tailed p-value
+report.confidenceIntervals[1]  // ConfidenceInterval(lower, upper)
+
+report.rSquared                // fraction of variance explained
+report.adjustedRSquared        // R² penalized for parameter count
+report.residualStandardError   // sqrt(residual variance), in target units
+
+report.n                       // sample size
+report.degreesOfFreedom        // n - p
+report.confidenceLevel         // 0.95 by default
+```
+
+The p-value answers the significance question directly. A small p-value means the data would be surprising if the true coefficient were zero, which is taken as evidence that the feature is contributing to the prediction. The confidence interval answers the same question visually: when the interval does not contain zero, the coefficient is significantly different from zero at the chosen level. The two views agree by construction — they read off the same standard error and the same t-critical value, just from different ends.
+
+Adjusted R² is the companion to plain R². Plain R² always rises as features are added, even when the new feature is pure noise. Adjusted R² subtracts a penalty for the parameter count, so adding a feature that does not pay for itself in residual reduction makes the metric fall. When the two diverge, the model is overfit.
+
+`RegressionSummary` is `Codable`, `Sendable`, and `Equatable`. Persisting a summary to disk for a later regression-diff is `JSONEncoder().encode(report)`. Comparing two summaries for an A/B model comparison is `==`. The `CustomStringConvertible` conformance is what makes `print(report)` reproduce the table. The `markdownTable()` and `csvRows()` formatters expose the same data in formats that paste cleanly into a PR comment or a spreadsheet.
+
+> Important: `summary` throws `MatrixError.singular` when the design matrix `X'X` cannot be inverted — the same condition that makes `fit` throw. Without a stable inverse, the variance-covariance matrix is unreliable and the standard errors that build on it would be silently meaningless. The throw is intentional: the caller learns immediately that inference is not available, rather than reading a struct of corrupted numbers.
+
 ### The full pipeline
 
 A typical workflow combines data splitting, model fitting, and evaluation:
@@ -229,6 +297,11 @@ redundant.determinant  // 0.0 → fit will throw MatrixError.singular
 - ``Swift/Array/rSquared(actual:)``
 - ``Swift/Array/meanSquaredError(actual:)``
 - ``Swift/Array/rootMeanSquaredError(actual:)``
+
+### Inference
+- ``LinearRegression/summary(features:targets:level:)``
+- ``RegressionSummary``
+- ``ConfidenceInterval``
 
 ### Related
 - <doc:Pipeline>

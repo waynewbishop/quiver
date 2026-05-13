@@ -100,3 +100,5 @@ Both `.shape` and `.size` are constrained to two-dimensional arrays whose inner 
 
 This is a broader benefit of working in a strongly typed, compiled language. Properties that other environments require for runtime type inspection are unnecessary here. When we declare `[[Double]]`, the element type is fixed and enforced by the compiler. There is no silent type coercion, no unexpected precision loss, and no need to inspect the array to discover what it contains. The type signature is the single source of truth.
 
+> Experiment: **The Quiver Notebook** is the right place to validate dimensions before a model ever touches the data. Load a bundled dataset, pull a feature matrix out with `toMatrix(columns:)`, and print `.shape` and `.size` before fitting. Then deliberately mismatch — pass a feature matrix and a label vector whose row count does not match — and watch what happens. A `guard features.shape.rows == labels.count else { ... }` check at the top of a snippet catches the kind of bug that produces wrong predictions silently. See <doc:Quiver-Notebook>.
+

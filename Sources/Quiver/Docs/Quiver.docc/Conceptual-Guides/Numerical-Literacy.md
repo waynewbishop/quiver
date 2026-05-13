@@ -69,3 +69,5 @@ The goal of this primer is not to make every developer an expert in floating-poi
 
 Quiver's API is designed so that the default path is the numerically sound path. Calling `variance` is correct. Calling `standardDeviation` is correct. Inverting a well-conditioned matrix is correct. The places where we need to think — when to check `.conditionNumber`, when to use a tolerance instead of `==`, when to worry about summation order — are the places where the underlying mathematics demands thought, not the places where the API has cut corners.
 
+> Experiment: **The Quiver Notebook** is the right place to make catastrophic cancellation visible. Build a tightly clustered array such as `[1_000_000.001, 1_000_000.002, 1_000_000.003]`, then compute variance two ways — the textbook formula `mean(x²) − mean(x)²` next to Quiver's `variance()`. The textbook version often returns zero or a negative number; Quiver's returns the right answer. Watching the two diverge on the same data is the single most teachable moment in numerical literacy. See <doc:Quiver-Notebook>.
+

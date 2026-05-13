@@ -111,3 +111,5 @@ git clone https://github.com/waynewbishop/quiver-cookbook.git
 ```
 
 Quiver is included as a package dependency and resolves automatically — no manual setup. Browse `Sources/Recipes/`, pick a file, and run it. Each recipe uses the `#Playground` macro, so results appear inline in the Canvas as we read.
+
+> Experiment: [quiver-cookbook](https://github.com/waynewbishop/quiver-cookbook) is the fastest way to see a full Quiver workflow evaluate inline. Clone the repo, open any single recipe — wind tunnel lift prediction, the driving classifier, the airfoil polynomial fit — and watch the Canvas update as the recipe runs. Each file is self-contained, so the working surface is one recipe at a time.
