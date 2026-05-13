@@ -10,6 +10,8 @@ With Panel, each column gets a name and all rows stay together as a unit. It ser
 
 > Important: `Panel` does not replace Quiver's array and matrix operations — it organizes them. Each column is a standard `[Double]` that supports Quiver vector operations like `.mean()`, `.standardDeviation()`, and boolean masking.
 
+This page covers Panel as a data structure — how to construct one, access columns, convert to the shapes models need, and filter rows. For applied workflows — train/test splits, summaries, classification pipelines, charting — see <doc:Panel-Workflows>.
+
 ### Creating a panel
 
 Build a panel from an ordered list of named columns. All columns must have the same number of elements:
@@ -26,7 +28,7 @@ let employees = Panel([
 
 ### Creating a panel from a matrix
 
-`Panel` can also be created from an existing matrix by providing column names. This is useful when we already have data in `[[Double]]` form — from a computation, a file import, or another Quiver operation — and want to add column labels:
+A `Panel` can also be created from an existing matrix by providing column names. This is useful when we already have data in `[[Double]]` form — from a computation, a file import, or another Quiver operation — and want to add column labels:
 
 ```swift
 import Quiver
@@ -46,7 +48,7 @@ if let jumpSpread = athletes["jumpHeight"].standardDeviation() {
 
 ### Wrapping a single array as a panel
 
-Sometimes the data already lives in a plain `[Double]` and we want the Panel surface — typed summaries, head printing, charting — without writing the literal constructor. `toPanel()` on `Array where Element == Double` wraps the array in a single-column Panel. By default the column is named `"values"`; pass a string to give it a semantic name:
+Sometimes the data already lives in a plain `[Double]` and we want the Panel surface — typed summaries, head printing, charting — without writing the literal constructor. The `toPanel()` method on `Array where Element == Double` wraps the array in a single-column Panel. By default the column is named `"values"`; pass a string to give it a semantic name:
 
 ```swift
 import Quiver
@@ -162,195 +164,16 @@ let filtered = samples.filtered(where: mask)
 // filtered["label"] == [1.0, 0.0, 1.0]
 ```
 
-### Splitting for machine learning
+When a filter matches no rows, the resulting panel keeps its column schema but reports a row count of zero. The columns still exist, just empty. See <doc:Panel-Workflows> for how `summary()` and downstream operations behave on a zero-row panel.
 
-Split a `Panel` into training and testing subsets with a single call. All columns are split atomically — the same rows go to training and testing across every column:
+### Design
 
-```swift
-import Quiver
-
-// 5 samples with two feature columns and a binary label
-let dataset = Panel([
-    ("feature1", [1.0, 2.0, 3.0, 4.0, 5.0]),
-    ("feature2", [10.0, 20.0, 30.0, 40.0, 50.0]),
-    ("label", [0.0, 1.0, 0.0, 1.0, 0.0])
-])
-
-// Split 80/20 — all columns partitioned by the same rows
-let (train, test) = dataset.trainTestSplit(testRatio: 0.2, seed: 42)
-
-// Extract features as a matrix and labels as integers
-let trainFeatures = train.toMatrix(columns: ["feature1", "feature2"])
-let trainLabels = train.labels("label")
-```
-
-This eliminates the need to match seeds across parallel array splits, which is error-prone and a common source of row misalignment bugs.
-
-### Inspecting data
-
-Panel provides three quick inspections for any new panel:
-
-```swift
-import Quiver
-
-let employees = Panel([
-    ("age", [25.0, 30.0, 35.0, 28.0, 42.0]),
-    ("income", [50000.0, 62000.0, 75000.0, 58000.0, 95000.0]),
-    ("score", [88.0, 92.0, 85.0, 91.0, 78.0])
-])
-
-print(employees)        // Panel: 3 columns, 5 rows
-print(employees.shape)  // (rows: 5, columns: 3)
-
-print(employees.head())
-//        age    income  score
-// 0     25.0   50000.0  88.0
-// 1     30.0   62000.0  92.0
-// 2     35.0   75000.0  85.0
-// 3     28.0   58000.0  91.0
-// 4     42.0   95000.0  78.0
-```
-
-`print` shows the structure. `shape` returns dimensions as a named tuple, matching the matrix API. `head` displays row data in tabular format and by default shows up to 10 rows — pass a count to limit the output:
-
-```swift
-print(employees.head(n: 3))
-//        age    income  score
-// 0     25.0   50000.0  88.0
-// 1     30.0   62000.0  92.0
-// 2     35.0   75000.0  85.0
-```
-
-The fourth inspection — `summary()` — returns a typed snapshot of per-column statistics and gets its own section below.
-
-> Experiment: **The Quiver Notebook** is the right place to catch data-quality issues before they propagate. Call `head` after every load or filter step and watch the tabular output update as the panel changes — a column of unexpected zeros is the kind of issue that quietly breaks downstream models if it slips past the eye. See <doc:Quiver-Notebook>.
-
-### Typed column summaries
-
-`summary()` returns a `PanelSummary` — a typed snapshot keyed by column name. The previous String-returning version printed the same table, but every downstream caller had to parse it back into numbers. The typed return removes that round-trip. Each column's statistics live in a `ColumnSummary` value addressable by field, so the same call serves a human reader (via `print`) and a downstream calculation (via property access):
-
-```swift
-import Quiver
-
-let quiz = Panel([
-    ("score", [60.0, 70.0, 80.0, 90.0, 100.0])
-])
-
-let summary = quiz.summary()
-
-// Reads like a report
-print(summary)
-// column  count  mean      std   min    max
-// -------------------------------------------
-// score       5  80.0  15.8114  60.0  100.0
-
-// Reads like data
-if let score = summary.columns["score"] {
-    score.count    // 5
-    score.mean     // 80.0
-    score.std      // 15.8114... — sample standard deviation, ddof = 1
-    score.min      // 60.0
-    score.q1       // 70.0
-    score.median   // 80.0
-    score.q3       // 90.0
-    score.max      // 100.0
-    score.iqr      // 20.0
-}
-```
-
-The nine fields are the same five-number summary used elsewhere in Quiver — `count`, `mean`, `std`, `min`, `q1`, `median`, `q3`, `max`, `iqr`. `std` is the sample standard deviation; the formula divides by `n - 1`, matching the default of `[Double].standardDeviation()`.
-
-`PanelSummary` and `ColumnSummary` are both `Codable`, `Sendable`, and `Equatable`. Crossing a task boundary, persisting a snapshot to disk, or comparing two snapshots from different runs is a direct conformance call — `JSONEncoder().encode(summary)` for the first, `==` for the third. The `CustomStringConvertible` conformance is what makes `print(summary)` reproduce the formatted table.
-
-For deliverables, `ColumnSummary` and `PanelSummary` both expose `markdownTable()` and `csvRows()` formatters. The Markdown variant pastes cleanly into a PR comment or a stakeholder report. The CSV variant moves a snapshot into a spreadsheet or another tool without intermediate parsing:
-
-```swift
-if let score = summary.columns["score"] {
-    print(score.markdownTable())
-    // | Statistic | Value |
-    // | --- | --- |
-    // | count | 5 |
-    // | mean | 80.0 |
-    // | std | 15.8114 |
-    // ...
-}
-
-print(summary.csvRows())
-// column,count,mean,std,min,max
-// score,5,80.0,15.811388300841896,60.0,100.0
-```
-
-### Classification pipeline
-
-`Panel` integrates directly with Quiver's [classification](<doc:Machine-Learning-Primer>) workflow. A typical pipeline scales features, fits a classifier on training data, and evaluates predictions — all while keeping columns aligned. `Pipeline.fit` bundles the scaler and classifier into a single value, so the scaler trained on the training set is the exact scaler applied at predict time:
-
-```swift
-import Quiver
-
-let loans = Panel([
-    ("creditScore", [720.0, 650.0, 580.0, 710.0, 690.0]),
-    ("balance", [15000.0, 78000.0, 42000.0, 8000.0, 55000.0]),
-    ("approved", [1.0, 0.0, 0.0, 1.0, 1.0])
-])
-
-// Split preserves row alignment across all columns
-let (train, test) = loans.trainTestSplit(testRatio: 0.2, seed: 42)
-let featureColumns = ["creditScore", "balance"]
-
-// One call fits the scaler and the classifier together as a Pipeline
-let pipeline = Pipeline.fit(
-    features: train.toMatrix(columns: featureColumns),
-    labels: train.labels("approved")
-)
-
-// Predict against the test set — the pipeline applies its own scaler first
-let predictions = pipeline.predict(test.toMatrix(columns: featureColumns))
-```
-
-`Pipeline.fit` takes it from there: it fits a `StandardScaler` on the raw features, applies it, trains the `GaussianNaiveBayes` model on the scaled data, and returns the two as one bundled value. The `predict` call applies the stored scaler before running the model, which is what keeps every prediction in the same coordinate system the model was trained on. For the full Pipeline surface, see <doc:Pipeline>.
-
-> Tip: `Panel` is a convenience, not a requirement. Every Quiver classifier accepts standard `[[Double]]` matrices and `[Int]` label arrays directly. `Panel` simply keeps columns named and rows aligned — use it when that organization helps, skip it when raw arrays are simpler.
-
-### Charting Panel data with Swift Charts
-
-Swift Charts iterates data and emits one mark per row, and the columns of a Panel slot in directly. The chart-side code asks for two things: an iterable collection and a stable identifier per element. Panel provides both — the row count is known, and each column reads as a parallel `[Double]`:
-
-```swift
-import Charts
-import Quiver
-import SwiftUI
-
-struct WorkoutTrendChart: View {
-    let workouts: Panel
-
-    var body: some View {
-        Chart {
-            ForEach(0..<workouts.rowCount, id: \.self) { row in
-                LineMark(
-                    x: .value("Week", workouts["week"][row]),
-                    y: .value("Heart Rate", workouts["heartRate"][row])
-                )
-            }
-        }
-    }
-}
-```
-
-For categorical aggregations — total revenue per region, mean response time per endpoint, count of events per day — the natural starting point is `groupedData(by:using:)` on a `[Double]` column, which returns sorted `(category, value)` tuples that map straight to a `BarMark`:
-
-```swift
-let sales: [Double]   = [120.0, 95.0, 140.0, 110.0, 85.0, 130.0]
-let regions: [String] = ["North", "South", "North", "South", "South", "North"]
-
-let chartData = sales.groupedData(by: regions, using: .sum)
-// [(category: "North", value: 390.0), (category: "South", value: 290.0)]
-```
-
-The grouping happens once, in Quiver. The chart receives sorted, labeled tuples and renders them — no `Dictionary` to flatten on the chart side, no second pass to deduplicate categories. The full catalog of chart-ready transformations — stacked series, percentile ranks, scaled-to-range outputs, downsampled signals — is documented in <doc:Data-Visualization>.
-
-### Design scope
-
-`Panel` is intentionally focused on numeric columnar data for ML workflows. It is a value type with a fixed schema — columns are defined at creation and all values are `Double`. This focused design keeps `Panel` lightweight and predictable, optimized for the split-scale-train-evaluate cycle that classification workflows require.
+The `Panel` type is a value type with a fixed schema — columns are defined at creation and all values are `Double`. The schema is set once at construction and never mutates, which is what lets every downstream operation rely on column alignment without defensive checks.
 
 Panels conform to Swift's `Equatable` protocol. Two panels are equal when they have the same column names in the same order and the same data in every column. This is useful for verifying that a filtering or splitting operation produced the expected result.
 
+Column order is preserved. Swift dictionaries are unordered, so a panel stores its columns under both a name-keyed map for constant-time lookup and an ordered array for canonical iteration. The order columns were declared in is the order `head` and `summary` render, the order `toMatrix` extracts, and the order any reproducible report should follow. When code needs to walk every column deterministically, it walks the declaration order rather than iterating the underlying dictionary.
+
+### Next steps
+
+With the structure covered, the applied workflows live in <doc:Panel-Workflows>: splitting for machine learning, inspecting data with `head` and typed `summary` values, running a classification pipeline end-to-end, and feeding Panel columns into Swift Charts. For pairwise and matrix-wide Pearson correlation across columns, see <doc:Correlation>.

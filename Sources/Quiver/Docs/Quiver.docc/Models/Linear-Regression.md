@@ -107,9 +107,9 @@ print("RMSE: \(rmse)")  // in the same units as the target
 
 ### Inference with RegressionSummary
 
-`rSquared`, `meanSquaredError`, and `rootMeanSquaredError` describe how close the predictions are to the targets. They do not answer the question that determines whether a feature is worth keeping in the model: is the coefficient on this feature different from zero, given the noise in the data, or did we recover a non-zero weight by chance from a sample that happens to lean that way?
+The `rSquared`, `meanSquaredError`, and `rootMeanSquaredError` properties describe how close the predictions are to the targets. They do not answer the question that determines whether a feature is worth keeping in the model: is the coefficient on this feature different from zero, given the noise in the data, or did we recover a non-zero weight by chance from a sample that happens to lean that way?
 
-`LinearRegression.summary(features:targets:level:)` answers that question. It returns a `RegressionSummary` value carrying everything downstream callers need to interpret a regression fit — the coefficients themselves, one standard error and one t-statistic per coefficient, two-tailed p-values, confidence intervals at the chosen level, R² and adjusted R², the sample size, the residual degrees of freedom, and the residual standard error:
+The `LinearRegression.summary(features:targets:level:)` method answers that question. It returns a `RegressionSummary` value carrying everything downstream callers need to interpret a regression fit — the coefficients themselves, one standard error and one t-statistic per coefficient, two-tailed p-values, confidence intervals at the chosen level, R² and adjusted R², the sample size, the residual degrees of freedom, and the residual standard error:
 
 ```swift
 import Quiver
@@ -169,9 +169,9 @@ The p-value answers the significance question directly. A small p-value means th
 
 Adjusted R² is the companion to plain R². Plain R² always rises as features are added, even when the new feature is pure noise. Adjusted R² subtracts a penalty for the parameter count, so adding a feature that does not pay for itself in residual reduction makes the metric fall. When the two diverge, the model is overfit.
 
-`RegressionSummary` is `Codable`, `Sendable`, and `Equatable`. Persisting a summary to disk for a later regression-diff is `JSONEncoder().encode(report)`. Comparing two summaries for an A/B model comparison is `==`. The `CustomStringConvertible` conformance is what makes `print(report)` reproduce the table. The `markdownTable()` and `csvRows()` formatters expose the same data in formats that paste cleanly into a PR comment or a spreadsheet.
+The `RegressionSummary` type is `Codable`, `Sendable`, and `Equatable`. Persisting a summary to disk for a later regression-diff is `JSONEncoder().encode(report)`. Comparing two summaries for an A/B model comparison is `==`. The `CustomStringConvertible` conformance is what makes `print(report)` reproduce the table. The `markdownTable()` and `csvRows()` formatters expose the same data in formats that paste cleanly into a PR comment or a spreadsheet.
 
-> Important: `summary` throws `MatrixError.singular` when the design matrix `X'X` cannot be inverted — the same condition that makes `fit` throw. Without a stable inverse, the variance-covariance matrix is unreliable and the standard errors that build on it would be silently meaningless. The throw is intentional: the caller learns immediately that inference is not available, rather than reading a struct of corrupted numbers.
+> Important: The `summary` method throws `MatrixError.singular` when the design matrix `X'X` cannot be inverted — the same condition that makes `fit` throw. Without a stable inverse, the variance-covariance matrix is unreliable and the standard errors that build on it would be silently meaningless. The throw is intentional: the caller learns immediately that inference is not available, rather than reading a struct of corrupted numbers.
 
 ### The full pipeline
 
@@ -235,7 +235,7 @@ let r2 = predictions.rSquared(actual: test["price"])
 print("R²: \(r2)")
 ```
 
-`Panel` is entirely optional. The regression model accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for details.
+The `Panel` type is entirely optional. The regression model accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns, including the typed snapshot a panel returns from `summary()`.
 
 > Tip: When scaling is part of the workflow, `Pipeline` bundles the scaler and model into a single value type. It scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
 
@@ -282,7 +282,7 @@ redundant.determinant  // 0.0 → fit will throw MatrixError.singular
 
 ### Safe by design
 
-`LinearRegression` follows the same immutable-struct pattern as `GaussianNaiveBayes`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models conform to Swift's `Equatable` protocol, so verifying two training runs produce the same coefficients is a single expression.
+The `LinearRegression` model follows the same immutable-struct pattern as `GaussianNaiveBayes`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models conform to Swift's `Equatable` protocol, so verifying two training runs produce the same coefficients is a single expression.
 
 ## Topics
 

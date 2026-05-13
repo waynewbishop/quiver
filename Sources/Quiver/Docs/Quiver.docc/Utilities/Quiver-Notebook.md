@@ -116,7 +116,7 @@ print("shape:", panel.shape)
 
 The `guard let` checks that the dataset loaded successfully. If the file is missing or unreadable, the `else` branch runs and we call `exit(0)` to end the program cleanly. (Inside an Xcode project the same check would `return` from a function — in the Notebook there is no enclosing function, so `exit(0)` is the equivalent.)
 
-Once we have a `Panel`, the rest of Quiver is one method call away. We can ask for descriptive statistics, split the data into training and test sets, or pull selected columns into a matrix for a model to learn from. See <doc:Panel> for the full surface and <doc:Train-Test-Split> for the partitioning method.
+Once we have a <doc:Panel>, the rest of Quiver is one method call away. We can ask for descriptive statistics, split the data into training and test sets, or pull selected columns into a matrix for a model to learn from. See <doc:Panel-Workflows> for those applied operations and <doc:Train-Test-Split> for the partitioning method.
 
 > Experiment: **The bundled examples** are the right place to start exploring. Open any one of them and edit it freely — the editor auto-saves to the browser as we type, so refreshing the page or closing and reopening the tab preserves work in progress. See <doc:Notebook-Datasets>.
 

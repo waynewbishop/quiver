@@ -105,7 +105,7 @@ let flagged = features.maskedWithIndices(by: valid.not)
 
 The `maskedWithIndices(by:)` method is useful when we need to know *which* elements matched — for example, annotating outlier points on a chart with their day number or labeling flagged values in a report.
 
-This integrates directly with `Panel`. When filtering a `Panel`, the same mask applies to every column simultaneously, keeping rows aligned across all features:
+This integrates directly with <doc:Panel>. When filtering a panel, the same mask applies to every column simultaneously, keeping rows aligned across all features:
 
 ```swift
 import Quiver
@@ -123,7 +123,7 @@ let cleaned = data.filtered(where: validAge)
 
 ### Conditional selection
 
-`choose(where:otherwise:)` selects elements from one array where a condition is true, and from another array where it is false. This is useful for replacing outliers or imputing default values before training:
+The `choose(where:otherwise:)` method selects elements from one array where a condition is true, and from another array where it is false. This is useful for replacing outliers or imputing default values before training:
 
 ```swift
 import Quiver

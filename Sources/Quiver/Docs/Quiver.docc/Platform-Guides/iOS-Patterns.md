@@ -125,11 +125,11 @@ func summarizeHeartRate(samples: [Double]) -> PanelSummary? {
 }
 ```
 
-`Panel.summary()` returns a `PanelSummary` with count, mean, standard deviation, quartiles, min, max, and IQR — every field a dashboard typically needs in one typed value. The result is `Codable` and `Sendable`, so it crosses task boundaries and persists to disk without ceremony.
+Calling `Panel.summary()` returns a `PanelSummary` with count, mean, standard deviation, quartiles, min, max, and IQR — every field a dashboard typically needs in one typed value. The result is `Codable` and `Sendable`, so it crosses task boundaries and persists to disk without ceremony. Each column's statistics live in a `ColumnSummary` value addressable by field name. See <doc:Panel-Workflows> for the full typed-summary surface.
 
 The source — an `HKQuantitySample` query callback, an array of `CMAccelerometerData` readings, a CSV column the user imported, a list of numeric form entries — becomes a `[Double]` once at the boundary. Everything downstream is the same Quiver code that runs on any other input. Decode at the edge, compute in the middle, render at the end.
 
-> Tip: When the dashboard needs more than a summary — multiple aligned columns, filtering across rows, splitting into train/test subsets, or charting — the full `Panel` surface picks up where `summary()` leaves off. See <doc:Panel> for the type that organizes named columns of `[Double]` data.
+> Tip: When the dashboard needs more than a summary — multiple aligned columns, filtering across rows, splitting into train/test subsets, or charting — the full `Panel` surface picks up where `summary()` leaves off. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the split, summary, classification, and charting patterns.
 
 ### Turning a reading into a percentile
 
@@ -157,7 +157,7 @@ The whole calculation runs on the watch or phone with no network call and no per
 
 ### Small-sample A/B comparisons inside the app
 
-iOS apps that surface their own analytics often have a sample size of ten or twenty observations, not thousands. A workout app showing the user "is your pace this week genuinely faster than last week, or is the gap just noise?" needs a t-test, not a normal z-test, because the sample is small. `Distributions.t.cdf` produces the honest p-value at small `df`.
+iOS apps that surface their own analytics often have a sample size of ten or twenty observations, not thousands. A workout app showing the user "is your pace this week genuinely faster than last week, or is the gap just noise?" needs a t-test, not a normal z-test, because the sample is small. Calling `Distributions.t.cdf` produces the honest p-value at small `df`.
 
 ```swift
 import Quiver

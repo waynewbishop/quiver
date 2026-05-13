@@ -29,6 +29,24 @@ responseTimes.outlierMask(threshold: 2.0)  // [false, false, ..., true] — flag
 
 Mean tells us the center. Standard deviation tells us how spread out the values are. Median is a more robust center when there are outliers. The outlier mask flags values that sit far from the rest. A dashboard, a health summary, a feed that highlights the unusual entry — all of them are built from these four ideas.
 
+Each of those is one number at a time. When we want all of them at once, `summary()` returns a single value that holds them together:
+
+```swift
+if let stats = responseTimes.summary() {
+    stats.count    // 8
+    stats.mean     // 188.125
+    stats.std      // 60.2932
+    stats.min      // 120.0
+    stats.q1       // 156.25
+    stats.median   // 177.5
+    stats.q3       // 198.75
+    stats.max      // 320.0
+    stats.iqr      // 42.5
+}
+```
+
+The returned `ColumnSummary` is the same value a <doc:Panel> produces for a named column — one shape that serves single arrays and labeled tables alike. See <doc:Statistics-Primer> for the math behind each field and <doc:Panel> for the labeled-table version.
+
 For the full vocabulary — variance, quartiles, percentiles, z-scores — see <doc:Statistics-Primer>. For hypothesis testing, confidence intervals, and sampling, see <doc:Inferential-Statistics-Primer>.
 
 ### Treating numbers as positions in space
@@ -64,7 +82,7 @@ let model = try LinearRegression.fit(features: heights, targets: weights)
 model.predict([172.0])   // [70.56] — predicted weight for a 172cm person
 ```
 
-Every Quiver model follows the same shape: `fit` takes the training data, `predict` takes new inputs and returns answers. `LinearRegression` predicts a number, `KNearestNeighbors` predicts a category, `KMeans` finds groupings. The choice between them depends on what we are trying to answer, not on a library to learn — they all read from the same `[Double]` arrays the rest of Quiver uses.
+Every Quiver model follows the same shape: `fit` takes the training data, `predict` takes new inputs and returns answers. The `LinearRegression` model predicts a number, `KNearestNeighbors` predicts a category, and `KMeans` finds groupings. The choice between them depends on what we are trying to answer, not on a library to learn — they all read from the same `[Double]` arrays the rest of Quiver uses.
 
 For the full conceptual frame — features, labels, training, evaluation, overfitting — see <doc:Machine-Learning-Primer>. For the individual models, see <doc:Linear-Regression>, <doc:Nearest-Neighbors-Classification>, and <doc:KMeans-Clustering>.
 

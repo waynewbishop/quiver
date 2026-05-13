@@ -38,18 +38,6 @@ iOS has more sources of data than watchOS and more places to put that data than 
 
 ### Working with sensor inputs and user data
 
-iOS apps have many places to read from but Quiver does not interact with any of these sources directly. The pattern is to decode whatever the source produces into `[Double]` once, near the boundary, and let everything downstream operate on the same plain arrays Quiver computes on.
-
-```swift
-import Quiver
-
-// Once measurements are in a [Double], a Panel turns them into a typed summary
-func summary(of measurements: [Double]) -> PanelSummary? {
-    let panel = Panel([("measurements", measurements)])
-    return panel.summary()
-}
-```
-
-`Panel.summary()` returns a `PanelSummary` with count, mean, standard deviation, quartiles, min, max, and IQR — every field a dashboard typically needs in one typed value. The result is `Codable` and `Sendable`, so it crosses task boundaries and persists to disk without ceremony.
+iOS apps have many places to read from but Quiver does not interact with any of these sources directly. The pattern is to decode whatever the source produces into `[Double]` once, near the boundary, and let everything downstream operate on the same plain arrays Quiver computes on. From there, `Panel(...).summary()` turns the array into a typed snapshot with count, mean, standard deviation, quartiles, min, max, and IQR — every field a dashboard typically needs in one `Codable`, `Sendable` value that crosses task boundaries and persists to disk without ceremony. See <doc:iOS-Patterns> for the HealthKit-flavored worked example.
 
 > Experiment: [quiver-demo-ios](https://github.com/waynewbishop/quiver-demo-ios) is a personal-finance dashboard that pairs three Quiver aggregations with three Swift Charts views — a donut from `groupedData(.percentage)`, a weekly bar from `downsample(.sum)`, and a scatter with outliers flagged by `outlierMask`. Opening the project and changing the spending data in `FinanceModel.swift` shows the same chart shapes adapting to whatever the app already holds.

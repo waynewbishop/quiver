@@ -18,7 +18,7 @@ guard let iris = Dataset.iris else {
 }
 ```
 
-`Dataset` is the name we use to group the bundled datasets together — typing `Dataset.` in the editor brings up an autocomplete menu of every available dataset. The values that come back are safe to pass into SwiftUI views or background work without extra ceremony.
+The `Dataset` type is the name we use to group the bundled datasets together — typing `Dataset.` in the editor brings up an autocomplete menu of every available dataset. The values that come back are safe to pass into SwiftUI views or background work without extra ceremony.
 
 > Tip: For a printable list of every bundled accessor without leaving the editor, call `Dataset.catalog()` — it returns a newline-separated listing suitable for a class handout or an exploration session.
 
@@ -37,21 +37,21 @@ print(iris.description)
 print("shape:", panel.shape)
 ```
 
-`toPanel()` returns the dataset as a Quiver `Panel` — a table of named columns where every column is a vector of `Double` values. `head(n:)` prints the first few rows so we can eyeball what loaded. `description` is a one-paragraph summary of where the dataset came from, what its columns mean, and any cleaning that was applied before bundling — useful to read out loud at the start of a lecture. `shape` returns the row and column counts as a tuple, so a `print` confirms the load matches expectations before any modeling work begins.
+The `toPanel()` method returns the dataset as a Quiver <doc:Panel> — a table of named columns where every column is a vector of `Double` values. The `head(n:)` method prints the first few rows so we can eyeball what loaded. The `description` property is a one-paragraph summary of where the dataset came from, what its columns mean, and any cleaning that was applied before bundling — useful to read out loud at the start of a lecture. The `shape` property returns the row and column counts as a tuple, so a `print` confirms the load matches expectations before any modeling work begins.
 
 ### The bundled tabular datasets
 
 Five tabular datasets ship with the Notebook. Each is paired with a target column suitable for either regression or classification.
 
-`Dataset.iris` — 150 rows, 5 columns. Classification. Label column: `species` (encoded alphabetically as setosa→0, versicolor→1, virginica→2). The classic introductory classification dataset, originally collected by Edgar Anderson and published by R. A. Fisher in 1936.
+The `Dataset.iris` accessor returns 150 rows, 5 columns. Classification. Label column: `species` (encoded alphabetically as setosa→0, versicolor→1, virginica→2). The classic introductory classification dataset, originally collected by Edgar Anderson and published by R. A. Fisher in 1936.
 
-`Dataset.titanic` — 889 rows, 8 columns. Classification. Label column: `Survived` (0/1). Cleaned passenger manifest from the 1912 disaster. Useful for teaching mixed numeric and categorical features, missing-value handling, and class-imbalance trade-offs against a familiar binary outcome.
+The `Dataset.titanic` accessor returns 889 rows, 8 columns. Classification. Label column: `Survived` (0/1). Cleaned passenger manifest from the 1912 disaster. Useful for teaching mixed numeric and categorical features, missing-value handling, and class-imbalance trade-offs against a familiar binary outcome.
 
-`Dataset.californiaHousing` — 20,640 rows, 10 columns. Regression. Target column: `median_house_value`. 1990 California census districts. The standard introductory regression dataset for teaching feature scaling, geographic features, and the gap between linear and tree-based models on real-world tabular data.
+The `Dataset.californiaHousing` accessor returns 20,640 rows, 10 columns. Regression. Target column: `median_house_value`. 1990 California census districts. The standard introductory regression dataset for teaching feature scaling, geographic features, and the gap between linear and tree-based models on real-world tabular data.
 
-`Dataset.bikeSharing` — 731 rows, 16 columns. Regression. Target column: `cnt` (total daily rides). Daily Capital Bikeshare ride counts paired with weather, calendar, and season features. A clean introduction to time-aware regression and to the seasonality patterns that make naive splits leak information.
+The `Dataset.bikeSharing` accessor returns 731 rows, 16 columns. Regression. Target column: `cnt` (total daily rides). Daily Capital Bikeshare ride counts paired with weather, calendar, and season features. A clean introduction to time-aware regression and to the seasonality patterns that make naive splits leak information.
 
-`Dataset.studentPerformance` — 395 rows, 33 columns. Regression (or classification on a thresholded `G3`). Target column: `G3` (final grade, 0–20). Portuguese secondary-school students with family, study, and lifestyle features alongside three sequential grade columns (G1, G2, G3). Useful for teaching feature selection and the leakage trap of training on G1 and G2 to predict G3.
+The `Dataset.studentPerformance` accessor returns 395 rows, 33 columns. Regression (or classification on a thresholded `G3`). Target column: `G3` (final grade, 0–20). Portuguese secondary-school students with family, study, and lifestyle features alongside three sequential grade columns (G1, G2, G3). Useful for teaching feature selection and the leakage trap of training on G1 and G2 to predict G3.
 
 ### Working with categorical columns
 
@@ -149,13 +149,13 @@ print("shape:", myData.shape)
 
 The resulting dataset takes its name from the file name without the extension. Each column in the CSV is read according to its type. Numeric columns copy straight across as numbers. String columns become numeric class indices the same way iris's `species` column does, with the original strings preserved in the categorical mapping. Date columns convert to Unix timestamps (the number of seconds since January 1, 1970), so a calendar date becomes a single number a model can work with. Missing cells become `Double.nan`. Any column whose values do not match one of these types is skipped with a warning rather than failing the entire load.
 
-`Dataset.load(path:)` returns `nil` only if the CSV cannot be parsed at all. The underlying error is written to standard error so the cause is visible in the Notebook's console pane.
+The `Dataset.load(path:)` method returns `nil` only if the CSV cannot be parsed at all. The underlying error is written to standard error so the cause is visible in the Notebook's console pane.
 
 > Tip: Skipped columns produce a warning on standard error but the load still succeeds with the remaining columns. Check `columnNames` after loading a custom CSV to confirm every expected column made it in — a silently dropped column is a common cause of "my model is missing a feature."
 
 ### Catalog
 
-`Dataset.catalog()` returns a newline-separated listing of every bundled accessor. Useful at the start of an exploration session, or in a class handout that prints the full menu:
+The `Dataset.catalog()` method returns a newline-separated listing of every bundled accessor. Useful at the start of an exploration session, or in a class handout that prints the full menu:
 
 ```swift
 print(Dataset.catalog())
@@ -172,6 +172,7 @@ print(Dataset.catalog())
 ### Related
 - <doc:Quiver-Notebook>
 - <doc:Panel>
+- <doc:Panel-Workflows>
 - <doc:Train-Test-Split>
 - <doc:Similarity-Operations>
 - <doc:Semantic-Search>

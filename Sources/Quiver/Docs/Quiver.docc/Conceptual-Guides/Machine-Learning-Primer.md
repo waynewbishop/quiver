@@ -20,7 +20,7 @@ let data = Panel([
 ])
 ```
 
-Here, `creditScore` and `balance` are features, the information the model receives as input. `approved` is the label, the outcome we want the model to learn to predict. The model never sees the label at prediction time; it must infer the answer from the features alone.
+Here, `creditScore` and `balance` are features, the information the model receives as input. The `approved` column is the label, the outcome we want the model to learn to predict. The model never sees the label at prediction time; it must infer the answer from the features alone.
 
 > Note: A good mental model is features = question, label = answer. We train the model on many question-answer pairs, then ask it new questions and check whether it gives the right answers.
 
@@ -44,7 +44,7 @@ let (train, test) = features.trainTestSplit(testRatio: 0.2, seed: 42)
 // test:  2 rows for evaluation
 ```
 
-The `seed` parameter ensures the same split every time, making experiments reproducible. When using a `Panel`, the split is atomic, so all columns are partitioned by the same rows, so features and labels stay aligned automatically.
+The `seed` parameter ensures the same split every time, making experiments reproducible. When using a <doc:Panel>, the split is atomic, so all columns are partitioned by the same rows, so features and labels stay aligned automatically.
 
 ### Stratified splitting
 
@@ -76,7 +76,7 @@ let scaledTrain = scaler.transform(trainFeatures)
 let scaledTest = scaler.transform(testFeatures)
 ```
 
-This pattern — fit once on training data, apply everywhere — prevents leakage and gives us an honest evaluation. `Pipeline` enforces this automatically by bundling the scaler and model together, so the caller passes raw features and Pipeline handles scaling internally. See <doc:Pipeline> for details.
+This pattern — fit once on training data, apply everywhere — prevents leakage and gives us an honest evaluation. The `Pipeline` type enforces this automatically by bundling the scaler and model together, so the caller passes raw features and Pipeline handles scaling internally. See <doc:Pipeline> for details.
 
 ### Feature engineering and scaling
 
@@ -166,7 +166,7 @@ print(predictions)  // [0, 1]
 
 The model uses what it learned during fitting but never modifies itself. Calling `predict` twice on the same input always gives the same result.
 
-Some classifiers can also return **calibrated probabilities** — a probability distribution across classes that sums to `1.0` for each sample, useful for cost-sensitive decisions and threshold tuning. `GaussianNaiveBayes.predictProbabilities(_:)` exposes this for the Naive Bayes classifier; see <doc:Naive-Bayes>.
+Some classifiers can also return **calibrated probabilities** — a probability distribution across classes that sums to `1.0` for each sample, useful for cost-sensitive decisions and threshold tuning. The `GaussianNaiveBayes.predictProbabilities(_:)` method exposes this for the Naive Bayes classifier; see <doc:Naive-Bayes>.
 
 ### Evaluating models
 

@@ -135,7 +135,7 @@ let cm = predictions.confusionMatrix(actual: test.labels("churned"))
 print("Accuracy: \(cm.accuracy)")
 ```
 
-`Panel` is entirely optional. The classifier accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for details.
+The `Panel` type is entirely optional. The classifier accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns, including the typed snapshot a panel returns from `summary()`.
 
 ### Structured results with classify
 
@@ -159,7 +159,7 @@ Each `Classification` result conforms to `Sequence` — the same Swift protocol 
 
 ### Safe by design
 
-`GaussianNaiveBayes` is a Swift struct, which means it cannot be accidentally changed after creation. This design prevents three common mistakes:
+The `GaussianNaiveBayes` model is a Swift struct, which means it cannot be accidentally changed after creation. This design prevents three common mistakes:
 
 **The model is always ready to use.** Calling `fit(features:labels:)` returns a fully trained model in one step. There is no way to create an empty model and forget to train it before making predictions.
 

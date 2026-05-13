@@ -178,17 +178,17 @@ let model = KMeans.fit(data: scaler.transform(features), k: 3, seed: 42)
 print(model.labels)
 ```
 
-`Panel` is entirely optional. The clustering algorithm accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for details.
+The `Panel` type is entirely optional. The clustering algorithm accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns, including the typed snapshot a panel returns from `summary()`.
 
 ### When to use K-Means
 
-K-Means works best when clusters are roughly spherical and similarly sized, the number of clusters is known or can be estimated, and features are continuous and scaled to similar ranges. `StandardScaler` is the recommended choice for distance-based algorithms because it centers each feature at zero with unit variance, preventing high-magnitude features from dominating the distance calculation. `FeatureScaler` (min-max scaling) is an alternative when a bounded [0, 1] range is preferred. It is a natural fit for customer segmentation, anomaly detection, and exploring structure in unlabeled data.
+K-Means works best when clusters are roughly spherical and similarly sized, the number of clusters is known or can be estimated, and features are continuous and scaled to similar ranges. The `StandardScaler` type is the recommended choice for distance-based algorithms because it centers each feature at zero with unit variance, preventing high-magnitude features from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred. It is a natural fit for customer segmentation, anomaly detection, and exploring structure in unlabeled data.
 
 K-Means struggles with non-spherical cluster shapes (elongated, curved, or nested), clusters of very different sizes or densities, and categorical data. It also cannot determine the "right" `k` automatically — the elbow method helps, but the final choice requires domain knowledge. Note that K-Means assigns every point to a cluster — there are no unassigned outliers, so unusual data points will be forced into the nearest group.
 
 ### Safe by design
 
-`KMeans` follows the same immutable-struct pattern as `GaussianNaiveBayes`, `LinearRegression`, and `KNearestNeighbors`. The model is always ready to use after `fit`, the training data stays separate from the result, and reproducible seeds ensure consistent results across runs.
+The `KMeans` model follows the same immutable-struct pattern as `GaussianNaiveBayes`, `LinearRegression`, and `KNearestNeighbors`. The model is always ready to use after `fit`, the training data stays separate from the result, and reproducible seeds ensure consistent results across runs.
 
 Both `KMeans` and `Cluster` conform to Swift's `Equatable` protocol. When two runs use the same data and the same seed, the results are guaranteed identical:
 

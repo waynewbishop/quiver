@@ -59,7 +59,7 @@ The value of `k` controls the tradeoff between sensitivity and smoothness. A sma
 
 Quiver supports two distance metrics via the `DistanceMetric` enum:
 
-**Euclidean distance** (default) measures straight-line distance between points. It works well when features have similar scales, but can be dominated by high-magnitude features when scales differ. `StandardScaler` is the recommended choice for distance-based classifiers because it centers each feature at zero with unit variance, preventing any single feature from dominating the distance calculation. `FeatureScaler` (min-max scaling) is an alternative when a bounded [0, 1] range is preferred:
+**Euclidean distance** (default) measures straight-line distance between points. It works well when features have similar scales, but can be dominated by high-magnitude features when scales differ. The `StandardScaler` type is the recommended choice for distance-based classifiers because it centers each feature at zero with unit variance, preventing any single feature from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred:
 
 ```swift
 import Quiver
@@ -181,7 +181,7 @@ let cm = predictions.confusionMatrix(actual: test.labels("species"))
 print("Accuracy: \(cm.accuracy)")
 ```
 
-`Panel` is entirely optional. The classifier accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for details.
+The `Panel` type is entirely optional. The classifier accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns, including the typed snapshot a panel returns from `summary()`.
 
 > Tip: When scaling is part of the workflow, `Pipeline` bundles the scaler and model into a single value type. It scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
 
@@ -217,7 +217,7 @@ Nearest Neighbors struggles with large datasets (prediction scans every training
 
 ### Safe by design
 
-`KNearestNeighbors` follows the same immutable-struct pattern as `GaussianNaiveBayes` and `LinearRegression`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models and their `Classification` results also conform to Swift's `Equatable` protocol.
+The `KNearestNeighbors` model follows the same immutable-struct pattern as `GaussianNaiveBayes` and `LinearRegression`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models and their `Classification` results also conform to Swift's `Equatable` protocol.
 
 ## Topics
 

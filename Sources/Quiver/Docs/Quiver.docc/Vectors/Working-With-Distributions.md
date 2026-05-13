@@ -1,6 +1,6 @@
 # Working with Distributions
 
-Evaluate probability densities, cumulative probabilities, and quantiles for named distributions.
+Evaluating probability densities, cumulative probabilities, and quantiles for the normal, Student's t, and chi-squared distributions.
 
 ## Overview
 
@@ -8,7 +8,7 @@ A probability distribution describes how likely each possible value of a random 
 
 The `Distributions` namespace groups these functions by distribution name. Quiver ships the normal distribution at `Distributions.normal`, the Student's t-distribution at `Distributions.t`, and the chi-squared distribution at `Distributions.chiSquared`. Each call passes the distribution parameters directly. There is no fitted-distribution object to construct, no shared state to mis-configure, and every call site is self-documenting.
 
-Three functions answer three questions about a distribution. `pdf` gives the height of the curve at a point, indicating where probability is concentrated. `cdf` gives the probability of falling at or below a value, useful for "what fraction of the distribution sits below this?" `quantile` inverts `cdf` to find the cutoff for a given probability, useful for "what value marks the 97.5th percentile?" The three calls below demonstrate each function on a standard normal:
+Three functions answer three questions about a distribution. The `pdf` function gives the height of the curve at a point, indicating where probability is concentrated. The `cdf` function gives the probability of falling at or below a value, useful for "what fraction of the distribution sits below this?" The `quantile` function inverts `cdf` to find the cutoff for a given probability, useful for "what value marks the 97.5th percentile?" The three calls below demonstrate each function on a standard normal:
 
 ```swift
 import Quiver
@@ -39,7 +39,7 @@ let peak = Distributions.normal.pdf(x: 0, mean: 0, standardDeviation: 1)  // ≈
 let oneSigma = Distributions.normal.pdf(x: 1, mean: 0, standardDeviation: 1)  // ≈ 0.2420
 ```
 
-The log-density returns the natural log of the same quantity. Working in log-space is the standard tactic for numerical work that combines many density values together. Products become sums, and densities far in the tail that would round to zero in linear space stay representable. `GaussianNaiveBayes` calls `Distributions.normal.logPDF` directly during prediction, the same implementation we expose publicly. Any classifier, kernel density estimator, or probabilistic model we write next can use the same well-tested function without reimplementing the math.
+The log-density returns the natural log of the same quantity. Working in log-space is the standard tactic for numerical work that combines many density values together. Products become sums, and densities far in the tail that would round to zero in linear space stay representable. The `GaussianNaiveBayes` model calls `Distributions.normal.logPDF` directly during prediction, the same implementation we expose publicly. Any classifier, kernel density estimator, or probabilistic model we write next can use the same well-tested function without reimplementing the math.
 
 ```swift
 import Quiver
@@ -169,7 +169,7 @@ A chi-squared statistic of `2.8` produces an upper-tail probability around `0.73
 
 ### Why the optional return
 
-Every function in `Distributions` returns `Double?`. The optional makes out-of-domain input a `nil` rather than a runtime trap or a silently propagating `NaN`. The conditions are distribution-specific but consistent: a non-positive standard deviation for the normal, non-positive degrees of freedom for t and chi-squared, a probability outside `(0, 1)` for any `quantile` call, and any computation whose result is non-finite. This matches the pattern used by `mean`, `median`, and other Quiver statistics. Invalid input is handled at the call site with `if let` or `guard let`, not buried inside the result.
+Every function in `Distributions` returns `Double?`. The optional makes out-of-domain input a `nil` rather than a runtime trap or a silently propagating `NaN`. The conditions are distribution-specific but consistent: a non-positive standard deviation for the normal, non-positive degrees of freedom for t and chi-squared, a probability outside `(0, 1)` for any `quantile` call, and any computation whose result is non-finite. This matches the pattern used by `mean`, `median`, and other Quiver statistics. Invalid input is handled at the call site with `if let` or `guard let`, not buried inside the result. See <doc:Numerical-Literacy> for the broader distinction between `nil` (no data) and `NaN` (math undefined) across Quiver.
 
 ```swift
 import Quiver

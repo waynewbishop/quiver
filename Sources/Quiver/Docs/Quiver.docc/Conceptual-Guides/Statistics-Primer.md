@@ -61,6 +61,15 @@ scores.variance()          // 44.84 — the same information in squared units
 
 A low standard deviation means the values cluster tightly around the mean. A high standard deviation means they are scattered. Two classrooms with the same average test score can tell completely different stories once the standard deviation is known.
 
+There are two formulas for standard deviation, and Quiver picks one by default. The **sample** formula divides by `n − 1` and corrects for the fact that the sample mean is itself an estimate computed from the same data. The **population** formula divides by `n` and is appropriate only when the data in hand is the entire population, not a draw from it. Quiver defaults to the sample formula because most data analysis works with samples, not populations.
+
+```swift
+scores.standardDeviation()         // 6.6962 — sample (the default)
+scores.standardDeviation(ddof: 0)  // 6.2638 — population
+```
+
+The same `n − 1` choice flows through everything that depends on standard deviation, including the `std` field of the typed snapshot we will meet at the end of this primer. Knowing the convention up front prevents the inevitable confusion when a value from Quiver disagrees with a value from a textbook that defaults the other way.
+
 ### The five-number summary
 
 Mean and median describe a single point. They compress the whole dataset into one number, which is useful but loses information. A more complete picture comes from **quartiles** — the four cut points that divide the data into four equal-sized groups.
@@ -83,7 +92,31 @@ if let q = responseTimes.quartiles() {
 
 The return type is `Quartiles`, a typed value with `min`, `q1`, `median`, `q3`, `max`, and `iqr` as named properties. Read them directly when only one is needed (`q.median`, `q.iqr`), or print the whole value for the full summary.
 
-Quartiles are more robust than mean and standard deviation when the data is skewed, because they describe the distribution by *position* rather than by *distance from a center*. The single slow response at 320ms does not distort Q1 or Q3. For the same reason, box plots — a common visualization in dashboards — draw their boxes at Q1 and Q3 and their whiskers from the min and max.
+Quartiles are computed by linear interpolation between adjacent order statistics. For a sorted array of length `n`, the `p`-th percentile lives at index `(p / 100) · (n − 1)`. When that index falls between two integers, the result is the straight-line blend of the two surrounding values. Other tools use other quartile conventions, so a textbook reporting different quartile values for the same input is not contradicting Quiver — it is using a different definition. When `n = 1`, every position collapses to the single value and `iqr` is `0`.
+
+Quartiles are more robust than mean and standard deviation when the data is skewed, because they describe the distribution by *position* rather than by *distance from a center*. The single slow response at 320ms does not distort Q1 or Q3. For the same reason, box plots — a common visualization in dashboards — read their geometry directly from these positions: the box spans Q1 to Q3, a line at the median sits inside, and the whiskers reach the extreme values that fall within `1.5 · iqr` of the box. Anything farther is drawn as a separate point to flag it as an outlier.
+
+> Tip: <doc:Data-Visualization> builds a Swift Charts box plot from the same `summary()` call on this dataset, with each `ColumnSummary` field mapped to one chart mark.
+
+When the goal is the full descriptive picture — mean, spread, and the five-number summary together — `summary()` returns all of them as a single typed value:
+
+```swift
+if let stats = responseTimes.summary() {
+    stats.count    // 8
+    stats.mean     // 188.125
+    stats.std      // 60.2932
+    stats.min      // 120.0
+    stats.q1       // 156.25
+    stats.median   // 177.5
+    stats.q3       // 198.75
+    stats.max      // 320.0
+    stats.iqr      // 42.5
+}
+```
+
+The returned `ColumnSummary` is the same value a <doc:Panel> produces for each of its named columns. One shape serves both single arrays and labeled tables, so a dashboard that summarizes a vector of response times and a dashboard that summarizes a panel of named metrics read the same statistics off the same type.
+
+The `summary()` method returns `nil` for an empty array, matching the contract of `mean()`, `median()`, `standardDeviation()`, and `quartiles()`. An empty column has no descriptive statistics to report. When a column contains `NaN`, `summary()` does return a value, but the `mean`, `std`, and any quartile touching the `NaN` will themselves be `NaN`; the `count` still reports the number of stored elements. The two signals — `nil` for missing data, `NaN` for undefined math — are described together on <doc:Numerical-Literacy>.
 
 ### The z-score
 
@@ -143,27 +176,4 @@ Everything up to this point has been about describing the data we already have. 
 
 A different kind of question shows up the moment we start treating our data as evidence about something larger. An A/B test in an iOS app captures session times for the few thousand users who happened to land in the variant group — but the product decision rides on every user who will ever touch that flow. A week of accelerometer readings from one watch reflects one wearer's gait, but we want a threshold that will work for the next wearer too. In each case the dataset in hand is a sample, and the thing we actually care about is the population the sample came from. **Inferential statistics** is the toolkit for reasoning across that gap. See <doc:Inferential-Statistics-Primer> for sampling theory, hypothesis testing, confidence intervals, and resampling.
 
-For descriptive statistics across multiple named columns at once, `Panel.summary()` returns a typed `PanelSummary` carrying count, mean, standard deviation, quartiles, min, max, and IQR for every column in a single `Codable` value. The same surface works on a single `[Double]` through `toPanel()` — `scores.toPanel().summary()` returns a one-column `PanelSummary` with all nine fields without writing the literal constructor:
-
-```swift
-import Quiver
-
-let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0]
-
-// Single array — toPanel() bridges into the typed-summary surface
-print(scores.toPanel("scores").summary())
-// column  count     mean     std   min   max
-// ------------------------------------------
-// scores      8  78.3750  6.6962  68.0  88.0
-
-// Multiple named columns — same call, broader output
-let students = Panel([
-    ("score", scores),
-    ("study_hours", [2.0, 3.0, 4.0, 4.0, 5.0, 5.0, 6.0, 7.0])
-])
-print(students.summary())
-// column       count     mean     std   min   max
-// -----------------------------------------------
-// score            8  78.3750  6.6962  68.0  88.0
-// study_hours      8   4.5000  1.6036   2.0   7.0
-```
+The same `summary()` surface scales from a single array to a labeled table. Calling it on a `Panel` returns one snapshot per column with the same nine fields, indexed by column name. See <doc:Panel-Workflows> for the applied workflow that uses `summary()` across a multi-column panel during an ML pipeline.

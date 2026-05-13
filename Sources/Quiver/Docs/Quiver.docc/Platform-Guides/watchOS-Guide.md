@@ -48,7 +48,7 @@ The baseline is a snapshot, not a model. The user's fitness, sleep, or focus pat
 
 ### Ranking a sample against history
 
-With a baseline in hand, every new sample becomes a question — where does *this* reading fall in the distribution of the user's history? Two Quiver methods handle the two common shapes of that question. `percentileRank` gives a 0-to-100 position; the baseline's `standardDeviation` lets us compute a z-score.
+With a baseline in hand, every new sample becomes a question — where does *this* reading fall in the distribution of the user's history? Two Quiver methods handle the two common shapes of that question. The `percentileRank` method gives a 0-to-100 position; the baseline's `standardDeviation` lets us compute a z-score.
 
 ```swift
 import Quiver
@@ -86,7 +86,7 @@ The whole calculation runs on the watch with no network call and no permissions.
 
 Where `PersonalBaseline` summarized one signal against a user's history, the next pattern handles a different question: given several signals at once, which effort regime is the user in? The answer comes from a fit-once-predict-many classifier trained on a small labeled multi-signal dataset. The training data is collected during a short calibration session — the user runs at a known effort for a minute, taps the effort level on screen, and the app stores the multi-signal samples that arrived during that minute. A few minutes of calibration produces a few dozen labeled samples that cover every effort regime the app cares about.
 
-During the calibration session, each sensor stream is appended to its own buffer as new samples arrive (`heartRate` from `HKAnchoredObjectQuery`, `cadence` from `HKQuantityType.runningStrideLength`, `pace` from `HKQuantityType.runningSpeed`), and the user's tap on the effort label is appended in parallel. At session end, the four aligned buffers go into a `Panel` together:
+During the calibration session, each sensor stream is appended to its own buffer as new samples arrive (`heartRate` from `HKAnchoredObjectQuery`, `cadence` from `HKQuantityType.runningStrideLength`, `pace` from `HKQuantityType.runningSpeed`), and the user's tap on the effort label is appended in parallel. At session end, the four aligned buffers go into a <doc:Panel> together — keeping row alignment across every column without manual bookkeeping:
 
 ```swift
 import Quiver
@@ -107,7 +107,7 @@ let labels = training.labels("effort")
 let pipeline = Pipeline.fit(features: features, labels: labels, k: 3)
 ```
 
-The four buffers stay aligned because the app appends to all four on the same tick — each row across the Panel is one sample in time. `Panel` then takes over the alignment guarantee: `toMatrix(columns:)` returns the feature matrix in the order requested, and `labels(_:)` returns the effort column as `[Int]`. `Pipeline.fit` takes it from there — it fits a `StandardScaler` on the raw features, applies it, trains the `KNearestNeighbors` model on the scaled data, and returns the two as one bundled value. KNN scales linearly with the training set, so a few dozen calibration samples on Apple Watch silicon is comfortable.
+The four buffers stay aligned because the app appends to all four on the same tick — each row across the Panel is one sample in time. The `Panel` type then takes over the alignment guarantee: `toMatrix(columns:)` returns the feature matrix in the order requested, and `labels(_:)` returns the effort column as `[Int]`. Calling `Pipeline.fit` takes it from there — it fits a `StandardScaler` on the raw features, applies it, trains the `KNearestNeighbors` model on the scaled data, and returns the two as one bundled value. KNN scales linearly with the training set, so a few dozen calibration samples on Apple Watch silicon is comfortable.
 
 During the session, every new reading runs through the same pipeline:
 
@@ -118,7 +118,7 @@ func classify(_ sample: [Double]) -> Int {
 }
 ```
 
-`Pipeline.predict` applies the stored `StandardScaler` to the raw sample and then runs the model on the scaled result. That single call is what keeps every prediction in the same coordinate system the model was trained on. Because the pipeline is `Codable`, the fitted scaler and model travel together when written to `Documents/` at session end and decoded at the next launch — no risk of a mismatched pair from saving them separately. For the full Pipeline surface, see <doc:Pipeline>.
+Calling `Pipeline.predict` applies the stored `StandardScaler` to the raw sample and then runs the model on the scaled result. That single call is what keeps every prediction in the same coordinate system the model was trained on. Because the pipeline is `Codable`, the fitted scaler and model travel together when written to `Documents/` at session end and decoded at the next launch — no risk of a mismatched pair from saving them separately. For the full Pipeline surface, see <doc:Pipeline>.
 
 ### Integrating with a live workout session
 
