@@ -783,6 +783,57 @@ public extension Array where Element: FloatingPoint {
         return dotProduct / magnitudeProduct
     }
 
+    /// Returns the Pearson correlation coefficient between two vectors.
+    ///
+    /// Measures how closely two vectors move together along a straight line. Values range from
+    /// -1 (perfect inverse relationship) through 0 (no linear relationship) to 1 (perfect
+    /// positive relationship). Unlike cosine similarity, correlation is invariant to shifts
+    /// in either vector — adding a constant to every element leaves the result unchanged.
+    ///
+    /// Mathematical operation:
+    /// ```
+    /// r(x, y) = cov(x, y) / (sd(x) × sd(y))
+    /// ```
+    ///
+    /// The `ddof` parameter cancels in the ratio, so sample-versus-population standard
+    /// deviation does not affect the result.
+    ///
+    /// Example:
+    /// ```swift
+    /// let x = [1.0, 2.0, 3.0, 4.0, 5.0]
+    /// let y = [2.0, 4.0, 5.0, 4.0, 5.0]
+    /// x.correlation(with: y)  // ≈ 0.7746
+    /// ```
+    ///
+    /// A column with zero variance produces a correlation of `NaN`, since the denominator
+    /// is undefined. The vectors must have the same length and at least one element; an
+    /// empty or mismatched call returns `0.0`, matching the convention used by `dot(_:)`.
+    ///
+    /// - Parameter other: The vector to correlate against (must have the same number of elements)
+    /// - Returns: The Pearson correlation coefficient, in the range [-1, 1], or `NaN` if either vector has zero variance
+    func correlation(with other: [Element]) -> Element {
+        guard count == other.count, !isEmpty else { return Element.zero }
+
+        let n = Element(count)
+        let meanX = self.reduce(0, +) / n
+        let meanY = other.reduce(0, +) / n
+
+        var numerator: Element = 0
+        var denomX: Element = 0
+        var denomY: Element = 0
+
+        for i in 0..<count {
+            let diffX = self[i] - meanX
+            let diffY = other[i] - meanY
+            numerator += diffX * diffY
+            denomX += diffX * diffX
+            denomY += diffY * diffY
+        }
+
+        guard denomX > 0 && denomY > 0 else { return Element.nan }
+        return numerator / Foundation.sqrt(denomX * denomY)
+    }
+
     /// Calculates the scalar projection of this vector onto another vector.
     ///
     /// The scalar projection represents the signed length of the shadow cast by this vector
