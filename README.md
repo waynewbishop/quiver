@@ -20,7 +20,9 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
 
 * **Statistics**
   * Central tendency (mean, median, min, max, argmin, argmax)
-  * Dispersion (variance, standard deviation, quartiles, percentiles)
+  * Dispersion (variance, standard deviation, standard error, quartiles, percentiles) — `ddof=1` sample-statistics convention by default
+  * Typed snapshots — `[Double].summary()` returns a `ColumnSummary` with the nine-field descriptive picture; `Panel.summary()` returns a `PanelSummary` keyed by column name
+  * Pearson correlation — pairwise `correlation(with:)` on two arrays, matrix-wide `correlationMatrix()` on `[[Double]]`, labeled `Panel.correlationMatrix()`
   * Cumulative operations (sum, product)
   * Outlier detection (z-score method)
   * Probability distributions — normal `pdf`, `logPDF`, `cdf`, and `quantile` via `Distributions.normal`
@@ -39,10 +41,11 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
   * `Fraction` type for exact rational representation of matrix and vector results
 
 * **Data Preparation**
+  * Panel — named-column data structure with `summary()`, `unique()`, `valueCounts()`, `sortedBy()`, `correlationMatrix()`, atomic train/test splitting, and conversion to matrices for model input
+  * Pipeline — bundles a `StandardScaler` and a model into one value type, so the scaler trained on the training set is the exact scaler applied at predict time
+  * Feature scaling — `StandardScaler` for z-score scaling (default for distance-based models) and `FeatureScaler` for min-max scaling, both with fit-then-transform
   * Train/test split with reproducible seeded shuffling
   * Stratified splitting preserving class proportions
-  * Feature scaling (min-max normalization, fit-then-transform)
-  * Panel (named-column data structure for aligned splitting)
   * Boolean masking and conditional selection
   * Class distribution, imbalance ratio, and oversampling for imbalanced data
 
@@ -130,6 +133,10 @@ let smoothed = sales.rollingMean(window: 3)
 let outliers = sales.outlierMask(threshold: 1.2).trueIndices
 ```
 
+## Quiver Notebook
+
+[Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) is a browser-based Swift editor with Quiver and a library of teaching datasets pre-loaded. Write Swift snippets against bundled datasets like iris, Titanic, California Housing, and student-performance — no Xcode project, no package setup, no CSV hunting. Snippets carry over unchanged into an iOS, watchOS, or Vapor app, so the same code that taught the concept ships the feature. See the [Quiver Notebook README](https://github.com/waynewbishop/quiver-notebook) for setup.
+
 ## Design Philosophy
 
 * **Swift-first**: Extends standard Swift arrays — no custom container types, no conversion overhead
@@ -147,7 +154,7 @@ let outliers = sales.outlierMask(threshold: 1.2).trueIndices
 
 ## Cookbook
 
-[42 interactive recipes](https://github.com/waynewbishop/quiver-cookbook) for learning vector math, statistics, and ML models in Swift. Each recipe is a single `.swift` file optimized for the Xcode `#Playground` macro — clone the repo, open in Xcode, and start experimenting.
+[59 interactive recipes](https://github.com/waynewbishop/quiver-cookbook) for learning vector math, statistics, and ML models in Swift. Each recipe is a single `.swift` file optimized for the Xcode `#Playground` macro — clone the repo, open in Xcode, and start experimenting.
 
 ## Documentation
 
