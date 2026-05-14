@@ -16,15 +16,20 @@ import XCTest
 
 final class ArrayReshapeTests: XCTestCase {
 
-    // Reshape a 1D vector into a 2D matrix
+    // Reshape a 1D vector into 2D shapes — multi-row, single-row, single-column
     func testReshaped1Dto2D() {
-        let vector = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
-        let matrix = vector.reshaped(rows: 2, columns: 3)
-
-        XCTAssertEqual(matrix, [
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0]
-        ])
+        XCTAssertEqual(
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0].reshaped(rows: 2, columns: 3),
+            [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+        )
+        XCTAssertEqual(
+            [1.0, 2.0, 3.0, 4.0].reshaped(rows: 1, columns: 4),
+            [[1.0, 2.0, 3.0, 4.0]]
+        )
+        XCTAssertEqual(
+            [1.0, 2.0, 3.0, 4.0].reshaped(rows: 4, columns: 1),
+            [[1.0], [2.0], [3.0], [4.0]]
+        )
     }
 
     // Reshape a 2D matrix into different 2D dimensions
@@ -42,15 +47,16 @@ final class ArrayReshapeTests: XCTestCase {
         ])
     }
 
-    // Flatten a 2D matrix into a 1D vector
+    // Flatten a 2D matrix into a 1D vector — non-empty and empty cases
     func testFlattened() {
         let matrix: [[Double]] = [
             [1.0, 2.0, 3.0],
             [4.0, 5.0, 6.0]
         ]
-        let flat = matrix.flattened()
+        XCTAssertEqual(matrix.flattened(), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
 
-        XCTAssertEqual(flat, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+        let empty: [[Double]] = []
+        XCTAssertEqual(empty.flattened(), [])
     }
 
     // Flatten then reshape returns the original matrix
@@ -62,30 +68,6 @@ final class ArrayReshapeTests: XCTestCase {
         let roundTrip = original.flattened().reshaped(rows: 2, columns: 3)
 
         XCTAssertEqual(roundTrip, original)
-    }
-
-    // Reshape to a single-row matrix
-    func testReshapeToSingleRow() {
-        let vector = [1.0, 2.0, 3.0, 4.0]
-        let row = vector.reshaped(rows: 1, columns: 4)
-
-        XCTAssertEqual(row, [[1.0, 2.0, 3.0, 4.0]])
-    }
-
-    // Reshape to a single-column matrix
-    func testReshapeToSingleColumn() {
-        let vector = [1.0, 2.0, 3.0, 4.0]
-        let column = vector.reshaped(rows: 4, columns: 1)
-
-        XCTAssertEqual(column, [[1.0], [2.0], [3.0], [4.0]])
-    }
-
-    // Flatten an empty matrix
-    func testFlattenedEmpty() {
-        let empty: [[Double]] = []
-        let flat = empty.flattened()
-
-        XCTAssertEqual(flat, [])
     }
 
     // Reshape with Float type

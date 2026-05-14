@@ -34,14 +34,14 @@ final class ArrayStatisticsTests: XCTestCase {
         XCTAssertEqual(a.argMax(), 2)
     }
 
-    // Covers mean, median, variance, std
+    // Covers mean, median, variance, standardDeviation
     func testCentralTendencyAndDispersion() throws {
         let a = [1.0, 2.0, 3.0, 4.0, 5.0]
         XCTAssertEqual(a.mean(), 3.0)
-        XCTAssertEqual(a.variance(), 2.0)
+        XCTAssertEqual(a.variance(), 2.5)
 
-        let std = try XCTUnwrap(a.std())
-        XCTAssertEqual(std, sqrt(2.0), accuracy: 1e-10)
+        let std = try XCTUnwrap(a.standardDeviation())
+        XCTAssertEqual(std, sqrt(2.5), accuracy: 1e-10)
 
         let b = [1.0, 5.0, 3.0, 4.0, 2.0]
         XCTAssertEqual(b.median(), 3.0)
@@ -61,13 +61,13 @@ final class ArrayStatisticsTests: XCTestCase {
     func testOutlierMaskPreCalculatedStats() {
         let data = [4.0, 7.0, 2.0, 9.0, 3.0, 35.0, 5.0]
 
-        guard let mean = data.mean(), let std = data.std() else {
+        guard let mean = data.mean(), let std = data.standardDeviation() else {
             XCTFail("Unable to calculate statistics")
             return
         }
 
         let mask1 = data.outlierMask(threshold: 2.0)
-        let mask2 = data.outlierMask(threshold: 2.0, mean: mean, std: std)
+        let mask2 = data.outlierMask(threshold: 2.0, mean: mean, standardDeviation: std)
         XCTAssertEqual(mask1, mask2)
     }
 
@@ -108,5 +108,47 @@ final class ArrayStatisticsTests: XCTestCase {
         // Edge cases
         XCTAssertNil(([[Double]]()).meanVector())
         XCTAssertNil([[1.0, 2.0], [3.0, 4.0, 5.0]].meanVector())
+    }
+
+    // MARK: - Mode Tests
+
+    func testModeSingleValueWins() {
+        let rolls = [1, 3, 3, 5, 6, 3, 2]
+        XCTAssertEqual(rolls.mode(), [3])
+    }
+
+    func testModeBimodalReturnsAllTies() {
+        let ratings = [4, 5, 4, 3, 5, 4, 5]
+        XCTAssertEqual(Set(ratings.mode()), Set([4, 5]))
+    }
+
+    func testModeAllUniqueReturnsAll() {
+        let unique = [1, 2, 3, 4, 5]
+        XCTAssertEqual(Set(unique.mode()), Set([1, 2, 3, 4, 5]))
+    }
+
+    func testModeEmptyReturnsEmpty() {
+        let empty: [Int] = []
+        XCTAssertEqual(empty.mode(), [])
+    }
+
+    func testModeOnDoubles() {
+        let scores = [4.0, 5.0, 4.0, 3.0, 5.0, 4.0]
+        XCTAssertEqual(scores.mode(), [4.0])
+    }
+
+    func testModeOnStrings() {
+        let responses = ["yes", "no", "yes", "maybe", "yes", "no"]
+        XCTAssertEqual(responses.mode(), ["yes"])
+    }
+
+    func testModeOnBools() {
+        let workouts = [true, false, true, true, false, true, true]
+        XCTAssertEqual(workouts.mode(), [true])
+    }
+
+    func testModeSingleElement() {
+        let one = [42]
+        XCTAssertEqual(one.mode(), [42])
     }
 }

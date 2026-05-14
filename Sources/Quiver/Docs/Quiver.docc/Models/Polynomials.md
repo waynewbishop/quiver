@@ -22,7 +22,7 @@ String(describing: p)   // "2x² + 3x + 1"
 
 ### Evaluating polynomials
 
-`Polynomial` adopts Swift's `callAsFunction` so the value behaves like a Swift function. Calling `p(x)` evaluates the polynomial at a single `Double`; calling `p(xs)` on a `[Double]` evaluates at every point in the array, which is the right shape for plotting. Internally the evaluation uses **Horner's method**, rewriting `a₀ + a₁x + a₂x² + ... + aₙxⁿ` as `a₀ + x·(a₁ + x·(a₂ + ... + x·aₙ))` to avoid repeated `pow(x, k)` calls and the precision loss that comes with them:
+The `Polynomial` type adopts Swift's `callAsFunction` so the value behaves like a Swift function. Calling `p(x)` evaluates the polynomial at a single `Double`; calling `p(xs)` on a `[Double]` evaluates at every point in the array, which is the right shape for plotting. Internally the evaluation uses **Horner's method**, rewriting `a₀ + a₁x + a₂x² + ... + aₙxⁿ` as `a₀ + x·(a₁ + x·(a₂ + ... + x·aₙ))` to avoid repeated `pow(x, k)` calls and the precision loss that comes with them:
 
 ```swift
 import Quiver
@@ -38,6 +38,12 @@ p(0)                    // 1.0  — value of the constant term
 let xs = Array.linspace(start: -2.0, end: 2.0, count: 5)
 p(xs)                   // [3.0, 0.0, 1.0, 6.0, 15.0]
 ```
+
+Worth knowing what Horner's method is, even though we never write it ourselves. The textbook formula for evaluating `2 + 3x + 4x² + 5x³` walks each term, raises `x` to a power, multiplies by the coefficient, and sums — every power is its own rounding step, and the higher powers carry the largest errors. Horner's rewrite is the same expression nested: `2 + x·(3 + x·(4 + x·5))`. Each coefficient contributes one rounding step instead of one per power, and the work is `n` multiply-then-add operations instead of `n` calls to `pow`.
+
+Quiver's `Polynomial` type uses Horner's method behind `callAsFunction`. Calling `p(x)` returns the precision-stable answer with no math required on the caller's side — no manual loop, no decision about evaluation order, no `pow` calls to manage. The teaching point is that the textbook formula and the stable formulation produce different floating-point results, and the library hides the choice so the user does not have to make it.
+
+> Tip: <doc:Numerical-Literacy> covers the broader pattern of reformulating textbook formulas to keep floating-point error small. Horner's method is one example among several.
 
 ### Polynomial arithmetic
 
@@ -83,7 +89,7 @@ The derivative is a polynomial in its own right, so it composes with everything 
 
 ### Fitting polynomials to data
 
-`[Double].polyfit(x:y:degree:)` is the least-squares counterpart to `LinearRegression.fit`. Given parallel `x` and `y` arrays and a target `degree`, it returns the polynomial of that degree that best fits the data in the ordinary-least-squares sense, the polynomial whose values minimize the sum of squared residuals against `y`. Internally `polyfit` builds a Vandermonde-style design matrix whose row `i` contains `[x[i], x[i]², ..., x[i]ⁿ]`, then defers to `LinearRegression.fit` to solve the normal equation:
+The `[Double].polyfit(x:y:degree:)` method is the least-squares counterpart to `LinearRegression.fit`. Given parallel `x` and `y` arrays and a target `degree`, it returns the polynomial of that degree that best fits the data in the ordinary-least-squares sense, the polynomial whose values minimize the sum of squared residuals against `y`. Internally `polyfit` builds a Vandermonde-style design matrix whose row `i` contains `[x[i], x[i]², ..., x[i]ⁿ]`, then defers to `LinearRegression.fit` to solve the normal equation:
 
 ```swift
 import Quiver
@@ -116,7 +122,7 @@ p.coefficients              // [1.0, 3.0, 2.0]   — ascending: a₀, a₁, a₂
 String(describing: p)        // "2x² + 3x + 1"     — descending, human-readable
 ```
 
-Two polynomial values are `Equatable` when their coefficient arrays match exactly. Operations like `+` and `*` may introduce trailing zeros. A polynomial of degree two added to its negative is mathematically zero, but the resulting array may still carry trailing zeros that survive the addition. `trimmed` returns the canonical form by stripping trailing zeros, which is the right call before comparing two polynomials for equality:
+Two polynomial values are `Equatable` when their coefficient arrays match exactly. Operations like `+` and `*` may introduce trailing zeros. A polynomial of degree two added to its negative is mathematically zero, but the resulting array may still carry trailing zeros that survive the addition. The `trimmed` property returns the canonical form by stripping trailing zeros, which is the right call before comparing two polynomials for equality:
 
 ```swift
 import Quiver

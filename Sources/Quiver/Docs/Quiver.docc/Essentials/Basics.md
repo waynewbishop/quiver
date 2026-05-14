@@ -12,7 +12,7 @@ If we can write Swift, we already have most of what we need to work with data. T
 
 This page is a starting point organized around three pillars that show up in any data work: **statistics** (describing what is in the data), **linear algebra** (treating numbers as positions in space), and **machine learning** (using the first two to make predictions). Each section teaches the smallest useful idea, then points to a deeper guide when we want to go further.
 
-### Statistics — describing what we have
+### Describing what we have with statistics
 
 Most numerical work starts with a set of numbers and a need to describe them. The answer is a small handful of summaries — the average, the typical spread around that average, the unusual values worth flagging. Quiver computes all of these as methods on `[Double]`.
 
@@ -21,17 +21,35 @@ import Quiver
 
 let responseTimes = [120.0, 145.0, 160.0, 175.0, 180.0, 195.0, 210.0, 320.0]
 
-responseTimes.mean()       // 188.125 — the average response time
-responseTimes.std()        // 56.4   — typical distance from the mean
-responseTimes.median()     // 177.5  — the middle value
+responseTimes.mean()              // 188.125 — the average response time
+responseTimes.standardDeviation() // 60.29  — typical distance from the mean
+responseTimes.median()            // 177.5  — the middle value
 responseTimes.outlierMask(threshold: 2.0)  // [false, false, ..., true] — flags 320.0
 ```
 
 Mean tells us the center. Standard deviation tells us how spread out the values are. Median is a more robust center when there are outliers. The outlier mask flags values that sit far from the rest. A dashboard, a health summary, a feed that highlights the unusual entry — all of them are built from these four ideas.
 
-For the full vocabulary — variance, quartiles, percentiles, z-scores, hypothesis testing — see <doc:Statistics-Primer>. For the complete API, see <doc:Statistical-Operations>.
+Each of those is one number at a time. When we want all of them at once, `summary()` returns a single value that holds them together:
 
-### Linear algebra — numbers as positions
+```swift
+if let stats = responseTimes.summary() {
+    stats.count    // 8
+    stats.mean     // 188.125
+    stats.std      // 60.2932
+    stats.min      // 120.0
+    stats.q1       // 156.25
+    stats.median   // 177.5
+    stats.q3       // 198.75
+    stats.max      // 320.0
+    stats.iqr      // 42.5
+}
+```
+
+The returned `ColumnSummary` is the same value a <doc:Panel> produces for a named column — one shape that serves single arrays and labeled tables alike. See <doc:Statistics-Primer> for the math behind each field and <doc:Panel> for the labeled-table version.
+
+For the full vocabulary — variance, quartiles, percentiles, z-scores — see <doc:Statistics-Primer>. For hypothesis testing, confidence intervals, and sampling, see <doc:Inferential-Statistics-Primer>.
+
+### Treating numbers as positions in space
 
 A list of numbers can also be thought of as a single point in space. `[3.0, 4.0]` is a point in two dimensions. `[3.0, 4.0, 5.0]` is a point in three. A user's preferences across ten categories is a point in ten dimensions. We cannot picture ten dimensions, but the math that compares two points works exactly the same way it does in two.
 
@@ -49,7 +67,7 @@ The dot product combines two vectors into a single number. Cosine similarity nor
 
 For the full picture — vectors, matrices, transformations, distance, projection — see <doc:Linear-Algebra-Primer>. For the operations themselves, see <doc:Vector-Operations>.
 
-### Machine learning — predicting from examples
+### Predicting from examples with machine learning
 
 Machine learning sounds like a separate discipline, but at the level we usually need it, it is one of three patterns applied to data we have already prepared. Given a set of examples, predict a number (regression). Given a set of labeled examples, predict a category (classification). Given a set of unlabeled examples, find the natural groupings (clustering).
 
@@ -64,7 +82,7 @@ let model = try LinearRegression.fit(features: heights, targets: weights)
 model.predict([172.0])   // [70.56] — predicted weight for a 172cm person
 ```
 
-Every Quiver model follows the same shape: `fit` takes the training data, `predict` takes new inputs and returns answers. `LinearRegression` predicts a number, `KNearestNeighbors` predicts a category, `KMeans` finds groupings. The choice between them depends on what we are trying to answer, not on a library to learn — they all read from the same `[Double]` arrays the rest of Quiver uses.
+Every Quiver model follows the same shape: `fit` takes the training data, `predict` takes new inputs and returns answers. The `LinearRegression` model predicts a number, `KNearestNeighbors` predicts a category, and `KMeans` finds groupings. The choice between them depends on what we are trying to answer, not on a library to learn — they all read from the same `[Double]` arrays the rest of Quiver uses.
 
 For the full conceptual frame — features, labels, training, evaluation, overfitting — see <doc:Machine-Learning-Primer>. For the individual models, see <doc:Linear-Regression>, <doc:Nearest-Neighbors-Classification>, and <doc:KMeans-Clustering>.
 

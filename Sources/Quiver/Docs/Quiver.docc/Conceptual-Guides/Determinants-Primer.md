@@ -260,3 +260,5 @@ let inverse = try matrix.inverted()
 
 For matrices that fail these checks, we know to handle the situation gracefully — whether that means removing redundant features, adjusting the data, or reporting that the computation cannot be performed reliably.
 
+> Experiment: **The Quiver Notebook** is the right place to feel how the determinant and condition number move together. Build a 2×2 matrix that starts well-conditioned, then sweep one element toward making the columns parallel — print `determinant` and `conditionNumber` at each step. Watching the determinant slide toward zero while the condition number races toward infinity is the fastest way to see why both diagnostics matter. See <doc:Quiver-Notebook>.
+

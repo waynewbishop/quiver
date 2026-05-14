@@ -1,98 +1,139 @@
 # watchOS Guide
 
-Live sensor processing and in-session summaries on Apple Watch with Quiver.
+Building a personal baseline, ranking against history, and fitting a classifier once for many predictions on Apple Watch.
 
 ## Overview
 
-Apps on Apple Watch work with data the moment it arrives. A workout view smooths a noisy heart-rate stream into a stable display. A sleep tracker groups motion samples into stages while the user is still asleep. A focus-mode app classifies ambient motion into walking, sitting, or driving. A weather complication folds an hourly forecast into a single number that fits on a watch face. Each new sample arrives within a few seconds of the last one, and the computation has to keep up.
+Quiver gives us the building blocks to compose an answer. A running app wants to tell a user whether the heart rate they just hit is high for them. A sleep app wants to flag a short night against their own typical. A focus app wants to know whether the current motion stretch is unusually still. Each situation has the same shape — a fresh reading on one side, the user's accumulated history on the other, and an answer composed from the arrays the app already holds.
 
-Quiver fits this reality by running entirely in-process as pure Swift, with no bridging layer and no external dependencies. Rolling windows of `mean` and `std` smooth a live sensor stream without dropping samples. `KNearestNeighbors` classifies the current window against a small set of labeled patterns the app shipped with. `Pipeline` keeps the scaler and the classifier as one matched pair, so the same transformation applied during fitting applies during prediction. Because every Quiver model is `Sendable`, the fitted state crosses task boundaries during an `HKWorkoutSession` without locks or copies.
+### Building a personal baseline
 
-### Live sensor streams and rolling windows
-
-Quiver on Apple Watch is almost always applied to a rolling window of recent samples, not a static training set. Sensors arrive continuously. The model has to track what is happening *now* without accumulating unbounded history, because memory is finite and stale data dilutes the signal.
-
-The pattern is simple: keep a fixed-size buffer of the most recent feature vectors, re-fit the model when the buffer changes, and use the fitted model to classify or predict the next incoming sample. As old samples fall off the back of the buffer and new ones arrive at the front, the model adapts continuously to the current conditions.
+The first thing many on-wrist features need is context. A `PersonalBaseline` captures that context as a few summary statistics over the user's history: the mean, the typical spread, and a few percentile breakpoints. Once computed, the baseline is held in observable state for the rest of the session and every new sample is interpreted against it. For a sleep app the history is a year of nightly hours. For a focus app the history is a week of motion samples. For the running example used below the history is a runner's accumulated heart-rate readings — but the type and the five statistics it carries are the same in every case.
 
 ```swift
 import Quiver
 
-// A rolling window of the most recent sensor readings
-var window: [[Double]] = []
-let windowSize = 60  // 60 samples at 1 Hz = one minute of data
+struct PersonalBaseline: Codable {
+    let mean: Double
+    let standardDeviation: Double
+    let standardError: Double
+    let p25: Double
+    let p50: Double
+    let p75: Double
 
-func ingest(_ sample: [Double]) {
-    window.append(sample)
-    if window.count > windowSize {
-        window.removeFirst()
+    static func from(history: [Double]) -> PersonalBaseline? {
+        guard let mean = history.mean(),
+              let standardDeviation = history.standardDeviation(),
+              let standardError = history.standardError(),
+              let p25 = history.percentile(25),
+              let p50 = history.percentile(50),
+              let p75 = history.percentile(75) else {
+            return nil
+        }
+        return PersonalBaseline(
+            mean: mean,
+            standardDeviation: standardDeviation,
+            standardError: standardError,
+            p25: p25,
+            p50: p50,
+            p75: p75
+        )
     }
-}
-
-// Re-fit the model whenever the window has filled with fresh data
-func currentModel() -> KMeans {
-    let scaler = FeatureScaler.fit(features: window)
-    let scaled = scaler.transform(window)
-    return KMeans.fit(data: scaled, k: 3, seed: 42)
 }
 ```
 
-Because every Quiver model is a value type, the re-fit produces a fresh model on every call and the previous one is discarded. Nothing mutates, nothing leaks, and the old model remains valid for anyone who happens to be holding a reference to it from an earlier frame — a property that matters the moment a second concurrent task is reading predictions while the main task is refitting.
+Six Quiver methods turn an array of historical readings into a structured snapshot — `mean` for the center, `standardDeviation` for the typical spread, `standardError` for how precise the estimate of the mean is, and three calls to `percentile` for the breakpoints. The baseline is `Codable` and `Sendable` for free, so it crosses task boundaries during a workout without copies and persists to disk between sessions without ceremony.
 
-> Tip: The right window size depends on the signal and the sample rate. A 60-second window at 1 Hz gives the model enough data to find structure without overwhelming the memory budget. For rarer events (lap detection, mode transitions) the window may need to be larger. For fast-moving signals (motion bursts) it may need to be smaller.
+The baseline is a snapshot, not a model. The user's fitness, sleep, or focus patterns drift over weeks of training or life changes, so the app should recompute the baseline on a cadence that matches the underlying signal — weekly for a trained runner whose resting heart rate moves with fitness, monthly for a sleep tracker, end-of-session for a focus app where every block updates the history. The shape of the recomputation is identical to the initial build; only the cadence changes.
+
+### Ranking a sample against history
+
+With a baseline in hand, every new sample becomes a question — where does *this* reading fall in the distribution of the user's history? Two Quiver methods handle the two common shapes of that question. The `percentileRank` method gives a 0-to-100 position; the baseline's `standardDeviation` lets us compute a z-score.
+
+```swift
+import Quiver
+
+extension PersonalBaseline {
+    // 0-100: where does this reading fall in the user's history?
+    func percentileRank(of value: Double, in history: [Double]) -> Double {
+        return history.percentileRank(of: value)
+    }
+
+    // How many standard deviations from the user's typical reading?
+    func zScore(of value: Double) -> Double {
+        return (value - mean) / standardDeviation
+    }
+}
+```
+
+The two views differ in what they emphasize. Percentile rank answers "is this rare?" — a reading at the 95th percentile is rare regardless of how skewed the distribution is. Z-score answers "is this extreme?" — a reading three standard deviations above the mean is extreme even when many readings fall in that direction. A dashboard often shows both, side by side.
+
+A z-score can also be turned into a probability with `Distributions.normal.cdf`. For a reading 2.1 standard deviations above the mean, the area in the upper tail is the probability of seeing a value at least that extreme:
+
+```swift
+import Quiver
+
+let z = baseline.zScore(of: 175.0)                                       // 2.1 above the mean
+let cdf = Distributions.normal.cdf(x: z, mean: 0, standardDeviation: 1) ?? 0
+let probability = 1 - cdf                                                // 0.018 — top 1.8%
+```
+
+The whole calculation runs on the watch with no network call and no permissions. A glance complication can show "this reading is in the top 2% of your history" the moment a sample arrives. For the full distribution surface — `Distributions.t`, `Distributions.chiSquared`, and inference helpers — see <doc:Working-With-Distributions>.
+
+> Experiment: **The Quiver Notebook** is the right place to compare the distribution functions side by side. Try `Distributions.normal.cdf` and `Distributions.t.cdf` on the same array of recent readings — the normal turns a z-score into a probability, while the t-distribution answers the same question honestly for small samples where the normal assumption is too strong. Running both is the fastest way to feel when each one applies. See <doc:Quiver-Notebook>.
+
+### Fitting a classifier once and predicting many times
+
+Where `PersonalBaseline` summarized one signal against a user's history, the next pattern handles a different question: given several signals at once, which effort regime is the user in? The answer comes from a fit-once-predict-many classifier trained on a small labeled multi-signal dataset. The training data is collected during a short calibration session — the user runs at a known effort for a minute, taps the effort level on screen, and the app stores the multi-signal samples that arrived during that minute. A few minutes of calibration produces a few dozen labeled samples that cover every effort regime the app cares about.
+
+During the calibration session, each sensor stream is appended to its own buffer as new samples arrive (`heartRate` from `HKAnchoredObjectQuery`, `cadence` from `HKQuantityType.runningStrideLength`, `pace` from `HKQuantityType.runningSpeed`), and the user's tap on the effort label is appended in parallel. At session end, the four aligned buffers go into a <doc:Panel> together — keeping row alignment across every column without manual bookkeeping:
+
+```swift
+import Quiver
+
+// Calibration session result — each row across the Panel is one sample in time
+let training = Panel([
+    ("heartRate", [128, 132, 135, 148, 151, 154, 165, 168, 171, 178, 181, 184]),
+    ("cadence",   [165, 168, 170, 175, 176, 178, 182, 184, 185, 188, 189, 190]),
+    ("pace",      [9.5, 9.2, 9.0, 8.0, 7.8, 7.6, 6.8, 6.6, 6.4, 5.8, 5.6, 5.4]),
+    ("effort",    [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])  // 0=easy, 1=moderate, 2=tempo, 3=hard
+])
+
+// Extract the feature matrix and the label vector — no manual slicing
+let features = training.toMatrix(columns: ["heartRate", "cadence", "pace"])
+let labels = training.labels("effort")
+
+// One call fits the scaler and the classifier together as a Pipeline
+let pipeline = Pipeline.fit(features: features, labels: labels, k: 3)
+```
+
+The four buffers stay aligned because the app appends to all four on the same tick — each row across the Panel is one sample in time. The `Panel` type then takes over the alignment guarantee: `toMatrix(columns:)` returns the feature matrix in the order requested, and `labels(_:)` returns the effort column as `[Int]`. Calling `Pipeline.fit` takes it from there — it fits a `StandardScaler` on the raw features, applies it, trains the `KNearestNeighbors` model on the scaled data, and returns the two as one bundled value. KNN scales linearly with the training set, so a few dozen calibration samples on Apple Watch silicon is comfortable.
+
+During the session, every new reading runs through the same pipeline:
+
+```swift
+// Every 1.5 seconds, as a new multi-signal sample arrives
+func classify(_ sample: [Double]) -> Int {
+    return pipeline.predict([sample])[0]
+}
+```
+
+Calling `Pipeline.predict` applies the stored `StandardScaler` to the raw sample and then runs the model on the scaled result. That single call is what keeps every prediction in the same coordinate system the model was trained on. Because the pipeline is `Codable`, the fitted scaler and model travel together when written to `Documents/` at session end and decoded at the next launch — no risk of a mismatched pair from saving them separately. For the full Pipeline surface, see <doc:Pipeline>.
+
+### Integrating with a live workout session
+
+The pattern above runs against a simulated sample stream so the demo can be explored in isolation. In a shipping watchOS app, the same sample-rate cadence comes from `HKWorkoutSession` and the live `HKWorkoutBuilder` sample stream. The classifier, the scaler, and the predict-per-sample loop stay identical — what changes is the data source. The app starts an `HKWorkoutSession`, asks for the relevant `HKQuantityType` samples (heart rate, distance, active energy, running cadence), and feeds each new reading through `classify(_:)` as it arrives. For the authorization-and-runtime considerations of running long tasks on watchOS, see Apple's [HealthKit Workouts documentation](https://developer.apple.com/documentation/healthkit/workouts_and_activity_rings).
 
 ### Sensor realities on watchOS
 
-Apple Watch sensors have characteristics that a developer used to offline training data needs to understand before building a rolling-window classifier. Machine learning is only as good as the data feeding it, and the data coming off the wrist has a few practical quirks worth knowing.
+Apple Watch sensors have characteristics that a developer used to offline training data needs to understand before building a real-time classifier. Machine learning is only as good as the data feeding it.
 
-**Sample rate mismatch.** Different sensors report at different rates. Heart rate updates roughly once per second during a workout, motion data can arrive at up to 100 Hz, GPS-derived pace is smoothed and reported at around 1 Hz with variable latency, and altimeter readings depend on the activity type. A naive feature vector built by grabbing the latest value from each sensor will pair fresh motion data with stale heart rate. For most classifiers, resampling everything to a common cadence — 1 Hz is a practical floor for cardiovascular work — produces cleaner training data than mixing native rates.
+**Sample rate mismatch.** Different sensors report at different rates. Heart rate updates roughly once per second during a workout, motion data can arrive at up to 100 Hz, GPS-derived pace is smoothed and reported at around 1 Hz with variable latency. A naive feature vector that grabs the latest value from each sensor will pair fresh motion data with stale heart rate. Resample everything to a common cadence — 1.5 seconds is a practical floor for cardiovascular work — before building the multi-signal sample.
 
-**Heart rate latency.** Apple Watch heart rate readings lag true heart rate by roughly 10 to 30 seconds during rapid changes — the start of a sprint, a sudden hill, the first 60 seconds of exercise. A classifier that re-fits during those transitions will be learning from a signal that is telling it about the *previous* effort level, not the current one. Ignoring the first minute after an effort change, or time-boxing the rolling window to exclude those moments, keeps the model honest.
+**Heart rate latency.** Apple Watch heart rate readings lag the true value by roughly 10 to 30 seconds during rapid changes — the start of a sprint, a sudden hill, the first 60 seconds of exercise. A classifier reading during those transitions will be classifying the *previous* effort level, not the current one. The fit-once-predict-many pattern handles this gracefully because the model itself does not adapt during the lag — it just labels what the sensors report.
 
-**Workout session states.** An `HKWorkoutSession` can be active, paused, or ended. Paused sessions still emit samples for some sensors, and those samples will contaminate a rolling window if the ingestion code doesn't filter them. Check the session state on every sample and skip ingestion when the session is not active.
+**Session state.** A live workout session can be active, paused, or ended. Paused sessions still emit samples for some sensors, and those samples will contaminate the classifier's output if the ingestion code does not filter them. Check session state on every sample and skip the predict call when the session is not active.
 
-> Tip: The goal of this section is not to make machine learning on watchOS sound fragile. It's to surface the few realities that separate a demo that works once from a model that behaves correctly across every run, every walk, and every paused interval a user actually puts it through.
+> Tip: The training data is the load-bearing artifact. A multi-signal classifier built from 12 hand-labeled samples per regime works because the regimes are well-separated in feature space. Adding a tenth feature does not make the classifier better when the labels are still drawn from a 50-sample training set — invest in label quality and signal separation before adding more features.
 
-### Running training during an authorized session
-
-Long-running tasks on watchOS are only reliable inside an authorized session. An active `HKWorkoutSession` is the most common example: while the workout is running, the system grants the app extended runtime and continuous sensor access. A `Task.detached` that fits a model during the workout will run to completion because the workout itself is the authorization.
-
-The pattern combines three things: a workout session to authorize the runtime, a rolling window to capture live sensor data, and a Swift Concurrency task to run the fit off the main thread so the UI stays responsive.
-
-```swift
-import Quiver
-import HealthKit
-
-@Observable
-@MainActor
-final class WorkoutClassifier {
-    var currentModel: KMeans?
-    var window: [[Double]] = []
-
-    // Called by the sensor delegate as new samples arrive
-    func ingest(_ sample: [Double]) async {
-        window.append(sample)
-        if window.count > 60 {
-            window.removeFirst()
-        }
-
-        // Only refit when the window is full and every few seconds
-        guard window.count == 60 else { return }
-
-        // Fit in a detached task so the view stays responsive
-        let buffer = window
-        let fitted = await Task.detached(priority: .userInitiated) {
-            let scaler = FeatureScaler.fit(features: buffer)
-            let scaled = scaler.transform(buffer)
-            return KMeans.fit(data: scaled, k: 3, seed: 42)
-        }.value
-
-        // Assignment runs on the main actor — the view updates automatically
-        currentModel = fitted
-    }
-}
-```
-
-The `buffer = window` copy before the detached task captures a snapshot of the current window as a value, so the task operates on its own copy without competing with concurrent ingestion. When the fit completes, the fresh `KMeans` model crosses back into the main actor as a `Sendable` value and the assignment updates any SwiftUI view bound to `currentModel`. For the full set of concurrency patterns, see <doc:Concurrency-Primer>.
-
-> Tip: The `guard window.count == 60` check means the model is only refitted when there is enough fresh data to be meaningful. Refitting on a half-full window produces unstable clusters and wastes battery.
-
+> Experiment: [quiver-demo-watchos](https://github.com/waynewbishop/quiver-demo-watchos) is a two-tab Apple Watch app that streams a simulated workout and labels each sample two ways — by heart-rate zone alone, and by a four-signal KNN classifier.

@@ -56,6 +56,44 @@ let percents = series.stackedPercentage()
 // percents[2] = [13.5, 14.5, 11.1, 15.2]   (tablet %)
 ```
 
+### Box plots from a column summary
+
+A box plot is the chart that draws the five-number summary directly. The fields on a `ColumnSummary` map onto the marks of the plot one to one: `q1` and `q3` form the edges of the box, `median` is the line inside it, and the whiskers extend out to the most extreme data points still within `1.5 · iqr` of the box. Any value beyond those fences is drawn as a separate point — the convention statistics courses use to flag outliers without letting them stretch the whiskers. See <doc:Statistics-Primer> for what each field means mathematically.
+
+Quiver does not draw the chart, but it computes every field the chart needs in one call:
+
+```swift
+import Quiver
+
+let responseTimes = [120.0, 145.0, 160.0, 175.0, 180.0, 195.0, 210.0, 320.0]
+
+if let stats = responseTimes.summary() {
+    // Box edges and median line
+    stats.q1       // 156.25
+    stats.median   // 177.5
+    stats.q3       // 198.75
+
+    // Tukey fences — anything outside these is an outlier point
+    let lowerFence = stats.q1 - 1.5 * stats.iqr   // 92.5
+    let upperFence = stats.q3 + 1.5 * stats.iqr   // 262.5
+
+    // Partition the data into whisker-eligible values and outliers
+    let mask = responseTimes.isGreaterThanOrEqual(lowerFence)
+        .and(responseTimes.isLessThanOrEqual(upperFence))
+    let inliers = responseTimes.masked(by: mask)
+    let outliers = responseTimes.masked(by: mask.not())
+
+    // Whiskers reach to the most extreme inliers
+    let whiskerLow = inliers.min() ?? stats.q1     // 120.0
+    let whiskerHigh = inliers.max() ?? stats.q3    // 210.0
+    // outliers == [320.0] — drawn as separate points beyond the upper whisker
+}
+```
+
+Each piece maps to a Swift Charts mark. A `RectangleMark` spans from `q1` to `q3` for the box, a `RuleMark` at `median` draws the line inside it, two more `RuleMark` shapes carry the whiskers from `whiskerLow` to `q1` and from `q3` to `whiskerHigh`, and a `PointMark` for each value in `outliers` draws the dots beyond the fences.
+
+The same shape works for one column or for several drawn side by side. Calling `summary()` on a `Panel` produces one `ColumnSummary` per column, all stored under their original names in the returned `PanelSummary`, and a chart that iterates the panel's `columnNames` renders one box per column with the labels already in place. See <doc:Panel-Workflows> for the typed-summary surface end to end.
+
 ### Correlation heatmaps
 
 Visualize relationships between multiple variables using a correlation matrix flattened into chart-ready tuples:
@@ -272,6 +310,8 @@ let classNames = ["cat", "dog", "bird", "fish"]
 ```
 
 The tallest bar is the model's prediction. The relative heights show how confident the model is — a single dominant bar means high confidence, while similar heights across bars suggest uncertainty.
+
+> Experiment: **The Quiver Notebook** is the right place to see how data preparation shapes a chart's story. Render a histogram from a raw revenue column, then re-render the same chart after applying `standardized()` — same data, centered and scaled. The y-axis numbers move from dollars to standard deviations, but the shape of the distribution stays the same. Try `scaled(to:)` next and watch the bars stretch to a target range. Visualization choices are data-preparation choices in disguise. See <doc:Quiver-Notebook>.
 
 ## Topics
 

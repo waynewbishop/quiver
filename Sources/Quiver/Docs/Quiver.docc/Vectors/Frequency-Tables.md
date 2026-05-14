@@ -42,6 +42,25 @@ The answer is **order**. A `Set` knows what is unique, but it does not know how 
 
 `distinct()` and `distinctCounts()` add the missing piece: a guaranteed ascending order. Once values are unique *and* ordered, the output becomes reproducible, easy to scan, and stable enough to test against. That is the small but meaningful step beyond what `Set` alone provides.
 
+### The most common value
+
+Once we have counts, the next question often asked of a frequency table is which value appears the most often. This is the **mode**, and it is the natural center for categorical data the same way the mean is the natural center for numeric data. Quiver exposes it as `mode()` on `Array where Element: Hashable`, returning an array of all values tied for highest frequency:
+
+```swift
+import Quiver
+
+let outcomes = [1.0, 2.0, 3.0, 1.0, 2.0, 1.0]
+outcomes.mode()              // [1.0] — the most common outcome
+
+let bimodal = [4, 5, 4, 3, 5, 4, 5]
+bimodal.mode()               // [4, 5] — two values tied for first
+
+let strings = ["yes", "no", "yes", "maybe"]
+strings.mode()               // ["yes"]
+```
+
+Returning an array rather than a single value is deliberate. A bimodal distribution — two categories tied for the highest frequency — is a real fact about the data, and Quiver surfaces it rather than picking one tie-breaker silently. When every value appears the same number of times, every value is a mode and the full array comes back unchanged. The mode pairs naturally with `distinctCounts()`: counts answer "how often does each value appear," and mode answers "which appears the most."
+
 ### From counts to probabilities
 
 Counts answer the question "how many?" Probabilities answer "what fraction?" The conversion is one division — divide each count by the total number of observations. The result is a number between `0` and `1` that represents the empirical probability of drawing that value if we sampled uniformly at random from the array.
@@ -87,16 +106,70 @@ labels.frequencyDistribution()
 
 The dictionary above is the complete prior table for this training set. When we later train a classifier, the same number appears as `prior:` in the per-class statistics a fitted Gaussian Naive Bayes model reports. Computing it directly with `frequencyDistribution()` lets us inspect class balance before fitting — a `0.166...` prior on virginica means it is the smaller class, which is information worth knowing before deciding whether to stratify a split or rebalance the data. See <doc:Naive-Bayes> for how the same priors flow into prediction.
 
+### Are the counts what we expected
+
+A frequency table tells us what the data *did*. A natural follow-up question asks whether what the data did is consistent with what we expected — whether a six-sided die is fair, whether website visitors are uniformly distributed across four landing pages, whether a survey's response rates match the population they sampled. The **chi-squared goodness-of-fit test** answers this. It compares observed category counts to expected counts under a null hypothesis, summarizes the disagreement with a single number, and reads a p-value off the chi-squared distribution.
+
+The test statistic is the sum of `(observed − expected)² / expected` across every category. Larger values mean larger disagreement. Under the null hypothesis that the observed counts came from the expected distribution, the statistic follows the chi-squared distribution with `k − 1` degrees of freedom, where `k` is the number of categories. Quiver provides the reference distribution as `Distributions.chiSquared.cdf`:
+
+```swift
+import Quiver
+import Foundation
+
+// 60 rolls of a six-sided die, counts for faces 1 through 6
+let observed = [12.0, 8.0, 11.0, 9.0, 13.0, 7.0]
+
+// Under a fair die, every face should appear 60 / 6 = 10 times
+let total = observed.sum()
+let expected = total / Double(observed.count)  // 10.0
+
+// Chi-squared statistic: sum of (O − E)² / E across categories
+var chiSquared = 0.0
+for o in observed {
+    chiSquared += pow(o - expected, 2) / expected
+}
+// chiSquared ≈ 2.8
+
+let df = Double(observed.count - 1)  // 5 categories → df = 5
+if let cdf = Distributions.chiSquared.cdf(x: chiSquared, df: df) {
+    let pValue = 1 - cdf  // ≈ 0.731
+    print("chi-squared: \(chiSquared), p: \(pValue)")
+}
+```
+
+The statistic of `2.8` and the p-value of `0.731` together say the observed counts are well within the range a fair die would produce by chance. We do not reject the null hypothesis of fairness. The variation across categories — twelve ones, seven sixes, thirteen fives — looks unusual to the eye but is not statistically unusual at all.
+
+Compare that to a clearly loaded die where six comes up 35 times in 60 rolls:
+
+```swift
+let loaded = [5.0, 5.0, 5.0, 5.0, 5.0, 35.0]
+var chiSqLoaded = 0.0
+for o in loaded {
+    chiSqLoaded += pow(o - 10.0, 2) / 10.0
+}
+// chiSqLoaded ≈ 75.0
+// p-value ≈ 10⁻¹⁵ — overwhelming evidence against fairness
+```
+
+A statistic of `75` with df=5 produces a p-value far below any reasonable significance level. The data is incompatible with a fair die, and the chi-squared test makes the gap between "looks weird" and "is statistically weird" quantitative.
+
+> Note: The chi-squared approximation requires that every expected count be reasonably large — a common rule of thumb is at least five observations expected per category. For small samples or rare categories, the approximation breaks down and the test loses calibration. For binary outcomes specifically, a binomial-based test is the more honest choice.
+
 ## Topics
 
 ### Counting unique values
 - ``Swift/Array/distinct()``
 - ``Swift/Array/distinctCounts()``
+- ``Swift/Array/mode()``
 
 ### From counts to probabilities
 - ``Swift/Array/probability(of:)``
 - ``Swift/Array/frequencyDistribution()``
 
+### Inferential follow-up
+- ``Distributions/chiSquared/cdf(x:df:)``
+
 ### Related articles
 - <doc:Statistics-Primer>
 - <doc:Naive-Bayes>
+- <doc:Working-With-Distributions>

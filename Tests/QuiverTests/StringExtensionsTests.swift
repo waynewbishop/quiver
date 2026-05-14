@@ -41,10 +41,10 @@ final class StringExtensionsTests: XCTestCase {
         XCTAssertEqual("word".tokenize(), ["word"])
     }
 
-    // MARK: - Punctuation stripping (default behavior)
+    // MARK: - Punctuation removal (default behavior)
 
     // Covers trailing punctuation, quotes, brackets, hyphens, and punctuation-only tokens
-    func testTokenizeStripsPunctuation() {
+    func testTokenizeRemovesPunctuation() {
         // Mixed sentence punctuation
         XCTAssertEqual("Hello, world! How are you?".tokenize(),
                         ["hello", "world", "how", "are", "you"])
@@ -61,7 +61,7 @@ final class StringExtensionsTests: XCTestCase {
         XCTAssertEqual("hello ... world !!! done".tokenize(),
                         ["hello", "world", "done"])
 
-        // Leading hyphens stripped
+        // Leading hyphens removed
         XCTAssertEqual("--flag -option".tokenize(), ["flag", "option"])
     }
 
@@ -74,14 +74,14 @@ final class StringExtensionsTests: XCTestCase {
 
     func testTokenizePreservesPunctuationWhenRequested() {
         let text = "Hello, world! How are you?"
-        let tokens = text.tokenize(strippingPunctuation: false)
+        let tokens = text.tokenize(removingPunctuation: false)
 
         XCTAssertEqual(tokens, ["hello,", "world!", "how", "are", "you?"])
     }
 
     func testTokenizePreservesPunctuationEdgeCases() {
-        XCTAssertEqual("...".tokenize(strippingPunctuation: false), ["..."])
-        XCTAssertEqual("!!!".tokenize(strippingPunctuation: false), ["!!!"])
+        XCTAssertEqual("...".tokenize(removingPunctuation: false), ["..."])
+        XCTAssertEqual("!!!".tokenize(removingPunctuation: false), ["!!!"])
     }
 
     // MARK: - Embed Tests
@@ -105,7 +105,7 @@ final class StringExtensionsTests: XCTestCase {
         XCTAssertEqual(withUnknown[0], [0.8, 0.7, 0.9])
         XCTAssertEqual(withUnknown[1], [0.1, 0.9, 0.2])
 
-        // Tokenize then embed — punctuation must be stripped first
+        // Tokenize then embed — punctuation must be removed first
         let fromText = "running, shoes!".tokenize().embed(using: embeddings)
         XCTAssertEqual(fromText.count, 2)
         XCTAssertEqual(fromText[0], [0.8, 0.7, 0.9])

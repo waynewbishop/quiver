@@ -194,9 +194,10 @@ public extension Array where Element: FloatingPoint {
     /// average of squared deviations from the mean. A variance of zero means all values
     /// are identical. Variance is the square of the standard deviation.
     ///
-    /// The `ddof` parameter controls whether to compute population variance (dividing
-    /// by `n`) or sample variance (dividing by `n - 1`). Use population variance when
-    /// the data represents the entire set; use sample variance when it is a subset.
+    /// The `ddof` parameter controls whether to compute sample variance (dividing by
+    /// `n - 1`, the default) or population variance (dividing by `n`). Use sample variance
+    /// when the data is a subset drawn from a larger population; use population variance
+    /// when the data represents the entire set.
     ///
     /// Example:
     /// ```swift
@@ -204,17 +205,17 @@ public extension Array where Element: FloatingPoint {
     ///
     /// let data = [4.0, 7.0, 2.0, 9.0, 3.0]
     ///
-    /// let popVar = data.variance()         // 6.8 (population, ddof: 0)
-    /// let sampleVar = data.variance(ddof: 1)  // 8.5 (sample, ddof: 1)
+    /// let sampleVar = data.variance()         // 8.5 (sample, ddof: 1)
+    /// let popVar = data.variance(ddof: 0)     // 6.8 (population, ddof: 0)
     /// ```
     ///
-    /// - Parameter ddof: Delta Degrees of Freedom — 0 for population (default), 1 for sample
+    /// - Parameter ddof: Delta Degrees of Freedom — 1 for sample (default), 0 for population
     /// - Returns: The variance, or nil if the array has fewer elements than `ddof + 1`
-    func variance(ddof: Int = 0) -> Element? {
+    func variance(ddof: Int = 1) -> Element? {
         let vector = _Vector(elements: self)
         return vector.variance(ddof: ddof)
     }
-    
+
     /// Returns the standard deviation of all elements in the array.
     ///
     /// Standard deviation measures spread in the same units as the original data (unlike
@@ -229,15 +230,38 @@ public extension Array where Element: FloatingPoint {
     ///
     /// let data = [4.0, 7.0, 2.0, 9.0, 3.0]
     ///
-    /// let popStd = data.std()         // 2.61 (population, ddof: 0)
-    /// let sampleStd = data.std(ddof: 1)  // 2.92 (sample, ddof: 1)
+    /// let sampleStd = data.standardDeviation()         // 2.92 (sample, ddof: 1)
+    /// let popStd = data.standardDeviation(ddof: 0)     // 2.61 (population, ddof: 0)
     /// ```
     ///
-    /// - Parameter ddof: Delta Degrees of Freedom — 0 for population (default), 1 for sample
+    /// - Parameter ddof: Delta Degrees of Freedom — 1 for sample (default), 0 for population
     /// - Returns: The standard deviation, or nil if the array has fewer elements than `ddof + 1`
-    func std(ddof: Int = 0) -> Element? {
+    func standardDeviation(ddof: Int = 1) -> Element? {
         let vector = _Vector(elements: self)
-        return vector.std(ddof: ddof)
+        return vector.standardDeviation(ddof: ddof)
+    }
+
+    /// Returns the standard error of the mean for the elements in the array.
+    ///
+    /// The standard error estimates how much the sample mean would vary if the data were
+    /// resampled from the same population. It is the standard deviation divided by the
+    /// square root of the sample size. Standard error shrinks as the sample grows, which
+    /// is why larger samples produce more precise estimates of the mean.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let data = [4.0, 7.0, 2.0, 9.0, 3.0]
+    ///
+    /// let se = data.standardError()        // 1.30 (sample, ddof: 1)
+    /// ```
+    ///
+    /// - Parameter ddof: Delta Degrees of Freedom — 1 for sample (default), 0 for population
+    /// - Returns: The standard error, or nil if the array has fewer elements than `ddof + 1`
+    func standardError(ddof: Int = 1) -> Element? {
+        let vector = _Vector(elements: self)
+        return vector.standardError(ddof: ddof)
     }
 
     /// Detects outliers using the z-score method and returns a boolean mask.
@@ -248,7 +272,7 @@ public extension Array where Element: FloatingPoint {
     /// the outlier values.
     ///
     /// For performance when processing multiple arrays with the same distribution, pass
-    /// pre-calculated `mean` and `std` values to avoid recomputing them.
+    /// pre-calculated `mean` and `standardDeviation` values to avoid recomputing them.
     ///
     /// Example:
     /// ```swift
@@ -265,13 +289,13 @@ public extension Array where Element: FloatingPoint {
     /// - Parameters:
     ///   - threshold: Number of standard deviations from the mean to flag as an outlier (default: 2.0)
     ///   - mean: Pre-calculated mean to use instead of computing from the array (optional)
-    ///   - std: Pre-calculated standard deviation to use instead of computing from the array (optional)
+    ///   - standardDeviation: Pre-calculated standard deviation to use instead of computing from the array (optional)
     /// - Returns: Boolean mask where `true` indicates the element at that index is an outlier
-    func outlierMask(threshold: Element = 2.0, mean: Element? = nil, std: Element? = nil) -> [Bool] {
+    func outlierMask(threshold: Element = 2.0, mean: Element? = nil, standardDeviation: Element? = nil) -> [Bool] {
         guard !self.isEmpty else { return [] }
 
         let computedMean = mean ?? self.mean() ?? 0
-        let computedStd = std ?? self.std() ?? 1
+        let computedStd = standardDeviation ?? self.standardDeviation() ?? 1
 
         return self.map { abs($0 - computedMean) > threshold * computedStd }
     }
@@ -400,5 +424,41 @@ public extension Array where Element == Double {
             return nil
         }
         return (lower: lower, upper: upper)
+    }
+}
+
+// MARK: - Mode
+
+public extension Array where Element: Hashable {
+    /// Returns the most frequently occurring value(s) in the array.
+    ///
+    /// The mode is the third measure of central tendency alongside `mean()` and `median()`.
+    /// Unlike those measures, mode works on any `Hashable` type — integers, strings, booleans,
+    /// or doubles — making it useful for categorical data where averaging is undefined.
+    ///
+    /// When multiple values tie for the highest frequency, all tied values are returned.
+    /// When every value occurs exactly once, the entire array is returned (every value is
+    /// tied for first). An empty input returns an empty array.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let diceRolls = [1, 3, 3, 5, 6, 3, 2]
+    /// diceRolls.mode()                          // [3]
+    ///
+    /// let ratings = [4, 5, 4, 3, 5, 4, 5]
+    /// ratings.mode()                            // [4, 5]  — bimodal
+    ///
+    /// let responses = ["yes", "no", "yes", "maybe"]
+    /// responses.mode()                          // ["yes"]
+    /// ```
+    ///
+    /// - Complexity: O(*n*) where *n* is the number of elements.
+    /// - Returns: An array of all values tied for highest frequency. Empty if input is empty.
+    func mode() -> [Element] {
+        let counts = Dictionary(grouping: self, by: { $0 }).mapValues(\.count)
+        guard let maxCount = counts.values.max() else { return [] }
+        return counts.filter { $0.value == maxCount }.map(\.key)
     }
 }

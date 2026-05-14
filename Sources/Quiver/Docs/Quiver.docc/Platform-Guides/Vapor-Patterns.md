@@ -1,137 +1,111 @@
 # Vapor Patterns
 
-Serving vector databases, inference endpoints, and statistical engines with Quiver on Swift on Server.
+Building semantic-search and CRUD endpoints over a precomputed vector catalog with Quiver and Vapor.
 
 ## Overview
 
-The <doc:Vapor-Guide> covers the foundations — routes that share one fitted model, the JSON-to-`[Double]` boundary, and loading fitted state when the server starts. This article builds on those foundations with applied patterns Vapor and Quiver developers reach for repeatedly: a semantic search index behind an HTTP route, a prediction endpoint that loads its model once and uses it for every request, a stats engine for hypothesis tests and rolling summaries, and the question of how a fitted model behaves when many requests arrive at the same time.
+A Vapor server that hosts a vector catalog has the same shape as almost any small database service. Clients ask for the list of items, add new ones, remove the ones they no longer want, and search for the items closest to whatever query they have in mind. What makes the Quiver version different is what happens at search time: instead of matching on exact words, the server ranks by semantic similarity — a query for "cushioned long run" finds shoes whose descriptions never used those exact words but match the meaning.
 
-### Vector database — semantic search behind a route
+This article walks through the four endpoints that make up that service — list, create, delete, and semantic search — and the small amount of vector math that turns text into a ranked answer. The <doc:Vapor-Guide> covers the foundations these patterns build on.
 
-The clearest pattern for Quiver on Vapor is a semantic search index. A collection of documents — products, articles, notes, anything textual — is tokenized and turned into vectors once. The resulting document vectors are kept in memory for the life of the server, and every search request decodes a query, turns it into a vector, ranks it against the precomputed collection, and returns the top matches. The collection rarely changes; reads happen constantly; the work all stays inside the Swift process.
+### Semantic-search endpoint
 
-The full embedding pipeline is covered in <doc:Semantic-Search>. What changes when the pipeline lives behind HTTP is where each piece runs: tokenization happens twice (once when documents are loaded, once per query), document vectors are precomputed and held in memory, and only the query side runs inside the request handler.
+The clearest pattern for Quiver on Vapor is a semantic-search index. A collection of items — products, articles, notes, anything textual — is tokenized and turned into vectors when the server starts. The resulting document vectors stay in memory for the life of the server, and every search request decodes a query, turns it into a vector the same way, ranks it against the precomputed collection, and returns the top matches.
+
+The pipeline is five Quiver methods chained together:
 
 ```swift
 import Vapor
 import Quiver
 
-func routes(_ app: Application) throws {
-    let store = ProductStore()
-    seed(store)  // Tokenize, embed, and store vectors once at server start
-
-    app.post("products") { request throws -> HTTPStatus in
-        let input = try request.content.decode(AddRequest.self)
-        store.add(input.description)  // Updates the catalog separately, not inside a search request
-        return .created
+app.get("search") { request -> [SearchResult] in
+    guard let query = request.query[String.self, at: "q"] else {
+        throw Abort(.badRequest, reason: "Missing query parameter ?q=")
     }
 
-    // Search runs against the precomputed collection — no fitting, no re-embedding documents
-    app.get("search") { request -> [SearchResult] in
-        guard let query = request.query[String.self, at: "q"] else {
-            throw Abort(.badRequest, reason: "Missing query parameter ?q=")
-        }
-        return store.search(query: query).map {
-            SearchResult(rank: $0.rank, description: $0.label, similarity: $0.score)
-        }
+    // Tokenize the query → embed each token → reduce to one vector
+    let tokens = query.tokenize()
+    let vectors = tokens.embed(using: embeddings)
+    guard let queryVector = vectors.meanVector() else {
+        return []
+    }
+
+    // Rank the query vector against precomputed document vectors
+    let productVectors = store.shoes.map(\.vector)
+    let similarities = productVectors.cosineSimilarities(to: queryVector)
+    let top = similarities.topIndices(k: 5, labels: store.shoes)
+
+    return top.map { result in
+        SearchResult(
+            rank: result.rank,
+            description: result.label.description,
+            similarity: result.score
+        )
     }
 }
+
+struct SearchResult: Content {
+    let rank: Int
+    let description: String
+    let similarity: Double
+}
+```
+
+The full embedding pipeline is covered in <doc:Semantic-Search>. What changes when it lives behind HTTP is where each step runs: tokenization happens twice (once when documents are loaded at boot, once per query), document vectors are precomputed and held in memory, and only the query side runs inside the request handler. The handler's work is decode → tokenize → embed → reduce → rank — every step is a pure read against precomputed data.
+
+What this pattern is and what it is not: it is a search index over precomputed embeddings, optimized for fast reads. It is not a retraining loop. The catalog changes through a separate endpoint, never inside the search handler. For the underlying operations, see <doc:Similarity-Operations>.
+
+### Adding entries with vectors at creation time
+
+New entries enter the catalog through a creation endpoint that takes a description, embeds it on receipt, and stores both the text and the vector. The embedding step is the same five Quiver methods used by search, just running once at create time instead of once per query.
+
+```swift
+import Vapor
+import Quiver
 
 struct AddRequest: Content { let description: String }
-struct SearchResult: Content { let rank: Int; let description: String; let similarity: Double }
+
+app.post("products") { request throws -> HTTPStatus in
+    let input = try request.content.decode(AddRequest.self)
+
+    // Embed the new description with the same pipeline search uses
+    let tokens = input.description.tokenize()
+    let vectors = tokens.embed(using: embeddings)
+    guard let vector = vectors.meanVector() else {
+        throw Abort(.unprocessableEntity, reason: "Description produced no embeddable tokens.")
+    }
+
+    store.add(Shoe(description: input.description, vector: vector))
+    return .created
+}
 ```
 
-This is the shape the [running-shoes demo](https://github.com/waynewbishop/quiver-demo-vapor) ships. Inside `ProductStore.search(...)`, the query is tokenized, embedded, and reduced to a single vector with `meanVector`, then ranked against precomputed document vectors with `cosineSimilarities(to:)` and `topIndices(k:labels:)`.
+The pattern keeps the catalog and its vector representation in sync. Every entry that enters the store enters with its vector already computed, so search never has to embed a stored document at query time. The cost of embedding is paid once at creation, not once per future search.
 
-What this pattern is and what it is not: it is a search index over precomputed embeddings, optimized for fast reads. It is not a retraining loop. The catalog changes on demand through `POST /products`, never inside the search request handler. For the underlying operations, see <doc:Semantic-Search> and <doc:Similarity-Operations>.
+### Managing catalog membership through removal
 
-### Prediction endpoint — load once, predict on every request
-
-The most common machine-learning shape on Vapor is a prediction endpoint backed by a model that was trained somewhere else. Training runs in a notebook, a command-line tool, or a scheduled job. The result is saved as JSON through `Codable`. The server loads it when it starts and exposes a route that decodes a feature vector and returns a prediction. Training never happens inside a request handler.
-
-A lead-scoring regression is a clean example. Historical features and outcomes feed a `LinearRegression` fit somewhere away from the server; the resulting model is shipped to the server as a JSON file.
+Removal closes the CRUD loop without touching the vector math. The catalog is keyed by description (or by an `id` field in production-shaped applications); the handler looks up the matching entry and removes it.
 
 ```swift
 import Vapor
-import Quiver
 
-func routes(_ app: Application) throws {
-    // Load the fitted model when the server starts — request handlers never refit
-    let modelURL = URL(fileURLWithPath: "Resources/lead-scorer.json")
-    let data = try Data(contentsOf: modelURL)
-    let model = try JSONDecoder().decode(LinearRegression.self, from: data)
-
-    app.post("score") { request -> ScoreResponse in
-        let input = try request.content.decode(ScoreRequest.self)
-        let prediction = model.predict([input.features])[0]
-        return ScoreResponse(score: prediction)
+app.delete("products", ":description") { request -> HTTPStatus in
+    guard let description = request.parameters.get("description") else {
+        throw Abort(.badRequest, reason: "Missing path parameter.")
     }
-}
-
-struct ScoreRequest: Content { let features: [Double] }
-struct ScoreResponse: Content { let score: Double }
-```
-
-This pattern serves a fitted model, but does not retrain inside a request handler — for that, the same logic that <doc:watchOS-Patterns> walks through under "When to train, when to predict" applies on the server, just with cron jobs or scheduled workers instead of workout session boundaries.
-
-> Tip: When training pairs a scaler with the model, save them together so they stay matched at prediction time. Decoding two separate JSON files invites a mismatched pair the first time someone retrains one and forgets the other. See <doc:Pipeline>.
-
-### Stats engine — self-contained tests and rolling-summary services
-
-Some Vapor and Quiver workloads are not classification or regression at all. They are hypothesis tests, confidence intervals, or rolling summaries: confirm whether two samples differ, summarize a stream of incoming observations, flag anomalies as they arrive. Quiver fits both shapes, but they call for different ways of holding state.
-
-**Self-contained test endpoint.** A request body carries a sample of observations, the route runs a hypothesis test or a regression on that sample, and the response is the result. No state carries over from one request to the next. Each request is complete on its own, which means the route stays safe even when many requests arrive in parallel.
-
-```swift
-import Vapor
-import Quiver
-
-struct RegressionRequest: Content {
-    let features: [[Double]]
-    let targets: [Double]
-}
-
-struct RegressionResponse: Content {
-    let coefficients: [Double]
-    let hasIntercept: Bool
-}
-
-app.post("experiments/regression") { request -> RegressionResponse in
-    let input = try request.content.decode(RegressionRequest.self)
-    let model = try LinearRegression.fit(features: input.features, targets: input.targets)
-    return RegressionResponse(coefficients: model.coefficients, hasIntercept: model.hasIntercept)
+    guard store.remove(description: description) else {
+        throw Abort(.notFound, reason: "No matching entry.")
+    }
+    return .ok
 }
 ```
 
-Each request fits a fresh model on the data it brought, returns a structured result, and exits. Nothing accumulates between requests.
+The `store.remove(description:)` call mutates the shared catalog. As discussed in <doc:Vapor-Guide>'s "Sharing fitted state" section, this is the kind of mutation that requires the `@unchecked Sendable` annotation on the store type — Vapor's async context serializes the writes, and the read-heavy search path stays unaffected.
 
-**Rolling-summary actor.** When the server needs to take in a stream of observations and expose a running summary — anomaly detection over incoming metrics, z-scores against a moving window — an `actor` is the right shape. The actor owns the moving buffer; routes write into it and read summaries from it. Swift Concurrency makes sure only one task touches the actor's state at a time, so the buffer stays consistent without manual locks.
+For a fourth, read-only endpoint — listing the current catalog — the handler simply returns `store.shoes.map(\.description)` without touching any vectors. The same store backs all four endpoints; the same `Sendable` value-sharing pattern keeps them safe under concurrent load.
 
-```swift
-actor MetricsAccumulator {
-    private var window: [Double] = []
-    private let capacity = 1_000
+### When the in-memory catalog stops scaling
 
-    func ingest(_ value: Double) {
-        window.append(value)
-        if window.count > capacity { window.removeFirst() }
-    }
+This is a vector catalog with CRUD endpoints, optimized for fast reads and occasional writes. It is not a database. There is no persistence across server restarts, no transaction guarantees, no replication. For applications where the catalog needs to survive a restart or grow beyond what fits in memory, the same Quiver pipeline runs unchanged in front of a real database — the embedding and ranking math stay in the Vapor process; the storage moves to PostgreSQL, SQLite, or whatever the application already uses.
 
-    func summary() -> (mean: Double, std: Double) {
-        return (window.mean() ?? 0, window.std() ?? 0)
-    }
-}
-```
-
-What these patterns are and what they are not: these are prediction and analytical operations. Quiver supplies the math; storing the accumulated observations long-term is still a database problem.
-
-### Sizing a model for the server
-
-Server hardware is faster than a Watch and has more memory available, so the timing numbers from <doc:watchOS-Patterns>'s "Sizing a model for the wrist" are an upper bound for the same operations on Vapor. A K-Means fit that runs in about a millisecond on Apple Silicon will run faster on a server CPU. The interesting sizing question on Vapor is not how fast a single fit runs — it is what happens when many requests arrive at once.
-
-Can many request handlers all call `predict(...)` against the same fitted model, in parallel, without any coordination between them? Yes. The model never changes after `fit` returns. `predict(...)` is a pure read — coefficients in, prediction out, no shared values touched along the way. Because the model is `Sendable`, the compiler verifies the value is safe to share across tasks. Because Swift's `Array` is copy-on-write, the captured `[Double]` parameters do not duplicate storage on read.
-
-The result is that fitting is the costly operation (kept off the request handler, run when the server starts or on a schedule), and prediction is the only operation that runs per request. With Quiver's classical models running in milliseconds even on Watch silicon, prediction on a server fits comfortably inside the time budget of an HTTP handler with room to spare.
-
-> Tip: `Array` in Swift is copy-on-write, so passing a `[Double]` to `predict(...)` shares storage. But mutating a captured array inside a closure forces a copy. In a busy request handler, that cost is small per request but adds up when traffic stays high — prefer reading from server-wide arrays rather than mutating them.
-
+> Experiment: The patterns in this article are from [quiver-demo-vapor](https://github.com/waynewbishop/quiver-demo-vapor), a semantic-search server that scores fifteen shoes against a six-dimension hand-built embedding dictionary. Running the four endpoints — list, create, delete, search — in sequence against the same in-memory store, then comparing two queries that differ by one word, shows how `cosineSimilarities` and `topIndices` collapse free text into a ranked answer.

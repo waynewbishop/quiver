@@ -253,7 +253,7 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
             if let logDensity = Distributions.normal.logPDF(
                 x: sample[f],
                 mean: classStats.means[f],
-                std: std
+                standardDeviation: std
             ) {
                 logProb += logDensity
             }

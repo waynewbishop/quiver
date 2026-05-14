@@ -20,7 +20,7 @@ import Foundation
 /// `Panel` is provided by the Quiver framework to give names to columns of `[Double]`
 /// data while keeping rows aligned. It does not replace Quiver's array and matrix
 /// operations — it organizes them. Each column is a standard `[Double]` that supports
-/// all existing Quiver vector operations like `.mean()`, `.std()`, `.isGreaterThan(_:)`,
+/// all existing Quiver vector operations like `.mean()`, `.standardDeviation()`, `.isGreaterThan(_:)`,
 /// and boolean masking.
 ///
 /// Use `Panel` when working with multi-feature datasets where column identity
@@ -175,7 +175,7 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
     /// Returns the values for the named column as a Quiver vector.
     ///
     /// The returned array supports all Quiver vector operations — `.mean()`,
-    /// `.std()`, `.isGreaterThan(_:)`, boolean masking, and so on.
+    /// `.standardDeviation()`, `.isGreaterThan(_:)`, boolean masking, and so on.
     ///
     /// - Parameter column: The column name to look up.
     /// - Returns: The column's values as `[Double]`.
@@ -408,63 +408,328 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
 
     // MARK: - Description
 
-    /// Returns per-column summary statistics as a formatted string.
+    /// Returns a typed snapshot of per-column descriptive statistics.
     ///
-    /// For each column, computes count, mean, standard deviation, minimum, and
-    /// maximum using existing Quiver vector operations.
-    ///
-    /// - Returns: A multi-line string with one row of statistics per column.
-    public func summary() -> String {
+    /// For each column, builds a `ColumnSummary` covering count, mean, standard deviation,
+    /// quartiles, min, max, and iqr. The returned value conforms to `CustomStringConvertible`,
+    /// so `print(panel.summary())` produces the same formatted table as the previous
+    /// `String`-returning version. Programmatic callers can read individual values from
+    /// `panel.summary().columns["name"]?.mean`.
+    public func summary() -> PanelSummary {
+        var columnSummaries: [String: ColumnSummary] = [:]
+        for name in columnNames {
+            let col = column(name)
+            // Build a ColumnSummary directly so empty columns still appear in the table
+            // with zeros, matching the previous `String`-returning behavior.
+            let mean = col.mean() ?? 0.0
+            let std = col.standardDeviation() ?? 0.0
+            let q = col.quartiles()
+            columnSummaries[name] = ColumnSummary(
+                count: col.count,
+                mean: mean,
+                std: std,
+                min: q?.min ?? 0.0,
+                q1: q?.q1 ?? 0.0,
+                median: q?.median ?? 0.0,
+                q3: q?.q3 ?? 0.0,
+                max: q?.max ?? 0.0,
+                iqr: q?.iqr ?? 0.0
+            )
+        }
+        return PanelSummary(columnNames: columnNames, columns: columnSummaries)
+    }
 
-        // Format a value: drop trailing ".0" for whole numbers, otherwise 4 decimals
+    /// Returns a typed snapshot of per-column descriptive statistics.
+    ///
+    /// `describe` is an alias for ``summary()`` — both return the same
+    /// `PanelSummary` value covering count, mean, standard deviation, and the
+    /// five-number summary for every column. The alias exists for
+    /// discoverability: developers arriving from prior numerical-computing
+    /// experience often type `.describe()` first, while developers learning
+    /// Quiver from scratch find `.summary()` more natural. Both work.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let panel = Panel([
+    ///     ("age",   [25.0, 30.0, 35.0, 40.0]),
+    ///     ("score", [88.0, 92.0, 85.0, 91.0])
+    /// ])
+    /// print(panel.describe())  // identical output to print(panel.summary())
+    /// ```
+    public func describe() -> PanelSummary {
+        return summary()
+    }
+
+    /// Returns the last `n` rows of the panel as a formatted string.
+    ///
+    /// Mirrors ``head(n:)`` for inspecting the end of a dataset — useful for
+    /// time-series data where the most recent observations are at the bottom,
+    /// or for verifying that a sort placed the right values at the end.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let panel = Panel([
+    ///     ("day",     [1.0, 2.0, 3.0, 4.0, 5.0]),
+    ///     ("revenue", [120.0, 135.0, 142.0, 128.0, 145.0])
+    /// ])
+    /// print(panel.tail(n: 2))
+    /// //    day  revenue
+    /// // 3  4.0    128.0
+    /// // 4  5.0    145.0
+    /// ```
+    ///
+    /// - Parameter n: Number of rows to display from the end. Defaults to 10.
+    /// - Returns: A formatted string showing the last `n` rows in tabular form.
+    public func tail(n: Int = 10) -> String {
+        let displayRows = Swift.min(n, rowCount)
+        guard displayRows > 0 else { return "(empty Panel)" }
+
+        let startRow = rowCount - displayRows
+
         func format(_ value: Double) -> String {
             if value == value.rounded(.towardZero) && !value.isNaN && !value.isInfinite {
-                return "\(Int(value)).0"
+                let intVal = Int(value)
+                return "\(intVal).0"
             }
-            return String(format: "%.4f", value)
+            return String(format: "%.1f", value)
         }
 
-        // Compute stats for each column
-        let headers = ["column", "count", "mean", "std", "min", "max"]
-        var rows: [[String]] = []
+        let indexStrings = (startRow..<rowCount).map { "\($0)" }
+        let indexWidth = Swift.max(indexStrings.last?.count ?? 1, 1)
+
+        var columnStrings: [[String]] = []
+        var columnWidths: [Int] = []
 
         for name in columnNames {
             let col = column(name)
-            let mean = col.mean() ?? 0.0
-            let std = col.std() ?? 0.0
-            let minVal = col.min() ?? 0.0
-            let maxVal = col.max() ?? 0.0
-            rows.append([name, "\(col.count)", format(mean), format(std), format(minVal), format(maxVal)])
+            let values = (startRow..<rowCount).map { format(col[$0]) }
+            let width = Swift.max(name.count, values.map { $0.count }.max() ?? 0)
+            columnStrings.append(values)
+            columnWidths.append(width)
         }
 
-        // Compute width for each column based on header and data
-        var widths = headers.map { $0.count }
-        for row in rows {
-            for (c, cellValue) in row.enumerated() {
-                widths[c] = Swift.max(widths[c], cellValue.count)
+        let indexPad = String(repeating: " ", count: indexWidth)
+        let headerParts = zip(columnNames, columnWidths).map { name, width in
+            String(repeating: " ", count: width - name.count) + name
+        }
+        var lines = [indexPad + "  " + headerParts.joined(separator: "  ")]
+
+        for r in 0..<displayRows {
+            let indexLabel = indexStrings[r].padding(toLength: indexWidth, withPad: " ", startingAt: 0)
+            let valueParts = (0..<columnNames.count).map { c in
+                let cellValue = columnStrings[c][r]
+                let width = columnWidths[c]
+                return String(repeating: " ", count: width - cellValue.count) + cellValue
             }
-        }
-
-        // Build header — first column left-aligned, rest right-aligned
-        let headerParts = headers.enumerated().map { c, h in
-            c == 0
-                ? h.padding(toLength: widths[c], withPad: " ", startingAt: 0)
-                : String(repeating: " ", count: widths[c] - h.count) + h
-        }
-        var lines = [headerParts.joined(separator: "  ")]
-        lines.append(String(repeating: "-", count: lines[0].count))
-
-        // Build data rows — first column left-aligned, rest right-aligned
-        for row in rows {
-            let parts = row.enumerated().map { c, cellValue in
-                c == 0
-                    ? cellValue.padding(toLength: widths[c], withPad: " ", startingAt: 0)
-                    : String(repeating: " ", count: widths[c] - cellValue.count) + cellValue
-            }
-            lines.append(parts.joined(separator: "  "))
+            lines.append(indexLabel + "  " + valueParts.joined(separator: "  "))
         }
 
         return lines.joined(separator: "\n")
+    }
+
+    /// Returns the unique values in a column, sorted ascending.
+    ///
+    /// Uses exact floating-point equality, so two values that differ by
+    /// floating-point noise (e.g., `1.0` and `1.0 + 1e-16`) are treated as
+    /// distinct. This is the right behavior for integer-coded categories
+    /// (species labels, class IDs, day-of-week values) and is a foot-gun for
+    /// continuous measured data — bin continuous data first if the goal is
+    /// "how many distinct ranges does this column take."
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let panel = Panel([
+    ///     ("species", [0.0, 1.0, 0.0, 2.0, 1.0, 0.0])
+    /// ])
+    /// panel.unique(column: "species")  // [0.0, 1.0, 2.0]
+    /// ```
+    ///
+    /// - Parameter column: The column name to inspect.
+    /// - Returns: The unique values in ascending order, or `nil` if the column does not exist.
+    public func unique(column: String) -> [Double]? {
+        guard let values = storage[column] else { return nil }
+        return Array(Set(values)).sorted()
+    }
+
+    /// Returns the frequency of each unique value in a column.
+    ///
+    /// The result is sorted by count descending, with ties broken by value
+    /// ascending. The pair shape `(value: Double, count: Int)` is the
+    /// chart-ready format for a `BarMark` over categorical data.
+    ///
+    /// Like ``unique(column:)``, this method uses exact floating-point
+    /// equality, so it is intended for integer-coded categories or
+    /// integer-valued doubles. Bin continuous data first if needed.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let panel = Panel([
+    ///     ("species", [0.0, 1.0, 0.0, 2.0, 1.0, 0.0])
+    /// ])
+    /// panel.valueCounts(column: "species")
+    /// // [(value: 0.0, count: 3), (value: 1.0, count: 2), (value: 2.0, count: 1)]
+    /// ```
+    ///
+    /// - Parameter column: The column name to inspect.
+    /// - Returns: An array of `(value, count)` pairs sorted by count
+    ///   descending, or `nil` if the column does not exist.
+    public func valueCounts(column: String) -> [(value: Double, count: Int)]? {
+        guard let values = storage[column] else { return nil }
+        var counts: [Double: Int] = [:]
+        for v in values {
+            counts[v, default: 0] += 1
+        }
+        return counts
+            .map { (value: $0.key, count: $0.value) }
+            .sorted { lhs, rhs in
+                if lhs.count != rhs.count { return lhs.count > rhs.count }
+                return lhs.value < rhs.value
+            }
+    }
+
+    // MARK: - Transformations
+
+    /// Returns a new Panel sorted by the values in one column.
+    ///
+    /// All columns are reordered together so rows stay aligned — the row that
+    /// had the smallest value in the sort column ends up in row 0 of every
+    /// column. NaN values sort to the end regardless of the `ascending`
+    /// argument, matching the convention used by most numerical libraries.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let panel = Panel([
+    ///     ("name",  [3.0, 1.0, 2.0]),  // placeholder for ID
+    ///     ("score", [88.0, 95.0, 72.0])
+    /// ])
+    /// let topFirst = panel.sortedBy(column: "score", ascending: false)
+    /// // row 0 — score 95.0
+    /// // row 1 — score 88.0
+    /// // row 2 — score 72.0
+    /// ```
+    ///
+    /// Use ``head(n:)`` after sorting to extract the top-N or bottom-N rows.
+    ///
+    /// - Parameters:
+    ///   - column: The column name to sort by.
+    ///   - ascending: `true` for smallest-first, `false` for largest-first.
+    ///     Defaults to `true`. NaN values always sort to the end.
+    /// - Returns: A new Panel with rows reordered by the sort column.
+    /// - Note: Calling this method with a column name that does not exist
+    ///   triggers a `preconditionFailure`, matching the behavior of the
+    ///   subscript accessor.
+    public func sortedBy(column: String, ascending: Bool = true) -> Panel {
+        let sortColumn = self.column(column)
+
+        // Sort row indices by the value in the sort column. NaN sorts last
+        // in both ascending and descending modes.
+        let indices = (0..<rowCount).sorted { i, j in
+            let a = sortColumn[i]
+            let b = sortColumn[j]
+            if a.isNaN && b.isNaN { return false }
+            if a.isNaN { return false }  // a goes after b
+            if b.isNaN { return true }   // a goes before b
+            return ascending ? a < b : a > b
+        }
+
+        // Reorder every column using the same index permutation.
+        var sortedColumns: [(String, [Double])] = []
+        for name in columnNames {
+            let col = self.column(name)
+            sortedColumns.append((name, indices.map { col[$0] }))
+        }
+        return Panel(sortedColumns)
+    }
+
+    /// Returns a new Panel with one column standardized to z-scores.
+    ///
+    /// Standardization rescales values so the column has mean 0 and standard
+    /// deviation 1. Each output value is `(x - mean) / std` for the original
+    /// column. The other columns pass through unchanged.
+    ///
+    /// This is the Panel-level convenience for the array-level
+    /// ``Swift/Array/standardized()`` method. Use it for quick exploratory
+    /// transforms — comparing two columns on a normalized axis, plotting a
+    /// distribution centered on zero. For ML pipelines that need to fit a
+    /// scaler on training data and apply the same transform to test data,
+    /// reach for ``FeatureScaler`` instead.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let panel = Panel([
+    ///     ("age",   [25.0, 30.0, 35.0, 40.0]),
+    ///     ("score", [88.0, 92.0, 85.0, 91.0])
+    /// ])
+    /// let zPanel = panel.standardized(column: "age")
+    /// // age column now has mean 0, std 1; score column unchanged
+    /// ```
+    ///
+    /// - Parameter column: The column name to standardize.
+    /// - Returns: A new Panel with the named column replaced by its z-scored values.
+    /// - Note: A constant column (zero standard deviation) returns a column
+    ///   of zeros for that column, matching the array-level method.
+    public func standardized(column: String) -> Panel {
+        let original = self.column(column)
+        let zScores = original.standardized()
+
+        var newColumns: [(String, [Double])] = []
+        for name in columnNames {
+            if name == column {
+                newColumns.append((name, zScores))
+            } else {
+                newColumns.append((name, self.column(name)))
+            }
+        }
+        return Panel(newColumns)
+    }
+
+    /// Returns the pairwise Pearson correlation matrix with column labels.
+    ///
+    /// Builds an N-by-N matrix where entry `[i][j]` is the Pearson correlation
+    /// between column `i` and column `j`. Diagonal entries are 1.0. The result
+    /// pairs the matrix with the column names in the same order, so the labels
+    /// are immediately available for printing, charting, or feeding into a
+    /// heatmap.
+    ///
+    /// Pair with ``Swift/Array/heatmapData(labels:)`` or Swift Charts'
+    /// `RectangleMark` to visualize the correlation structure of a Panel.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let panel = Panel([
+    ///     ("temp",  [70.0, 75.0, 80.0, 85.0, 90.0]),
+    ///     ("sales", [40.0, 55.0, 70.0, 88.0, 105.0]),
+    ///     ("rain",  [0.0, 1.0, 0.0, 0.0, 0.5])
+    /// ])
+    /// let result = panel.correlationMatrix()
+    /// // result.columns: ["temp", "sales", "rain"]
+    /// // result.matrix:  [[1.0, 0.998, ...], [0.998, 1.0, ...], [..., ..., 1.0]]
+    /// ```
+    ///
+    /// Constant columns (zero variance) produce `Double.nan` in their row
+    /// and column entries, which carries the "undefined correlation" meaning
+    /// without crashing the rest of the matrix.
+    ///
+    /// - Returns: A named tuple of `(columns, matrix)`. The `columns` array
+    ///   matches the order of rows and columns in `matrix`.
+    public func correlationMatrix() -> (columns: [String], matrix: [[Double]]) {
+        let columnsAsRows = columnNames.map { self.column($0) }
+        let matrix = columnsAsRows.correlationMatrix()
+        return (columns: columnNames, matrix: matrix)
     }
 
     // MARK: - Private
@@ -486,5 +751,37 @@ public struct Panel: CustomStringConvertible, Equatable, Sendable {
         self.storage = dict
         self.columnNames = names
         self.rowCount = 0
+    }
+}
+
+// MARK: - Array → Panel Bridge
+
+public extension Array where Element == Double {
+
+    /// Wraps the array as a single-column `Panel` for chaining into Panel-level operations.
+    ///
+    /// The cleanest way to take a flat numeric vector and feed it into the Panel API
+    /// without the array-of-tuples ceremony. The default column name `"values"` lets
+    /// us call the method without arguments when we just want a quick descriptive
+    /// summary; pass an explicit name when the column will be referenced later.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0]
+    ///
+    /// // Default name — fine for one-shot inspection
+    /// print(scores.toPanel().summary())
+    ///
+    /// // Named — preferred when the column appears in later prints or charts
+    /// let panel = scores.toPanel("scores")
+    /// print(panel.head())
+    /// ```
+    ///
+    /// - Parameter columnName: The name to give the single column. Defaults to `"values"`.
+    /// - Returns: A `Panel` with one column containing the array's values.
+    func toPanel(_ columnName: String = "values") -> Panel {
+        Panel([(columnName, self)])
     }
 }

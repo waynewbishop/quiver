@@ -4,11 +4,11 @@ Apply operations between arrays and scalars or between arrays of different dimen
 
 ## Overview
 
-Quiver provides **broadcasting** capabilities that enable operations between arrays and scalars, or between arrays of different shapes. Broadcasting produces cleaner, more expressive code by eliminating explicit loops for common element-wise operations. 
+Quiver supports **broadcasting** between arrays and scalars, or between arrays of different shapes. Broadcasting replaces the explicit loops common element-wise operations would otherwise need.
 
-### Why broadcasting?
+### Why broadcasting matters
 
-Swift already provides powerful functional methods like `map`, `reduce`, and `filter` for transforming arrays. Broadcasting is a standard approach for mathematical operations on arrays, providing a more declarative syntax specifically designed for numerical computing. While Swift's functional methods are excellent for general-purpose transformations, broadcasting reads more like mathematical notation.
+Swift already provides functional methods like `map`, `reduce`, and `filter` for transforming arrays. Broadcasting offers a second syntax for the same work, shaped to read like mathematical notation rather than a closure pipeline. Functional methods are still the right choice for general-purpose transformations; broadcasting is the right choice when the code maps onto a formula a reader already knows from math.
 
 **Swift's map (functional approach):**
 ```swift

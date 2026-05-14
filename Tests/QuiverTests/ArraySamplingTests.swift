@@ -283,4 +283,69 @@ final class ArraySamplingTests: XCTestCase {
         // And the interval should be reasonably tight (not the full data range)
         XCTAssertLessThan(ci.upper - ci.lower, 5.0)
     }
+
+    // MARK: - samplingDistributionOfMean / OfMedian / OfStandardDeviation
+
+    func testSamplingDistributionShapeAndCount() {
+        let population = [Double].randomNormal(1_000, mean: 0, standardDeviation: 1)
+        let means = population.samplingDistributionOfMean(sampleSize: 30, iterations: 500, seed: 42)
+        XCTAssertEqual(means.count, 500)
+    }
+
+    func testSamplingDistributionIsSeedDeterministic() {
+        let population = Array(stride(from: 0.0, to: 100.0, by: 0.1))
+        let a = population.samplingDistributionOfMean(sampleSize: 30, iterations: 200, seed: 7)
+        let b = population.samplingDistributionOfMean(sampleSize: 30, iterations: 200, seed: 7)
+        XCTAssertEqual(a, b)
+    }
+
+    func testSamplingDistributionDifferentSeedsDiffer() {
+        let population = Array(stride(from: 0.0, to: 100.0, by: 0.1))
+        let a = population.samplingDistributionOfMean(sampleSize: 30, iterations: 200, seed: 7)
+        let b = population.samplingDistributionOfMean(sampleSize: 30, iterations: 200, seed: 8)
+        XCTAssertNotEqual(a, b)
+    }
+
+    func testSamplingDistributionRecoversPopulationMean() {
+        // Population with known mean 50.0 — many samples should average close to it.
+        let population = Array(stride(from: 0.0, to: 100.0, by: 0.1))
+        let means = population.samplingDistributionOfMean(sampleSize: 50, iterations: 1000, seed: 42)
+        XCTAssertEqual(means.mean()!, 49.95, accuracy: 1.0)
+    }
+
+    func testSamplingDistributionStandardErrorMatchesTheory() {
+        // Population std ≈ 28.87 (uniform 0..100), n=50 → expected SE ≈ 4.08
+        let population = Array(stride(from: 0.0, to: 100.0, by: 0.1))
+        let means = population.samplingDistributionOfMean(sampleSize: 50, iterations: 2000, seed: 42)
+        // Theoretical SE within Monte Carlo tolerance (~5%)
+        XCTAssertEqual(means.standardDeviation()!, 4.08, accuracy: 0.3)
+    }
+
+    func testSamplingDistributionAllowsSampleSizeLargerThanPopulation() {
+        // With-replacement sampling: drawing 100 from a population of 10 is legal.
+        let small: [Double] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        let means = small.samplingDistributionOfMean(sampleSize: 100, iterations: 50, seed: 1)
+        XCTAssertEqual(means.count, 50)
+    }
+
+    func testSamplingDistributionEdgeCases() {
+        let empty: [Double] = []
+        XCTAssertEqual(empty.samplingDistributionOfMean(sampleSize: 10, iterations: 100, seed: 1), [])
+
+        let population: [Double] = [1, 2, 3]
+        XCTAssertEqual(population.samplingDistributionOfMean(sampleSize: 10, iterations: 0, seed: 1), [])
+        XCTAssertEqual(population.samplingDistributionOfMean(sampleSize: 0, iterations: 100, seed: 1), [])
+    }
+
+    func testSamplingDistributionOfMedianAndStandardDeviation() {
+        let population = [Double].randomNormal(1_000, mean: 10, standardDeviation: 2)
+        let medians = population.samplingDistributionOfMedian(sampleSize: 50, iterations: 500, seed: 42)
+        let stds = population.samplingDistributionOfStandardDeviation(sampleSize: 50, iterations: 500, seed: 42)
+        XCTAssertEqual(medians.count, 500)
+        XCTAssertEqual(stds.count, 500)
+        // Median of medians should be close to the population median (≈ 10)
+        XCTAssertEqual(medians.mean()!, 10.0, accuracy: 0.5)
+        // Mean of sample standard deviations should be close to the population std (≈ 2)
+        XCTAssertEqual(stds.mean()!, 2.0, accuracy: 0.2)
+    }
 }

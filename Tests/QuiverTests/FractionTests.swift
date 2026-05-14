@@ -18,29 +18,28 @@ final class FractionTests: XCTestCase {
 
     // MARK: - Basic Conversions
 
-    func testWholeNumbers() {
+    // Whole numbers, simple fractions, negatives, and the matrix-inverse
+    // thirteenths case all render correctly via Fraction.description.
+    func testFractionDescription() {
+        // Whole numbers
         XCTAssertEqual(Fraction(2.0).description, "2")
         XCTAssertEqual(Fraction(-3.0).description, "-3")
         XCTAssertEqual(Fraction(0.0).description, "0")
         XCTAssertEqual(Fraction(1.0).description, "1")
-    }
 
-    func testSimpleFractions() {
+        // Simple positive fractions
         XCTAssertEqual(Fraction(0.5).description, "1/2")
         XCTAssertEqual(Fraction(0.25).description, "1/4")
         XCTAssertEqual(Fraction(0.2).description, "1/5")
         XCTAssertEqual(Fraction(0.75).description, "3/4")
         XCTAssertEqual(Fraction(1.0 / 3.0).description, "1/3")
-    }
 
-    func testNegativeFractions() {
+        // Negative fractions
         XCTAssertEqual(Fraction(-0.5).description, "-1/2")
         XCTAssertEqual(Fraction(-0.2).description, "-1/5")
         XCTAssertEqual(Fraction(-1.0 / 3.0).description, "-1/3")
-    }
 
-    func testThirteenths() {
-        // The matrix inverse use case: determinant of 13
+        // Thirteenths — the matrix inverse use case where the determinant is 13
         XCTAssertEqual(Fraction(5.0 / 13.0).description, "5/13")
         XCTAssertEqual(Fraction(-1.0 / 13.0).description, "-1/13")
         XCTAssertEqual(Fraction(-2.0 / 13.0).description, "-2/13")
@@ -75,36 +74,27 @@ final class FractionTests: XCTestCase {
 
     // MARK: - Matrix Extension
 
+    // Matrix inverse rendered as fractions — covers the determinant-13 case,
+    // the identity (no-op inverse), and a diagonal scaling matrix.
     func testMatrixInverseAsFractions() throws {
-        let A = [[3.0, 1.0],
-                 [2.0, 5.0]]
-        let inverse = try A.inverted()
-        let display = inverse.asFractions()
+        // Determinant 13 case
+        let a = try [[3.0, 1.0], [2.0, 5.0]].inverted().asFractions()
+        XCTAssertEqual(a[0][0].description, "5/13")
+        XCTAssertEqual(a[0][1].description, "-1/13")
+        XCTAssertEqual(a[1][0].description, "-2/13")
+        XCTAssertEqual(a[1][1].description, "3/13")
 
-        XCTAssertEqual(display[0][0].description, "5/13")
-        XCTAssertEqual(display[0][1].description, "-1/13")
-        XCTAssertEqual(display[1][0].description, "-2/13")
-        XCTAssertEqual(display[1][1].description, "3/13")
-    }
+        // Identity inverts to itself
+        let identity = try [[1.0, 0.0], [0.0, 1.0]].inverted().asFractions()
+        XCTAssertEqual(identity[0][0].description, "1")
+        XCTAssertEqual(identity[0][1].description, "0")
+        XCTAssertEqual(identity[1][0].description, "0")
+        XCTAssertEqual(identity[1][1].description, "1")
 
-    func testIdentityInverseAsFractions() throws {
-        let identity = [[1.0, 0.0], [0.0, 1.0]]
-        let inverse = try identity.inverted()
-        let display = inverse.asFractions()
-
-        XCTAssertEqual(display[0][0].description, "1")
-        XCTAssertEqual(display[0][1].description, "0")
-        XCTAssertEqual(display[1][0].description, "0")
-        XCTAssertEqual(display[1][1].description, "1")
-    }
-
-    func testScalingInverseAsFractions() throws {
-        let scale = [[2.0, 0.0], [0.0, 3.0]]
-        let inverse = try scale.inverted()
-        let display = inverse.asFractions()
-
-        XCTAssertEqual(display[0][0].description, "1/2")
-        XCTAssertEqual(display[1][1].description, "1/3")
+        // Diagonal scaling matrix
+        let scale = try [[2.0, 0.0], [0.0, 3.0]].inverted().asFractions()
+        XCTAssertEqual(scale[0][0].description, "1/2")
+        XCTAssertEqual(scale[1][1].description, "1/3")
     }
 
     // MARK: - Determinant as Fraction

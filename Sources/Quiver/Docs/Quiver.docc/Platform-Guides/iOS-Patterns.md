@@ -1,177 +1,183 @@
 # iOS Patterns
 
-Personalizing classifiers, surfacing anomalies, and ranking recommendations on the device.
+Patterns that turn arrays an iOS app already holds into charts and inferential answers.
 
 ## Overview
 
-The <doc:iOS-Guide> covers the foundations — loading models at launch, how a screen's life on display affects the work, and decoding sensor and storage inputs into `[Double]`. This article builds on those foundations with applied patterns iOS developers reach for repeatedly: a personalized classifier fit from a single user's history, anomaly surfacing in a list view, similarity-based recommendation against a precomputed item index, and data aggregation that feeds a Swift Charts visualization.
+A finance app wants to render a year of transactions as a donut chart by category. A health app wants to fold thirty days of readings into a weekly trend. A feed wants to highlight the unusual entries without burying the normal ones. A workout app wants to tell the user whether this week's pace is genuinely faster than last week's or just noise. Each situation has the same shape: raw values on one side, an answer on the other, and a clean piece of math in between. Quiver gives us the building blocks to compose that answer from the arrays the app already holds. This article walks through four patterns that come up repeatedly.
 
-### Personalization in a single-user app
+### Aggregating data for Swift Charts
 
-iOS apps usually have one user across many sessions. Personalization on iOS therefore happens between sessions rather than during them — a model fit from a user's accumulated history and held in observable state across launches. The pattern is to load the user's data from `Documents/`, fit a `Pipeline` that pairs a scaler with a classifier, and save the fitted pipeline back to disk so the next launch is ready to predict immediately.
+[Swift Charts](https://developer.apple.com/documentation/charts) is excellent at rendering. It is not particular about where the data comes from or how it has been summarized — by the time a `BarMark`, `SectorMark`, or `PointMark` is constructed, the values already need to be in the right shape. The Quiver side of the pipeline gets the values into that shape. The chart side reads them and renders.
 
-```swift
-import SwiftUI
-import Quiver
-
-@Observable
-@MainActor
-final class PersonalBaseline {
-    var pipeline: Pipeline<KNearestNeighbors>?
-
-    private var fileURL: URL {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return docs.appendingPathComponent("baseline.json")
-    }
-
-    // Fits a personalized classifier from the user's stored history
-    func refit(features: [[Double]], labels: [Int]) throws {
-        let fitted = Pipeline.fit(features: features, labels: labels, k: 3)
-        let data = try JSONEncoder().encode(fitted)
-        try data.write(to: fileURL)
-        pipeline = fitted
-    }
-
-    // Restores the most recent pipeline from disk on app launch
-    func load() {
-        guard let data = try? Data(contentsOf: fileURL) else { return }
-        pipeline = try? JSONDecoder().decode(Pipeline<KNearestNeighbors>.self, from: data)
-    }
-}
-```
-
-The `Pipeline` keeps the scaler and the classifier as one matched pair, so encoding and decoding move them together. Refitting does not happen during view updates — it is triggered by a settings action when the user wants to update their baseline, or scheduled at the end of a session. Predictions read from `pipeline` and run cheaply on every view update. For the saving side of this pattern, see <doc:Model-Persistence>; for why the pairing matters, see <doc:Pipeline>.
-
-What this pattern is and what it is not: it is a per-user personalization fit, saved across launches, refit on demand. It is not a model that keeps learning from every new piece of data as it arrives. The user explicitly asks for a refit, or the app does it at the start or end of a session — never while SwiftUI is drawing a view.
-
-### Surfacing anomalies in a list view
-
-Many iOS apps display a list or chart of measurements where the interesting values are the unusual ones. A spending feed wants to highlight the outsized transaction; a health dashboard wants to flag the abnormally high reading; a logging app wants to mark the request that took ten times longer than the rest. Quiver's `outlierMask(threshold:)` produces a boolean array aligned with the values, and SwiftUI renders against that mask the same way it renders against any other state.
+The three chart types most iOS dashboards reach for each pair with one Quiver method that does the aggregation work:
 
 ```swift
-import SwiftUI
+import Charts
 import Quiver
+import SwiftUI
 
-struct Reading: Identifiable {
-    let id = UUID()
-    let label: String
-    let value: Double
-}
+struct FinanceDashboard: View {
+    let amounts: [Double]
+    let categories: [String]
 
-struct ReadingsList: View {
-    let readings: [Reading]
-
-    // Flag any reading more than two standard deviations from the mean
-    private var anomalyMask: [Bool] {
-        readings.map(\.value).outlierMask(threshold: 2.0)
+    // Sums the spending in each category and returns sorted percentage shares
+    private var categoryShares: [(category: String, value: Double)] {
+        amounts.groupedData(by: categories, using: .percentage)
     }
 
     var body: some View {
-        List(Array(zip(readings, anomalyMask)), id: \.0.id) { reading, isAnomaly in
-            HStack {
-                Text(reading.label)
-                Spacer()
-                Text(reading.value, format: .number.precision(.fractionLength(1)))
-                if isAnomaly {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                }
-            }
+        Chart(categoryShares, id: \.category) { share in
+            SectorMark(
+                angle: .value("Share", share.value),
+                innerRadius: .ratio(0.6)
+            )
+            .foregroundStyle(by: .value("Category", share.category))
         }
     }
 }
 ```
 
-The mask is computed once per render against the current list of values. Because Swift's `Array` is copy-on-write, mapping out the values and computing the mask does not allocate the underlying storage twice. As the list grows, the mask grows with it; as the user filters or searches, the mask recomputes against the visible subset.
+The `groupedData(by:using:)` call is the load-bearing step. It accepts a parallel array of category labels and an aggregation kind — `.sum`, `.mean`, `.count`, `.percentage` — and returns sorted `(category, value)` tuples that map directly to the shape `SectorMark` (donut) or `BarMark` (bar) expects. No `Dictionary` to flatten on the chart side, no second pass to deduplicate categories.
 
-The shape here is a one-shot z-score check against the dataset currently in view, not a moving-window detector running on a live stream — that is the watchOS shape, where the window slides forward continuously. On iOS the dataset is whatever the screen is currently showing, and the mask is recomputed when that dataset changes.
-
-### Recommendation and similarity routes
-
-Recommendation on iOS rarely needs a server when the catalog is small enough to fit on the device. The pattern is to embed every catalog item as a feature vector once — at app launch from a bundled file, or when the catalog updates from a download — and rank against the precomputed vectors at view time. Quiver's `cosineSimilarities(to:)` and `topIndices(k:labels:)` do the ranking; SwiftUI renders the result.
+For headline statistics that sit above the chart — total spending, daily average, month-over-month change — the same pattern applies, just with vector aggregation:
 
 ```swift
-import SwiftUI
-import Quiver
-
-struct Item: Identifiable {
-    let id: Int
-    let name: String
-    let vector: [Double]
-}
-
-@Observable
-@MainActor
-final class Catalog {
-    var items: [Item] = []
-
-    // Returns the top-k items most similar to the given query vector
-    func recommend(matching query: [Double], k: Int = 5) -> [(rank: Int, item: Item, score: Double)] {
-        let vectors = items.map(\.vector)
-        let similarities = vectors.cosineSimilarities(to: query)
-        return similarities.topIndices(k: k, labels: items).map {
-            (rank: $0.rank, item: $0.label, score: $0.score)
-        }
-    }
-}
-
-struct RecommendationsView: View {
-    let catalog: Catalog
-    let queryVector: [Double]
-
-    var body: some View {
-        List(catalog.recommend(matching: queryVector), id: \.item.id) { result in
-            HStack {
-                Text("\(result.rank). \(result.item.name)")
-                Spacer()
-                Text(result.score, format: .number.precision(.fractionLength(2)))
-            }
-        }
-    }
-}
+let total = amounts.sum()                          // 5050.0
+let dailyAverage = amounts.mean() ?? 0             // 32.99
+let change = amounts.percentChange(lag: 1)         // [-0.04, 0.02, ...]
 ```
 
-The full embedding pipeline — tokenizing text, building vectors, reducing with `meanVector` — is covered in <doc:Semantic-Search>. What changes on iOS is where each piece runs: embedding happens when the catalog loads, the precomputed vectors live in observable state, and only the ranking call runs while a view is on screen. For the underlying operations, see <doc:Similarity-Operations>.
+Each call returns a `Double` or `[Double]` that drops straight into a SwiftUI `Text` view. There is no intermediate container, no formatter layer, no view-model state that the chart and the headline statistics have to share.
 
-What this pattern is and what it is not: it is a top-k similarity ranking against a precomputed index. It is not a learned recommender that personalizes from interaction history — that pattern combines this index with the personalization shape from earlier in the article, where a per-user model produces the query vector instead of a fixed input.
+### Downsampling a long time series
 
-### Aggregating for charts
-
-iOS is where Quiver-aggregated data most often meets [Swift Charts](https://developer.apple.com/documentation/charts). The chart screen receives raw measurements, runs them through a `Panel` for column-aware summarization, and feeds the result to the chart view. The intermediate `Panel` keeps column identity, supports per-column statistics, and converts cleanly to whatever shape Swift Charts expects.
+Time series data on iOS often arrives at a finer cadence than the screen needs. Daily transactions become a weekly bar chart. Hourly readings become a daily summary. Per-second samples become a per-minute trace. The `downsample(factor:using:)` method collapses every N adjacent values into a single value, with the same aggregation kinds as `groupedData`.
 
 ```swift
-import SwiftUI
 import Charts
 import Quiver
 
-struct DistributionChart: View {
-    let temperatures: [Double]
+struct WeeklyBreakdown: View {
+    let dailySpending: [Double]   // 30 values, one per day
 
-    // Bucket the values into a histogram with Quiver
-    private var bins: [(midpoint: Double, count: Int)] {
-        temperatures.histogram(bins: 12)
+    // Collapse 30 days into 5 weekly totals
+    private var weeklyTotals: [Double] {
+        dailySpending.downsample(factor: 6, using: .sum)
     }
 
     var body: some View {
-        Chart(bins, id: \.midpoint) { bin in
-            BarMark(
-                x: .value("Temperature", bin.midpoint),
-                y: .value("Count", bin.count)
-            )
+        Chart {
+            ForEach(Array(weeklyTotals.enumerated()), id: \.offset) { index, value in
+                BarMark(
+                    x: .value("Week", index + 1),
+                    y: .value("Spending", value)
+                )
+            }
         }
     }
 }
 ```
 
-The histogram is a direct array transform. For richer summaries — five-number summary, quartiles, standard deviation — the same pattern applies: the chart view reads precomputed Quiver results from observable state. For the Panel-to-Charts pipeline end to end, see <doc:Panel-and-Charts>; for the broader catalog of summary methods and chart shapes, see <doc:Data-Visualization> and <doc:Panel>.
+The downsample is a single array transform. The chart receives a small, view-sized array and renders without ever needing to know there was a longer signal behind it. For finer-grained smoothing where the cadence shouldn't change — flattening noise without losing samples — see `rollingMean(window:)` and `exponentialMean(alpha:)` in <doc:Data-Visualization>.
 
-### Sizing a model for the phone
+For outlier-aware time series — where the goal is to render every sample but highlight the unusual ones — the pattern combines `outlierMask(threshold:)` with `maskedWithIndices(by:)` so the chart can render normal values one way and outliers another:
 
-A useful baseline for iOS sizing is the watchOS measurement set in <doc:watchOS-Patterns> under "Sizing a model for the wrist." If a model fits and predicts inside a few milliseconds on Apple Watch silicon, it does the same on iPhone silicon with room to spare. The interesting questions on iOS are not raw fit speed but when the work happens.
+```swift
+import Charts
+import Quiver
 
-The first question is whether to load a saved model or to fit one at launch. Decoding a fitted `Pipeline` from JSON is faster than refitting it, and trades a CPU-heavy operation for a disk read. For models that do not need to adapt to the current user — a recommendation index, a content classifier — loading is preferred. For models that do need to be user-specific, the fit happens once at the end of a session or when the user explicitly opts in, never as a side effect of a view appearing.
+struct UnusualDaysChart: View {
+    let dailySpending: [Double]
 
-The second question is doing work off the main thread under SwiftUI. A fitted Quiver model is `Sendable`, so a `.task` modifier on a view can call `predict(...)` on a background priority without blocking the render loop. The result crosses back to the main actor as a value and the SwiftUI binding updates the view automatically. For the full set of concurrency patterns, see <doc:Concurrency-Primer>.
+    private var outlierFlags: [Bool] {
+        dailySpending.outlierMask(threshold: 1.5)
+    }
 
-> Tip: For models that ship in the bundle as JSON, the decode happens once the first time the model is used. Hold the fitted value in an `@Observable` store and let every view read from that store rather than decoding inside `onAppear` — decoding twice is a silent regression that only shows up under profiling.
+    var body: some View {
+        Chart {
+            ForEach(Array(dailySpending.enumerated()), id: \.offset) { day, value in
+                PointMark(
+                    x: .value("Day", day + 1),
+                    y: .value("Spending", value)
+                )
+                .foregroundStyle(outlierFlags[day] ? .red : .blue)
+                .symbolSize(outlierFlags[day] ? 120 : 40)
+            }
+        }
+    }
+}
+```
 
+The mask is computed once per render against the current data. SwiftUI re-runs the body only when the input changes, so the work is paid for at the moments the dashboard refreshes — not on every frame.
+
+### Decoding sensor and storage inputs
+
+iOS apps have many places to read numbers from — `HKHealthStore` for health data, `CMMotionManager` for motion, `UserDefaults` and `FileManager` for what the app has stored itself, the keyboard and form fields for user input. Quiver does not interact with any of these sources directly. The pattern is to decode whatever the source produces into `[Double]` once, near the boundary, and treat the result as Quiver data from that point on.
+
+```swift
+import Quiver
+
+// Once HealthKit samples are in a [Double], a Panel turns them into a typed summary
+func summarizeHeartRate(samples: [Double]) -> PanelSummary? {
+    let panel = Panel([("heartRate", samples)])
+    return panel.summary()
+}
+```
+
+Calling `Panel.summary()` returns a `PanelSummary` with count, mean, standard deviation, quartiles, min, max, and IQR — every field a dashboard typically needs in one typed value. The result is `Codable` and `Sendable`, so it crosses task boundaries and persists to disk without ceremony. Each column's statistics live in a `ColumnSummary` value addressable by field name. See <doc:Panel-Workflows> for the full typed-summary surface.
+
+The source — an `HKQuantitySample` query callback, an array of `CMAccelerometerData` readings, a CSV column the user imported, a list of numeric form entries — becomes a `[Double]` once at the boundary. Everything downstream is the same Quiver code that runs on any other input. Decode at the edge, compute in the middle, render at the end.
+
+> Tip: When the dashboard needs more than a summary — multiple aligned columns, filtering across rows, splitting into train/test subsets, or charting — the full `Panel` surface picks up where `summary()` leaves off. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the split, summary, classification, and charting patterns.
+
+### Turning a reading into a percentile
+
+A health dashboard records heart-rate readings over months and wants to tell the user how unusual today's resting reading is. The user's history makes that possible. The mean and standard deviation of past readings define a personal distribution; `Distributions.normal.cdf` turns the current reading into the probability of seeing a value at least that extreme, which the UI can render as "in the top 2% of your history" or similar.
+
+```swift
+import Quiver
+
+// User's historical resting heart rates over the past three months
+let history: [Double] = [/* … */]
+let today: Double = 84
+
+if let mean = history.mean(),
+   let std = history.standardDeviation() {
+    let z = (today - mean) / std
+    if let cdf = Distributions.normal.cdf(x: z, mean: 0, standardDeviation: 1) {
+        let upperTail = 1.0 - cdf
+        let percentLabel = String(format: "Top %.0f%% of your history", upperTail * 100)
+        // Render percentLabel in a glance complication, a SwiftUI Text, or a notification body
+    }
+}
+```
+
+The whole calculation runs on the watch or phone with no network call and no permissions beyond what the app already had to read history. A glance can render "this reading is in the top 2% of your history" the moment a sample arrives.
+
+### Small-sample A/B comparisons inside the app
+
+iOS apps that surface their own analytics often have a sample size of ten or twenty observations, not thousands. A workout app showing the user "is your pace this week genuinely faster than last week, or is the gap just noise?" needs a t-test, not a normal z-test, because the sample is small. Calling `Distributions.t.cdf` produces the honest p-value at small `df`.
+
+```swift
+import Quiver
+
+let thisWeek: [Double] = [/* 8 pace samples */]
+let baseline: Double = 9.5  // user's typical pace from a longer baseline
+
+if let mean = thisWeek.mean(),
+   let se = thisWeek.standardError() {
+    let t = (mean - baseline) / se
+    let df = Double(thisWeek.count - 1)
+    if let cdf = Distributions.t.cdf(x: abs(t), df: df) {
+        let pValue = 2 * (1 - cdf)
+        let label = pValue < 0.05
+            ? "Significantly different from your typical pace"
+            : "Within your typical range"
+    }
+}
+```
+
+> Note: The same calculation against the normal distribution would overstate significance at small `n`. For ten samples the t-distribution gives a p-value roughly five times larger than the normal would, which is the honest accounting of small-sample uncertainty. For the full distribution surface, see <doc:Working-With-Distributions>.
+
+> Experiment: [quiver-demo-ios](https://github.com/waynewbishop/quiver-demo-ios) is a personal-finance dashboard that renders three Swift Charts views from twenty-four hardcoded transactions. Cloning it and changing the `outlierMask` threshold in `FinanceModel.swift` from `1.5` to `1.0` and then to `2.5` shows the scatter's red points expand and contract — the clearest way to feel what a z-score threshold controls.

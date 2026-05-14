@@ -341,8 +341,8 @@ public extension Array where Element: FloatingPoint {
     /// ```
     ///
     /// - Complexity: O(*n* log *n*) where *n* is the number of elements.
-    /// - Returns: A tuple containing the five-number summary and IQR, or nil if the array is empty
-    func quartiles() -> (min: Element, q1: Element, median: Element, q3: Element, max: Element, iqr: Element)? where Element: BinaryFloatingPoint {
+    /// - Returns: A `Quartiles` value containing the five-number summary and IQR, or nil if the array is empty.
+    func quartiles() -> Quartiles<Element>? where Element: BinaryFloatingPoint {
         guard !isEmpty else { return nil }
 
         let sorted = self.sorted()
@@ -357,7 +357,7 @@ public extension Array where Element: FloatingPoint {
 
         let iqr = q3Value - q1Value
 
-        return (min: minVal, q1: q1Value, median: medianValue, q3: q3Value, max: maxVal, iqr: iqr)
+        return Quartiles(min: minVal, q1: q1Value, median: medianValue, q3: q3Value, max: maxVal, iqr: iqr)
     }
 
     /// Calculates the value at a specific percentile using linear interpolation.
@@ -578,7 +578,7 @@ public extension Array where Element: FloatingPoint {
     /// - Returns: Array of z-score standardized values, or empty array if standard deviation is zero
     func standardized() -> [Element] {
         guard !isEmpty else { return [] }
-        guard let meanVal = mean(), let stdVal = std() else {
+        guard let meanVal = mean(), let stdVal = standardDeviation() else {
             return []
         }
 
@@ -853,7 +853,11 @@ public extension Array where Element == [Double] {
             denomY += diffY * diffY
         }
 
-        guard denomX > 0 && denomY > 0 else { return 0.0 }
+        // Constant column → undefined correlation, returned as NaN.
+        // Returning 0.0 would conflate "no linear relationship" with
+        // "correlation undefined" — two different mathematical statements.
+        // Matches the convention in pandas (`df.corr()`) and NumPy (`np.corrcoef`).
+        guard denomX > 0 && denomY > 0 else { return .nan }
 
         return numerator / Foundation.sqrt(denomX * denomY)
     }

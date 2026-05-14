@@ -16,27 +16,11 @@ import XCTest
 
 final class ArrayArithmeticTests: XCTestCase {
 
-    func testAddition() {
-        let a = [1.0, 2.0, 3.0]
-        let b = [4.0, 5.0, 6.0]
-        XCTAssertEqual(a.add(b), [5.0, 7.0, 9.0])
-    }
-
-    func testSubtraction() {
-        let a = [5.0, 7.0, 9.0]
-        let b = [1.0, 2.0, 3.0]
-        XCTAssertEqual(a.subtract(b), [4.0, 5.0, 6.0])
-    }
-
-    func testMultiplication() {
-        let a = [2.0, 3.0, 4.0]
-        let b = [3.0, 2.0, 1.0]
-        XCTAssertEqual(a.multiply(b), [6.0, 6.0, 4.0])
-    }
-
-    func testDivision() {
-        let a = [6.0, 8.0, 10.0]
-        let b = [2.0, 4.0, 5.0]
-        XCTAssertEqual(a.divide(b), [3.0, 2.0, 2.0])
+    // Element-wise add, subtract, multiply, divide produce the expected vectors
+    func testElementwiseArithmetic() {
+        XCTAssertEqual([1.0, 2.0, 3.0].add([4.0, 5.0, 6.0]),      [5.0, 7.0, 9.0])
+        XCTAssertEqual([5.0, 7.0, 9.0].subtract([1.0, 2.0, 3.0]), [4.0, 5.0, 6.0])
+        XCTAssertEqual([2.0, 3.0, 4.0].multiply([3.0, 2.0, 1.0]), [6.0, 6.0, 4.0])
+        XCTAssertEqual([6.0, 8.0, 10.0].divide([2.0, 4.0, 5.0]),  [3.0, 2.0, 2.0])
     }
 }

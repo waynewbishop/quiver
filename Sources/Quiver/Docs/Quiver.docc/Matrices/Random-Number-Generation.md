@@ -55,11 +55,11 @@ Generate values from a Gaussian (bell curve) distribution using the Box-Muller t
 let standardNormal = [Double].randomNormal(1000)
 
 // Custom mean and standard deviation
-let heights = [Double].randomNormal(500, mean: 170.0, std: 10.0)
+let heights = [Double].randomNormal(500, mean: 170.0, standardDeviation: 10.0)
 // Example: values clustered around 170, mostly between 150-190
 
 // 2D matrix of normal values
-let noiseMatrix = [Double].randomNormal(3, 4, mean: 0.0, std: 0.1)
+let noiseMatrix = [Double].randomNormal(3, 4, mean: 0.0, standardDeviation: 0.1)
 ```
 
 ### Random integers
@@ -85,7 +85,7 @@ All uniform and normal generation methods work with both `Float` and `Double` ty
 ```swift
 // Float variants
 let floatValues = [Float].random(3)
-let floatNormal = [Float].randomNormal(100, mean: 0.0, std: 1.0)
+let floatNormal = [Float].randomNormal(100, mean: 0.0, standardDeviation: 1.0)
 let floatRange = [Float].random(5, in: 0.0...10.0)
 ```
 
@@ -115,13 +115,13 @@ Generate datasets with known characteristics to verify Quiver's statistics funct
 ```swift
 // Uniform data — mean should be near the midpoint
 let uniform = [Double].random(100, in: 50.0...70.0)
-if let avg = uniform.mean(), let std = uniform.std() {
+if let avg = uniform.mean(), let std = uniform.standardDeviation() {
     print(avg)  // Approximately 60.0
     print(std)  // Approximately 5.8
 }
 
 // Normal data — verify the distribution matches expectations
-let normal = [Double].randomNormal(1000, mean: 100.0, std: 15.0)
+let normal = [Double].randomNormal(1000, mean: 100.0, standardDeviation: 15.0)
 if let median = normal.median() {
     print(median)  // Approximately 100.0
 }
@@ -168,5 +168,5 @@ Uniform random generation uses Swift's built-in `Double.random(in:)` and `Float.
 - ``Swift/Array/random(_:_:)-9gsef``
 
 ### Normal distribution
-- ``Swift/Array/randomNormal(_:mean:std:)->[Double]``
-- ``Swift/Array/randomNormal(_:_:mean:std:)->[[Double]]``
+- ``Swift/Array/randomNormal(_:mean:standardDeviation:)->[Double]``
+- ``Swift/Array/randomNormal(_:_:mean:standardDeviation:)->[[Double]]``

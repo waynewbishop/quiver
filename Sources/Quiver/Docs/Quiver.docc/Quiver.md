@@ -63,7 +63,8 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Vector-Projections>
 
 ### Statistics
-- <doc:Statistical-Operations>
+- <doc:Statistics-Primer>
+- <doc:Inferential-Statistics-Primer>
 - <doc:Frequency-Tables>
 - <doc:Working-With-Distributions>
 - <doc:Boolean-Masking>
@@ -95,7 +96,8 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Data Preparation
 - <doc:Panel>
-- <doc:Panel-and-Charts>
+- <doc:Panel-Workflows>
+- <doc:Correlation>
 - <doc:Data-Visualization>
 - <doc:Train-Test-Split>
 - <doc:Feature-Scaling>
@@ -116,6 +118,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Quiver-Notebook-For-Classrooms>
 - <doc:Quiver-Cookbook>
 - <doc:Quiver-Knowledge-File>
+- <doc:Xcode-Playground>
 
 ### Supporting Types
 - ``LogDeterminant``

@@ -172,8 +172,8 @@ public extension Array where Element == Int {
     /// ```
     ///
     /// - Parameter actual: The ground truth class labels, one per sample.
-    /// - Returns: A formatted string with per-class metrics, accuracy, and averages.
-    func classificationReport(actual: [Int]) -> String {
+    /// - Returns: A `ClassificationReport` with per-class metrics, accuracy, and macro/weighted averages.
+    func classificationReport(actual: [Int]) -> ClassificationReport {
         precondition(count == actual.count,
             "Predicted and actual arrays must have the same length")
 
@@ -181,12 +181,17 @@ public extension Array where Element == Int {
         let classes = Array(Set(actual + self)).sorted()
 
         // Compute per-class metrics using one-vs-rest
-        var perClass: [(label: Int, precision: Double?, recall: Double?, f1Score: Double?, support: Int)] = []
+        var perClassDict: [Int: ClassMetrics] = [:]
         for cls in classes {
             let cm = _Metrics.confusionMatrix(predicted: self, actual: actual, positiveLabel: cls)
             let support = actual.filter { $0 == cls }.count
-            perClass.append((label: cls, precision: cm.precision, recall: cm.recall,
-                             f1Score: cm.f1Score, support: support))
+            perClassDict[cls] = ClassMetrics(
+                label: cls,
+                precision: cm.precision,
+                recall: cm.recall,
+                f1Score: cm.f1Score,
+                support: support
+            )
         }
 
         // Compute overall accuracy
@@ -194,67 +199,45 @@ public extension Array where Element == Int {
         let accuracy = total > 0 ? Double(correct) / Double(total) : 0.0
 
         // Macro average — unweighted mean of per-class metrics
-        let definedP = perClass.compactMap { $0.precision }
-        let definedR = perClass.compactMap { $0.recall }
-        let definedF = perClass.compactMap { $0.f1Score }
+        let definedP = classes.compactMap { perClassDict[$0]?.precision }
+        let definedR = classes.compactMap { perClassDict[$0]?.recall }
+        let definedF = classes.compactMap { perClassDict[$0]?.f1Score }
         let macroP = definedP.isEmpty ? nil : definedP.reduce(0, +) / Double(definedP.count)
         let macroR = definedR.isEmpty ? nil : definedR.reduce(0, +) / Double(definedR.count)
         let macroF = definedF.isEmpty ? nil : definedF.reduce(0, +) / Double(definedF.count)
 
         // Weighted average — weighted by support
-        let totalSupport = perClass.map { $0.support }.reduce(0, +)
+        let totalSupport = classes.compactMap { perClassDict[$0]?.support }.reduce(0, +)
         let weightedP: Double? = totalSupport > 0
-            ? perClass.compactMap { metrics in metrics.precision.map { $0 * Double(metrics.support) } }.reduce(0, +) / Double(totalSupport)
+            ? classes.compactMap { cls -> Double? in
+                guard let m = perClassDict[cls], let p = m.precision else { return nil }
+                return p * Double(m.support)
+            }.reduce(0, +) / Double(totalSupport)
             : nil
         let weightedR: Double? = totalSupport > 0
-            ? perClass.compactMap { metrics in metrics.recall.map { $0 * Double(metrics.support) } }.reduce(0, +) / Double(totalSupport)
+            ? classes.compactMap { cls -> Double? in
+                guard let m = perClassDict[cls], let r = m.recall else { return nil }
+                return r * Double(m.support)
+            }.reduce(0, +) / Double(totalSupport)
             : nil
         let weightedF: Double? = totalSupport > 0
-            ? perClass.compactMap { metrics in metrics.f1Score.map { $0 * Double(metrics.support) } }.reduce(0, +) / Double(totalSupport)
+            ? classes.compactMap { cls -> Double? in
+                guard let m = perClassDict[cls], let f = m.f1Score else { return nil }
+                return f * Double(m.support)
+            }.reduce(0, +) / Double(totalSupport)
             : nil
 
-        // Format helpers for the column layout
-        func fmt(_ val: Double?) -> String {
-            guard let value = val else { return " 0.00" }
-            return String(format: "%5.2f", value)
-        }
-        func fmtSupport(_ val: Int) -> String {
-            return String(format: "%10d", val)
-        }
+        let macroAverage = ClassMetrics(label: -1, precision: macroP, recall: macroR, f1Score: macroF, support: totalSupport)
+        let weightedAverage = ClassMetrics(label: -1, precision: weightedP, recall: weightedR, f1Score: weightedF, support: totalSupport)
 
-        // Label column width — at least "weighted avg".count = 12
-        let labelStrings = perClass.map { "\($0.label)" }
-        let labelWidth = Swift.max(
-            labelStrings.map { $0.count }.max() ?? 1,
-            12
+        return ClassificationReport(
+            perClass: perClassDict,
+            classOrder: classes,
+            accuracy: accuracy,
+            macroAverage: macroAverage,
+            weightedAverage: weightedAverage,
+            totalSupport: totalSupport
         )
-
-        // Header — fixed column widths
-        let headerLabel = String(repeating: " ", count: labelWidth)
-        let header = "\(headerLabel)  precision    recall  f1-score   support"
-        var lines = [header, ""]
-
-        // Per-class rows — "      %0.2f" (6 spaces + 4-char value = 10 per column)
-        for (i, m) in perClass.enumerated() {
-            let pad = String(repeating: " ", count: labelWidth - labelStrings[i].count)
-            lines.append("\(pad)\(labelStrings[i])      \(fmt(m.precision))     \(fmt(m.recall))     \(fmt(m.f1Score))\(fmtSupport(m.support))")
-        }
-
-        lines.append("")
-
-        // Accuracy row — blank precision and recall columns, f1-score and support only
-        let accPad = String(repeating: " ", count: labelWidth - 8)
-        lines.append("\(accPad)accuracy                          \(fmt(accuracy))\(fmtSupport(total))")
-
-        // Macro avg row
-        let macroPad = String(repeating: " ", count: labelWidth - 9)
-        lines.append("\(macroPad)macro avg      \(fmt(macroP))     \(fmt(macroR))     \(fmt(macroF))\(fmtSupport(total))")
-
-        // Weighted avg row
-        let weightPad = String(repeating: " ", count: labelWidth - 12)
-        lines.append("\(weightPad)weighted avg      \(fmt(weightedP))     \(fmt(weightedR))     \(fmt(weightedF))\(fmtSupport(total))")
-
-        return lines.joined(separator: "\n")
     }
 
     // MARK: - Class Balance

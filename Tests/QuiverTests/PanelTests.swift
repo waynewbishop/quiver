@@ -164,12 +164,275 @@ final class PanelTests: XCTestCase {
             ("x", [1.0, 2.0, 3.0, 4.0, 5.0])
         ])
 
-        let output = panel.summary()
+        let output = panel.summary().description
 
         XCTAssertTrue(output.contains("x"), "Output should contain the column name")
         XCTAssertTrue(output.contains("mean"), "Output should contain a mean header")
         XCTAssertTrue(output.contains("3.0"), "Output should contain the mean value")
         XCTAssertTrue(output.contains("1.0"), "Output should contain the min value")
         XCTAssertTrue(output.contains("5.0"), "Output should contain the max value")
+    }
+
+    // tail returns the last n rows in tabular form
+    func testTailReturnsLastRows() {
+        let panel = Panel([
+            ("day", [1.0, 2.0, 3.0, 4.0, 5.0]),
+            ("revenue", [120.0, 135.0, 142.0, 128.0, 145.0])
+        ])
+
+        let output = panel.tail(n: 2)
+        XCTAssertTrue(output.contains("4.0"), "Tail should contain row index 4's value")
+        XCTAssertTrue(output.contains("145.0"), "Tail should contain the last revenue value")
+        XCTAssertFalse(output.contains("120.0"), "Tail of 2 should not contain the first row")
+    }
+
+    // tail with n larger than rowCount returns all rows
+    func testTailRequestingMoreRowsThanAvailable() {
+        let panel = Panel([
+            ("x", [1.0, 2.0])
+        ])
+
+        let output = panel.tail(n: 10)
+        XCTAssertTrue(output.contains("1.0"))
+        XCTAssertTrue(output.contains("2.0"))
+    }
+
+    // unique returns sorted distinct values
+    func testUniqueReturnsSortedDistinct() {
+        let panel = Panel([
+            ("species", [0.0, 1.0, 0.0, 2.0, 1.0, 0.0])
+        ])
+
+        XCTAssertEqual(panel.unique(column: "species"), [0.0, 1.0, 2.0])
+    }
+
+    // unique returns nil for missing columns
+    func testUniqueMissingColumnReturnsNil() {
+        let panel = Panel([("species", [0.0, 1.0])])
+        XCTAssertNil(panel.unique(column: "nonexistent"))
+    }
+
+    // valueCounts returns counts sorted by count descending
+    func testValueCountsSortedByCount() {
+        let panel = Panel([
+            ("species", [0.0, 1.0, 0.0, 2.0, 1.0, 0.0])
+        ])
+
+        guard let counts = panel.valueCounts(column: "species") else {
+            XCTFail("Expected non-nil result for existing column")
+            return
+        }
+
+        XCTAssertEqual(counts.count, 3)
+        XCTAssertEqual(counts[0].value, 0.0)
+        XCTAssertEqual(counts[0].count, 3)
+        XCTAssertEqual(counts[1].value, 1.0)
+        XCTAssertEqual(counts[1].count, 2)
+        XCTAssertEqual(counts[2].value, 2.0)
+        XCTAssertEqual(counts[2].count, 1)
+    }
+
+    // valueCounts breaks ties by value ascending
+    func testValueCountsBreaksTiesAscending() {
+        let panel = Panel([
+            ("x", [3.0, 1.0, 2.0])  // each appears once
+        ])
+
+        guard let counts = panel.valueCounts(column: "x") else {
+            XCTFail("Expected non-nil result")
+            return
+        }
+
+        XCTAssertEqual(counts.map { $0.value }, [1.0, 2.0, 3.0])
+    }
+
+    // valueCounts returns nil for missing columns
+    func testValueCountsMissingColumnReturnsNil() {
+        let panel = Panel([("x", [1.0])])
+        XCTAssertNil(panel.valueCounts(column: "nonexistent"))
+    }
+
+    // sortedBy reorders all columns ascending by the specified column
+    func testSortedByAscending() {
+        let panel = Panel([
+            ("id", [3.0, 1.0, 2.0]),
+            ("score", [88.0, 95.0, 72.0])
+        ])
+
+        let sorted = panel.sortedBy(column: "score", ascending: true)
+
+        XCTAssertEqual(sorted["score"], [72.0, 88.0, 95.0])
+        // The id column moves with the score column.
+        XCTAssertEqual(sorted["id"], [2.0, 3.0, 1.0])
+    }
+
+    // sortedBy descending reverses the ordering
+    func testSortedByDescending() {
+        let panel = Panel([
+            ("id", [3.0, 1.0, 2.0]),
+            ("score", [88.0, 95.0, 72.0])
+        ])
+
+        let sorted = panel.sortedBy(column: "score", ascending: false)
+
+        XCTAssertEqual(sorted["score"], [95.0, 88.0, 72.0])
+        XCTAssertEqual(sorted["id"], [1.0, 3.0, 2.0])
+    }
+
+    // sortedBy places NaN values at the end in both directions
+    func testSortedByPlacesNaNAtEnd() {
+        let panel = Panel([
+            ("id", [1.0, 2.0, 3.0, 4.0]),
+            ("score", [88.0, .nan, 72.0, 95.0])
+        ])
+
+        let asc = panel.sortedBy(column: "score", ascending: true)
+        let descScores = panel.sortedBy(column: "score", ascending: false)["score"]
+        let ascScores = asc["score"]
+
+        XCTAssertEqual(ascScores[0], 72.0)
+        XCTAssertEqual(ascScores[1], 88.0)
+        XCTAssertEqual(ascScores[2], 95.0)
+        XCTAssertTrue(ascScores[3].isNaN, "NaN should sort to the end ascending")
+
+        XCTAssertEqual(descScores[0], 95.0)
+        XCTAssertEqual(descScores[1], 88.0)
+        XCTAssertEqual(descScores[2], 72.0)
+        XCTAssertTrue(descScores[3].isNaN, "NaN should sort to the end descending too")
+    }
+
+    // standardized produces a column with mean ~0 and std ~1
+    func testStandardizedProducesZeroMeanUnitStd() {
+        let panel = Panel([
+            ("age", [25.0, 30.0, 35.0, 40.0, 45.0]),
+            ("score", [88.0, 92.0, 85.0, 91.0, 87.0])
+        ])
+
+        let zPanel = panel.standardized(column: "age")
+        let zAge = zPanel["age"]
+
+        XCTAssertEqual(zAge.mean() ?? .nan, 0.0, accuracy: 1e-10)
+        XCTAssertEqual(zAge.standardDeviation() ?? .nan, 1.0, accuracy: 1e-10)
+    }
+
+    // standardized leaves other columns unchanged
+    func testStandardizedDoesNotMutateOtherColumns() {
+        let panel = Panel([
+            ("age", [25.0, 30.0, 35.0]),
+            ("score", [88.0, 92.0, 85.0])
+        ])
+
+        let zPanel = panel.standardized(column: "age")
+        XCTAssertEqual(zPanel["score"], [88.0, 92.0, 85.0])
+    }
+
+    // standardized on a constant column returns zeros for that column
+    func testStandardizedConstantColumnReturnsZeros() {
+        let panel = Panel([
+            ("constant", [5.0, 5.0, 5.0])
+        ])
+
+        let zPanel = panel.standardized(column: "constant")
+        XCTAssertEqual(zPanel["constant"], [0.0, 0.0, 0.0])
+    }
+
+    // correlationMatrix returns the labels in column order
+    func testCorrelationMatrixReturnsOrderedLabels() {
+        let panel = Panel([
+            ("a", [1.0, 2.0, 3.0, 4.0, 5.0]),
+            ("b", [2.0, 4.0, 6.0, 8.0, 10.0]),
+            ("c", [5.0, 4.0, 3.0, 2.0, 1.0])
+        ])
+
+        let result = panel.correlationMatrix()
+        XCTAssertEqual(result.columns, ["a", "b", "c"])
+    }
+
+    // correlationMatrix returns 1.0 on the diagonal
+    func testCorrelationMatrixDiagonalIsOne() {
+        let panel = Panel([
+            ("a", [1.0, 2.0, 3.0, 4.0]),
+            ("b", [4.0, 3.0, 2.0, 1.0])
+        ])
+
+        let result = panel.correlationMatrix()
+        XCTAssertEqual(result.matrix[0][0], 1.0, accuracy: 1e-10)
+        XCTAssertEqual(result.matrix[1][1], 1.0, accuracy: 1e-10)
+    }
+
+    // correlationMatrix recovers known correlations
+    func testCorrelationMatrixRecoversPerfectPositive() {
+        let panel = Panel([
+            ("x", [1.0, 2.0, 3.0, 4.0, 5.0]),
+            ("y", [2.0, 4.0, 6.0, 8.0, 10.0])  // y = 2x
+        ])
+
+        let result = panel.correlationMatrix()
+        XCTAssertEqual(result.matrix[0][1], 1.0, accuracy: 1e-10)
+        XCTAssertEqual(result.matrix[1][0], 1.0, accuracy: 1e-10)
+    }
+
+    // correlationMatrix recovers perfect negative correlation
+    func testCorrelationMatrixRecoversPerfectNegative() {
+        let panel = Panel([
+            ("x", [1.0, 2.0, 3.0, 4.0, 5.0]),
+            ("y", [5.0, 4.0, 3.0, 2.0, 1.0])
+        ])
+
+        let result = panel.correlationMatrix()
+        XCTAssertEqual(result.matrix[0][1], -1.0, accuracy: 1e-10)
+    }
+
+    // correlationMatrix returns NaN for off-diagonal entries involving a
+    // constant column (zero variance has no defined correlation; matches
+    // pandas df.corr() and np.corrcoef behavior). Returning 0.0 would
+    // conflate "no linear relationship" with "undefined correlation" —
+    // two different statements. Diagonals remain 1.0 by Quiver convention.
+    func testCorrelationMatrixConstantColumnReturnsNaN() {
+        let panel = Panel([
+            ("varying",  [1.0, 2.0, 3.0, 4.0, 5.0]),
+            ("constant", [3.0, 3.0, 3.0, 3.0, 3.0])
+        ])
+
+        let result = panel.correlationMatrix()
+
+        // Off-diagonal entries involving the constant column are NaN —
+        // the corrected behavior, was 0.0 before the May 6 validation pass
+        XCTAssertTrue(result.matrix[0][1].isNaN, "Constant column should produce NaN correlation")
+        XCTAssertTrue(result.matrix[1][0].isNaN, "Constant column should produce NaN correlation")
+
+        // Diagonals stay at 1.0 by Quiver convention — the matrix
+        // implementation short-circuits self-correlation rather than
+        // computing it through pearsonCorrelation.
+        XCTAssertEqual(result.matrix[0][0], 1.0, accuracy: 1e-10)
+        XCTAssertEqual(result.matrix[1][1], 1.0, accuracy: 1e-10)
+    }
+
+    // toPanel with the default name produces a "values" column with the array's data
+    func testToPanelDefaultName() {
+        let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0]
+        let panel = scores.toPanel()
+
+        XCTAssertEqual(panel.columnNames, ["values"])
+        XCTAssertEqual(panel["values"], scores)
+        XCTAssertEqual(panel.rowCount, 8)
+    }
+
+    // toPanel with a custom name honors the supplied label
+    func testToPanelCustomName() {
+        let scores = [68.0, 72.0, 75.0]
+        let panel = scores.toPanel("scores")
+
+        XCTAssertEqual(panel.columnNames, ["scores"])
+        XCTAssertEqual(panel["scores"], scores)
+    }
+
+    // toPanel chains naturally into Panel-level descriptive operations
+    func testToPanelChainsIntoSummary() {
+        let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0]
+        let summary = scores.toPanel("scores").summary()
+
+        XCTAssertEqual(summary.columnNames, ["scores"])
+        XCTAssertEqual(summary.columns["scores"]?.count, 8)
     }
 }
