@@ -4,13 +4,9 @@ A Quiver type that organizes named columns of numeric data into a single contain
 
 ## Overview
 
-Panel takes a matrix of rows and pivots it into named columns, where each column represents a [feature or label](<doc:Machine-Learning-Primer>). Each column is a `[Double]` — effectively a named vector. The data is the same, just organized by column instead of by row. Without Panel, features offer no indication of what each column represents, and splitting or filtering requires careful coordination across parallel arrays to keep rows aligned.
+A Panel is a table of named columns. Each column holds an array of numbers. Naming the columns means the data can be read, split, and filtered by name instead of by position, the way a spreadsheet or a database table works.
 
-With Panel, each column gets a name and all rows stay together as a unit. It serves as a lightweight container for labeled column data, scoped to Quiver's numeric focus.
-
-> Important: `Panel` does not replace Quiver's array and matrix operations — it organizes them. Each column is a standard `[Double]` that supports Quiver vector operations like `.mean()`, `.standardDeviation()`, and boolean masking.
-
-This page covers Panel as a data structure — how to construct one, access columns, convert to the shapes models need, and filter rows. For applied workflows — train/test splits, summaries, classification pipelines, charting — see <doc:Panel-Workflows>.
+> Note: This page covers Panel as a data structure — how to construct one, access columns, convert to the shapes models need, and filter rows. For applied workflows — train/test splits, summaries, classification pipelines, charting — see <doc:Panel-Workflows>.
 
 ### Creating a panel
 
@@ -48,7 +44,7 @@ if let jumpSpread = athletes["jumpHeight"].standardDeviation() {
 
 ### Wrapping a single array as a panel
 
-Sometimes the data already lives in a plain `[Double]` and we want the Panel surface — typed summaries, head printing, charting — without writing the literal constructor. The `toPanel()` method on `Array where Element == Double` wraps the array in a single-column Panel. By default the column is named `"values"`; pass a string to give it a semantic name:
+Sometimes the data already lives in a plain `[Double]` and we want the Panel surface — typed summaries, head printing, charting — without writing the literal constructor:
 
 ```swift
 import Quiver
@@ -63,7 +59,7 @@ let panel = scores.toPanel("scores")
 print(panel.head())
 ```
 
-This is the bridge that connects every Quiver vector method to the Panel surface. Any `[Double]` — a sensor stream, a column extracted from another panel, the output of an aggregation — becomes addressable by name and inspectable with `head`, `summary`, and the charting helpers.
+This is the bridge between any `[Double]` and the Panel surface. A column of test scores, a list of sensor readings, an array of probabilities, the output of `.standardized()` or `.cumulativeSum()` — anything that is already a numeric array becomes addressable by name and ready for descriptive statistics, summaries, filtering, and charting.
 
 ### Column access
 
@@ -81,7 +77,9 @@ let employees = Panel([
 if let avgIncome = employees["income"].mean() {
     print(avgIncome)  // 60000.0
 }
-employees["income"].standardized()  // z-scores
+employees["income"].median()              // 57500.0 — robust to skew
+employees["income"].standardDeviation()   // 10801.23 — typical spread
+employees["income"].standardized()        // z-scores, useful for feature scaling
 ```
 
 For classification workflows, use `.labels()` to extract a column as `[Int]` for classifiers:

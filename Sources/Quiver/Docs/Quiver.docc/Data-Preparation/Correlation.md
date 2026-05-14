@@ -85,7 +85,7 @@ if r.isNaN {
 
 The same rule applies when an input contains `NaN` already. The value propagates through the mean, the deviations, and the final ratio rather than getting silently dropped — a `NaN` reaching a correlation cell is the signal that something upstream needs cleaning.
 
-### What correlation does and does not say
+### The limits of a linear measure
 
 A correlation near `+1` or `-1` says that two columns move together in a straight line. It does not say that one causes the other, and it does not capture relationships that bend. A perfect parabola `y = x²` over a symmetric range produces a Pearson correlation of zero even though the two columns are deterministically related — the linear component cancels out. For monotonic but nonlinear associations, a rank-based statistic such as Spearman is the appropriate tool. Spearman is out of scope for `1.2.0`.
 

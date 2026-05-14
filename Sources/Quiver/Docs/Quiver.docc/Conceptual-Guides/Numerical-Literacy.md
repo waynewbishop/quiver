@@ -37,13 +37,17 @@ The most common way for floating-point error to dominate a result is by subtract
 
 The same care extends to iterative algorithms. The `KMeans` model recomputes cluster centroids by averaging the points assigned to each cluster, then reassigns points to the nearest centroid. After many iterations on a large dataset, those centroid coordinates have been summed and divided enough times that small rounding errors could drift the result. Quiver works in squared distance internally to avoid unnecessary `sqrt` operations, uses stable summation for centroid updates, and compares positions with a tolerance during convergence checks. Two runs on the same data with the same seed return identical results. See <doc:KMeans-Clustering> for the clustering API and the convergence guarantees.
 
-The `LinearRegression` model has a related concern. When feature columns are nearly redundant — say, height in inches and height in centimeters — the underlying matrix becomes ill-conditioned: technically invertible, but so close to non-invertible that floating-point noise gets amplified into large errors in the coefficient estimates. Quiver exposes `.conditionNumber` as the diagnostic. The <doc:Determinants-Primer> covers it in detail; a condition number above `10⁶` is the signal to stop and rethink. See <doc:Linear-Regression> for the model itself and the inference surface that surfaces the condition number alongside the fit. High-degree `polyfit` is the polynomial sibling of this problem — the Vandermonde columns it builds become ill-conditioned as the degree grows, for the same reason. See <doc:Polynomials>.
+### Verifying the fit
 
-Two more defenses worth knowing by name. Multiplying many small probabilities together underflows to zero — Quiver works in log-space instead, where products become sums and tail densities stay representable. See `logPDF` on <doc:Working-With-Distributions> and the Naive-Bayes prediction path on <doc:Naive-Bayes> for the two sites that apply it. The mirror problem on the other end is `exp` overflowing on large inputs, which Quiver handles by subtracting the maximum value before exponentiating. See <doc:Activation-Functions> for the `softMax` site.
+Sometimes the data we hand a model is shaped in a way the math cannot solve cleanly, no matter how careful Quiver is internally. The classic case is `LinearRegression` with two feature columns that say the same thing twice — height in inches and height in centimeters, for example. The model technically returns coefficients, but tiny changes to the input produce wildly different answers. The math is unstable, and Quiver cannot rescue it; the only honest move is to tell the caller. Quiver exposes `.conditionNumber` for exactly this — a single number that says how trustworthy the fit is. Above `10⁶`, the fit is not reliable and the right move is to drop one of the redundant columns and refit. See <doc:Linear-Regression> for the model, and <doc:Determinants-Primer> for the math behind the diagnostic.
 
-### Undefined results versus missing data
+The same shape of problem shows up in `polyfit` when we ask for a high-degree polynomial. Each new degree adds a column to an internal matrix that looks more and more like the columns next to it, and the fit becomes unstable for the same reason as a redundant feature. The fix is the same: drop the degree until the fit stabilizes. See <doc:Polynomials>.
 
-Quiver uses two different signals for two different situations. The Swift `nil` we already know means "there is no value here." `NaN` — short for *Not a Number* — means "there is a value here, but the math that produced it is undefined." They live at different layers entirely.
+### Defending against overflow and underflow
+
+Floating-point numbers have a finite range as well as finite precision. Multiplying many small probabilities together underflows to zero — Quiver works in log-space instead, where products become sums and tail densities stay representable. See `logPDF` on <doc:Working-With-Distributions> and the Naive-Bayes prediction path on <doc:Naive-Bayes> for the two sites that apply it. The mirror problem on the other end is `exp` overflowing on large inputs, which Quiver handles by subtracting the maximum value before exponentiating. See <doc:Activation-Functions> for the `softMax` site.
+
+### How Quiver signals an empty answer
 
 A `nil` value is Swift's way of saying the operation could not be performed. Calling `mean()` on an empty array returns `nil` because there is no data to average. The return type is `Double?` and we unwrap with `if let` or `guard let`, the same as any other optional in Swift.
 
@@ -61,8 +65,6 @@ if undefined.isNaN {
     print("undefined result")       // we test NaN with .isNaN
 }
 ```
-
-Three rules of `NaN` are worth carrying around. First, `NaN` propagates: any arithmetic that touches it produces `NaN`. Add five to `NaN`, multiply it by zero, take its square root — all `NaN`. This is the standard's way of refusing to invent a meaning for the calculation. Second, `NaN` is never equal to anything, including itself. The expression `Double.nan == Double.nan` is `false`. This means we never test for `NaN` with `==`; we use `.isNaN`. Third, Quiver leans on propagation deliberately rather than silently dropping `NaN` values from a calculation — a `NaN` reaching a result is the signal that something upstream needs cleaning, not a value to ignore.
 
 The contract across Quiver is consistent. Functions that have no data to work with return `nil`. Functions that have data but cannot produce a finite mathematical result return `NaN`. The decision between them is "did the inputs exist" versus "did the math succeed."
 
@@ -89,8 +91,6 @@ This is why Quiver's aggregation functions — `mean`, `sum`, `standardDeviation
 Most numerical code does not need to worry about any of this. Adding a list of test scores, computing a mean response time, normalizing a feature column — these operate on data with limited dynamic range and produce results that are correct to many more digits than the application cares about. The floating-point approximation is invisible.
 
 The cases where numerical error becomes visible share a few warning signs. The data spans many orders of magnitude — values from `1e-10` to `1e10` in the same array. The algorithm subtracts nearly equal numbers. The algorithm iterates many times, accumulating small updates. The matrix being inverted has a high condition number. Or the result is fed into a downstream system that compares it with strict equality.
-
-When any of those conditions hold, the path forward is to check `.conditionNumber` where it applies, use Quiver's stable methods rather than rolling our own from textbook formulas, and never test floating-point results with `==`. Tolerance-based comparison — `abs(a - b) < tolerance` — is the floating-point equivalent of equality. The choice of tolerance depends on the application, but `1e-9` is a reasonable default for `Double` arithmetic on well-conditioned problems.
 
 ### Numerical literacy in practice
 

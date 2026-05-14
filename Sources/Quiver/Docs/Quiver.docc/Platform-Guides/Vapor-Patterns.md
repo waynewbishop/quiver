@@ -104,10 +104,8 @@ The `store.remove(description:)` call mutates the shared catalog. As discussed i
 
 For a fourth, read-only endpoint — listing the current catalog — the handler simply returns `store.shoes.map(\.description)` without touching any vectors. The same store backs all four endpoints; the same `Sendable` value-sharing pattern keeps them safe under concurrent load.
 
-### What this pattern is and what it is not
+### When the in-memory catalog stops scaling
 
 This is a vector catalog with CRUD endpoints, optimized for fast reads and occasional writes. It is not a database. There is no persistence across server restarts, no transaction guarantees, no replication. For applications where the catalog needs to survive a restart or grow beyond what fits in memory, the same Quiver pipeline runs unchanged in front of a real database — the embedding and ranking math stay in the Vapor process; the storage moves to PostgreSQL, SQLite, or whatever the application already uses.
-
-> Tip: Quiver supplies the math. Storing accumulated observations long-term is a database problem. The vector catalog pattern works because the dataset fits in memory and rebuilds cheaply at boot — beyond that scale, the embedding pipeline stays the same but the catalog needs persistent storage.
 
 > Experiment: The patterns in this article are from [quiver-demo-vapor](https://github.com/waynewbishop/quiver-demo-vapor), a semantic-search server that scores fifteen shoes against a six-dimension hand-built embedding dictionary. Running the four endpoints — list, create, delete, search — in sequence against the same in-memory store, then comparing two queries that differ by one word, shows how `cosineSimilarities` and `topIndices` collapse free text into a ranked answer.

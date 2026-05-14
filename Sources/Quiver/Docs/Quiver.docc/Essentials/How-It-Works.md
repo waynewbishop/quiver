@@ -76,16 +76,17 @@ print(cm)       // TP: 3  FP: 1  TN: 3  FN: 1  (accuracy: 75.0%)
 
 ### Typed summary returns
 
-When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The `Quartiles`, `ColumnSummary`, `PanelSummary`, and `RegressionSummary` types are the patterns we will see repeatedly. Each one carries the same four conformances — `Codable`, `Sendable`, `Equatable`, and `CustomStringConvertible` — and each conformance buys something concrete. Conforming to `Codable` round-trips the value to JSON for persistence or for a network response. Conforming to `Sendable` lets the same value cross task boundaries without a lock. Conforming to `Equatable` makes the value comparable in unit tests with a single `==`. Conforming to `CustomStringConvertible` produces a readable summary when printed.
+When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The `Quartiles`, `ColumnSummary`, `PanelSummary`, and `RegressionSummary` types are the patterns we will see repeatedly.
 
 ```swift
 let summary: PanelSummary = panel.summary()
 
-summary.columns["price"]?.mean   // named field, compile-time checked
-print(summary)                   // a formatted table
-```
+print(summary) // a formatted table
 
-The alternative — a `[String: Any]` dictionary or a tuple of positional fields — loses every one of those guarantees. Typed summaries keep the call site self-documenting and the downstream code type-safe.
+if let price = summary.columns["price"] {
+    print(price.mean) // named field, compile-time checked
+}
+```
 
 ### A focused and intentional scope
 

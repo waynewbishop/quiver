@@ -8,9 +8,9 @@ Once a panel exists and its columns are accessible, the same value drives the sp
 
 The progression matches a realistic ML run. We split the data, look at what we have, summarize each column, fit a pipeline, predict, and visualize the result. Every transition is one method call on the panel.
 
-### Splitting for machine learning
+### Splitting data for evaluation
 
-Split a `Panel` into training and testing subsets with a single call. All columns are split atomically — the same rows go to training and testing across every column:
+Split a `Panel` into two subsets with a single call. The pattern shows up in both modeling (training and testing sets for machine learning) and statistics (holdout samples for cross-validation studies). All columns are split atomically — the same rows go to each subset across every column, so features and labels stay aligned without manual coordination:
 
 ```swift
 import Quiver
@@ -124,6 +124,39 @@ print(snapshot.csvRows())
 Both deliverables surface count, mean, std, min, and max. The full nine-field view — including the quartiles — lives on the inner `ColumnSummary`, reachable through `snapshot.columns[name]`.
 
 A `Panel` cannot be constructed with zero columns — the initializer requires at least one. It can end up with zero rows, however, after a filter removes every match. Calling `summary()` on a zero-row panel returns a `PanelSummary` whose `columnNames` is intact and whose `columns` dictionary still has an entry for every column. Each entry reports `count: 0` with zeros across the remaining fields. This is a deliberate departure from `[Double].summary()`, which returns `nil` for an empty array. A zero-row panel still has structure — the columns exist and have names — so the snapshot preserves it. To distinguish "no rows" from "rows with a mean of zero," check `snapshot.columns[name]?.count == 0` rather than reading the mean.
+
+### Exploring data
+
+Once we know the shape of the panel, the next questions are usually about its contents. Which values appear in a column, how often, which rows rank highest by some measure, and how the columns relate to each other. Four methods on `Panel` cover that exploration directly:
+
+```swift
+import Quiver
+
+let monthly = Panel([
+    ("revenue",      [12500.0, 9800.0, 15200.0, 11000.0, 8500.0, 14000.0]),
+    ("customers",    [320.0, 285.0, 410.0, 305.0, 250.0, 380.0]),
+    ("satisfaction", [4.2, 3.8, 4.5, 4.1, 3.5, 4.3]),
+    ("region",       [1.0, 2.0, 1.0, 3.0, 2.0, 1.0])  // 1=North, 2=South, 3=West
+])
+
+// Distinct values in a column — useful for spotting unexpected categories
+monthly.unique(column: "region")           // [1.0, 2.0, 3.0]
+
+// Counts of each value — the categorical version of summary()
+monthly.valueCounts(column: "region")
+// [(value: 1.0, count: 3), (value: 2.0, count: 2), (value: 3.0, count: 1)]
+
+// Rank rows by any column without losing alignment across the other columns
+let topRevenue = monthly.sortedBy(column: "revenue", ascending: false)
+
+// Pairwise Pearson correlations across every numeric column
+let result = monthly.correlationMatrix()
+// result.columns: ["revenue", "customers", "satisfaction", "region"]
+// result.matrix[0][1]  // 0.9846 — revenue and customers move together
+// result.matrix[0][2]  // 0.9685 — revenue and satisfaction move together
+```
+
+The `unique` and `valueCounts` methods answer "what's in this column?" — the second question after `head()`. The `sortedBy` method ranks rows while keeping every column aligned with the row that owns it, so the top-revenue month also carries its customer count, satisfaction score, and region in the same slot. The `correlationMatrix` method computes Pearson correlations across every pair of numeric columns; see <doc:Correlation> for the math, the diagonal-and-symmetry guarantees, and the NaN-on-constant-column contract.
 
 ### Classification pipeline
 
