@@ -6,7 +6,7 @@ Adopting the Notebook in a course, workshop, or self-study setting.
 
 The Quiver Notebook gives a class a Swift environment every student can run on their own laptop with one command — no accounts, no shared server, no IT review, and no per-student setup. An instructor distributes the environment by sharing a repository URL, and each student clones it, runs `swift run`, and arrives at the same editor as everyone else. This page covers the configuration choices that come up when adopting the Notebook in a class, a workshop, or a self-study setting.
 
-> Note: For starting the Notebook and writing snippets, see <doc:Quiver-Notebook>. For the bundled dataset library, see <doc:Notebook-Datasets>.
+> Note: For starting the Notebook and writing snippets, see <doc:Quiver-Notebook>.
 
 ### When to reach for the Notebook
 
@@ -20,9 +20,9 @@ The Notebook is the right tool for:
 
 ### Who the Notebook is for
 
-**Educators** preparing lectures or assignments can fork the repository, drop custom example files into the `examples-custom/` folder, and distribute the URL to a class. The bundled stack covers enough ground for an applied linear algebra unit, an introductory descriptive statistics segment, and an applied regression module — material that fits inside an existing course. A short supervised learning survey covering k-nearest neighbors, k-means, and Naive Bayes also fits comfortably in a few weeks.
-
 **Students** working through a course, textbook, or self-study get a Swift environment that does numerical work without installing additional binaries, configuring system packages, or downloading datasets separately. One clone and one command produce a working editor with Quiver, Foundation, and the bundled datasets already wired in.
+
+**Educators** preparing lectures or assignments can fork the repository, drop custom example files into the `examples-custom/` folder, and distribute the URL to a class. The bundled stack covers enough ground for an applied linear algebra unit, an introductory descriptive statistics segment, and an applied regression module — material that fits inside an existing course. A short supervised learning survey covering k-nearest neighbors, k-means, and Naive Bayes also fits comfortably in a few weeks.
 
 **Apple-platform developers** prototyping a model or testing an idea get a focused editor without a project workspace. Code that runs here compiles unchanged on any Apple platform — including iOS, watchOS, visionOS, and Vapor server-side targets.
 
