@@ -436,10 +436,15 @@ public enum Distributions: Sendable {
         if x <= 0 { return 0.0 }
         if x >= 1 { return 1.0 }
 
-        // ln of B(x;a,b)/B(a,b) prefactor.
-        let lnPrefactor = Foundation.lgamma(a + b)
-            - Foundation.lgamma(a) - Foundation.lgamma(b)
-            + a * Foundation.log(x) + b * Foundation.log(1.0 - x)
+        // ln of B(x;a,b)/B(a,b) prefactor. Split into named subexpressions
+        // so the Swift 6.3+ type checker can resolve the arithmetic in
+        // reasonable time.
+        let lgammaSum: Double = Foundation.lgamma(a + b)
+        let lgammaA: Double = Foundation.lgamma(a)
+        let lgammaB: Double = Foundation.lgamma(b)
+        let logX: Double = Foundation.log(x)
+        let log1mX: Double = Foundation.log(1.0 - x)
+        let lnPrefactor: Double = lgammaSum - lgammaA - lgammaB + a * logX + b * log1mX
         let prefactor = Foundation.exp(lnPrefactor)
         guard prefactor.isFinite else { return nil }
 
@@ -530,7 +535,9 @@ public enum Distributions: Sendable {
         let maxIterations = 200
         let epsilon = 3.0e-16
 
-        let lnPrefactor = -x + a * Foundation.log(x) - Foundation.lgamma(a)
+        let logX: Double = Foundation.log(x)
+        let lgammaA: Double = Foundation.lgamma(a)
+        let lnPrefactor: Double = -x + a * logX - lgammaA
         guard lnPrefactor.isFinite else { return nil }
         let prefactor = Foundation.exp(lnPrefactor)
 
@@ -558,7 +565,9 @@ public enum Distributions: Sendable {
         let epsilon = 3.0e-16
         let fpMin = 1.0e-300
 
-        let lnPrefactor = -x + a * Foundation.log(x) - Foundation.lgamma(a)
+        let logX: Double = Foundation.log(x)
+        let lgammaA: Double = Foundation.lgamma(a)
+        let lnPrefactor: Double = -x + a * logX - lgammaA
         guard lnPrefactor.isFinite else { return nil }
         let prefactor = Foundation.exp(lnPrefactor)
 
