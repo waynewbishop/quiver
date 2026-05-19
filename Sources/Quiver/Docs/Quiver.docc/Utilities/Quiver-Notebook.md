@@ -20,6 +20,8 @@ Open the **Terminal** application (in Applications → Utilities, or search "Ter
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
+On a fresh Mac, the installer prompts for Apple's Command Line Tools first and pauses while they download — this is a one-time Apple step that Homebrew depends on, not a hang. Approve the prompt and the Homebrew install continues automatically when the Command Line Tools finish.
+
 When the install finishes, confirm Homebrew is working by checking its version:
 
 ```bash
@@ -60,7 +62,7 @@ The download takes a few minutes. When it finishes, confirm Swift is available:
 swift --version
 ```
 
-The terminal should print a Swift version like `Swift version 6.0.2`. If it says "command not found," close the terminal window and open a new one — the install only takes effect in new terminal sessions.
+The terminal should print a Swift version line that begins with `Swift version 6.` followed by a minor and patch number. If it says "command not found," close the terminal window and open a new one — the install only takes effect in new terminal sessions.
 
 #### 4. Clone and run the Notebook
 
