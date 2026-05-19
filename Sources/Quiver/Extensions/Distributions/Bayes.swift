@@ -133,11 +133,10 @@ public enum Bayes: Sendable {
     ///
     /// The public input is linear-space (priors and likelihoods are passed
     /// as ordinary probabilities). Internally, the computation runs in
-    /// log-space and normalizes via ``Swift/Array/softMax()-(Self)``, which
-    /// applies the same max-subtraction trick that `_Bayes.logSumExp` does.
-    /// `softMax` is the single source of truth for log-space normalization
-    /// across Quiver — `GaussianNaiveBayes.predictProbabilities` calls it
-    /// for the same reason.
+    /// log-space and normalizes via `softMax`, which applies the same
+    /// max-subtraction trick that `_Bayes.logSumExp` does. `softMax` is the
+    /// single source of truth for log-space normalization across Quiver —
+    /// `GaussianNaiveBayes.predictProbabilities` calls it for the same reason.
     ///
     /// - Parameters:
     ///   - prior: A labeled prior distribution. Probabilities must sum to one.

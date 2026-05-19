@@ -187,8 +187,7 @@ public struct LinearRegression: Regressor, Codable, CustomStringConvertible, Equ
     /// model evaluated on the training data that produced it.
     ///
     /// The summary covers everything downstream callers need to interpret a
-    /// regression fit. It mirrors the output of `statsmodels.OLS.fit().summary()`:
-    /// per-coefficient inference plus the goodness-of-fit summary.
+    /// regression fit: per-coefficient inference plus the goodness-of-fit summary.
     ///
     /// ```swift
     /// import Quiver

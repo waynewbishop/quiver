@@ -86,17 +86,17 @@ final class FourierTests: XCTestCase {
     }
 
     func testDominantFrequencyOnSineWave() {
-        // Same 440 Hz tone — fourierDominantFrequency should return ~437.5 Hz
+        // Same 440 Hz tone — PowerSpectrum.dominantFrequency should return ~437.5 Hz
         // (bin 14 × 8000 / 256 = 437.5 Hz — the bin-center frequency)
         // Verified: 14 * 8000.0 / 256 = 437.5
         let sampleRate = 8000.0
         let signal = [Double].sineWave(frequency: 440.0, sampleRate: sampleRate, count: 256)
 
-        guard let dominant = signal.fourierDominantFrequency(sampleRate: sampleRate) else {
-            XCTFail("Expected a dominant frequency for a pure sine wave")
+        guard let psd = signal.powerSpectralDensity(sampleRate: sampleRate) else {
+            XCTFail("Expected a power spectrum for a pure sine wave")
             return
         }
-        XCTAssertEqual(dominant, 437.5, accuracy: 1.0)
+        XCTAssertEqual(psd.dominantFrequency, 437.5, accuracy: 1.0)
     }
 
     func testDominantFrequencyCompositeSignal() {
@@ -109,11 +109,11 @@ final class FourierTests: XCTestCase {
         let tone600 = [Double].sineWave(frequency: 600.0, sampleRate: sampleRate, count: sampleCount)
         let signal = (tone200 * 3.0).add(tone600)
 
-        guard let dominant = signal.fourierDominantFrequency(sampleRate: sampleRate) else {
-            XCTFail("Expected a dominant frequency for a composite signal")
+        guard let psd = signal.powerSpectralDensity(sampleRate: sampleRate) else {
+            XCTFail("Expected a power spectrum for a composite signal")
             return
         }
-        XCTAssertEqual(dominant, 200.0, accuracy: 2.0)
+        XCTAssertEqual(psd.dominantFrequency, 200.0, accuracy: 2.0)
     }
 
     func testMagnitudeSymmetry() {
@@ -200,7 +200,7 @@ final class FourierTests: XCTestCase {
 
     func testEmptySignal() {
         let empty: [Double] = []
-        XCTAssertNil(empty.fourierDominantFrequency(sampleRate: 1000.0, windowed: false))
+        XCTAssertNil(empty.powerSpectralDensity(sampleRate: 1000.0))
     }
 
     func testSingleElement() {
@@ -227,17 +227,17 @@ final class FourierTests: XCTestCase {
     // MARK: - Convenience Methods
 
     func testConvenienceDominantFrequencyWithWindowing() {
-        // Same 440 Hz test but through the convenience method
+        // Same 440 Hz test, with Hann windowing enabled.
         let sampleRate = 8000.0
         let signal = [Double].sineWave(frequency: 440.0, sampleRate: sampleRate, count: 256)
 
-        guard let dominant = signal.fourierDominantFrequency(sampleRate: sampleRate, windowed: true) else {
-            XCTFail("Expected a dominant frequency with windowing enabled")
+        guard let psd = signal.powerSpectralDensity(sampleRate: sampleRate, windowed: true) else {
+            XCTFail("Expected a power spectrum with windowing enabled")
             return
         }
 
         // With windowing the bin resolution stays the same — should still detect ~440 Hz
-        XCTAssertEqual(dominant, 437.5, accuracy: 5.0)
+        XCTAssertEqual(psd.dominantFrequency, 437.5, accuracy: 5.0)
     }
 
     func testFourierSpectrumReturnsParallelArrays() {
@@ -280,14 +280,14 @@ final class FourierTests: XCTestCase {
         let signalMean = rrSignal.mean() ?? 0.0
         let centered = rrSignal.subtract([Double](repeating: signalMean, count: rrSignal.count))
 
-        guard let dominant = centered.fourierDominantFrequency(sampleRate: sampleRate, windowed: true) else {
-            XCTFail("Expected a dominant frequency for HRV signal")
+        guard let psd = centered.powerSpectralDensity(sampleRate: sampleRate, windowed: true) else {
+            XCTFail("Expected a power spectrum for HRV signal")
             return
         }
 
         // After mean subtraction, the 0.25 Hz respiratory peak should dominate
         // Frequency resolution after padding to 512: 4.0 / 512 = 0.0078 Hz
-        print("HRV dominant frequency: \(dominant) Hz (expected ~0.25)")
+        let dominant = psd.dominantFrequency
         XCTAssertGreaterThan(dominant, 0.1, "Respiratory frequency should dominate after mean subtraction")
         XCTAssertEqual(dominant, 0.25, accuracy: 0.02)
     }

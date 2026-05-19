@@ -43,6 +43,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Statistics-Primer>
 - <doc:Inferential-Statistics-Primer>
 - <doc:Machine-Learning-Primer>
+- <doc:Physics-Primitives-Primer>
 - <doc:Numerical-Literacy>
 - <doc:Concurrency-Primer>
 
@@ -93,6 +94,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Signal Processing
 - <doc:Fourier-Transform>
+- <doc:Physics-Primitives-Primer>
 
 ### Data Preparation
 - <doc:Panel>

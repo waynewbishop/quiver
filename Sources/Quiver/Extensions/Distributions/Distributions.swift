@@ -259,8 +259,7 @@ public enum Distributions: Sendable {
         /// t-distributed random variable falls at or below `x`. Computed via the
         /// regularized incomplete beta function `I_x(a, b)` — series form for the
         /// rapidly-converging branch and Lentz's continued fraction otherwise — with
-        /// the standard transition at `x = (a + 1) / (a + b + 2)`. This route is
-        /// used by the SciPy and statsmodels reference implementations and gives
+        /// the standard transition at `x = (a + 1) / (a + b + 2)`. The route gives
         /// the symmetry invariant `tCDF(-x, df) + tCDF(x, df) = 1` to machine precision.
         ///
         /// Example:
