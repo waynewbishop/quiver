@@ -122,7 +122,7 @@ let dominant = centered.fourierDominantFrequency(sampleRate: sampleRate, windowe
 let breathsPerMinute = (dominant ?? 0) * 60.0  // 15.0
 ```
 
-This technique is common in wearable health devices where direct respiratory measurement is impractical. For end-to-end patterns covering session lifecycle, sensor streams, and on-device inference, see <doc:watchOS-Guide>.
+This technique is common in wearable health devices where direct respiratory measurement is impractical. For end-to-end patterns covering session lifecycle, sensor streams, and on-device inference, see <doc:watchOS-Apps>.
 
 ### Phase and inverse transform
 

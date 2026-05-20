@@ -38,26 +38,25 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:How-It-Works>
 
 ### Conceptual Guides
+
+- <doc:Numerical-Literacy>
+- <doc:Statistics-Primer>
+- <doc:Probability-Primer>
+- <doc:Inferential-Statistics-Primer>
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
-- <doc:Statistics-Primer>
-- <doc:Inferential-Statistics-Primer>
-- <doc:Machine-Learning-Primer>
 - <doc:Physics-Primitives-Primer>
-- <doc:Numerical-Literacy>
+- <doc:Machine-Learning-Primer>
 - <doc:Concurrency-Primer>
 
 ### iOS
-- <doc:iOS-Guide>
-- <doc:iOS-Patterns>
+- <doc:iOS-Apps>
 
 ### watchOS
-- <doc:watchOS-Guide>
-- <doc:watchOS-Patterns>
+- <doc:watchOS-Apps>
 
 ### Vapor
-- <doc:Vapor-Guide>
-- <doc:Vapor-Patterns>
+- <doc:Vapor-Server>
 
 ### Vectors
 - <doc:Vector-Operations>

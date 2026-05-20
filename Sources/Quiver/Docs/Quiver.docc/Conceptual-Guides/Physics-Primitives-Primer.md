@@ -54,7 +54,7 @@ The idea is straightforward. Plot the rate on the vertical axis and time on the 
 
 > Tip: Newton himself wrote about the **trapezoid rule** in the *Principia*. The idea is to treat each adjacent pair of samples as the two parallel sides of a trapezoid: average the two heights, multiply by the time between them, and that gives the area of that little slice. Add up every slice across the signal, and the total is a close approximation of the true area under the curve. The smaller the spacing between samples, the closer the approximation gets to the real answer.
 
-Quiver exposes the trapezoid rule as `trapezoidalIntegral(dt:)`, where `dt` is the time between samples in seconds. The method takes a series of rate samples and returns the accumulated total.
+Quiver exposes the trapezoid rule as `trapezoidalIntegral(dt:)`, where `dt` is the time between samples in seconds. The method takes a series of rate samples and returns the accumulated total. In the Notebook, substitute a real recording — see <doc:Notebook-Datasets>.
 
 ```swift
 import Quiver
@@ -94,7 +94,7 @@ let g = 9.81             // m/s²
 Kinetic energy is computed in two steps. First, we square every velocity sample, which produces a new array of squared values. Then we multiply each squared value by one-half the mass, which converts the array into joules.
 
 ```swift
-let velocity: [Double] = [/* m/s samples */]
+let velocity: [Double] = [3.0, 3.2, 3.4, 3.5, 3.6, 3.5, 3.4, 3.3, 3.2, 3.0]   // m/s samples
 
 let velocitySquared = velocity.square()
 let kineticEnergy = velocitySquared.broadcast(multiplyingBy: 0.5 * mass)   // joules per sample
@@ -105,7 +105,7 @@ The first line, `velocity.square()`, returns a new array where each element is t
 Potential energy is even simpler. There is no squaring step. We just multiply each altitude sample by the runner's mass and by g:
 
 ```swift
-let altitude: [Double] = [/* metres above sea level */]
+let altitude: [Double] = [120.0, 125.0, 132.0, 140.0, 148.0, 155.0, 161.0, 168.0, 174.0, 180.0]   // metres above sea level
 
 let potentialEnergy = altitude.broadcast(multiplyingBy: mass * g)          // joules per sample
 ```
@@ -116,9 +116,9 @@ The teaching moment is not the formulas. It is that squaring a velocity series p
 
 ### Frequency is a physical quantity
 
-A signal repeating 2.8 times per second has a frequency of 2.8 Hz. For a runner, that is cadence: 2.8 steps per second is 168 steps per minute. The discrete Fourier transform finds repeating rhythms in a signal, and `fourierDominantFrequency(sampleRate:)` returns the strongest one.
+A signal repeating 2.8 times per second has a frequency of 2.8 Hz. For a runner, that is cadence: 2.8 steps per second is 168 steps per minute. The discrete Fourier transform finds repeating rhythms in a signal, and the `dominantFrequency` property of the `PowerSpectrum` value returned by `powerSpectralDensity(sampleRate:windowed:)` reports the strongest one.
 
-The next step is asking "how much energy is in this band of frequencies?" — for example, the cadence band between 2 Hz and 3.5 Hz for a typical runner. That question is answered by the **power spectral density**, which Quiver computes with `powerSpectralDensity(sampleRate:windowed:)`. The method returns a `PowerSpectrum` value that pairs each frequency with the energy at that frequency, and provides a method to ask for the energy inside any band:
+The next step is asking how much energy sits inside a given band of frequencies — for example, the cadence band between 2 Hz and 3.5 Hz for a typical runner. That question is answered by the **power spectral density**, which Quiver computes with `powerSpectralDensity(sampleRate:windowed:)`. The method returns a `PowerSpectrum` value that pairs each frequency with the energy at that frequency, and provides a method to ask for the energy inside any band. In the Notebook, substitute a real recording — see <doc:Notebook-Datasets>.
 
 ```swift
 import Quiver
@@ -126,7 +126,7 @@ import Quiver
 // 60 seconds of accelerometer magnitude sampled at 50 Hz.
 let accelMagnitude: [Double] = [/* 3000 samples */]
 
-let psd = accelMagnitude.powerSpectralDensity(sampleRate: 50, windowed: true)
+guard let psd = accelMagnitude.powerSpectralDensity(sampleRate: 50, windowed: true) else { return }
 
 let topHz = psd.dominantFrequency            // ≈ 2.83 Hz → 170 strides per minute
 let cadenceEnergy = psd.bandEnergy(in: 2.0...3.5)
@@ -134,7 +134,7 @@ let cadenceEnergy = psd.bandEnergy(in: 2.0...3.5)
 
 `PowerSpectrum` carries the frequencies, the densities, and the sample rate together as one value. The density is energy per hertz, so the band energy is the area under the spectrum across the requested range. For a runner, a high cadence-band energy means steady, rhythmic strides. For someone walking, the same energy sits in a different band. For a watch sitting on a desk, almost all the energy is at zero hertz. A classifier like K-Nearest Neighbors can tell those three states apart from band-energy features alone.
 
-### What you can now compute from a workout
+### What we can now compute from a workout
 
 The six lines below were not single-call operations before this primer. Now each is one method on an array of doubles.
 
@@ -143,7 +143,7 @@ import Quiver
 
 let totalWorkJ    = powerWatts.trapezoidalIntegral(dt: 1.0) ?? 0
 let workCurve     = powerWatts.cumulativeTrapezoidal(dt: 1.0)
-let spectrum      = accelMagnitude.powerSpectralDensity(sampleRate: 50, windowed: true)
+guard let spectrum = accelMagnitude.powerSpectralDensity(sampleRate: 50, windowed: true) else { return }
 let cadenceHz     = spectrum.dominantFrequency
 let cadenceEnergy = spectrum.bandEnergy(in: 2.0...3.5)
 let kinetic       = velocity.square().broadcast(multiplyingBy: 0.5 * mass)
