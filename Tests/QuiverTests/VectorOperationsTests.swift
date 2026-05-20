@@ -59,36 +59,36 @@ final class VectorOperationsTests: XCTestCase {
         // Standard worked example
         let x = [1.0, 2.0, 3.0, 4.0, 5.0]
         let y = [2.0, 4.0, 5.0, 4.0, 5.0]
-        XCTAssertEqual(x.correlation(with: y), 0.7745966692, accuracy: 1e-10)
+        XCTAssertEqual(x.correlation(with: y)!, 0.7745966692, accuracy: 1e-10)
 
         // Perfect positive linear relationship
         let a = [1.0, 2.0, 3.0]
         let b = [2.0, 4.0, 6.0]
-        XCTAssertEqual(a.correlation(with: b), 1.0, accuracy: 1e-10)
+        XCTAssertEqual(a.correlation(with: b)!, 1.0, accuracy: 1e-10)
 
         // Perfect negative linear relationship
         let c = [6.0, 4.0, 2.0]
-        XCTAssertEqual(a.correlation(with: c), -1.0, accuracy: 1e-10)
+        XCTAssertEqual(a.correlation(with: c)!, -1.0, accuracy: 1e-10)
 
         // Symmetric in its arguments
-        XCTAssertEqual(x.correlation(with: y), y.correlation(with: x), accuracy: 1e-10)
+        XCTAssertEqual(x.correlation(with: y)!, y.correlation(with: x)!, accuracy: 1e-10)
 
         // Shift invariance — adding a constant to either vector leaves r unchanged
         let yShifted = y.map { $0 + 100.0 }
-        XCTAssertEqual(x.correlation(with: y), x.correlation(with: yShifted), accuracy: 1e-10)
+        XCTAssertEqual(x.correlation(with: y)!, x.correlation(with: yShifted)!, accuracy: 1e-10)
 
-        // Constant column produces NaN
+        // Constant column produces nil — variance is zero and the ratio is undefined
         let constant = [3.0, 3.0, 3.0]
         let firstThree = Array(x.prefix(3))
-        XCTAssertTrue(firstThree.correlation(with: constant).isNaN)
+        XCTAssertNil(firstThree.correlation(with: constant))
 
         // Agrees with the matrix-level convenience for the same pair
         let matrix = [x, y].correlationMatrix()
-        XCTAssertEqual(x.correlation(with: y), matrix[0][1], accuracy: 1e-10)
+        XCTAssertEqual(x.correlation(with: y)!, matrix[0][1], accuracy: 1e-10)
 
-        // Empty and mismatched lengths return 0.0, matching dot(_:) convention
-        XCTAssertEqual([Double]().correlation(with: []), 0.0)
-        XCTAssertEqual([1.0, 2.0].correlation(with: [1.0]), 0.0)
+        // Empty and mismatched lengths return nil
+        XCTAssertNil([Double]().correlation(with: []))
+        XCTAssertNil([1.0, 2.0].correlation(with: [1.0]))
     }
 
     func testCosineSimilarities() {

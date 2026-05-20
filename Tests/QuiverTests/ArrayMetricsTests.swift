@@ -111,6 +111,18 @@ final class ArrayMetricsTests: XCTestCase {
         XCTAssertNotEqual(cm1, cm3)
     }
 
+    // ConfusionMatrix round-trips through JSON, matching every other typed return in Quiver
+    func testConfusionMatrixCodable() throws {
+        let predictions = [1, 0, 1, 1, 0]
+        let actual      = [1, 0, 0, 1, 0]
+        let original = predictions.confusionMatrix(actual: actual)
+
+        let encoded = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(ConfusionMatrix.self, from: encoded)
+
+        XCTAssertEqual(decoded, original)
+    }
+
     // MARK: - Classification Report
 
     // MARK: - Class Balance
