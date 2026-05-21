@@ -14,7 +14,7 @@ A watchOS app reads samples from `HKWorkoutSession` and `HKAnchoredObjectQuery`,
 
 ## Statistics on watchOS
 
-A workout produces a stream of samples. Until those samples are summarized against the wearer's own history, a single reading means nothing. Sixty heart-rate samples at the top of a climb are only legible against the wearer's own typical climbing heart rate.
+A workout produces a stream of samples: heart rate every second, pace every stride, power every cadence cycle. Sixty heart-rate samples are not a workout summary. The job of descriptive statistics here is to compare a fresh window of samples against the wearer's own baseline, so the watch can say "this is hard for you" instead of "this is 168 BPM." Quiver computes the baseline once, stores the typed snapshot to disk, and reads it back at session start to score every incoming sample.
 
 ### The baseline and its summary
 

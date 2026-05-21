@@ -16,7 +16,7 @@ The convention is worth holding from the first line of code. Anything that came 
 
 ## Statistics on iOS
 
-A user's history is a list of events. Until that list is summarized, it is not legible. Eighty-four trip delays in a database mean nothing to the person who took them. Statistics is the act of compressing a list of events into a few numbers a human can read.
+An iOS app accumulates user events as it runs: trips taken, workouts logged, purchases recorded, sessions completed. A list of eighty-four trip delays is not a screen. The job of descriptive statistics is to turn that list into the four or five numbers a screen renders: a typical value, a spread, a cut-off the user is asking about. Quiver computes these from the raw `[Double]` the app already holds, returns a typed snapshot ready for SwiftUI, and runs entirely on-device.
 
 ### From raw history to typed summary
 

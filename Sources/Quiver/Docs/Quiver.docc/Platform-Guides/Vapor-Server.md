@@ -29,7 +29,7 @@ The seeded `ProductStore` holds the catalog, the embeddings dictionary, and the 
 
 ## Statistics on Vapor
 
-A server is a stream of events. Requests arrive, handlers run, and latencies accumulate. The question a server has to answer about itself is the same question statistics answers about any stream of numbers: what is typical, and what is unusual.
+A server is a stream of events. Requests arrive, handlers run, and latencies accumulate. The question the dashboard, the alert, and the SLO report all ask is the same: what is the 95th percentile of the last ten thousand request latencies, and is it inside our budget? Quiver answers that with one call against a `[Double]`, and the same primitives that compute the percentile compute the median, the IQR, and the typed snapshot the report renders from.
 
 ### Why percentiles beat averages
 
