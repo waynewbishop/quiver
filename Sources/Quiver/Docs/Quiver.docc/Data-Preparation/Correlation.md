@@ -100,7 +100,7 @@ let y = [2.0, 3.0, 5.0]
 x.cosineOfAngle(with: y)  // 0.9972
 x.correlation(with: y)    // Optional(0.9820)
 
-let yShifted = y.map { $0 + 10.0 }
+let yShifted = y + 10.0
 x.cosineOfAngle(with: yShifted)  // 0.9564
 x.correlation(with: yShifted)    // Optional(0.9820)
 ```

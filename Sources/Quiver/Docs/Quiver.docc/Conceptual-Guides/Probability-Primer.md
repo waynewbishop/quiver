@@ -53,12 +53,13 @@ Four named quantities carry the meaning. The **prior** `P(H)` is the probability
 Quiver exposes this directly when the three inputs are known. See <doc:Working-With-Distributions> for the broader family of distribution-based reasoning that contains `Bayes.posterior`.
 
 ```swift
-let posterior = Bayes.posterior(
+import Quiver
+
+Bayes.posterior(
     prior: 0.20,         // 20% of inbox is spam
     likelihood: 0.60,    // 60% of spam contains the phrase
     evidence: 0.15       // 15% of all mail contains the phrase
-)
-// posterior ≈ 0.80
+)  // ≈ 0.80
 ```
 
 Eighty percent. The phrase moved the probability of spam from 20% to 80%, because the phrase is much more common in spam than in legitimate mail.
@@ -74,12 +75,13 @@ P(H | E) = sensitivity · prior / (sensitivity · prior + falsePositiveRate · (
 Quiver's expanded overload takes the three rates the developer actually has:
 
 ```swift
-let posterior = Bayes.posterior(
+import Quiver
+
+Bayes.posterior(
     prior: 0.02,                  // 2% phishing base rate for this account
     trueRate: 0.70,               // 70% of phishing uses "verify your account"
     falsePositiveRate: 0.03       // 3% of legitimate mail uses it too
-)
-// posterior ≈ 0.3226
+)  // ≈ 0.3226
 ```
 
 Thirty-two percent. The phrase is a strong signal — seventy percent of phishing uses it — but the base rate of phishing is so low that even after the evidence arrives, the message is still more likely legitimate than phishing. This is the famous counterintuitive payoff of Bayesian reasoning: rare conditions stay rare unless the evidence is overwhelming, and "rare" beats "specific" more often than intuition expects. The same math is what makes a positive medical test for a 1-in-100 disease leave the patient with only a 32% probability of actually having the disease, even when the test is 95% accurate.

@@ -116,7 +116,7 @@ let theoreticalAt3 = Distributions.normal.cdf(x: 3.0, mean: candidateMean, stand
 // ≈ 0.2611
 
 // What fraction of the sample sits at or below 3.0?
-let empiricalAt3 = Double(times.filter { $0 <= 3.0 }.count) / Double(times.count)
+let empiricalAt3 = times.percentileRank(of: 3.0) / 100.0
 // ≈ 0.30
 ```
 
