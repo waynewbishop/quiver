@@ -52,8 +52,6 @@ The same statistical surface generalizes across any screen whose product is a hi
 
 A SwiftUI view that reads `summary()` inside `body` recomputes on every render, which walks the whole history each time the parent state changes. We move the call to `.task` or compute it once when the underlying data changes, then hold the result in observable state.
 
-> Tip: A SwiftUI view that calls `summary()` inside `body` recomputes on every render. Move the call to `.task` or compute it once when the underlying data changes, then hold the result in observable state.
-
 ## Linear algebra on iOS
 
 Sorting by a column ranks items by one number: newest first, biggest first, or closest first. Ranking by closeness asks a different question. Given the item the user is reading now, which other items resemble it across many dimensions at once.

@@ -612,4 +612,270 @@ final class DistributionsTests: XCTestCase {
             }
         }
     }
+
+    // MARK: - Poisson
+
+    // Anchor values verified against scipy.stats.poisson
+    func testPoissonPMFKnownValues() {
+        // PMF(k=2, λ=3.5) = exp(-3.5) * 3.5^2 / 2! ≈ 0.184959
+        guard let v = Distributions.poisson.pmf(k: 2, lambda: 3.5) else {
+            XCTFail("nil"); return
+        }
+        XCTAssertEqual(v, 0.184959, accuracy: 1e-6)
+
+        // PMF(k=0, λ=1.0) = exp(-1.0) ≈ 0.367879
+        guard let v0 = Distributions.poisson.pmf(k: 0, lambda: 1.0) else {
+            XCTFail("nil"); return
+        }
+        XCTAssertEqual(v0, Foundation.exp(-1.0), accuracy: 1e-12)
+    }
+
+    func testPoissonLogPMFMatchesLogOfPMF() {
+        // log(pmf) and logPMF must agree across a range of parameters
+        for lambda in [0.5, 1.0, 3.5, 10.0] {
+            for k in 0..<15 {
+                guard let pmf = Distributions.poisson.pmf(k: k, lambda: lambda),
+                      let logPMF = Distributions.poisson.logPMF(k: k, lambda: lambda) else {
+                    XCTFail("nil at λ=\(lambda), k=\(k)"); return
+                }
+                XCTAssertEqual(Foundation.log(pmf), logPMF, accuracy: 1e-10)
+            }
+        }
+    }
+
+    // PMF over the full support sums to 1 — partition invariant
+    func testPoissonPMFSumsToOne() {
+        for lambda in [0.5, 1.0, 3.5, 10.0] {
+            var total = 0.0
+            for k in 0..<100 {
+                guard let v = Distributions.poisson.pmf(k: k, lambda: lambda) else {
+                    XCTFail("nil"); return
+                }
+                total += v
+            }
+            XCTAssertEqual(total, 1.0, accuracy: 1e-10, "λ=\(lambda)")
+        }
+    }
+
+    // Anchor verified against scipy.stats.poisson.cdf
+    func testPoissonCDFKnownValues() {
+        // CDF(k=5, λ=3.5) ≈ 0.857614
+        guard let v = Distributions.poisson.cdf(k: 5, lambda: 3.5) else {
+            XCTFail("nil"); return
+        }
+        XCTAssertEqual(v, 0.857614, accuracy: 1e-6)
+
+        // CDF(k=0, λ=1.0) = exp(-1.0)
+        guard let v0 = Distributions.poisson.cdf(k: 0, lambda: 1.0) else {
+            XCTFail("nil"); return
+        }
+        XCTAssertEqual(v0, Foundation.exp(-1.0), accuracy: 1e-12)
+    }
+
+    // CDF is monotonically nondecreasing and bounded in [0, 1]
+    func testPoissonCDFMonotonic() {
+        for lambda in [0.5, 3.5, 10.0] {
+            var prev = -1.0
+            for k in 0..<30 {
+                guard let v = Distributions.poisson.cdf(k: k, lambda: lambda) else {
+                    XCTFail("nil"); return
+                }
+                XCTAssertGreaterThanOrEqual(v, prev)
+                XCTAssertGreaterThanOrEqual(v, 0.0)
+                XCTAssertLessThanOrEqual(v, 1.0)
+                prev = v
+            }
+        }
+    }
+
+    // Quantile round-trips through the CDF: cdf(quantile(p)) >= p, cdf(quantile(p) - 1) < p
+    func testPoissonQuantileRoundTrip() {
+        for lambda in [0.5, 3.5, 10.0] {
+            for p in [0.1, 0.25, 0.5, 0.75, 0.95, 0.99] {
+                guard let k = Distributions.poisson.quantile(p: p, lambda: lambda),
+                      let cdfAtK = Distributions.poisson.cdf(k: k, lambda: lambda) else {
+                    XCTFail("nil at λ=\(lambda), p=\(p)"); return
+                }
+                XCTAssertGreaterThanOrEqual(cdfAtK, p, "λ=\(lambda), p=\(p), k=\(k)")
+                if k > 0 {
+                    guard let cdfAtKMinus1 = Distributions.poisson.cdf(k: k - 1, lambda: lambda) else {
+                        XCTFail("nil"); return
+                    }
+                    XCTAssertLessThan(cdfAtKMinus1, p, "λ=\(lambda), p=\(p), k=\(k)")
+                }
+            }
+        }
+    }
+
+    // 95th percentile of Poisson(3.5) is 7 per scipy.stats.poisson.ppf
+    func testPoissonQuantileKnownValue() {
+        XCTAssertEqual(Distributions.poisson.quantile(p: 0.95, lambda: 3.5), 7)
+    }
+
+    func testPoissonMeanAndVariance() {
+        XCTAssertEqual(Distributions.poisson.mean(lambda: 3.5), 3.5)
+        XCTAssertEqual(Distributions.poisson.variance(lambda: 3.5), 3.5)
+    }
+
+    func testPoissonInvalidInputs() {
+        XCTAssertNil(Distributions.poisson.pmf(k: 2, lambda: 0))
+        XCTAssertNil(Distributions.poisson.pmf(k: 2, lambda: -1))
+        XCTAssertNil(Distributions.poisson.pmf(k: -1, lambda: 1))
+        XCTAssertNil(Distributions.poisson.logPMF(k: 2, lambda: 0))
+        XCTAssertNil(Distributions.poisson.cdf(k: 5, lambda: 0))
+        XCTAssertNil(Distributions.poisson.quantile(p: 0.5, lambda: 0))
+        XCTAssertNil(Distributions.poisson.quantile(p: -0.1, lambda: 1))
+        XCTAssertNil(Distributions.poisson.quantile(p: 1.1, lambda: 1))
+        XCTAssertNil(Distributions.poisson.mean(lambda: 0))
+        XCTAssertNil(Distributions.poisson.variance(lambda: -1))
+    }
+
+    // CDF returns 0 for negative k
+    func testPoissonCDFNegativeK() {
+        XCTAssertEqual(Distributions.poisson.cdf(k: -1, lambda: 3.5), 0.0)
+        XCTAssertEqual(Distributions.poisson.cdf(k: -100, lambda: 1.0), 0.0)
+    }
+
+    // MARK: - Binomial
+
+    // Anchor values verified against scipy.stats.binom
+    func testBinomialPMFKnownValues() {
+        // PMF(k=3, n=10, p=0.4) = C(10,3) * 0.4^3 * 0.6^7 ≈ 0.214991
+        guard let v = Distributions.binomial.pmf(k: 3, n: 10, p: 0.4) else {
+            XCTFail("nil"); return
+        }
+        XCTAssertEqual(v, 0.214991, accuracy: 1e-6)
+
+        // PMF(k=0, n=10, p=0.4) = 0.6^10
+        guard let v0 = Distributions.binomial.pmf(k: 0, n: 10, p: 0.4) else {
+            XCTFail("nil"); return
+        }
+        XCTAssertEqual(v0, Foundation.pow(0.6, 10), accuracy: 1e-12)
+
+        // PMF(k=10, n=10, p=0.4) = 0.4^10
+        guard let v10 = Distributions.binomial.pmf(k: 10, n: 10, p: 0.4) else {
+            XCTFail("nil"); return
+        }
+        XCTAssertEqual(v10, Foundation.pow(0.4, 10), accuracy: 1e-12)
+    }
+
+    func testBinomialLogPMFMatchesLogOfPMF() {
+        for (n, p) in [(10, 0.4), (20, 0.5), (50, 0.1)] {
+            for k in 0...n {
+                guard let pmf = Distributions.binomial.pmf(k: k, n: n, p: p),
+                      let logPMF = Distributions.binomial.logPMF(k: k, n: n, p: p) else {
+                    XCTFail("nil at n=\(n), k=\(k), p=\(p)"); return
+                }
+                // Skip log comparison when pmf rounds to zero — logPMF is -infinity there
+                if pmf > 0 {
+                    XCTAssertEqual(Foundation.log(pmf), logPMF, accuracy: 1e-9)
+                }
+            }
+        }
+    }
+
+    // PMF over the full support {0, ..., n} sums to 1 — partition invariant
+    func testBinomialPMFSumsToOne() {
+        for (n, p) in [(10, 0.4), (20, 0.5), (50, 0.1), (100, 0.7)] {
+            var total = 0.0
+            for k in 0...n {
+                guard let v = Distributions.binomial.pmf(k: k, n: n, p: p) else {
+                    XCTFail("nil"); return
+                }
+                total += v
+            }
+            XCTAssertEqual(total, 1.0, accuracy: 1e-10, "n=\(n), p=\(p)")
+        }
+    }
+
+    // Anchor verified against scipy.stats.binom.cdf
+    func testBinomialCDFKnownValues() {
+        // CDF(k=3, n=10, p=0.4) ≈ 0.382281
+        guard let v = Distributions.binomial.cdf(k: 3, n: 10, p: 0.4) else {
+            XCTFail("nil"); return
+        }
+        XCTAssertEqual(v, 0.382281, accuracy: 1e-6)
+
+        // CDF at the support boundaries
+        XCTAssertEqual(Distributions.binomial.cdf(k: 10, n: 10, p: 0.4), 1.0)
+        XCTAssertEqual(Distributions.binomial.cdf(k: -1, n: 10, p: 0.4), 0.0)
+    }
+
+    // Boundary probabilities p = 0 and p = 1 short-circuit the beta evaluation
+    func testBinomialCDFBoundaryProbabilities() {
+        // p = 0: always 0 successes, so CDF(k>=0) = 1
+        XCTAssertEqual(Distributions.binomial.cdf(k: 0, n: 10, p: 0.0), 1.0)
+        XCTAssertEqual(Distributions.binomial.cdf(k: 5, n: 10, p: 0.0), 1.0)
+
+        // p = 1: always n successes, so CDF(k<n) = 0, CDF(k>=n) = 1
+        XCTAssertEqual(Distributions.binomial.cdf(k: 5, n: 10, p: 1.0), 0.0)
+        XCTAssertEqual(Distributions.binomial.cdf(k: 10, n: 10, p: 1.0), 1.0)
+    }
+
+    // CDF is monotonically nondecreasing across k for fixed n, p
+    func testBinomialCDFMonotonic() {
+        for (n, p) in [(20, 0.3), (50, 0.5), (100, 0.7)] {
+            var prev = -1.0
+            for k in 0...n {
+                guard let v = Distributions.binomial.cdf(k: k, n: n, p: p) else {
+                    XCTFail("nil"); return
+                }
+                XCTAssertGreaterThanOrEqual(v, prev)
+                XCTAssertGreaterThanOrEqual(v, 0.0)
+                XCTAssertLessThanOrEqual(v, 1.0)
+                prev = v
+            }
+        }
+    }
+
+    // Quantile round-trips through the CDF
+    func testBinomialQuantileRoundTrip() {
+        for (n, prob) in [(10, 0.4), (50, 0.5), (100, 0.3)] {
+            for p in [0.1, 0.25, 0.5, 0.75, 0.95] {
+                guard let k = Distributions.binomial.quantile(p: p, n: n, probability: prob),
+                      let cdfAtK = Distributions.binomial.cdf(k: k, n: n, p: prob) else {
+                    XCTFail("nil at n=\(n), p=\(p)"); return
+                }
+                XCTAssertGreaterThanOrEqual(cdfAtK, p, "n=\(n), p=\(p), k=\(k)")
+                if k > 0 {
+                    guard let cdfAtKMinus1 = Distributions.binomial.cdf(k: k - 1, n: n, p: prob) else {
+                        XCTFail("nil"); return
+                    }
+                    XCTAssertLessThan(cdfAtKMinus1, p)
+                }
+            }
+        }
+    }
+
+    // 95th percentile of Binomial(n=10, p=0.4) is 7 per scipy.stats.binom.ppf
+    func testBinomialQuantileKnownValue() {
+        XCTAssertEqual(Distributions.binomial.quantile(p: 0.95, n: 10, probability: 0.4), 7)
+        XCTAssertEqual(Distributions.binomial.quantile(p: 0.5, n: 10, probability: 0.4), 4)
+    }
+
+    func testBinomialMeanAndVariance() {
+        XCTAssertEqual(Distributions.binomial.mean(n: 10, p: 0.4), 4.0)
+
+        guard let variance = Distributions.binomial.variance(n: 10, p: 0.4) else {
+            XCTFail("nil"); return
+        }
+        XCTAssertEqual(variance, 2.4, accuracy: 1e-12)
+
+        // Variance vanishes at boundary probabilities
+        XCTAssertEqual(Distributions.binomial.variance(n: 10, p: 0.0), 0.0)
+        XCTAssertEqual(Distributions.binomial.variance(n: 10, p: 1.0), 0.0)
+    }
+
+    func testBinomialInvalidInputs() {
+        XCTAssertNil(Distributions.binomial.pmf(k: 5, n: 10, p: -0.1))
+        XCTAssertNil(Distributions.binomial.pmf(k: 5, n: 10, p: 1.1))
+        XCTAssertNil(Distributions.binomial.pmf(k: 11, n: 10, p: 0.5))
+        XCTAssertNil(Distributions.binomial.pmf(k: -1, n: 10, p: 0.5))
+        XCTAssertNil(Distributions.binomial.pmf(k: 5, n: -1, p: 0.5))
+        XCTAssertNil(Distributions.binomial.cdf(k: 5, n: 10, p: -0.1))
+        XCTAssertNil(Distributions.binomial.quantile(p: -0.1, n: 10, probability: 0.5))
+        XCTAssertNil(Distributions.binomial.quantile(p: 0.5, n: 10, probability: -0.1))
+        XCTAssertNil(Distributions.binomial.mean(n: -1, p: 0.5))
+        XCTAssertNil(Distributions.binomial.variance(n: 10, p: 1.5))
+    }
 }

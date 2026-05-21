@@ -73,6 +73,64 @@ final class ArrayChartsTests: XCTestCase {
         XCTAssertEqual(constant[0].count, 3)
     }
 
+    // Covers all three BinRule cases: formula correctness, degenerate input,
+    // and consistency with the primitive histogram(bins:) overload.
+    func testHistogramRule() {
+        // n = 100, integers 1...100 — straightforward IQR (Q1=25.5, Q3=75.5, IQR≈50)
+        let data = (1...100).map { Double($0) }
+
+        // squareRoot: ⌈√100⌉ = 10
+        let sq = data.histogram(rule: .squareRoot)
+        XCTAssertEqual(sq.count, 10)
+
+        // sturges: ⌈log₂(100) + 1⌉ = ⌈6.64 + 1⌉ = 8
+        let st = data.histogram(rule: .sturges)
+        XCTAssertEqual(st.count, 8)
+
+        // freedmanDiaconis: width = 2·IQR / n^(1/3) ≈ 100/4.642 ≈ 21.54
+        //   bin count = ⌈99/21.54⌉ = 5
+        let fd = data.histogram(rule: .freedmanDiaconis)
+        XCTAssertEqual(fd.count, 5)
+
+        // Counts across all rules must equal the input size — partition invariant
+        for hist in [sq, st, fd] {
+            let total = hist.map { $0.count }.reduce(0, +)
+            XCTAssertEqual(total, data.count)
+        }
+
+        // Consistency with the primitive: histogram(rule:) is a pure convenience
+        // layer over histogram(bins:). Same bin count → identical result.
+        let primitive = data.histogram(bins: sq.count)
+        for (a, b) in zip(sq, primitive) {
+            XCTAssertEqual(a.midpoint, b.midpoint, accuracy: 1e-12)
+            XCTAssertEqual(a.count, b.count)
+        }
+    }
+
+    // freedmanDiaconis falls back to Sturges on zero-IQR input rather than trapping
+    func testHistogramRuleZeroIQRFallback() {
+        // All values equal — IQR is zero, FD formula would divide by zero
+        let constant = [3.0, 3.0, 3.0, 3.0, 3.0]
+        let fd = constant.histogram(rule: .freedmanDiaconis)
+        // histogram(bins:) collapses constant input to one bin regardless of
+        // the requested bin count, so the fallback path returns one bin.
+        XCTAssertEqual(fd.count, 1)
+        XCTAssertEqual(fd[0].midpoint, 3.0)
+        XCTAssertEqual(fd[0].count, 5)
+
+        // Empty input returns empty across every rule
+        let empty: [Double] = []
+        XCTAssertTrue(empty.histogram(rule: .squareRoot).isEmpty)
+        XCTAssertTrue(empty.histogram(rule: .sturges).isEmpty)
+        XCTAssertTrue(empty.histogram(rule: .freedmanDiaconis).isEmpty)
+
+        // Single-element input — one bin under every rule
+        let single = [42.0]
+        XCTAssertEqual(single.histogram(rule: .squareRoot).count, 1)
+        XCTAssertEqual(single.histogram(rule: .sturges).count, 1)
+        XCTAssertEqual(single.histogram(rule: .freedmanDiaconis).count, 1)
+    }
+
     func testPercentile() throws {
         let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
 

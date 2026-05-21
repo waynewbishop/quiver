@@ -322,6 +322,8 @@ The tallest bar is the model's prediction. The relative heights show how confide
 
 ### Distribution analysis
 - ``Swift/Array/histogram(bins:)``
+- ``Swift/Array/histogram(rule:)``
+- ``BinRule``
 - ``Swift/Array/quartiles()``
 - ``Swift/Array/percentile(_:)``
 - ``Swift/Array/percentileRank(of:)``

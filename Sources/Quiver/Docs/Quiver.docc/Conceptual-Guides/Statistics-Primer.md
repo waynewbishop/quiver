@@ -23,11 +23,11 @@ salaries.mean()    // 77.5 — pulled upward by the outlier
 salaries.median()  // 59.0 — describes the typical member
 ```
 
-> Note: When the mean and median disagree by a lot, the distribution is skewed. Reach for the median when a few extreme values would otherwise dominate the mean.
+> Note: When the mean and median disagree by a lot, the distribution is skewed. Reach for the median when a few extreme values would otherwise dominate the mean. The gap between center measures is also the first signal in a longer workflow; see <doc:Identifying-A-Distribution> for the steps that move from "the data is skewed" to "the data follows this named family."
 
 ### The mode
 
-Mean and median both ask the data to be numeric. The **mode** does not — it is the value, or values, that appear most often, and it works on anything we can compare for equality. That makes it the natural measure of center for categorical data where averaging is undefined, including strings, booleans, and small integer codes. Quiver exposes `mode()` on `Array where Element: Hashable` and returns `[Element]` so that ties are surfaced rather than hidden. When two values share the highest frequency, both are returned — the result describes a bimodal distribution honestly instead of arbitrarily picking one.
+The **mode** is the most frequent value in a series and works on any type that supports equality. That makes it the natural measure of center for categorical data where averaging is undefined, including strings, booleans, and small integer codes. Quiver exposes `mode()` on `Array where Element: Hashable` and returns `[Element]` so that ties are surfaced rather than hidden. When two values share the highest frequency, both are returned, which describes a bimodal distribution honestly instead of arbitrarily picking one.
 
 ```swift
 import Quiver
@@ -43,9 +43,9 @@ Mean is the right summary for numeric data without extreme values. Median is the
 
 ### Describing the spread
 
-The middle tells us where the dataset is centered. It says nothing about how tightly the values cluster around that center. Two datasets can share the same mean but feel completely different — one tightly grouped, the other scattered. The concept that captures this is **spread**.
+The middle tells us where the dataset is centered. It says nothing about how tightly the values cluster around that center. Two datasets can share the same mean but feel completely different: one tightly grouped, the other scattered. The concept that captures this is **spread**.
 
-**Variance** measures spread by taking the distance of each value from the mean, squaring it, and averaging the squared distances. Squaring is what makes variance sensitive to extreme values — a single value far from the mean contributes disproportionately. The drawback is that variance is measured in squared units. If the original values are in dollars, the variance is in dollars-squared, which does not map to anything intuitive.
+**Variance** measures spread by taking the distance of each value from the mean, squaring it, and averaging the squared distances. Squaring is what makes variance sensitive to extreme values: a single value far from the mean contributes disproportionately. The drawback is that variance is measured in squared units. If the original values are in dollars, the variance is in dollars-squared, which does not map to anything intuitive.
 
 **Standard deviation** solves that problem. It is the square root of variance, which brings the answer back to the original units. A standard deviation of 5 on a list of test scores means "a typical score sits about 5 points away from the mean." Standard deviation is the most practical measure of spread because it is expressed in the same units as the data.
 
@@ -57,7 +57,7 @@ scores.standardDeviation() // 6.70 — a typical score is ~7 points from the mea
 scores.variance()          // 44.84 — the same information in squared units
 ```
 
-> Experiment: **The Quiver Notebook** is the right place to see why median resists outliers. Append one extreme value to `scores` and re-run — mean and standard deviation move noticeably, median barely budges. The robustness claim becomes a visible difference. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to see why median resists outliers. Append one extreme value to `scores` and re-run. Mean and standard deviation move noticeably; median barely budges. The robustness claim becomes a visible difference. See <doc:Quiver-Notebook>.
 
 A low standard deviation means the values cluster tightly around the mean. A high standard deviation means they are scattered. Two classrooms with the same average test score can tell completely different stories once the standard deviation is known.
 
@@ -92,7 +92,7 @@ if let q = responseTimes.quartiles() {
 
 The return type is `Quartiles`, a typed value with `min`, `q1`, `median`, `q3`, `max`, and `iqr` as named properties. Read them directly when only one is needed (`q.median`, `q.iqr`), or print the whole value for the full summary.
 
-Quartiles are computed by linear interpolation between adjacent order statistics. For a sorted array of length `n`, the `p`-th percentile lives at index `(p / 100) · (n − 1)`. When that index falls between two integers, the result is the straight-line blend of the two surrounding values. Other tools use other quartile conventions, so a textbook reporting different quartile values for the same input is not contradicting Quiver — it is using a different definition. When `n = 1`, every position collapses to the single value and `iqr` is `0`.
+Quartiles are computed by linear interpolation between adjacent order statistics. For a sorted array of length `n`, the `p`-th percentile lives at index `(p / 100) · (n − 1)`. When that index falls between two integers, the result is the straight-line blend of the two surrounding values. Other tools use other quartile conventions, so a textbook reporting different quartile values for the same input is not contradicting Quiver; it is using a different definition. When `n = 1`, every position collapses to the single value and `iqr` is `0`.
 
 Quartiles are more robust than mean and standard deviation when the data is skewed, because they describe the distribution by *position* rather than by *distance from a center*. The single slow response at 320ms does not distort Q1 or Q3. For the same reason, box plots — a common visualization in dashboards — read their geometry directly from these positions: the box spans Q1 to Q3, a line at the median sits inside, and the whiskers reach the extreme values that fall within `1.5 · iqr` of the box. Anything farther is drawn as a separate point to flag it as an outlier.
 
@@ -137,7 +137,7 @@ let zScores = scores.standardized()
 // The 95 appears as ≈ 1.77 standard deviations above the mean
 ```
 
-Rough rules of thumb help interpret a z-score. Values with absolute z-score below 1 are ordinary, within the normal range of variation, covering about 68% of values in a typical distribution. Values between 1 and 2 are somewhat above or below average but not remarkable, covering about another 27%. Values between 2 and 3 are notably unusual and worth investigating, covering about 4.5%. Values above 3 are rare — less than 0.3% of a normal distribution. These percentages describe a true normal distribution and real data will vary, but the categories hold as useful guides. See <doc:Working-With-Distributions> for the `Distributions.normal` API that computes these probabilities exactly.
+Rough rules of thumb help interpret a z-score. Values with absolute z-score below 1 are ordinary, within the normal range of variation, covering about 68% of values in a typical distribution. Values between 1 and 2 are somewhat above or below average but not remarkable, covering about another 27%. Values between 2 and 3 are notably unusual and worth investigating, covering about 4.5%. Values above 3 are rare, accounting for less than 0.3% of a normal distribution. These percentages describe a true normal distribution and real data will vary, but the categories hold as useful guides. See <doc:Working-With-Distributions> for the `Distributions.normal` API that computes these probabilities exactly.
 
 Z-scores are the bridge between descriptive statistics and machine learning. Once every value is measured on a universal ruler, comparisons across different datasets, different units, and different scales become possible.
 
@@ -172,8 +172,10 @@ See <doc:Boolean-Masking> for the full mask-and-filter pattern.
 
 ### From describing to inferring
 
-Everything up to this point has been about describing the data we already have. We computed the mean of a list of salaries, the spread of a list of test scores, the unusual days in a month of spending. Those are summaries. They are correct by construction — the mean of the list is the mean of the list, with no uncertainty involved.
+Everything up to this point has been about describing the data we already have. We computed the mean of a list of salaries, the spread of a list of test scores, the unusual days in a month of spending. Those are summaries. They are correct by construction: the mean of the list is the mean of the list, with no uncertainty involved.
 
-A different kind of question shows up the moment we start treating our data as evidence about something larger. An A/B test in an iOS app captures session times for the few thousand users who happened to land in the variant group — but the product decision rides on every user who will ever touch that flow. A week of accelerometer readings from one watch reflects one wearer's gait, but we want a threshold that will work for the next wearer too. In each case the dataset in hand is a sample, and the thing we actually care about is the population the sample came from. **Inferential statistics** is the toolkit for reasoning across that gap. See <doc:Inferential-Statistics-Primer> for sampling theory, hypothesis testing, confidence intervals, and resampling.
+A different kind of question shows up the moment we start treating our data as evidence about something larger. An A/B test in an iOS app captures session times for the few thousand users who happened to land in the variant group, but the product decision rides on every user who will ever touch that flow. A week of accelerometer readings from one watch reflects one wearer's gait, but we want a threshold that will work for the next wearer too. In each case the dataset in hand is a sample, and the thing we actually care about is the population the sample came from. **Inferential statistics** is the toolkit for reasoning across that gap. See <doc:Inferential-Statistics-Primer> for sampling theory, hypothesis testing, confidence intervals, and resampling.
+
+Between describing and inferring sits a third step: naming what kind of distribution the data follows. The summaries we have computed so far are the inputs to that question, and the answer unlocks the right inferential tool for the job. See <doc:Identifying-A-Distribution> for the workflow that turns a histogram and a few summary statistics into a named family.
 
 The same `summary()` surface scales from a single array to a labeled table. Calling it on a `Panel` returns one snapshot per column with the same nine fields, indexed by column name. See <doc:Panel-Workflows> for the applied workflow that uses `summary()` across a multi-column panel during an ML pipeline.
