@@ -239,6 +239,7 @@ public extension Array where Element == Double {
     ///   the signal is empty or has fewer than 2 samples.
     /// - Precondition: `count` must be a power of 2.
     /// - Complexity: O(n log n)
+    @available(*, deprecated, message: "Use powerSpectralDensity(sampleRate:windowed:)?.dominantFrequency instead. PowerSpectrum carries the full density spectrum, dominant frequency, and band-energy queries in one value.")
     func fourierDominantFrequency(sampleRate: Double) -> Double? {
         guard self.count > 1 else { return nil }
 
@@ -282,12 +283,19 @@ public extension Array where Element == Double {
     /// - Returns: The frequency in Hz of the strongest component, or `nil` if the
     ///   signal is empty.
     /// - Complexity: O(n log n)
+    @available(*, deprecated, message: "Use powerSpectralDensity(sampleRate:windowed:)?.dominantFrequency instead. PowerSpectrum carries the full density spectrum, dominant frequency, and band-energy queries in one value.")
     func fourierDominantFrequency(sampleRate: Double, windowed: Bool) -> Double? {
         guard !self.isEmpty else { return nil }
 
         var prepared = windowed ? self.hannWindowed() : self
         prepared = prepared.padded(toPowerOfTwo: 0.0)
-        return prepared.fourierDominantFrequency(sampleRate: sampleRate)
+        // Call the deprecated overload directly without triggering the deprecation
+        // warning, since this overload is also deprecated and forwards on purpose.
+        let magnitudes = prepared.fourierMagnitudeHalf()
+        let frequencies = prepared.fourierFrequenciesHalf(sampleRate: sampleRate)
+        let nonDC = Array(magnitudes.dropFirst())
+        guard let peak = nonDC.topIndices(k: 1).first else { return nil }
+        return frequencies[peak.index + 1]
     }
 
     /// Returns the positive-frequency spectrum as paired frequency and magnitude values,
@@ -323,5 +331,104 @@ public extension Array where Element == Double {
         let frequencies = prepared.fourierFrequenciesHalf(sampleRate: sampleRate)
 
         return zip(frequencies, magnitudes).map { (frequency: $0, magnitude: $1) }
+    }
+
+    // MARK: - Power Spectral Density
+
+    /// Returns the one-sided power spectral density of the signal as a
+    /// ``PowerSpectrum`` value pairing frequencies and densities together.
+    ///
+    /// The periodogram estimator is used — a single FFT of the (optionally Hann-windowed)
+    /// signal, magnitude-squared, and normalised so that integrating the density across
+    /// the one-sided band recovers the signal's total power. Density units are
+    /// `(signal²) / Hz`.
+    ///
+    /// The input is zero-padded internally to the next power of two; the spectral
+    /// resolution `Δf` reflects the padded length (`sampleRate / paddedLength`). For
+    /// the typical sensor case — 3,000 samples at 50 Hz — the padded length is 4,096
+    /// and `Δf ≈ 0.012 Hz`, ample resolution for any cadence-band query.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// // 60 seconds of wrist-accelerometer magnitude, sampled at 50 Hz.
+    /// let accelMagnitude: [Double] = /* 3,000 samples */ []
+    ///
+    /// guard let psd = accelMagnitude.powerSpectralDensity(sampleRate: 50, windowed: true) else { return }
+    ///
+    /// let cadenceHz     = psd.dominantFrequency        // ≈ 2.83 Hz → 170 steps/min
+    /// let cadenceEnergy = psd.bandEnergy(in: 2.0...3.5)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - sampleRate: Samples per second of the source signal, in hertz.
+    ///   - windowed: Whether to apply a Hann window before transforming. Defaults to `false`.
+    ///     Windowing reduces spectral leakage from finite-length signals and is the right
+    ///     default for analysing real sensor data.
+    /// - Returns: A ``PowerSpectrum`` carrying the frequency axis, the density at each
+    ///   bin, and the source sample rate. Returns `nil` if the input has fewer than two
+    ///   samples.
+    /// - Complexity: O(*n* log *n*) where *n* is the padded length.
+    func powerSpectralDensity(sampleRate: Double, windowed: Bool = false) -> PowerSpectrum? {
+        guard self.count >= 2 else { return nil }
+
+        // Window first (on the original length), then pad.
+        let windowSamples: [Double]
+        if windowed {
+            windowSamples = self.hannWindowed()
+        } else {
+            windowSamples = self
+        }
+        let padded = windowSamples.padded(toPowerOfTwo: 0.0)
+        let paddedN = padded.count
+
+        // Forward FFT.
+        let spectrum = _Fourier.transformReal(padded)
+        let halfCount = paddedN / 2 + 1
+
+        // Compute the normalisation denominator.
+        //   Unwindowed: Fs · paddedN
+        //   Windowed:   Fs · Σ wᵢ²  (sum-of-squares of the Hann window over the
+        //               original signal length — zero-padded tail contributes nothing)
+        // Matches scipy.signal.periodogram with scaling="density".
+        let denominator: Double
+        if windowed {
+            var windowEnergy = 0.0
+            let m = self.count
+            for n in 0..<m {
+                let w = 0.5 * (1.0 - Foundation.cos(2.0 * .pi * Double(n) / Double(m - 1)))
+                windowEnergy += w * w
+            }
+            denominator = sampleRate * windowEnergy
+        } else {
+            denominator = sampleRate * Double(paddedN)
+        }
+
+        // Build the one-sided density array.
+        var densities = [Double](repeating: 0.0, count: halfCount)
+        for k in 0..<halfCount {
+            let magSquared = spectrum[k].real * spectrum[k].real + spectrum[k].imag * spectrum[k].imag
+            var p = magSquared / denominator
+            // One-sided scaling: interior bins get ×2; DC (k=0) and Nyquist
+            // (k = paddedN/2, present only when paddedN is even — always true here
+            // since paddedN is a power of two) stay unscaled.
+            if k != 0 && k != paddedN / 2 {
+                p *= 2.0
+            }
+            densities[k] = p
+        }
+
+        // Frequency axis: i · Fs / paddedN for i in 0...paddedN/2.
+        var frequencies = [Double](repeating: 0.0, count: halfCount)
+        for i in 0..<halfCount {
+            frequencies[i] = Double(i) * sampleRate / Double(paddedN)
+        }
+
+        return PowerSpectrum(
+            sampleRate: sampleRate,
+            frequencies: frequencies,
+            densities: densities
+        )
     }
 }

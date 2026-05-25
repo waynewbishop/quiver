@@ -51,7 +51,7 @@ Floating-point numbers have a finite range as well as finite precision. Multiply
 
 A `nil` value is Swift's way of saying the operation could not be performed. Calling `mean()` on an empty array returns `nil` because there is no data to average. The return type is `Double?` and we unwrap with `if let` or `guard let`, the same as any other optional in Swift.
 
-A `NaN` is a value of type `Double` defined by the IEEE-754 floating-point standard, available in Swift as `Double.nan`. It is what mathematical operations return when the result is mathematically undefined — `0.0 / 0.0`, the square root of a negative number, or the correlation of a column with itself when that column has zero variance. The data was present; the math had no valid answer.
+A `NaN` is a value of type `Double` defined by the IEEE-754 floating-point standard, available in Swift as `Double.nan`. It is what mathematical operations return when the result is mathematically undefined — `0.0 / 0.0`, the square root of a negative number, or an entry in a correlation matrix where one of the columns has zero variance. The data was present; the math had no valid answer.
 
 ```swift
 let mean = [Double]().mean()        // nil — no data to average
@@ -66,9 +66,9 @@ if undefined.isNaN {
 }
 ```
 
-The contract across Quiver is consistent. Functions that have no data to work with return `nil`. Functions that have data but cannot produce a finite mathematical result return `NaN`. The decision between them is "did the inputs exist" versus "did the math succeed."
+The contract across Quiver follows a single rule. When the return slot can carry `nil` — a single scalar like `mean()`, `standardDeviation()`, or `correlation(with:)` — undefined math returns `nil`. When the return slot is a fixed-shape numeric container that cannot hold an optional in each cell — a correlation matrix, a regression's residual vector — undefined entries come back as `NaN`. The user-facing question is always "was the answer well-defined?" The answer arrives as `nil` where the type permits and as `NaN` where it does not.
 
-> Experiment: **The Quiver Notebook** shows both signals on a fitness app. Try `heartRate.mean()` on an empty array — returns `nil`, no data to average. Then try `[72.0, 72.0, 72.0].correlation(with: stepCount)` on a flat heart rate — returns `NaN`, zero variance is a divide-by-zero. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** shows both signals on a fitness app. Try `heartRate.mean()` on an empty array — returns `nil`, no data to average. Then build a correlation matrix that includes a flat heart rate column — the matrix cells for that column come back as `NaN`, because zero variance makes the Pearson ratio undefined and a `[[Double]]` cannot carry an optional in each cell. See <doc:Quiver-Notebook>.
 
 ### Order of operations matters
 

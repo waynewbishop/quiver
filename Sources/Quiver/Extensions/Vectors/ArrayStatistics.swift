@@ -264,6 +264,102 @@ public extension Array where Element: FloatingPoint {
         return vector.standardError(ddof: ddof)
     }
 
+    /// Returns the sample skewness of the array — a single number describing how lopsided
+    /// the distribution is.
+    ///
+    /// Skewness is the standardized third moment of the data: `(1/n) * Σ((x - mean)/std)^3`,
+    /// using the population standard deviation inside the ratio so the result is a pure shape
+    /// measure independent of scale. The sign tells you which way the distribution leans —
+    /// positive means a long right tail (mean pulled above the median), negative means a long
+    /// left tail (mean pulled below the median). The magnitude tells you how much: a rule of
+    /// thumb from intro statistics is that absolute values above 1 indicate substantial skew,
+    /// below 0.5 indicate near-symmetry, and the range in between is ambiguous and worth
+    /// pairing with a histogram and ``kurtosis(bias:)`` before concluding.
+    ///
+    /// The default returns the biased moment ratio `g1` — the form most intro-stats
+    /// textbooks introduce first. Pass `bias: false` for the Adjusted Fisher-Pearson
+    /// estimator `G1 = g1 * sqrt(n(n-1))/(n-2)`, which corrects the downward bias of
+    /// `g1` on small samples.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let symmetric = [1.0, 2.0, 3.0, 4.0, 5.0]
+    /// symmetric.skewness()                  // 0.0
+    ///
+    /// let rightSkewed = [1.0, 1.0, 1.0, 1.0, 2.0, 10.0]
+    /// rightSkewed.skewness()                // ~1.455 (long right tail)
+    /// ```
+    ///
+    /// - Parameter bias: When `true` (default), returns the biased moment ratio `g1`. When
+    ///   `false`, returns the bias-corrected `G1` (requires `n >= 3`).
+    /// - Returns: The skewness, or nil if the array has fewer than 3 elements, the standard
+    ///   deviation is zero, or any element is not finite.
+    func skewness(bias: Bool = true) -> Element? {
+        guard self.count >= 3 else { return nil }
+        guard self.allSatisfy({ $0.isFinite }) else { return nil }
+
+        let vector = _Vector(elements: self)
+        guard let g1 = vector.standardizedMoment(order: 3, ddof: 0) else { return nil }
+
+        if bias {
+            return g1
+        }
+        let n = Element(self.count)
+        let correction = (n * (n - 1)).squareRoot() / (n - 2)
+        return g1 * correction
+    }
+
+    /// Returns the sample excess kurtosis of the array — a single number describing how heavy
+    /// the tails of the distribution are relative to a normal.
+    ///
+    /// Kurtosis is the standardized fourth moment: `(1/n) * Σ((x - mean)/std)^4`. Quiver
+    /// returns the *excess* form (Fisher's definition), subtracting 3 so that a normal
+    /// distribution has kurtosis 0. Positive excess kurtosis indicates heavier tails than a
+    /// normal — more values out in the extremes than the bell curve predicts. Negative excess
+    /// kurtosis indicates lighter tails, closer to a uniform distribution. Values within
+    /// roughly ±0.5 of zero are consistent with a normal model for most practical purposes;
+    /// values beyond ±1 are a strong signal that the normal is the wrong candidate
+    /// distribution.
+    ///
+    /// Fisher's excess kurtosis is the default — the form OpenIntro Statistics and most
+    /// modern textbooks use, where a normal distribution has kurtosis zero. The older
+    /// Pearson convention (which leaves the `-3` off, so a normal has kurtosis 3) is
+    /// not used here. The default returns the biased moment ratio `g2`. Pass
+    /// `bias: false` for the sample-size-corrected estimator (requires `n >= 4`).
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let uniformLike = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+    /// uniformLike.kurtosis()                // ~-1.224 (light tails, platykurtic)
+    ///
+    /// let heavyTailed = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0]
+    /// heavyTailed.kurtosis()                // ~3.0 (heavy right tail)
+    /// ```
+    ///
+    /// - Parameter bias: When `true` (default), returns the biased moment ratio `g2`. When
+    ///   `false`, returns the bias-corrected estimator (requires `n >= 4`).
+    /// - Returns: The excess kurtosis (normal distribution has value 0), or nil if the array
+    ///   has fewer than 4 elements, the standard deviation is zero, or any element is not finite.
+    func kurtosis(bias: Bool = true) -> Element? {
+        guard self.count >= 4 else { return nil }
+        guard self.allSatisfy({ $0.isFinite }) else { return nil }
+
+        let vector = _Vector(elements: self)
+        guard let m4Ratio = vector.standardizedMoment(order: 4, ddof: 0) else { return nil }
+
+        let g2 = m4Ratio - 3
+        if bias {
+            return g2
+        }
+        let n = Element(self.count)
+        let factor = (n - 1) / ((n - 2) * (n - 3))
+        return factor * ((n + 1) * g2 + 6)
+    }
+
     /// Detects outliers using the z-score method and returns a boolean mask.
     ///
     /// Each element's z-score is computed as the absolute distance from the mean divided
@@ -298,6 +394,75 @@ public extension Array where Element: FloatingPoint {
         let computedStd = standardDeviation ?? self.standardDeviation() ?? 1
 
         return self.map { abs($0 - computedMean) > threshold * computedStd }
+    }
+}
+
+// MARK: - Empirical Rule
+
+public extension Array where Element == Double {
+    /// Returns the observed and expected fractions of values within one, two, and three
+    /// sample standard deviations of the mean — the 68-95-99.7 rule applied to your data.
+    ///
+    /// The empirical rule (also called the 68-95-99.7 rule or the three-sigma rule) states
+    /// that for normally distributed data, about 68% of values fall within one standard
+    /// deviation of the mean, 95% within two, and 99.7% within three. Comparing the observed
+    /// fractions against these expected fractions is the cheapest first-pass check on whether
+    /// a dataset is plausibly normal — small deviations suggest normality is a reasonable
+    /// working assumption; large deviations say reach for a histogram, a Q-Q plot, or a formal
+    /// test before trusting any method that assumes normality. The check is informal by
+    /// design: it gives you the numbers and lets you read them, rather than reducing the
+    /// question to a single yes-or-no answer that hides where the data deviates.
+    ///
+    /// The sample standard deviation (ddof = 1) is used, matching the convention of every
+    /// other Quiver statistic. The lesson the call is teaching is sampling variation against
+    /// a theoretical model, not the model in isolation.
+    ///
+    /// Returned values:
+    /// - **count**: The number of elements summarized
+    /// - **within1Sigma / within2Sigma / within3Sigma**: Observed fractions within k standard deviations of the mean
+    /// - **expected1Sigma / expected2Sigma / expected3Sigma**: Theoretical Gaussian fractions (0.6827, 0.9545, 0.9973)
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let measurements = [/* sensor readings */]
+    ///
+    /// if let check = measurements.empiricalRule() {
+    ///     print(check)
+    ///     // Empirical rule check (n = 395)
+    ///     //               actual    expected    diff
+    ///     //   within 1σ:  0.664     0.683       -0.019
+    ///     //   within 2σ:  0.954     0.954       +0.000
+    ///     //   within 3σ:  0.996     0.997       -0.001
+    /// }
+    /// ```
+    ///
+    /// - Complexity: O(*n*) — one pass for the mean, one for the standard deviation, three for the bucket counts.
+    /// - Returns: An ``EmpiricalRule`` value containing observed and expected fractions, or nil if
+    ///   the array has fewer than two elements, the standard deviation is zero, or any element is not finite.
+    func empiricalRule() -> EmpiricalRule? {
+        guard self.count >= 2 else { return nil }
+        guard self.allSatisfy({ $0.isFinite }) else { return nil }
+        guard let mean = self.mean(),
+              let std = self.standardDeviation(),
+              std != 0 else { return nil }
+
+        var c1 = 0, c2 = 0, c3 = 0
+        for value in self {
+            let distance = abs(value - mean)
+            if distance <= std { c1 += 1 }
+            if distance <= 2 * std { c2 += 1 }
+            if distance <= 3 * std { c3 += 1 }
+        }
+
+        let n = Double(self.count)
+        return EmpiricalRule(
+            count: self.count,
+            within1Sigma: Double(c1) / n,
+            within2Sigma: Double(c2) / n,
+            within3Sigma: Double(c3) / n
+        )
     }
 }
 

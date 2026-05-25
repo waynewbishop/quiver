@@ -38,33 +38,28 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:How-It-Works>
 
 ### Conceptual Guides
+
+- <doc:Numerical-Literacy>
+- <doc:Statistics-Primer>
+- <doc:Probability-Primer>
+- <doc:Inferential-Statistics-Primer>
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
-- <doc:Statistics-Primer>
-- <doc:Inferential-Statistics-Primer>
+- <doc:Physics-Primitives-Primer>
 - <doc:Machine-Learning-Primer>
-- <doc:Numerical-Literacy>
 - <doc:Concurrency-Primer>
 
-### iOS
-- <doc:iOS-Guide>
-- <doc:iOS-Patterns>
-
-### watchOS
-- <doc:watchOS-Guide>
-- <doc:watchOS-Patterns>
-
-### Vapor
-- <doc:Vapor-Guide>
-- <doc:Vapor-Patterns>
+### Platform Guides
+- <doc:iOS-Apps>
+- <doc:watchOS-Apps>
+- <doc:Vapor-Server>
 
 ### Vectors
 - <doc:Vector-Operations>
 - <doc:Vector-Projections>
 
 ### Statistics
-- <doc:Statistics-Primer>
-- <doc:Inferential-Statistics-Primer>
+- <doc:Identifying-A-Distribution>
 - <doc:Frequency-Tables>
 - <doc:Working-With-Distributions>
 - <doc:Boolean-Masking>
@@ -76,14 +71,12 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Matrices
 - <doc:Matrix-Operations>
 - <doc:Shape-And-Size>
-- <doc:Reshape-And-Flatten>
 - <doc:Broadcasting-Operations>
 - <doc:Array-Generation>
 - <doc:Random-Number-Generation>
 
 ### Transformations
 - <doc:Matrix-Transformations>
-- <doc:Common-Transformations>
 - <doc:Composing-Transformations>
 
 ### Similarity and Search

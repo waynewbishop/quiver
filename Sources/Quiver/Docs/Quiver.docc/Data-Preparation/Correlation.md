@@ -22,10 +22,10 @@ When we have two `[Double]` inputs and want a single number, `correlation(with:)
 let x = [1.0, 2.0, 3.0, 4.0, 5.0]
 let y = [2.0, 4.0, 5.0, 4.0, 5.0]
 
-let r = x.correlation(with: y)   // 0.7746 — moderately strong positive linear trend
+let r = x.correlation(with: y)   // Optional(0.7746) — moderately strong positive linear trend
 ```
 
-The number `0.7746` says that `x` and `y` move together in the same direction most of the time, but not perfectly — the fourth point of `y` dips when `x` keeps rising, and that small disagreement pulls the correlation off `1.0`. The pairwise call agrees with the matrix-level result for the same pair, so `x.correlation(with: y)` and `[x, y].correlationMatrix()[0][1]` produce identical numbers.
+The number `0.7746` says that `x` and `y` move together in the same direction most of the time, but not perfectly — the fourth point of `y` dips when `x` keeps rising, and that small disagreement pulls the correlation off `1.0`. The return is `Double?` because either vector having zero variance makes the Pearson ratio undefined; the convention matches `mean()` on an empty array and `standardDeviation()` when `n < 2`. The pairwise call agrees with the matrix-level result for the same pair, so unwrapping `x.correlation(with: y)` and reading `[x, y].correlationMatrix()[0][1]` produce identical numbers.
 
 ### Correlations across every pair in a panel
 
@@ -98,11 +98,11 @@ let x = [1.0, 2.0, 3.0]
 let y = [2.0, 3.0, 5.0]
 
 x.cosineOfAngle(with: y)  // 0.9972
-x.correlation(with: y)    // 0.9820
+x.correlation(with: y)    // Optional(0.9820)
 
-let yShifted = y.map { $0 + 10.0 }
+let yShifted = y + 10.0
 x.cosineOfAngle(with: yShifted)  // 0.9564
-x.correlation(with: yShifted)    // 0.9820
+x.correlation(with: yShifted)    // Optional(0.9820)
 ```
 
 Correlation centers each column on its mean before measuring, so the constant shift is removed before the comparison.

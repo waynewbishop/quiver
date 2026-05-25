@@ -802,17 +802,19 @@ public extension Array where Element: FloatingPoint {
     /// ```swift
     /// let x = [1.0, 2.0, 3.0, 4.0, 5.0]
     /// let y = [2.0, 4.0, 5.0, 4.0, 5.0]
-    /// x.correlation(with: y)  // ≈ 0.7746
+    /// x.correlation(with: y)  // Optional(0.7746)
     /// ```
     ///
-    /// A column with zero variance produces a correlation of `NaN`, since the denominator
-    /// is undefined. The vectors must have the same length and at least one element; an
-    /// empty or mismatched call returns `0.0`, matching the convention used by `dot(_:)`.
+    /// Returns `nil` when either vector has zero variance, since the Pearson denominator
+    /// is undefined in that case. This matches the optional-on-undefined-statistic pattern
+    /// used elsewhere in Quiver (`mean()` on an empty array, `standardDeviation()` when
+    /// `n < 2`). The vectors must have the same length and at least one element; an empty
+    /// or mismatched call also returns `nil`.
     ///
     /// - Parameter other: The vector to correlate against (must have the same number of elements)
-    /// - Returns: The Pearson correlation coefficient, in the range [-1, 1], or `NaN` if either vector has zero variance
-    func correlation(with other: [Element]) -> Element {
-        guard count == other.count, !isEmpty else { return Element.zero }
+    /// - Returns: The Pearson correlation coefficient, in the range [-1, 1], or `nil` if the result is undefined
+    func correlation(with other: [Element]) -> Element? {
+        guard count == other.count, !isEmpty else { return nil }
 
         let n = Element(count)
         let meanX = self.reduce(0, +) / n
@@ -830,7 +832,7 @@ public extension Array where Element: FloatingPoint {
             denomY += diffY * diffY
         }
 
-        guard denomX > 0 && denomY > 0 else { return Element.nan }
+        guard denomX > 0 && denomY > 0 else { return nil }
         return numerator / Foundation.sqrt(denomX * denomY)
     }
 

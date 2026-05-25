@@ -259,8 +259,7 @@ public enum Distributions: Sendable {
         /// t-distributed random variable falls at or below `x`. Computed via the
         /// regularized incomplete beta function `I_x(a, b)` — series form for the
         /// rapidly-converging branch and Lentz's continued fraction otherwise — with
-        /// the standard transition at `x = (a + 1) / (a + b + 2)`. This route is
-        /// used by the SciPy and statsmodels reference implementations and gives
+        /// the standard transition at `x = (a + 1) / (a + b + 2)`. The route gives
         /// the symmetry invariant `tCDF(-x, df) + tCDF(x, df) = 1` to machine precision.
         ///
         /// Example:
@@ -419,6 +418,397 @@ public enum Distributions: Sendable {
             }
             let clamped = Swift.max(0.0, Swift.min(1.0, p))
             return clamped.isFinite ? clamped : nil
+        }
+    }
+
+    /// Poisson distribution functions.
+    ///
+    /// Provides probability mass (``pmf(k:lambda:)``), log probability mass
+    /// (``logPMF(k:lambda:)``), cumulative density (``cdf(k:lambda:)``), and
+    /// quantile (``quantile(p:lambda:)``) for the Poisson distribution with
+    /// rate parameter `λ`. The Poisson distribution is discrete with support
+    /// on the non-negative integers, so the density function is a probability
+    /// mass function (`pmf`) rather than a probability density function
+    /// (`pdf`) — each value carries an actual probability rather than a
+    /// density.
+    ///
+    /// The mean and variance both equal `λ`. The function ``mean(lambda:)`` and
+    /// ``variance(lambda:)`` make this contract explicit at the call site.
+    ///
+    /// All functions return `Double?` (or `Int?` for `quantile`) and produce
+    /// `nil` when `lambda <= 0`, when the input is otherwise out of domain,
+    /// or when the computation would produce a non-finite result. Following
+    /// the convention established by ``Distributions/normal``, out-of-domain
+    /// input maps to `nil` rather than a runtime trap.
+    public enum poisson: Sendable {
+
+        /// Returns the probability mass `P(K = k)` under a Poisson distribution with rate `lambda`.
+        ///
+        /// The Poisson distribution describes the count of independent events
+        /// that occur in a fixed window when the events arrive at an average
+        /// rate of `λ` per window. The mass function is `P(K = k) = e^{-λ} · λ^k / k!`.
+        /// Computed in log space (see ``logPMF(k:lambda:)``) and exponentiated,
+        /// which keeps the calculation finite for moderate `λ` where the naive
+        /// `λ^k / k!` form overflows.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // Probability of seeing exactly 2 calls when 3.5 are expected
+        /// let p = Distributions.poisson.pmf(k: 2, lambda: 3.5)  // ≈ 0.1850
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - k: The count to evaluate. Must be non-negative.
+        ///   - lambda: The distribution rate parameter (λ). Must be positive.
+        /// - Returns: The probability mass at `k`, or `nil` if `k < 0` or `lambda <= 0`.
+        public static func pmf(k: Int, lambda: Double) -> Double? {
+            guard let logValue = logPMF(k: k, lambda: lambda) else { return nil }
+            let value = Foundation.exp(logValue)
+            return value.isFinite ? value : nil
+        }
+
+        /// Returns the natural log of the Poisson probability mass at `k`.
+        ///
+        /// Working in log space is the standard tactic for combining many
+        /// probabilities — the products become sums, and tail probabilities
+        /// that would underflow in linear space stay representable. The
+        /// formula `logP(K = k) = -λ + k·log(λ) - log(k!)` uses `lgamma(k+1)`
+        /// for the factorial term, which is finite for any reachable `k`.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // log probability of 2 events with rate 3.5
+        /// let lp = Distributions.poisson.logPMF(k: 2, lambda: 3.5)  // ≈ -1.687
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - k: The count to evaluate. Must be non-negative.
+        ///   - lambda: The distribution rate parameter (λ). Must be positive.
+        /// - Returns: The log probability mass at `k`, or `nil` if `k < 0` or `lambda <= 0`.
+        public static func logPMF(k: Int, lambda: Double) -> Double? {
+            guard lambda > 0, k >= 0 else { return nil }
+            let kd = Double(k)
+            let value = -lambda + kd * Foundation.log(lambda) - Foundation.lgamma(kd + 1.0)
+            return value.isFinite ? value : nil
+        }
+
+        /// Returns the cumulative probability `P(K <= k)` under a Poisson distribution with rate `lambda`.
+        ///
+        /// The Poisson CDF gives the probability that the event count falls at
+        /// or below `k`. Computed via the regularized upper incomplete gamma
+        /// function `Q(k+1, λ) = 1 - P(k+1, λ)`, which is numerically stable
+        /// across the full range of `λ` and avoids the precision loss of
+        /// naive partial-sum approaches.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // P(K ≤ 5) when 3.5 calls are expected
+        /// let p = Distributions.poisson.cdf(k: 5, lambda: 3.5)  // ≈ 0.8576
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - k: The upper count bound. Returns 0 for `k < 0`.
+        ///   - lambda: The distribution rate parameter (λ). Must be positive.
+        /// - Returns: The cumulative probability at `k`, or `nil` if `lambda <= 0`.
+        public static func cdf(k: Int, lambda: Double) -> Double? {
+            guard lambda > 0 else { return nil }
+            if k < 0 { return 0.0 }
+            guard let lowerP = _regularizedIncompleteGammaP(a: Double(k + 1), x: lambda) else {
+                return nil
+            }
+            let upperQ = 1.0 - lowerP
+            let clamped = Swift.max(0.0, Swift.min(1.0, upperQ))
+            return clamped.isFinite ? clamped : nil
+        }
+
+        /// Returns the smallest integer `k` such that `P(K <= k) >= p`.
+        ///
+        /// The Poisson quantile (inverse CDF) returns the count at which the
+        /// cumulative probability first crosses `p`. The Poisson distribution
+        /// is discrete, so the result is an integer rather than a continuous
+        /// value. Seeded by a normal approximation `λ + z·√λ` and refined by
+        /// stepping along the CDF until the threshold is crossed.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // The 95th percentile of a Poisson(3.5)
+        /// let k = Distributions.poisson.quantile(p: 0.95, lambda: 3.5)  // 7
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - p: The cumulative probability. Must be in `[0, 1]`.
+        ///   - lambda: The distribution rate parameter (λ). Must be positive.
+        /// - Returns: The smallest `k` for which `cdf(k:lambda:) >= p`,
+        ///   or `nil` if `p` is outside `[0, 1]` or `lambda <= 0`.
+        public static func quantile(p: Double, lambda: Double) -> Int? {
+            guard lambda > 0, p >= 0, p <= 1 else { return nil }
+            if p == 0 { return 0 }
+            if p == 1 { return Int.max }
+
+            // Cornish-Fisher style normal approximation as a seed
+            guard let z = normal.quantile(p: p, mean: 0, standardDeviation: 1) else {
+                return nil
+            }
+            let seed = lambda + z * Foundation.sqrt(lambda)
+            var k = Swift.max(0, Int(seed.rounded(.down)))
+
+            // Walk downward then upward until the smallest k with cdf >= p
+            guard let current = cdf(k: k, lambda: lambda) else { return nil }
+            if current >= p {
+                while k > 0 {
+                    guard let prev = cdf(k: k - 1, lambda: lambda) else { break }
+                    if prev < p { break }
+                    k -= 1
+                }
+                return k
+            }
+            while true {
+                k += 1
+                guard let next = cdf(k: k, lambda: lambda) else { return nil }
+                if next >= p { return k }
+            }
+        }
+
+        /// Returns the mean of a Poisson distribution. Equal to the rate `lambda`.
+        ///
+        /// - Parameter lambda: The distribution rate parameter (λ). Must be positive.
+        /// - Returns: The mean, or `nil` if `lambda <= 0`.
+        public static func mean(lambda: Double) -> Double? {
+            guard lambda > 0 else { return nil }
+            return lambda
+        }
+
+        /// Returns the variance of a Poisson distribution. Equal to the rate `lambda`.
+        ///
+        /// The mean-equals-variance property is a defining feature of the
+        /// Poisson distribution and a quick diagnostic for whether observed
+        /// count data is plausibly Poisson.
+        ///
+        /// - Parameter lambda: The distribution rate parameter (λ). Must be positive.
+        /// - Returns: The variance, or `nil` if `lambda <= 0`.
+        public static func variance(lambda: Double) -> Double? {
+            guard lambda > 0 else { return nil }
+            return lambda
+        }
+    }
+
+    /// Binomial distribution functions.
+    ///
+    /// Provides probability mass (``pmf(k:n:p:)``), log probability mass
+    /// (``logPMF(k:n:p:)``), cumulative density (``cdf(k:n:p:)``), and
+    /// quantile (``quantile(p:n:probability:)``) for the binomial distribution
+    /// with `n` independent trials each succeeding with probability `p`. The
+    /// binomial distribution is discrete with support on `{0, 1, ..., n}`, so
+    /// the density function is a probability mass function (`pmf`) rather
+    /// than a probability density function (`pdf`).
+    ///
+    /// The mean is `n·p` and the variance is `n·p·(1-p)`. Functions
+    /// ``mean(n:p:)`` and ``variance(n:p:)`` make these contracts explicit.
+    ///
+    /// All functions return `Double?` (or `Int?` for `quantile`) and produce
+    /// `nil` when `n < 0`, `p` is outside `[0, 1]`, or the input is otherwise
+    /// out of domain. Following the convention established by
+    /// ``Distributions/normal``, out-of-domain input maps to `nil`.
+    public enum binomial: Sendable {
+
+        /// Returns the probability mass `P(K = k)` of seeing `k` successes in `n` independent trials.
+        ///
+        /// The binomial distribution describes the count of successes in a
+        /// fixed number of independent yes-or-no trials, each succeeding with
+        /// the same probability `p`. The mass function is
+        /// `P(K = k) = C(n, k) · p^k · (1-p)^(n-k)`, where `C(n, k)` is the
+        /// binomial coefficient. Computed in log space (see
+        /// ``logPMF(k:n:p:)``) and exponentiated, which keeps the calculation
+        /// finite for the large `n` values that overflow the naive factorial form.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // Probability of exactly 3 successes in 10 trials at p = 0.4
+        /// let pr = Distributions.binomial.pmf(k: 3, n: 10, p: 0.4)  // ≈ 0.2150
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - k: The number of successes. Must be in `[0, n]`.
+        ///   - n: The number of trials. Must be non-negative.
+        ///   - p: The per-trial success probability. Must be in `[0, 1]`.
+        /// - Returns: The probability mass at `k`, or `nil` if any input is out of domain.
+        public static func pmf(k: Int, n: Int, p: Double) -> Double? {
+            guard let logValue = logPMF(k: k, n: n, p: p) else { return nil }
+            let value = Foundation.exp(logValue)
+            return value.isFinite ? value : nil
+        }
+
+        /// Returns the natural log of the binomial probability mass at `k`.
+        ///
+        /// Computed as `log C(n, k) + k·log(p) + (n-k)·log(1-p)`, with the
+        /// binomial coefficient evaluated via `lgamma` for numerical stability
+        /// at large `n`. Working in log space lets the function return a
+        /// finite value even when the underlying probability rounds to zero
+        /// in linear space.
+        ///
+        /// Boundary cases follow probability convention: `0^0 = 1`, so
+        /// `pmf(k: 0, n: n, p: 0)` returns `1.0` and `pmf(k: n, n: n, p: 1)`
+        /// returns `1.0`.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // log probability of 3 successes in 10 trials at p = 0.4
+        /// let lp = Distributions.binomial.logPMF(k: 3, n: 10, p: 0.4)  // ≈ -1.537
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - k: The number of successes. Must be in `[0, n]`.
+        ///   - n: The number of trials. Must be non-negative.
+        ///   - p: The per-trial success probability. Must be in `[0, 1]`.
+        /// - Returns: The log probability mass at `k`, or `nil` if any input is out of domain.
+        public static func logPMF(k: Int, n: Int, p: Double) -> Double? {
+            guard n >= 0, k >= 0, k <= n, p >= 0, p <= 1 else { return nil }
+
+            // Boundary probabilities: handle p = 0 and p = 1 explicitly so
+            // log(0) does not appear in the formula.
+            if p == 0 {
+                return k == 0 ? 0.0 : -.infinity
+            }
+            if p == 1 {
+                return k == n ? 0.0 : -.infinity
+            }
+
+            let nd = Double(n)
+            let kd = Double(k)
+            let logChoose = Foundation.lgamma(nd + 1.0) - Foundation.lgamma(kd + 1.0) - Foundation.lgamma(nd - kd + 1.0)
+            let value = logChoose + kd * Foundation.log(p) + (nd - kd) * Foundation.log(1.0 - p)
+            return value.isFinite ? value : nil
+        }
+
+        /// Returns the cumulative probability `P(K <= k)` of at most `k` successes in `n` trials.
+        ///
+        /// The binomial CDF gives the probability that the success count falls
+        /// at or below `k`. Computed via the regularized incomplete beta
+        /// function `I_{1-p}(n-k, k+1)`, which is the standard route for
+        /// stable evaluation across a wide range of `n` and `p`. Direct
+        /// partial summation of the PMF accumulates rounding error and
+        /// underflows for large `n`; the beta route avoids both.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // P(K ≤ 3) in 10 trials at p = 0.4
+        /// let pr = Distributions.binomial.cdf(k: 3, n: 10, p: 0.4)  // ≈ 0.3823
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - k: The upper success count. Returns 0 for `k < 0` and 1 for `k >= n`.
+        ///   - n: The number of trials. Must be non-negative.
+        ///   - p: The per-trial success probability. Must be in `[0, 1]`.
+        /// - Returns: The cumulative probability at `k`, or `nil` if any input is out of domain.
+        public static func cdf(k: Int, n: Int, p: Double) -> Double? {
+            guard n >= 0, p >= 0, p <= 1 else { return nil }
+            if k < 0 { return 0.0 }
+            if k >= n { return 1.0 }
+
+            // Boundary probabilities sidestep the beta evaluation entirely
+            if p == 0 { return 1.0 }
+            if p == 1 { return 0.0 }
+
+            // P(K <= k) = I_{1-p}(n-k, k+1)
+            guard let beta = _regularizedIncompleteBeta(x: 1.0 - p, a: Double(n - k), b: Double(k + 1)) else {
+                return nil
+            }
+            let clamped = Swift.max(0.0, Swift.min(1.0, beta))
+            return clamped.isFinite ? clamped : nil
+        }
+
+        /// Returns the smallest integer `k` such that `P(K <= k) >= p`.
+        ///
+        /// The binomial quantile (inverse CDF) returns the success count at
+        /// which the cumulative probability first crosses `p`. The
+        /// distribution is discrete, so the result is an integer. Seeded by
+        /// a normal approximation `n·probability + z·√(n·probability·(1-probability))`
+        /// and refined by stepping along the CDF until the threshold is crossed.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // 95th percentile of Binomial(n: 10, p: 0.4)
+        /// let k = Distributions.binomial.quantile(p: 0.95, n: 10, probability: 0.4)  // 7
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - p: The cumulative probability. Must be in `[0, 1]`.
+        ///   - n: The number of trials. Must be non-negative.
+        ///   - probability: The per-trial success probability. Must be in `[0, 1]`.
+        ///     Named to avoid colliding with the cumulative `p` parameter.
+        /// - Returns: The smallest `k` for which `cdf(k:n:p:) >= p`, or `nil`
+        ///   if any input is out of domain.
+        public static func quantile(p: Double, n: Int, probability: Double) -> Int? {
+            guard n >= 0, probability >= 0, probability <= 1, p >= 0, p <= 1 else { return nil }
+            if p == 0 { return 0 }
+            if p == 1 { return n }
+
+            // Normal approximation as a seed
+            let mean = Double(n) * probability
+            let std = Foundation.sqrt(Double(n) * probability * (1.0 - probability))
+            guard let z = normal.quantile(p: p, mean: 0, standardDeviation: 1) else {
+                return nil
+            }
+            let seed = mean + z * std
+            var k = Swift.max(0, Swift.min(n, Int(seed.rounded(.down))))
+
+            guard let current = cdf(k: k, n: n, p: probability) else { return nil }
+            if current >= p {
+                while k > 0 {
+                    guard let prev = cdf(k: k - 1, n: n, p: probability) else { break }
+                    if prev < p { break }
+                    k -= 1
+                }
+                return k
+            }
+            while k < n {
+                k += 1
+                guard let next = cdf(k: k, n: n, p: probability) else { return nil }
+                if next >= p { return k }
+            }
+            return n
+        }
+
+        /// Returns the mean of a binomial distribution. Equal to `n·p`.
+        ///
+        /// - Parameters:
+        ///   - n: The number of trials. Must be non-negative.
+        ///   - p: The per-trial success probability. Must be in `[0, 1]`.
+        /// - Returns: The mean, or `nil` if any input is out of domain.
+        public static func mean(n: Int, p: Double) -> Double? {
+            guard n >= 0, p >= 0, p <= 1 else { return nil }
+            return Double(n) * p
+        }
+
+        /// Returns the variance of a binomial distribution. Equal to `n·p·(1-p)`.
+        ///
+        /// The variance vanishes at the boundaries `p = 0` and `p = 1` because
+        /// every trial produces the same outcome with certainty. The maximum
+        /// variance for a given `n` occurs at `p = 0.5`.
+        ///
+        /// - Parameters:
+        ///   - n: The number of trials. Must be non-negative.
+        ///   - p: The per-trial success probability. Must be in `[0, 1]`.
+        /// - Returns: The variance, or `nil` if any input is out of domain.
+        public static func variance(n: Int, p: Double) -> Double? {
+            guard n >= 0, p >= 0, p <= 1 else { return nil }
+            return Double(n) * p * (1.0 - p)
         }
     }
 

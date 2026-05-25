@@ -33,9 +33,9 @@ public struct ConfidenceInterval: Equatable, Codable, Sendable {
 /// Returned by `LinearRegression.summary(features:targets:)`. Carries everything
 /// downstream callers need to interpret a regression fit — coefficients, standard
 /// errors, t-statistics, two-tailed p-values, confidence intervals, R² and adjusted
-/// R², plus sample size and degrees of freedom. Field names match the conventional
-/// `statsmodels.OLS` output where possible so existing reference values translate
-/// directly.
+/// R², plus sample size and degrees of freedom. Field names follow the conventional
+/// regression-output vocabulary used in introductory econometrics and applied
+/// statistics textbooks.
 ///
 /// Standard errors come from `σ² · (X'X)⁻¹` where `σ²` is the residual variance.
 /// The diagonal of that matrix gives one SE per coefficient. T-statistics are
@@ -72,8 +72,7 @@ public struct RegressionSummary: Equatable, Codable, Sendable {
 
     /// The adjusted coefficient of determination,
     /// `1 - (1 - R²) · (n - 1) / (n - p - 1)` where `p` is the number of fitted
-    /// coefficients (intercept counts when present in this convention,
-    /// matching `statsmodels`).
+    /// coefficients (intercept counts when present in this convention).
     public let adjustedRSquared: Double
 
     /// The sample size — number of training rows.

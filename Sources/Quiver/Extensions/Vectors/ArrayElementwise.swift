@@ -129,7 +129,10 @@ public extension Array where Element == Double {
     /// "softmax" is universal across ML literature, frameworks, and textbooks.
     ///
     /// Uses the numerically stable variant: subtracts the maximum value before
-    /// exponentiation to prevent overflow when scores are large.
+    /// exponentiation to prevent overflow when scores are large. Delegates to
+    /// the internal `_Bayes.logSumExp` primitive so that softmax normalization,
+    /// multi-hypothesis Bayes, and Naive Bayes classifier internals share a
+    /// single source of truth for log-space arithmetic.
     ///
     /// Example:
     /// ```swift
@@ -142,10 +145,15 @@ public extension Array where Element == Double {
     ///
     /// - Returns: A probability distribution with the same length as the input.
     func softMax() -> [Double] {
-        guard let maxVal = self.max() else { return [] }
-        let shifted = self.map { Foundation.exp($0 - maxVal) }
-        let total = shifted.reduce(0.0, +)
-        return shifted.map { $0 / total }
+        guard !self.isEmpty else { return [] }
+        let logNorm = _Bayes.logSumExp(self)
+        guard logNorm.isFinite else {
+            // All-(-inf) input — return a uniform distribution so the result
+            // still sums to one rather than propagating NaN.
+            let uniform = 1.0 / Double(self.count)
+            return Array(repeating: uniform, count: self.count)
+        }
+        return self.map { Foundation.exp($0 - logNorm) }
     }
 
     /// Applies the sigmoid function to each element: σ(x) = 1 / (1 + e⁻ˣ).

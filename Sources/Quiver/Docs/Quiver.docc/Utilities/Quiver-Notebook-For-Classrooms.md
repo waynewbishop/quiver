@@ -91,7 +91,7 @@ To hold a course on a specific release across a semester, do not pull from the N
 
 ### Privacy and network behavior
 
-Code and data live on the student's machine. The server binds to the loopback address and accepts connections from that machine alone. Bundled datasets ship inside the repository and load from disk. Custom CSVs load from a path the student provides, also from disk. At page load the browser fetches the Monaco editor from `cdnjs.cloudflare.com` so the editing surface renders; the fetch is one-way, and schools that restrict CDN access can allow that host or vendor Monaco into the repository. There are no accounts, telemetry, or analytics anywhere in the stack.
+Code and data stay on the student's machine, the local server accepts connections only from that machine, and there are no accounts, telemetry, or analytics anywhere in the stack. The one outbound request is the browser fetching the Monaco editor from a public CDN at page load, which schools that restrict CDN access can allow or vendor locally. See <doc:Quiver-Notebook> for the full account of the Notebook's privacy and network behavior.
 
 > Tip: The Notebook is designed for one student per laptop and runs Swift with the permissions of whoever launched it. A shared classroom server is not a supported configuration — a multi-user deployment would need sandboxing, resource limits, and per-user isolation that the current scope does not include.
 

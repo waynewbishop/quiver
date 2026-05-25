@@ -143,4 +143,23 @@ extension _Vector where Element: FloatingPoint {
         return std / Element(elements.count).squareRoot()
     }
 
+    /// Standardized moment of a given order, used as the building block for skewness
+    /// and kurtosis. Returns `(1/n) * Σ((x - mean)/std)^order` where `std` is computed
+    /// with the supplied `ddof` (0 for moment-ratio definitions).
+    /// Returns nil for empty input, when std is undefined, or when std is zero.
+    func standardizedMoment(order: Int, ddof: Int = 0) -> Element? {
+        guard !elements.isEmpty else { return nil }
+        guard let mean = self.mean(),
+              let std = self.standardDeviation(ddof: ddof),
+              std != .zero else { return nil }
+
+        var accumulator: Element = .zero
+        for value in elements {
+            let z = (value - mean) / std
+            var power: Element = 1
+            for _ in 0..<order { power *= z }
+            accumulator += power
+        }
+        return accumulator / Element(elements.count)
+    }
 }

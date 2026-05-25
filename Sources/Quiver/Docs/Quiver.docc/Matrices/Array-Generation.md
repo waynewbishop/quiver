@@ -87,16 +87,16 @@ let factors = [Double].ones(n)
 
 ### Generating plot inputs
 
-Plotting a function across a range begins with a sequence of x-values and a `map` over the function. `linspace` is the right choice here because the number of sample points usually matters more than the exact spacing between them.
+Plotting a function across a range begins with a sequence of x-values and a single element-wise call to compute the matching y-values. `linspace` is the right choice for the x-axis because the number of sample points usually matters more than the exact spacing between them.
 
 ```swift
-import Foundation
+import Quiver
 
 // Generate x-coordinates for plotting
 let x = [Double].linspace(start: 0, end: 2 * Double.pi, count: 100)
 
 // Generate y-coordinates (sine wave)
-let y = x.map { sin($0) }
+let y = x.sin()
 ```
 
 ### Building transformations incrementally

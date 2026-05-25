@@ -1,12 +1,12 @@
 # Working with Distributions
 
-Evaluating probability densities, cumulative probabilities, and quantiles for the normal, Student's t, and chi-squared distributions.
+Evaluating probability densities, cumulative probabilities, and quantiles for the normal, Student's t, chi-squared, Poisson, and binomial distributions.
 
 ## Overview
 
 A probability distribution describes how likely each possible value of a random quantity is. Test scores cluster around an average and taper off in both directions. Sensor noise sits near zero, with most samples small and a few large. Heights of adults fall in a bell-shaped band. The same mathematical machinery describes all three: a probability density function, a cumulative distribution function, and a quantile function.
 
-The `Distributions` namespace groups these functions by distribution name. Quiver ships the normal distribution at `Distributions.normal`, the Student's t-distribution at `Distributions.t`, and the chi-squared distribution at `Distributions.chiSquared`. Each call passes the distribution parameters directly. There is no fitted-distribution object to construct, no shared state to mis-configure, and every call site is self-documenting.
+The `Distributions` namespace groups these functions by distribution name. Quiver ships the normal distribution at `Distributions.normal`, the Student's t-distribution at `Distributions.t`, the chi-squared distribution at `Distributions.chiSquared`, the Poisson distribution at `Distributions.poisson`, and the binomial distribution at `Distributions.binomial`. Each call passes the distribution parameters directly. There is no fitted-distribution object to construct, no shared state to mis-configure, and every call site is self-documenting.
 
 Three functions answer three questions about a distribution. The `pdf` function gives the height of the curve at a point, indicating where probability is concentrated. The `cdf` function gives the probability of falling at or below a value, useful for "what fraction of the distribution sits below this?" The `quantile` function inverts `cdf` to find the cutoff for a given probability, useful for "what value marks the 97.5th percentile?" The three calls below demonstrate each function on a standard normal:
 
@@ -167,6 +167,80 @@ let upperTailProbability = 1.0 - (Distributions.chiSquared.cdf(x: chiSquaredStat
 
 A chi-squared statistic of `2.8` produces an upper-tail probability around `0.73`. Under a fair die, a gap that large or larger would happen roughly seven times in ten, well above the conventional `0.05` cutoff. The data is consistent with a fair die. We have no evidence to reject the null.
 
+### The Poisson distribution
+
+The Poisson distribution describes the count of independent events that occur in a fixed window when the events arrive at an average rate of `λ` per window. The classic examples are calls into a help line per hour, edits to a Wikipedia article per day, and earthquakes above a magnitude threshold per year. The distribution lives on the non-negative integers, and its single parameter `λ` controls both the mean and the variance: both equal `λ`. That mean-equals-variance property is also the quickest field test for whether observed count data is plausibly Poisson at all.
+
+A Poisson is discrete, so the density function is a probability mass function rather than a probability density: each value `k` carries an actual probability `P(K = k)`, not a density that integrates to a probability. Quiver names this `pmf` to keep the distinction visible in the API. Use `pmf(k:lambda:)` for a single mass, `cdf(k:lambda:)` for a cumulative tail probability, and `quantile(p:lambda:)` for the smallest count whose cumulative probability reaches a chosen level.
+
+```swift
+import Quiver
+
+// PMF: probability of exactly 2 calls when 3.5 per window are expected
+Distributions.poisson.pmf(k: 2, lambda: 3.5)        // ≈ 0.1850
+
+// CDF: probability of 5 or fewer calls
+Distributions.poisson.cdf(k: 5, lambda: 3.5)        // ≈ 0.8576
+
+// Quantile: the smallest count whose cumulative probability reaches 0.95
+Distributions.poisson.quantile(p: 0.95, lambda: 3.5) // 7
+```
+
+A worked example anchors the use case. A web service receives an average of `4.2` requests per second from a single client. We want a guardrail count `k` such that the probability of seeing more than `k` requests in any given second from a legitimate client stays below `0.01`. The 99th percentile of `Poisson(λ = 4.2)` is the value we are after.
+
+```swift
+import Quiver
+
+let lambda = 4.2
+
+// The smallest k such that P(K <= k) >= 0.99
+if let cutoff = Distributions.poisson.quantile(p: 0.99, lambda: lambda) {
+    // cutoff = 10
+}
+
+// Sanity check the tail probability at the cutoff
+if let cdfAtCutoff = Distributions.poisson.cdf(k: 10, lambda: lambda) {
+    // cdfAtCutoff ≈ 0.9959, so P(K > 10) ≈ 0.0041
+}
+```
+
+A guardrail at `k = 10` keeps the legitimate-traffic false-positive rate well below one percent per second under the Poisson model. The `logPMF` companion is the function to reach for when multiplying many of these probabilities together; the products become sums, and tail values that would round to zero in linear space stay representable. The `GaussianNaiveBayes` model uses the same log-space pattern with the normal density.
+
+### The binomial distribution
+
+The binomial distribution describes the count of successes in a fixed number of independent yes-or-no trials, each succeeding with the same probability `p`. Ten coin flips with a fair coin gives a binomial with `n = 10` and `p = 0.5`. Twenty-five A/B test exposures with a `0.04` conversion rate gives a binomial with `n = 25` and `p = 0.04`. The distribution lives on `{0, 1, ..., n}`, the mean is `n·p`, and the variance is `n·p·(1-p)`.
+
+Quiver exposes the binomial at `Distributions.binomial` with the same four functions as the Poisson: `pmf(k:n:p:)`, `logPMF(k:n:p:)`, `cdf(k:n:p:)`, and `quantile(p:n:probability:)`. The `quantile` parameter name `probability:` avoids colliding with the cumulative probability `p:`; everywhere else `p` is the per-trial success probability.
+
+```swift
+import Quiver
+
+// PMF: exactly 3 successes in 10 trials at p = 0.4
+Distributions.binomial.pmf(k: 3, n: 10, p: 0.4)   // ≈ 0.2150
+
+// CDF: at most 3 successes in 10 trials
+Distributions.binomial.cdf(k: 3, n: 10, p: 0.4)   // ≈ 0.3823
+
+// Quantile: the smallest success count whose cumulative probability reaches 0.95
+Distributions.binomial.quantile(p: 0.95, n: 10, probability: 0.4) // 7
+```
+
+Classifier evaluation is the most common reason to reach for the binomial. A model that achieved `82` correct predictions out of `100` test examples has an empirical accuracy of `0.82`, but the true accuracy could be anywhere in a confidence interval around that value. Treating each prediction as an independent Bernoulli trial, the count of correct predictions follows a binomial. The CDF then gives the probability of seeing at least the observed correct count under a hypothesized true accuracy, which is the building block for accuracy confidence intervals and for the comparison of two classifiers.
+
+```swift
+import Quiver
+
+// 82 correct out of 100 under a hypothesized true accuracy of 0.80
+let n = 100
+let p = 0.80
+
+if let cdfAt82 = Distributions.binomial.cdf(k: 82, n: n, p: p) {
+    // cdfAt82 ≈ 0.7287 — so P(correct >= 83) ≈ 0.2713
+}
+```
+
+The chance of seeing `82` or more correct predictions when the true accuracy is `0.80` is about `0.27`. That is well within the range where the observed `82` is consistent with a true rate of `0.80`; we have no reason from this one experiment to claim the model is actually better than `0.80`. The narrative is the same shape as the chi-squared goodness-of-fit example above: a test statistic, a reference distribution, an upper-tail probability, a verdict.
+
 ### Why the optional return
 
 Every function in `Distributions` returns `Double?`. The optional makes out-of-domain input a `nil` rather than a runtime trap or a silently propagating `NaN`. The conditions are distribution-specific but consistent: a non-positive standard deviation for the normal, non-positive degrees of freedom for t and chi-squared, a probability outside `(0, 1)` for any `quantile` call, and any computation whose result is non-finite. This matches the pattern used by `mean`, `median`, and other Quiver statistics. Invalid input is handled at the call site with `if let` or `guard let`, not buried inside the result. See <doc:Numerical-Literacy> for the broader distinction between `nil` (no data) and `NaN` (math undefined) across Quiver.
@@ -187,10 +261,16 @@ let edge = Distributions.normal.quantile(p: 1.0, mean: 0, standardDeviation: 1) 
 - ``Distributions/normal``
 - ``Distributions/t``
 - ``Distributions/chiSquared``
+- ``Distributions/poisson``
+- ``Distributions/binomial``
 
-### Density
+### Density and mass
 - ``Distributions/normal/pdf(x:mean:standardDeviation:)``
 - ``Distributions/normal/logPDF(x:mean:standardDeviation:)``
+- ``Distributions/poisson/pmf(k:lambda:)``
+- ``Distributions/poisson/logPMF(k:lambda:)``
+- ``Distributions/binomial/pmf(k:n:p:)``
+- ``Distributions/binomial/logPMF(k:n:p:)``
 
 ### Cumulative probability and quantiles
 - ``Distributions/normal/cdf(x:mean:standardDeviation:)``
@@ -198,3 +278,13 @@ let edge = Distributions.normal.quantile(p: 1.0, mean: 0, standardDeviation: 1) 
 - ``Distributions/t/cdf(x:df:)``
 - ``Distributions/t/quantile(p:df:)``
 - ``Distributions/chiSquared/cdf(x:df:)``
+- ``Distributions/poisson/cdf(k:lambda:)``
+- ``Distributions/poisson/quantile(p:lambda:)``
+- ``Distributions/binomial/cdf(k:n:p:)``
+- ``Distributions/binomial/quantile(p:n:probability:)``
+
+### Mean and variance
+- ``Distributions/poisson/mean(lambda:)``
+- ``Distributions/poisson/variance(lambda:)``
+- ``Distributions/binomial/mean(n:p:)``
+- ``Distributions/binomial/variance(n:p:)``

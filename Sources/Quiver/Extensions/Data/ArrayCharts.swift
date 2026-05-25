@@ -31,6 +31,24 @@ public enum AggregationMethod: Sendable {
     case percentage
 }
 
+/// Names a rule for choosing the number of bins in a histogram.
+///
+/// Passed to `histogram(rule:)`. Each rule picks a bin count from the data
+/// itself, freeing the caller from guessing a number. The three rules cover
+/// the common design space: a quick exploration rule that ignores the data's
+/// shape, a classical rule derived under a normal assumption, and a modern
+/// robust rule that uses the interquartile range. See the "Choosing a bin
+/// rule" section of <doc:Identifying-A-Distribution> for the history of each
+/// rule and the trade-offs that motivate the choice.
+public enum BinRule: Sendable {
+    /// `k = ⌈√n⌉`. Depends only on sample size. Quick first look.
+    case squareRoot
+    /// `k = ⌈log₂(n) + 1⌉`. Sturges, 1926; assumes roughly normal data.
+    case sturges
+    /// `width = 2·IQR / n^(1/3)`, then `k = ⌈(max − min) / width⌉`. Freedman-Diaconis, 1981; robust to outliers.
+    case freedmanDiaconis
+}
+
 public extension Array where Element: FloatingPoint {
 
     // MARK: - Time Series Operations
@@ -310,6 +328,66 @@ public extension Array where Element: FloatingPoint {
         }
 
         return result
+    }
+
+    /// Divides data into evenly spaced bins using a named bin-selection rule.
+    ///
+    /// Picks the bin count from the data itself, freeing the caller from
+    /// guessing. Three rules cover the common design space. Use `.squareRoot`
+    /// (`k = ⌈√n⌉`) for a quick first look. Use `.sturges` (`k = ⌈log₂ n + 1⌉`)
+    /// for small, roughly normal samples. Use `.freedmanDiaconis`
+    /// (`width = 2·IQR / n^(1/3)`) for skewed or heavy-tailed data; its
+    /// reliance on the interquartile range makes it resistant to outliers.
+    /// See the "Choosing a bin rule" section of <doc:Identifying-A-Distribution>
+    /// for the history of each rule and the trade-offs behind the choice.
+    /// To override the rule-driven choice with an explicit bin count, use
+    /// the `histogram(bins:)` overload directly.
+    ///
+    /// The return contract matches `histogram(bins:)`. When the data has zero
+    /// IQR (a constant or near-constant input), `.freedmanDiaconis` falls back
+    /// to Sturges so the method always returns a usable histogram.
+    ///
+    /// Example:
+    /// ```swift
+    /// let scores = [72.0, 85.0, 90.0, 78.0, 92.0, 88.0, 76.0, 95.0, 81.0, 87.0]
+    ///
+    /// scores.histogram(rule: .squareRoot).count        // 4  — ⌈√10⌉
+    /// scores.histogram(rule: .sturges).count           // 5  — ⌈log₂(10) + 1⌉
+    /// scores.histogram(rule: .freedmanDiaconis).count  // depends on the IQR
+    /// ```
+    ///
+    /// - Parameter rule: The bin-selection rule to apply.
+    /// - Returns: Array of tuples containing the midpoint and count for each bin.
+    /// - Complexity: O(*n* log *n*) for `.freedmanDiaconis` (sorts for the IQR);
+    ///   O(*n*) for the other two rules.
+    func histogram(rule: BinRule) -> [(midpoint: Element, count: Int)] where Element: BinaryFloatingPoint {
+        guard !isEmpty else { return [] }
+        let n = Double(count)
+
+        let sturgesCount = Swift.max(1, Int(Foundation.ceil(Foundation.log2(n) + 1)))
+
+        let bins: Int
+        switch rule {
+        case .squareRoot:
+            bins = Swift.max(1, Int(Foundation.ceil(Foundation.sqrt(n))))
+
+        case .sturges:
+            bins = sturgesCount
+
+        case .freedmanDiaconis:
+            guard let q = self.quartiles(),
+                  q.iqr > 0,
+                  q.max > q.min else {
+                // Zero IQR or zero range — fall back to Sturges so the
+                // method stays total and never returns an empty result.
+                bins = sturgesCount
+                break
+            }
+            let width = Element(2) * q.iqr / Element(Foundation.pow(n, 1.0 / 3.0))
+            bins = Swift.max(1, Int(Foundation.ceil(Double((q.max - q.min) / width))))
+        }
+
+        return histogram(bins: bins)
     }
 
     /// Calculates the five-number summary and interquartile range of the data.

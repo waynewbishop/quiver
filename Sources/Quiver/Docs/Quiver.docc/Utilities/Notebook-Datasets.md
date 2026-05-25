@@ -41,7 +41,7 @@ The `toPanel()` method returns the dataset as a Quiver <doc:Panel> — a table o
 
 ### The bundled tabular datasets
 
-Five tabular datasets ship with the Notebook. Each is paired with a target column suitable for either regression or classification.
+Five tabular datasets ship with the Notebook alongside a paired time-series set covered below. Each tabular dataset is paired with a target column suitable for either regression or classification.
 
 The `Dataset.iris` accessor returns 150 rows, 5 columns. Classification. Label column: `species` (encoded alphabetically as setosa→0, versicolor→1, virginica→2). The classic introductory classification dataset, originally collected by Edgar Anderson and published by R. A. Fisher in 1936.
 
@@ -52,6 +52,28 @@ The `Dataset.californiaHousing` accessor returns 20,640 rows, 10 columns. Regres
 The `Dataset.bikeSharing` accessor returns 731 rows, 16 columns. Regression. Target column: `cnt` (total daily rides). Daily Capital Bikeshare ride counts paired with weather, calendar, and season features. A clean introduction to time-aware regression and to the seasonality patterns that make naive splits leak information.
 
 The `Dataset.studentPerformance` accessor returns 395 rows, 33 columns. Regression (or classification on a thresholded `G3`). Target column: `G3` (final grade, 0–20). Portuguese secondary-school students with family, study, and lifestyle features alongside three sequential grade columns (G1, G2, G3). Useful for teaching feature selection and the leakage trap of training on G1 and G2 to predict G3.
+
+### The bundled time-series datasets
+
+Two synthetic time-series datasets ship alongside the tabular set. Both come from a single 60-second tempo run for a moderately trained 70 kg runner, simulated against published physiological constraints. Real wearable recordings are messy and privacy-laden, and the HR-pace-decoupling-and-spectral-analysis pair is the cleanest small-data demonstration of multi-rate sensor work we can offer for teaching.
+
+The `Dataset.simulatedRun` accessor returns 60 rows, 6 columns, sampled at 1 Hz. No label column. Across the minute, pace and power hold flat while `heartRate` drifts upward by roughly 6 BPM — the HR-pace-decoupling pattern that underlies True Effort Score work. The gap between the visible work the runner is doing and the body's rising response is precisely why a single-signal effort score misleads and a multi-signal one holds up. The dataset is the smallest honest demonstration we know of how one signal can mislead and several signals together reveal real effort.
+
+The `Dataset.simulatedRunAccel` accessor returns 3,000 rows, 2 columns, sampled at 50 Hz. No label column. The `magnitude` signal combines a footstrike fundamental at 2.833 Hz (170 steps per minute), a two-legged-gait harmonic at 5.667 Hz, and Gaussian noise around a 1g baseline. The 50 Hz rate is fast enough to resolve gait frequencies, which makes the dataset a clean starting point for power-spectral-density analysis, dominant-frequency detection, and band-energy features for activity classification.
+
+The same load-and-inspect pattern from earlier in this article carries over directly — `head(n:)` reveals the column names and a few rows, and `shape` confirms the row and column counts:
+
+```swift
+guard let run = Dataset.simulatedRun else {
+    exit(0)
+}
+
+let panel = run.toPanel()
+print(panel.head(n: 3))
+print("shape:", panel.shape)
+```
+
+Both datasets describe the same physical event at different sample rates, so a class can move from HR lag at 1 Hz to spectral analysis on motion at 50 Hz without leaving the run.
 
 ### Working with categorical columns
 
@@ -164,6 +186,8 @@ print(Dataset.catalog())
 // Dataset.californiaHousing
 // Dataset.bikeSharing
 // Dataset.studentPerformance
+// Dataset.simulatedRun
+// Dataset.simulatedRunAccel
 // Dataset.glove50d
 ```
 
