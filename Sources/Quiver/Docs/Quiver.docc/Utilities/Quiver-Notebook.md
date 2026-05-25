@@ -77,12 +77,14 @@ swift run
 The first launch takes a minute or two while Swift compiles the Notebook and pre-warms the snippet sandbox. The sandbox is a separate Swift package that depends on Quiver, so the first launch downloads and compiles Quiver from GitHub. Subsequent runs use the cached build and start in seconds. When the server is ready, the terminal prints a banner:
 
 ```
-Quiver Notebook is running.
+==========================================================
+  Quiver Notebook is running.
 
-Open this URL in your browser:
-http://localhost:8080
+  Open this URL in your browser:
+  http://localhost:8080
 
-If port 8080 is in use, restart with: PORT=8090 swift run
+  If port 8080 is in use, restart with: PORT=8090 swift run
+==========================================================
 ```
 
 Open the URL in any browser to start writing snippets. Press `Ctrl+C` in the terminal to stop the server.
@@ -155,6 +157,41 @@ After installing Homebrew, the terminal reports `brew: command not found` when r
 After running `swiftly init`, the terminal reports `swift: command not found` when running `swift --version`. Close the terminal window and open a new one. The install adds Swift to the shell, but the change only applies to newly opened terminals.
 
 If a fresh terminal still doesn't recognize `swift`, run `swiftly init` once more. It's safe to run again and will finish the setup.
+
+#### macOS version too old
+
+The Notebook reports that it requires macOS 15 (Sequoia) or newer and prints the version it detected. The toolchain check runs before the server starts, so this stops the launch immediately. The Notebook depends on a Swift 6 runtime that ships with macOS 15, and earlier releases cannot run it. Update macOS through System Settings → General → Software Update, then run `swift run` again.
+
+#### Xcode command-line tools missing or broken
+
+The Notebook reports that the Xcode command-line tools are not installed or that the active developer path is broken. This happens when `swift --version` cannot find a working toolchain — usually on a Mac that has never compiled Swift from the terminal. The lightest fix installs the toolchain through swiftly:
+
+```bash
+brew install swiftly
+swiftly init
+```
+
+Open a new terminal afterward, confirm with `swift --version`, then run `swift run` again.
+
+#### Xcode license not accepted
+
+The Notebook reports that the Xcode license has not been accepted on this machine. macOS blocks the toolchain until the license agreement is acknowledged, which the Notebook cannot do on the student's behalf. Accept it once:
+
+```bash
+sudo xcodebuild -license accept
+```
+
+Enter the Mac's password when prompted, then run `swift run` again.
+
+#### Swift version too old
+
+The Notebook reports that it requires Swift 6.0 or newer and prints the version it detected. An older Swift compiler is installed and active. Upgrade to the latest toolchain through swiftly:
+
+```bash
+swiftly install latest
+```
+
+Open a new terminal, confirm the version with `swift --version`, then run `swift run` again.
 
 #### Port already in use
 

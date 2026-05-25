@@ -63,7 +63,7 @@ print(spectrum.summary())
 
 The `summary()` readout shows the mean, standard deviation, min, max, and quartiles for each column — useful for spotting whether the magnitude column has a single dominant peak (a high max relative to the mean) or distributed energy across many bins.
 
-> Experiment: Try this in the <doc:Quiver-Notebook>. Paste the snippet, change the `frequency` argument to `sineWave` from 440 Hz to a different value, and re-run — the peak in `magnitudes` moves to match. Watching the peak shift in real time is the fastest way to build intuition for what the Fourier transform is doing.
+> Experiment: **The Quiver Notebook** is the right place to watch a peak track its frequency. Paste the snippet, change the `frequency` argument to `sineWave` from 440 Hz to a different value, and re-run — the peak in `magnitudes` moves to match. Watching the peak shift in real time is the fastest way to build intuition for what the Fourier transform is doing. See <doc:Quiver-Notebook>.
 
 ### Positive-frequency half
 

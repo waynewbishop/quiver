@@ -211,11 +211,13 @@ import Vapor
 import Quiver
 
 // Boot-time setup.
-final class ModelStore: @unchecked Sendable {
+struct ModelStore: Sendable {
     let model: LinearRegression
 
     init() throws {
-        let url = Bundle.module.url(forResource: "lead-scorer", withExtension: "json")!
+        guard let url = Bundle.module.url(forResource: "lead-scorer", withExtension: "json") else {
+            throw Abort(.internalServerError, reason: "lead-scorer.json missing from bundle")
+        }
         let data = try Data(contentsOf: url)
         self.model = try JSONDecoder().decode(LinearRegression.self, from: data)
     }

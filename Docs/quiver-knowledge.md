@@ -14,11 +14,11 @@ Complete reference for the Quiver Swift package. Upload this file to a Claude Pr
 
 ## What Quiver Is
 
-Quiver fills the gap between Swift's standard library and Apple's ML frameworks (CoreML, CreateML, Core AI). Swift gives you `Array` with basic operations. Apple's frameworks give you trained model inference. Between them is a wide space of real-time numerical computing — statistics, vector math, matrix operations, similarity search, clustering, regression — that neither addresses. Quiver fills that gap with 350+ APIs, zero dependencies, and a footprint small enough for watchOS.
+Quiver fills the gap between Swift's standard library and trained-model inference. Swift gives you `Array` with basic operations. Between basic arrays and a finished model sits a wide space of real-time numerical computing — statistics, vector math, matrix operations, similarity search, clustering, regression — that the standard library does not address. Quiver fills that gap with 350+ APIs, zero dependencies, and a footprint small enough for watchOS.
 
-**Built for Swift developers.** Quiver serves developers who need numerical computing in the language they already use — on iOS, watchOS, visionOS, server-side Linux, and in Xcode Playgrounds. No context switching, no `.mlmodel` files, no Accelerate wrappers.
+**Built for Swift developers.** Quiver serves developers who need numerical computing in the language they already use — on iOS, watchOS, visionOS, server-side Linux, and in Xcode Playgrounds. No context switching, no model files, no Accelerate wrappers.
 
-**Core AI and CoreML are complementary, not competitive.** Those frameworks run trained models (inference). Quiver provides the computational building blocks: `mean()`, `percentile()`, `cosineOfAngle(with:)`, `trainTestSplit()`, `KMeans.fit()`, `LinearRegression.fit()`. No Apple framework offers ad-hoc statistical queries, pairwise semantic comparison, or transparent ML model training on raw arrays.
+Quiver provides the computational building blocks for working with data directly: `mean()`, `percentile()`, `cosineOfAngle(with:)`, `trainTestSplit()`, `KMeans.fit()`, `LinearRegression.fit()`. It offers ad-hoc statistical queries, pairwise semantic comparison, and transparent ML model training on raw arrays.
 
 **Validated against industry-standard implementations.** Quiver has 312 unit tests plus a separate cross-validation suite (44 checks + 29 tests, all passing). Quiver produces identical results for identical inputs.
 
@@ -141,6 +141,7 @@ let M = [[1.0, 2.0], [3.0, 4.0]]
 let v = [1.0, 0.0]
 
 M.transform(v)              // matrix-vector multiply (non-optional)
+v.transformedBy(M)          // same result, vector-first syntax (non-optional)
 M.transpose()                // swap rows and columns (non-optional)
 M.transposed()               // same as transpose()
 M.multiplyMatrix(other)      // matrix-matrix multiply (non-optional)
@@ -158,7 +159,7 @@ try M.inverted()             // matrix inverse (throws MatrixError)
 
 `MatrixError` cases: `.notSquare`, `.singular`
 
-## Shape and Reshape
+## Shape and Size
 
 ```swift
 let M = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
@@ -981,7 +982,7 @@ Three questions about any dataset: where is the center, how spread out, and whic
 
 - **Aggregation:** `sum()`, `product()` (non-optional). `argMin()`, `argMax()` (optional — return indices).
 - **Central tendency:** `mean()`, `median()` — both optional. When they diverge, data is skewed.
-- **Dispersion:** `variance(ddof:)`, `std(ddof:)` — both optional. `ddof: 0` for population, `ddof: 1` for sample.
+- **Dispersion:** `variance(ddof:)`, `standardDeviation(ddof:)`, `standardError(ddof:)` — all optional. Default `ddof: 1` (sample); pass `ddof: 0` for an entire population.
 - **Cumulative:** `cumulativeSum()`, `cumulativeProduct()` — non-optional. Running totals.
 - **Outlier detection:** `outlierMask(threshold:)` — z-score method, returns `[Bool]`. Default std of 1.0 when all values identical.
 - **Vector averaging:** `meanVector()` — element-wise mean across multiple vectors. Returns optional.
@@ -1002,17 +1003,12 @@ Work with 2D arrays using element-wise arithmetic and linear algebra.
 
 ### Shape and Size
 
-Inspect matrix dimensions before operations.
+Inspect matrix dimensions and convert between 1D and 2D without altering data.
 
 - `.shape` returns `(rows: Int, columns: Int)` named tuple — only on `[[Numeric]]`.
 - `.size` returns total element count (rows × columns). Differs from `.count` which returns row count only.
 - Supports tuple destructuring: `let (stores, days) = sales.shape`.
 - Compile-time safety: calling `.shape` on `[Double]` or `[String]` is a compile-time error.
-
-### Reshape and Flatten
-
-Convert between 1D vectors and 2D matrices without altering data.
-
 - `flat.reshaped(rows:columns:)` — 1D → 2D, fills row-major. Total elements must equal rows × columns.
 - `matrix.flattened()` — 2D → 1D, concatenates rows.
 - `matrix.reshaped(rows:columns:)` — 2D → different 2D, flattens internally then reshapes.
@@ -1055,11 +1051,6 @@ Matrices transform vectors through multiplication. Each row produces one element
 - **Identity:** `[Double].identity(2)` — leaves vectors unchanged. Starting point for building transformations.
 - **Diagonal:** `[Double].diag([2.0, 3.0])` — scales each axis independently.
 - **Dimension rule:** Matrix columns must match vector length.
-
-### Common Transformations
-
-Specific transformation matrices for geometric operations.
-
 - **Rotation:** `[[cos θ, -sin θ], [sin θ, cos θ]]`. 90° = `[[0,-1],[1,0]]`. Preserves magnitude.
 - **Scaling:** Diagonal matrix. Uniform = same factor all axes. Non-uniform = different per axis.
 - **Reflection:** Negate one axis. `reflectX = [[1,0],[0,-1]]`, `reflectY = [[-1,0],[0,1]]`. Preserves distances.

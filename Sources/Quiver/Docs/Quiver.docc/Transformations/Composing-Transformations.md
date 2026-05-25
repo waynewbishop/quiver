@@ -6,7 +6,7 @@ Combining transformations with matrix multiplication for graphics pipelines and 
 
 Individual transformations like rotation and scaling are useful, but real applications often require combining them. Matrix multiplication folds several transformations into a single matrix that applies in one pass over the vector.
 
-That folding shows up in graphics pipelines, animation systems, and any application that chains coordinate system changes. For the individual matrix forms — rotation, scaling, reflection, and shear — see <doc:Common-Transformations>. This article focuses on how those matrices combine.
+That folding shows up in graphics pipelines, animation systems, and any application that chains coordinate system changes. For the individual matrix forms — rotation, scaling, reflection, and shear — see <doc:Matrix-Transformations>. This article focuses on how those matrices combine.
 
 > Note: For geometric intuition about how transformations compose, including visual examples of rotation, scaling, and chained operations, see [Matrix Transformations](https://waynewbishop.github.io/swift-algorithms/22-matrix-transformations.html) in Swift Algorithms & Data Structures.
 
@@ -17,7 +17,7 @@ Matrix multiplication composes transformations: the result represents applying o
 ```swift
 import Quiver
 
-// Rotation and scaling matrices from <doc:Common-Transformations>
+// Rotation and scaling matrices from <doc:Matrix-Transformations>
 let rotation = [
     [0.707, -0.707],
     [0.707,  0.707]

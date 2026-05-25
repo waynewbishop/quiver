@@ -201,7 +201,7 @@ for group in results {
 }
 ```
 
-Each `Classification` result conforms to `Sequence` — the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives you its data points directly, just like iterating an `Array`.
+Each `Classification` result conforms to `Sequence` — the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives us its data points directly, just like iterating an `Array`.
 
 > Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy`, `classificationReport`, or `confusionMatrix`.
 

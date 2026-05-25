@@ -49,13 +49,9 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Machine-Learning-Primer>
 - <doc:Concurrency-Primer>
 
-### iOS
+### Platform Guides
 - <doc:iOS-Apps>
-
-### watchOS
 - <doc:watchOS-Apps>
-
-### Vapor
 - <doc:Vapor-Server>
 
 ### Vectors
@@ -63,8 +59,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Vector-Projections>
 
 ### Statistics
-- <doc:Statistics-Primer>
-- <doc:Inferential-Statistics-Primer>
 - <doc:Identifying-A-Distribution>
 - <doc:Frequency-Tables>
 - <doc:Working-With-Distributions>
@@ -77,14 +71,12 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Matrices
 - <doc:Matrix-Operations>
 - <doc:Shape-And-Size>
-- <doc:Reshape-And-Flatten>
 - <doc:Broadcasting-Operations>
 - <doc:Array-Generation>
 - <doc:Random-Number-Generation>
 
 ### Transformations
 - <doc:Matrix-Transformations>
-- <doc:Common-Transformations>
 - <doc:Composing-Transformations>
 
 ### Similarity and Search
@@ -94,7 +86,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Signal Processing
 - <doc:Fourier-Transform>
-- <doc:Physics-Primitives-Primer>
 
 ### Data Preparation
 - <doc:Panel>
