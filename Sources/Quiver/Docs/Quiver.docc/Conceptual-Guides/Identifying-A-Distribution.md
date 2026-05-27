@@ -40,7 +40,7 @@ Each of the three rules answers a different question about the data, and the cho
 
 The **square-root rule** is the simplest. The bin count depends only on the sample size: `k = ⌈√n⌉`. A dataset of 100 values gets 10 bins. A dataset of 10,000 values gets 100 bins. The rule says nothing about the shape of the data, which makes it fast to compute and predictable in its behavior. Use it when the goal is a quick first look and the dataset is small enough that any sensible bin count will reveal the rough shape.
 
-The **Sturges rule** is the classical default in introductory statistics. Herbert Sturges derived it in 1926 by treating each bin as a Bernoulli trial under the assumption that the data follows a normal distribution. The formula `k = ⌈log₂(n) + 1⌉` grows slowly: 8 bins at `n = 100`, 11 bins at `n = 1,000`, only 15 bins at `n = 10,000`. The rule works well for the small, roughly symmetric samples it was designed for and is still the default in R's `hist()` function. It tends to undersmooth large datasets and skewed data, which is the limitation that motivated the next rule.
+The **Sturges rule** is the classical default in introductory statistics. Herbert Sturges derived it in 1926 by treating each bin as a Bernoulli trial under the assumption that the data follows a normal distribution. The formula `k = ⌈log₂(n) + 1⌉` grows slowly: 8 bins at `n = 100`, 11 bins at `n = 1,000`, only 15 bins at `n = 10,000`. The rule works well for the small, roughly symmetric samples it was designed for and remains a common default in introductory statistical software.
 
 The **Freedman-Diaconis rule** is the modern robust choice. Published by David Freedman and Persi Diaconis in 1981, the rule sets a bin width from the data rather than picking a bin count directly: `width = 2 · IQR / n^(1/3)`. The bin count then falls out from the data's range. The cube root in the denominator is the optimal scaling for the L2 risk of a histogram density estimator, and using the interquartile range instead of the standard deviation makes the bin width resistant to outliers; a few unusual values cannot blow up the bin width the way they can with standard-deviation-based rules. The rule is the default in most modern statistical libraries and the working data scientist's first choice for unfamiliar data.
 
@@ -122,6 +122,46 @@ let empiricalAt3 = times.percentileRank(of: 3.0) / 100.0
 
 A theoretical value of `0.2611` and an empirical value of `0.30` are within sampling noise of each other for a sample of twenty values. Across a grid of points the gap stays small, which supports the normal candidate. For the Poisson candidate on the arrivals data, the same comparison uses `Distributions.poisson.cdf` and gives the per-count tail probabilities. The visual version of this comparison is the quantile-quantile plot, which Quiver renders downstream once `Swift Charts` is wired in.
 
+### Checking the standard-deviation bands
+
+The candidate named above is normal, and a normal distribution makes a specific promise about where its mass sits: roughly 68 percent within one standard deviation of the mean, 95 percent within two, and 99.7 percent within three. The `empiricalRule()` method reads how closely the data keeps that promise, band by band. It does not test for normality; it measures the gap between observed and expected at each band and hands us the numbers to read.
+
+We start by printing the whole result. The `EmpiricalRule` value lays the three bands side by side, each with its observed fraction, the fraction a normal distribution predicts, and the signed difference between them. Here a few values cluster near eleven, with one outlier at thirty:
+
+```swift
+import Quiver
+
+let samples = [10.0, 11, 12, 11, 10, 9, 11, 10, 12, 30]
+
+if let check = samples.empiricalRule() {
+    print(check)
+    // Empirical rule check (n = 10)
+    //               actual    expected    diff
+    //   within 1σ:  0.900     0.683       +0.217
+    //   within 2σ:  0.900     0.955       -0.054
+    //   within 3σ:  1.000     0.997       +0.003
+}
+```
+
+The observed fractions sit beside what a normal distribution predicts, and the signed difference makes each gap readable at a glance. Checking all three bands rather than one is the point: a single band can look fine while another reveals a departure.
+
+To act on the result in code, we read the fields directly. The observed fractions are `within1Sigma`, `within2Sigma`, and `within3Sigma`; the matching expected fractions are `expected1Sigma`, `expected2Sigma`, and `expected3Sigma`:
+
+```swift
+import Quiver
+
+if let check = samples.empiricalRule() {
+    let gap1 = check.within1Sigma - check.expected1Sigma   // +0.217
+    let gap2 = check.within2Sigma - check.expected2Sigma   // -0.054
+    let gap3 = check.within3Sigma - check.expected3Sigma   // +0.003
+    // The gap is three numbers, not one.
+}
+```
+
+The gap is a vector, not a scalar. What we do next follows from *where* the largest gap sits, not from whether any gap crosses a cutoff — there is no threshold at which a fraction "becomes" non-normal. The action is to investigate, not to judge: go back to the histogram, render a quantile-quantile plot, or run the goodness-of-fit test the next section sets up.
+
+The bands are nested — every value inside one standard deviation is also inside two and three — so the three rows are three readings of one sample, not three independent checks. The 3σ band reaching `1.000` is nearly automatic for well-behaved data and carries little information; the 1σ and 2σ bands do the real work. A set of bands close to expected means the data is *consistent with* normal in those bands, never that it *is* normal: many non-normal shapes place roughly normal-looking mass in the central bands and depart only in the tails. The bands are drawn at the sample standard deviation (`ddof: 1`).
+
 ### Testing the fit
 
 Visual comparison is enough for most exploratory work. When we need a number that says whether the fit is close enough, we reach for a goodness-of-fit test. The chi-squared test compares observed counts to expected counts under the candidate distribution and turns the gap into an upper-tail probability. A small p-value means the candidate is unlikely; a large p-value means the candidate is consistent with the data.
@@ -134,7 +174,7 @@ A named distribution is not the goal; it is a tool. Once the data is identified 
 
 The chain that gets us from raw data to a named family also tells us when no named family fits well. A histogram with two clear peaks is bimodal, and no single-peak distribution will describe it honestly. Heavy tails that the candidate cannot reproduce point at a different family or at a mixture. Recognizing that the named families do not fit is its own diagnostic, and it is often the moment when domain knowledge gets pulled into the modeling decision. Throughout the workflow, the candidate functions return `Double?` rather than trapping on out-of-domain input; see <doc:Numerical-Literacy> for the `nil` versus `NaN` contract that governs every `Distributions` call.
 
-> Experiment: **The Quiver Notebook** is the right place to walk this chain on an unfamiliar dataset. Load one of the bundled tabular datasets, pull a single column, and run the four steps: `histogram(rule: .freedmanDiaconis)` for the shape, `quartiles()` for the asymmetry, `mean()` and `variance()` for the candidate diagnostic, and `Distributions.normal.cdf(x:mean:standardDeviation:)` for the comparison. The same four-step pattern works on every column. Watching it work — and watching it fail when the column is bimodal or heavy-tailed — is the fastest way to internalize what identifying a distribution actually means. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to walk this chain on data we shape ourselves. Start from a short array, then run the five steps: `histogram(rule: .freedmanDiaconis)` for the shape, `quartiles()` for the asymmetry, `mean()` and `variance()` for the candidate diagnostic, `Distributions.normal.cdf(x:mean:standardDeviation:)` for the comparison, and `empiricalRule()` for the standard-deviation bands. Add an outlier, spread the values wider, or introduce a second cluster, and watch the bands surface a defect a single glance would miss. Watching the chain react to a change we made by hand is the fastest way to internalize what identifying a distribution actually means. See <doc:Quiver-Notebook>.
 
 ## Topics
 
@@ -159,3 +199,5 @@ The chain that gets us from raw data to a named family also tells us when no nam
 - ``Distributions/poisson/cdf(k:lambda:)``
 - ``Distributions/binomial/cdf(k:n:p:)``
 - ``Distributions/chiSquared/cdf(x:df:)``
+- ``Swift/Array/empiricalRule()``
+- ``EmpiricalRule``

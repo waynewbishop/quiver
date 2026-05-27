@@ -16,6 +16,19 @@ import Foundation
 /// one, two, and three sample standard deviations of the mean, alongside the theoretical
 /// fractions for a Gaussian distribution. The expected fractions are exposed as instance
 /// properties so that observed and expected values read from the same struct at the call site.
+///
+/// ## Topics
+///
+/// ### Observed values
+/// - ``count``
+/// - ``within1Sigma``
+/// - ``within2Sigma``
+/// - ``within3Sigma``
+///
+/// ### Expected Gaussian constants
+/// - ``expected1Sigma``
+/// - ``expected2Sigma``
+/// - ``expected3Sigma``
 public struct EmpiricalRule: Equatable, Sendable {
 
     /// The number of elements summarized.

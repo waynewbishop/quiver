@@ -6,6 +6,8 @@ Train an ordinary least squares regression model.
 
 Linear regression finds the best-fit line (or hyperplane — the same idea extended to more than two dimensions) through training data by minimizing the sum of squared residuals. Unlike classification models that predict discrete categories, regression models predict continuous values like prices, temperatures, scores, or any numerical quantity.
 
+The fitted coefficients are estimates from a sample, and the same sample-versus-population thinking from the <doc:Inferential-Statistics-Primer> governs how much we should trust them. The `summary(features:targets:level:)` method returns the full inference machinery — standard errors, t-statistics, p-values, and confidence intervals — for every coefficient.
+
 ![Scatter plot of training points with the fitted regression line passing through them](diagram-linear-regression)
 
 ### How it works

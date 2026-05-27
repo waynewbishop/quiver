@@ -14,8 +14,6 @@ A **population** is the full set of values we care about while a **sample** is t
 
 The catch is that any single sample is one of many possible samples we could have drawn. A different week of users would have produced a slightly different mean session time. A different watch session would have produced a slightly different step rhythm. Inferential statistics is built around that variability.
 
-A small sample makes the distinction concrete:
-
 ```swift
 import Quiver
 
@@ -29,13 +27,21 @@ sessionSeconds.standardDeviation()   // ~6.91 — the sample standard deviation
 
 The sample mean of `250.0` is a fact about these ten users. Whether the population mean is also near `250.0`, or whether the gap from a known control baseline is real, is the question inferential statistics answers.
 
+Between the population and the sample sits an operational list called the **sampling frame**, the actual roster of items we can draw from. The population is every user who has the app installed. The frame is the set of user IDs in our analytics database, which probably excludes users who opted out of tracking. The sample is the 500 IDs we randomly picked from that database to analyze. Inferential statistics quantifies the variability that comes from drawing only some of the frame, not all of it. The gap between frame and population is a design problem, not a math problem, and no resampling procedure can correct it.
+
 ### The sampling distribution of the mean
 
 Imagine drawing the same-sized sample from the population over and over again. Each draw produces a slightly different sample mean. The collection of all those possible sample means has its own distribution, the **sampling distribution of the mean**. It describes how much the sample mean wobbles from one draw to the next.
 
 The remarkable fact about this distribution has a name. The **Central Limit Theorem** says that when we average many independent observations, the distribution of the sample mean approaches a normal (bell-shaped) distribution regardless of the population's shape, as long as the population has finite variance. Skewed populations, bimodal populations, populations with strange tails: once we average enough of them, the sample mean is approximately normal. Almost every method in this primer rests on this single fact. It means we do not need to know the shape of the population; we only need a sample large enough for the theorem to apply, and the math we use on the sample mean is allowed to assume the bell-shaped behavior of a normal distribution.
 
-The theorem is easier to trust once we have seen it work. The next snippet builds a heavily skewed population from an exponential distribution, draws a thousand small samples from it, and records the mean of each sample. The population is obviously not bell-shaped — most values cluster near zero, with a long right tail — but the distribution of sample means is:
+### Seeing the theorem at work
+
+The theorem is easier to trust once we have seen it work. The next snippet builds a heavily skewed population from an exponential distribution, draws a thousand small samples from it, and records the mean of each sample. The exponential distribution models time-between-events: minutes until the next customer arrives at a coffee shop, seconds until the next request hits a server, days until a hard drive fails. Its `rate` parameter is the average number of events per unit time, so `rate = 0.5` means one event every two minutes on average — which is why the population mean equals `1/rate = 2.0`.
+
+Note the change of perspective. Earlier "sample" meant the one dataset we actually collected. Here we are simulating what would happen if we ran the same study a thousand times. Each of the thousand "samples" is one hypothetical study; the array `sampleMeans` is the collection of their averages.
+
+The population is obviously not bell-shaped — most values cluster near zero, with a long right tail — but the distribution of sample means is:
 
 ```swift
 import Quiver
@@ -51,12 +57,24 @@ let sampleMeans = population.samplingDistributionOfMean(
     seed: 42
 )
 
-// The sampling distribution is approximately normal, centered on the population mean.
+// The sampling distribution is centered on the population mean, with its own spread.
 sampleMeans.mean()              // ≈ 2.05  — recovers the population mean
 sampleMeans.standardDeviation() // ≈ 0.29  — the standard error of the mean
+
+// Confirm the bell shape: observed fractions match the Gaussian targets.
+if let check = sampleMeans.empiricalRule() {
+    print(check)
+    // Empirical rule check (n = 1000)
+    //               actual    expected    diff
+    //   within 1σ:  ~0.68     0.683       ~0.00
+    //   within 2σ:  ~0.95     0.955       ~0.00
+    //   within 3σ:  ~1.00     0.997       ~0.00
+}
 ```
 
-The empirical standard error of about `0.29` matches the theoretical prediction: the population standard deviation is `1 / 0.5 = 2.0`, and dividing by `√50` gives `≈ 0.283`. A skewed population produces a bell-shaped sampling distribution, and the math we use from this point on rests on that fact.
+If we plotted both on a histogram, the population would show a sharp spike near zero with a long tail of rare large values, while the 1,000 sample means would form a clean symmetric bell centered near `2.0`. The Quiver Notebook renders both histograms from this snippet; see <doc:Quiver-Notebook>.
+
+The empirical standard error of about `0.29` matches the theoretical prediction: the population standard deviation is `1 / 0.5 = 2.0` (for the exponential, the standard deviation equals the mean), and dividing by `√50` gives `≈ 0.283`. A skewed population produces a bell-shaped sampling distribution, and the math we use from this point on rests on that fact.
 
 > Note: A common rule of thumb is that samples of size 30 or more are usually large enough for the Central Limit Theorem to give a good approximation. Smaller samples can still be analyzed, but the t-distribution is the right tool when we cannot rely on a large sample.
 
@@ -64,7 +82,7 @@ The empirical standard error of about `0.29` matches the theoretical prediction:
 
 The sampling distribution has its own spread. That spread has a name, the **standard error** of the mean, and it is the quantity that tells us how precisely the sample mean estimates the population mean. A small standard error means the sample mean changes very little from one hypothetical sample to the next; a large standard error means the sample mean is unstable and a single value should not be trusted on its own.
 
-The standard error equals the sample standard deviation divided by the square root of the sample size. Larger samples produce smaller standard errors, which is the mathematical statement of "more data, more confidence." Quiver ships this as `standardError()` on any `[Double]`:
+The standard error equals the sample standard deviation divided by the square root of the sample size. Larger samples produce smaller standard errors, which is the mathematical statement of "more data, more confidence." The square root reflects diminishing returns: doubling the sample size does not cut the standard error in half — it only divides it by `√2 ≈ 1.41`. To halve the standard error we need four times as much data. Precision improves with sample size, but the cost of each additional unit of precision rises sharply. Quiver ships this as `standardError()` on any `[Double]`:
 
 ```swift
 import Quiver
@@ -80,6 +98,8 @@ if let se = sessionSeconds.standardError() {
 > Note: Standard error uses the sample standard deviation, which divides by `n - 1`. Quiver's `standardDeviation()` and `standardError()` default to this — `ddof: 1` is the sample formula every inferential calculation in this primer assumes. For population statistics on a complete dataset, pass `ddof: 0` explicitly.
 
 ### Small samples and the t-distribution
+
+With a small sample, we are being asked to estimate two things — the average and the spread — from the same few data points. The t-distribution is the math's way of admitting we are less certain than the normal distribution would suggest, and widening the interval accordingly.
 
 The Central Limit Theorem promises normality for the sample mean when `n ≥ 30`. Below that threshold the sampling distribution of the mean has heavier tails than the bell curve, because we are estimating both the population mean and the population standard deviation from the same small sample. The **t-distribution** corrects for that uncertainty by widening the reference distribution as the sample shrinks. Quiver gives us the building blocks to use it directly through `Distributions.t.quantile` and `Distributions.t.cdf`:
 
@@ -100,6 +120,8 @@ The t-critical of about `2.262` is noticeably wider than the normal z-critical o
 ### Hypothesis testing
 
 A **hypothesis test** is a structured way to decide whether the data we observed is consistent with a specific claim about the population. The procedure has a fixed shape. State a **null hypothesis**, the conservative claim, usually that nothing has changed or that two groups are the same. Pair it with an **alternative hypothesis**, the claim we would accept if the null is rejected. Pick a significance level, called **alpha** (typically `0.05`), which is the probability of mistakenly rejecting the null when it is actually true. Then compute a single number from the sample, called a **test statistic**, and compare it against what we would expect if the null were true.
+
+### Running a test on the A/B sample
 
 For an A/B test on session times, the null hypothesis is "the variant's population mean equals the control baseline of 240 seconds." The alternative is "the variant's population mean differs from 240 seconds." Our sample mean is `250.0`. The question is whether a gap of 10 seconds is large enough, given the standard error, to be evidence that the populations actually differ, or whether a gap that size could plausibly arise by chance from random sampling alone.
 
@@ -133,13 +155,11 @@ if let sampleMean = sessionSeconds.mean(),
 
 The t-statistic of about `4.575` means the sample mean of 250 sits more than four standard errors above the hypothesized population mean of 240. Under the null, a gap that large would happen roughly thirteen times in ten thousand. The p-value is far below alpha, so we reject the null — the data is not consistent with a population mean of 240.
 
-> Note: The same t-statistic compared against the normal distribution would produce a p-value near `0.000005` — roughly 270× smaller than the honest small-sample value. The normal reference is overconfident at this sample size. The conclusion does not change at α = 0.05, but the normal p-value would overstate the strength of the evidence by orders of magnitude. For small samples, always pair the t-statistic with the t-distribution.
-
-#### Type I and Type II errors
-
-Hypothesis tests can produce two kinds of mistakes. A **Type I error** is rejecting the null when it is true: a false alarm. A **Type II error** is failing to reject the null when the alternative is true: a missed detection. Setting alpha to `0.05` caps the Type I error rate at five percent. The Type II error rate depends on sample size, true effect size, and how strict alpha is.
+> Experiment: **The Quiver Notebook** is the right place to feel a p-value move. Re-run the snippet with `baseline` set to `242`, `245`, `248`, and `250`. Watch the t-statistic shrink toward zero and the p-value climb smoothly past `0.05` somewhere near `245`. The p-value is a continuous gradient, not a switch. See <doc:Quiver-Notebook>.
 
 ### Interpreting the p-value
+
+Hypothesis tests can produce two kinds of mistakes. A **Type I error** is rejecting the null when it is true: a false alarm. A **Type II error** is failing to reject the null when the alternative is true: a missed detection. Setting alpha to `0.05` caps the Type I error rate at five percent. The Type II error rate depends on sample size, true effect size, and how strict alpha is.
 
 The output of a hypothesis test is a number called the **p-value**. It is the probability of observing data at least as extreme as our sample if the null hypothesis were true. A small p-value means the data would be surprising under the null, which is taken as evidence against the null. By convention, when the p-value falls below alpha, we reject the null.
 
@@ -173,8 +193,6 @@ let resampledMeans = sample.resampled(iterations: 1000, seed: 42) { resample in
 ```
 
 The closure receives a fresh resample on each iteration. Returning `mean` makes the resampled distribution reflect the variability of the sample mean. Returning `median` would give the resampled distribution of the median instead. Any statistic the closure can compute on a `[Double]` is fair game: a quartile, a difference of group means, a ratio. The resampling framework does not need to know the math behind the statistic.
-
-> Experiment: **The Quiver Notebook** is the right surface for resampling. Run the snippet, change the seed, and re-run. The resampled distribution shifts, the percentile interval moves slightly, and the variability the math describes becomes visible in the output pane. The `seed` parameter pins the randomness, so the same seed produces identical resamples every time. See <doc:Quiver-Notebook>.
 
 ### Confidence intervals from resampling
 
@@ -271,6 +289,6 @@ Significance and effect size are independent dimensions. A small p-value with a 
 
 ### From summaries to models
 
-The concepts in this primer reappear throughout Quiver's machine learning layer. `StandardScaler` applies z-score standardization column-by-column across a feature matrix, the same z-score from the descriptive primer, generalized so that every column in a dataset sits on the universal ruler. `Pipeline` wires a scaler and a model together so scaling happens automatically during `fit` and `predict`. Distance-based models like `KMeans` and `KNearestNeighbors` work best when features share a common scale, because a column in dollars would otherwise dominate a column in ratios.
+Three pieces of this primer reappear directly in Quiver's machine learning stack. The z-score, the subtract-the-mean-and-divide-by-the-spread operation we used to put values on a universal ruler, is what `StandardScaler` applies column-by-column before a model touches the data — the same formula at a larger scale, with one small twist that the scaler uses the population standard deviation while the primer's `standardDeviation()` defaults to the sample form. Resampling carries forward as the engine behind `percentileCI` on any statistic, not only the mean we used here.
 
-Statistics is not a side topic in Quiver. It is how the library describes data, how it detects what is unusual, how it tests claims about populations, and how it prepares inputs for every model. The <doc:Machine-Learning-Primer> picks up from here and shows how these same ideas drive classification, clustering, and regression.
+The confidence-interval idea has its richest payoff in `LinearRegression.summary(features:targets:level:)`, which returns standard errors, t-statistics, p-values, and CIs for every fitted coefficient — the same machinery from this primer, applied to a regression slope instead of a sample mean.
