@@ -4,7 +4,7 @@ Understanding Quiver's architecture as a layer over the Swift array type.
 
 ## Overview
 
-Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
+Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`, with a small number of value types reserved for objects that carry their own algebra — `Polynomial` is one such example. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
 
 ```swift
 import Quiver
@@ -72,11 +72,36 @@ Every model and result type produces a readable summary when printed. This makes
 print(model)    // KNearestNeighbors: k=3, euclidean, 6 training points, 2 features
 print(cluster)  // Cluster: center [1.23, 1.97], 3 points
 print(cm)       // TP: 3  FP: 1  TN: 3  FN: 1  (accuracy: 75.0%)
+print(p)        // 2x² + 3x + 1
+print(f)        // 3/5
 ```
+
+### Presentation-only types
+
+Some Quiver methods exist purely to render results in a form that communicates. The pattern is consistent: compute in `Double`, render rationally or algebraically when communicating the result matters more than feeding it back into a calculation.
+
+```swift
+import Quiver
+
+// Rational rendering of floating-point results
+let ratio = 1.0 / 3.0
+let unit = [0.6, 0.8]
+let matrix = [[0.5, 0.25], [0.75, 0.125]]
+
+ratio.asFraction()      // 1/3
+unit.asFractions()      // [3/5, 4/5]
+matrix.asFractions()    // [[1/2, 1/4], [3/4, 1/8]]
+
+// Algebraic rendering of a polynomial
+let p = Polynomial([1, 3, 2])
+p.asAlgebra()           // "2x² + 3x + 1"
+```
+
+These never replace the underlying numeric values — `Fraction` and the algebraic string are display views, not new computation paths. Quiver continues to compute in `Double` underneath.
 
 ### Typed summary returns
 
-When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The `Quartiles`, `ColumnSummary`, `PanelSummary`, and `RegressionSummary` types are the patterns we will see repeatedly.
+When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The `Quartiles`, `ColumnSummary`, `PanelSummary`, `RegressionSummary`, `ClassificationReport`, `ConfidenceInterval`, `EmpiricalRule`, `ContingencyTable`, and the `BayesPrior` / `BayesLikelihood` / `BayesPosterior` trio are the patterns we will see repeatedly.
 
 ```swift
 let summary: PanelSummary = panel.summary()
@@ -90,7 +115,7 @@ if let price = summary.columns["price"] {
 
 ### A focused and intentional scope
 
-Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. GPU acceleration, automatic differentiation, and distributed training are outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
+Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. Quiver provides analytic derivatives for polynomials, sample-based derivatives for sequences, and iterative optimization through `GradientDescent`; what it does not provide is reverse-mode automatic differentiation over arbitrary computation graphs. GPU acceleration and distributed training are similarly outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
 
 ### Performance characteristics
 

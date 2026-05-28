@@ -184,6 +184,26 @@ final class PolynomialTests: XCTestCase {
         XCTAssertEqual(String(describing: Polynomial([5, -2, 0, 1])), "x³ - 2x + 5")
     }
 
+    func testAsAlgebra() {
+        XCTAssertEqual(Polynomial([1, 3, 2]).asAlgebra(), "2x² + 3x + 1")
+        XCTAssertEqual(Polynomial([0, 1]).asAlgebra(), "x")
+        XCTAssertEqual(Polynomial([5]).asAlgebra(), "5")
+        XCTAssertEqual(Polynomial([0]).asAlgebra(), "0")
+        XCTAssertEqual(Polynomial([0, -1]).asAlgebra(), "-x")
+        XCTAssertEqual(Polynomial([5, -2, 0, 1]).asAlgebra(), "x³ - 2x + 5")
+
+        // asAlgebra() and description always agree.
+        let samples: [Polynomial] = [
+            Polynomial([1, 3, 2]),
+            Polynomial([0]),
+            Polynomial([0, -1]),
+            Polynomial([5, -2, 0, 1])
+        ]
+        for p in samples {
+            XCTAssertEqual(p.asAlgebra(), String(describing: p))
+        }
+    }
+
     // MARK: - Zero polynomial
 
     func testZeroPolynomial() {

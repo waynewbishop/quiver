@@ -57,7 +57,7 @@ let run2 = KMeans.fit(data: points, k: 3, seed: 42)
 run1 == run2  // true
 ```
 
-Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`.
+Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`.
 
 ---
 
@@ -692,6 +692,37 @@ let predictions = model.predict(testX)          // [[Double]] → [Double]
 let singleFeature = model.predict(xValues)      // [Double] → [Double] (featureCount == 1)
 ```
 
+## Gradient Descent
+
+```swift
+// Standardize features first — defaults assume unit variance.
+let scaled = StandardScaler.fit(features: trainX).transform(trainX)
+
+let gd = try GradientDescent.fit(
+    features: scaled, targets: trainY,
+    learningRate: 0.01, maxIterations: 1000, tolerance: 1.0e-6
+)
+// throws GradientDescentError.divergedNonFinite or .divergedIncreasing on divergence
+
+gd.coefficients     // [Double] — same layout as LinearRegression: [intercept, weight1, ...]
+gd.featureCount     // Int
+gd.hasIntercept     // Bool
+gd.learningRate     // Double — echoes the hyperparameter used
+gd.iterations       // Int — count when the loop stopped
+gd.finalLoss        // Double — loss at the returned coefficients
+gd.lossHistory      // [Double] — loss at every iteration, including iteration 0
+gd.outcome          // .converged | .maxIterationsReached
+
+print(gd)           // GradientDescent: 2 features, converged in 142 iterations (loss: 0.0034)
+
+let predictions = gd.predict(testX)             // [[Double]] → [Double]
+let singleFeature = gd.predict(xValues)         // [Double] → [Double] (featureCount == 1)
+```
+
+Same `Regressor` protocol as `LinearRegression`. Same `coefficients` layout (intercept at index 0 when `hasIntercept` is true). The iterative route exists for the cases where no closed form is available — currently nothing in Quiver, but the optimizer is the engine future iterative models (logistic regression, SVM) will reuse.
+
+`Outcome.maxIterationsReached` is necessary but not sufficient for trustworthiness — confirm meaningful descent by comparing `lossHistory.first` to `lossHistory.last` before relying on the coefficients.
+
 ## K-Means Clustering
 
 ```swift
@@ -935,12 +966,12 @@ Quiver's ML models follow a consistent pattern: `fit()` → `predict()` → eval
 - **Classification vs regression.** Classification predicts discrete categories (`[Int]` labels). Regression predicts continuous values (`[Double]` targets).
 - **Features and labels.** Features are the input measurements (`[[Double]]` matrix, rows = samples, columns = measurements). Labels are what we predict (`[Int]` for classification, `[Double]` for regression).
 - **Train/test split.** Never evaluate on training data. Use `trainTestSplit(testRatio:seed:)` or `stratifiedSplit(labels:testRatio:seed:)` to hold out evaluation data.
-- **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling.
-- **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression. All use static `fit()` methods — no unfitted state exists.
+- **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) and iterative optimizers (`GradientDescent`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling.
+- **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent. All use static `fit()` methods — no unfitted state exists.
 - **Model persistence.** All models conform to `Codable`. Train once, encode to JSON with `JSONEncoder`, decode on any platform with `JSONDecoder` — identical predictions guaranteed by `Equatable`. When scaling is used, persist both the scaler and model together. See the Model-Persistence documentation page for platform-specific guidance (iOS, watchOS, Vapor, SwiftData).
 - **Naive Bayes variance.** The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
 - **Evaluation (after training):** `confusionMatrix(actual:)` for classification (accuracy, precision, recall, F1). `rSquared(actual:)`, `meanSquaredError(actual:)` for regression. `classificationReport(actual:)` for a formatted summary.
-- **Loss (during training):** Not yet shipped. Current models use closed-form solutions (LinearRegression) or single-pass statistics (NaiveBayes) — no iterative loss. When GradientDescent ships, `lossHistory` will expose per-iteration loss as a `[Double]`, compatible with `rollingMean()` and Swift Charts. KMeans `inertia` is the closest current equivalent — it measures sum of squared distances to centroids.
+- **Loss (during training):** `GradientDescent.lossHistory` exposes per-iteration MSE loss as a `[Double]`, compatible with `rollingMean()` and Swift Charts. The first entry is the loss at θ = 0, the last is `finalLoss`. Other models use closed-form solutions (LinearRegression) or single-pass statistics (NaiveBayes), so they carry no iterative loss. KMeans `inertia` is the closest closed-form analog — sum of squared distances to centroids.
 
 ### Vector Operations
 

@@ -16,6 +16,8 @@ Linear regression models the relationship between features and a target as a lin
 
 Quiver solves this using the **normal equation** θ = (X'X)⁻¹X'y, which gives an exact closed-form solution. This approach uses the matrix operations already available in Quiver (transposition, multiplication, and inversion) rather than iterative gradient descent — repeatedly nudging the coefficients in the direction that reduces error. The result is a precise answer computed in a single pass.
 
+> Note: The iterative route exists for the cases where no closed form is available — and the same minimum is reached by walking there one step at a time. See <doc:Gradient-Descent>.
+
 ### Fitting a model
 
 The `fit(features:targets:intercept:)` static method computes the optimal coefficients and returns a ready-to-use model. There is no separate unfitted state, so the returned struct is immediately usable.
@@ -306,6 +308,7 @@ The `LinearRegression` model follows the same immutable-struct pattern as `Gauss
 - ``ConfidenceInterval``
 
 ### Related
+- <doc:Gradient-Descent>
 - <doc:Pipeline>
 - <doc:Machine-Learning-Primer>
 - <doc:Naive-Bayes>

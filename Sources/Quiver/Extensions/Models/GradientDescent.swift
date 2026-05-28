@@ -26,7 +26,7 @@ import Foundation
 /// follow this one — logistic regression, support vector machines — have loss
 /// functions with no closed-form minimum.
 ///
-/// This is a value type — once created via ``fit(features:targets:learningRate:maxIterations:tolerance:intercept:)``,
+/// This is a value type — once created via one of the `fit` methods,
 /// the model is immutable. The fitted instance carries the full loss trajectory
 /// so a reader can observe convergence rather than infer it from the final
 /// number alone.
@@ -293,7 +293,8 @@ public struct GradientDescent: Regressor, Codable, CustomStringConvertible, Equa
 
     /// Predicts target values for single-feature regression.
     ///
-    /// A convenience overload mirroring ``LinearRegression/predict(_:)-1xvqe``.
+    /// A convenience overload mirroring `LinearRegression.predict(_:)` for
+    /// single-feature models.
     ///
     /// - Parameter values: 1D array of feature values for single-feature
     ///   prediction.

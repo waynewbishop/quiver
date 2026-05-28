@@ -260,8 +260,15 @@ public struct Polynomial: Equatable, Codable, Sendable, CustomStringConvertible 
         return Polynomial(_trimmingTrailingZeros(scaled))
     }
 
-    /// A human-readable rendering of the polynomial in the conventional
+    /// Renders the polynomial as an algebraic expression in the conventional
     /// highest-power-first form.
+    ///
+    /// This is a presentation helper that exposes the algebraic structure of
+    /// the polynomial as a string, parallel to how `asFractions` on a vector
+    /// exposes the rational structure of normalized components. The returned
+    /// string is identical to ``description``; use this method in code where
+    /// the rendering is the point — book examples, playgrounds, teaching
+    /// notebooks — so the call itself signals intent.
     ///
     /// Coefficients of `0` are omitted, coefficients of `1` and `-1` are
     /// rendered without the leading digit (writing `x²` instead of `1x²`),
@@ -273,11 +280,13 @@ public struct Polynomial: Equatable, Codable, Sendable, CustomStringConvertible 
     /// ```swift
     /// import Quiver
     ///
-    /// String(describing: Polynomial([1, 3, 2]))   // "2x² + 3x + 1"
-    /// String(describing: Polynomial([0, -1]))     // "-x"
-    /// String(describing: Polynomial([0]))         // "0"
+    /// Polynomial([1, 3, 2]).asAlgebra()   // "2x² + 3x + 1"
+    /// Polynomial([0, -1]).asAlgebra()     // "-x"
+    /// Polynomial([0]).asAlgebra()         // "0"
     /// ```
-    public var description: String {
+    ///
+    /// - Returns: The polynomial in algebraic form.
+    public func asAlgebra() -> String {
         // Find the highest-degree non-zero coefficient. If none exists, we are
         // the zero polynomial.
         let highest = degree
@@ -321,6 +330,17 @@ public struct Polynomial: Equatable, Codable, Sendable, CustomStringConvertible 
         }
 
         return pieces.joined()
+    }
+
+    /// A human-readable rendering of the polynomial in the conventional
+    /// highest-power-first form.
+    ///
+    /// Identical to ``asAlgebra()``. Use ``asAlgebra()`` directly in code
+    /// where the rendering is the point; this property exists so
+    /// `String(describing:)`, `print(_:)`, and string interpolation produce
+    /// the same output without an explicit method call.
+    public var description: String {
+        asAlgebra()
     }
 
     // MARK: - Internal helpers

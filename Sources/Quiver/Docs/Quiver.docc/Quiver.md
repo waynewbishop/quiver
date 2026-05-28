@@ -44,6 +44,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Probability-Primer>
 - <doc:Inferential-Statistics-Primer>
 - <doc:Linear-Algebra-Primer>
+- <doc:Calculus-Primer>
 - <doc:Determinants-Primer>
 - <doc:Physics-Primitives-Primer>
 - <doc:Machine-Learning-Primer>
@@ -99,6 +100,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Models
 - <doc:Naive-Bayes>
 - <doc:Linear-Regression>
+- <doc:Gradient-Descent>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:KMeans-Clustering>
 - <doc:Evaluation-Metrics>

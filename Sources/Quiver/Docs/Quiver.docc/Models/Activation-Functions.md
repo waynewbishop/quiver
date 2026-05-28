@@ -59,6 +59,8 @@ let categoryScores = [2.0, 1.0, 0.1].softMax()  // [0.659, 0.242, 0.099]
 
 A useful mathematical property: σ(x) + σ(−x) = 1.0. This symmetry means the sigmoid of a positive score and the sigmoid of its negation always sum to 1, which is why a single sigmoid output captures both P(positive) and P(negative) without needing two outputs.
 
+> Note: `sigmoid` is also the link function at the heart of logistic regression — the next regression model after <doc:Linear-Regression>. The loss that pairs with it has no closed form, so the iterative optimizer in <doc:Gradient-Descent> is what fits it.
+
 ### Where activation functions fit
 
 Quiver's built-in models handle probability conversion internally, so calling `softMax` or `sigmoid` on their output is not necessary. These functions are most useful when working with external model output. Many models return raw logits, and converting them with `softMax` or `sigmoid` produces human-readable probabilities that pair naturally with Quiver's visualization tools.
