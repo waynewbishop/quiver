@@ -45,12 +45,37 @@ public struct Fraction: CustomStringConvertible, Equatable, Sendable {
         Double(numerator) / Double(denominator)
     }
 
-    /// Displays the fraction as "a/b", or just "a" for whole numbers
-    public var description: String {
+    /// Returns the fraction as a string in `a/b` form, or as a bare integer
+    /// when the denominator is `1`.
+    ///
+    /// Sibling to the `asFraction(maxDenominator:)` method that produced this
+    /// value and to the expression renderers on `Polynomial`, `[Double]`, and
+    /// `[[Double]]`. Use this method in code where the rendering is the point.
+    ///
+    /// ```swift
+    /// (5.0 / 13.0).asFraction().asExpression()   // "5/13"
+    /// (4.0).asFraction().asExpression()          // "4"
+    /// (-3.0 / 4.0).asFraction().asExpression()   // "-3/4"
+    /// ```
+    ///
+    /// See <doc:Rendering-Math-Primer> for the full family.
+    ///
+    /// - Returns: The fraction as a string.
+    public func asExpression() -> String {
         if denominator == 1 {
             return "\(numerator)"
         }
         return "\(numerator)/\(denominator)"
+    }
+
+    /// A human-readable rendering of the fraction.
+    ///
+    /// Identical to ``asExpression()``. Use ``asExpression()`` directly in
+    /// code where the rendering is the point; this property exists so
+    /// `String(describing:)`, `print(_:)`, and string interpolation produce
+    /// the same output without an explicit method call.
+    public var description: String {
+        asExpression()
     }
 
     /// Creates a fraction from an explicit numerator and denominator

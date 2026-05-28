@@ -90,7 +90,7 @@ if let q = responseTimes.quartiles() {
 }
 ```
 
-The return type is `Quartiles`, a typed value with `min`, `q1`, `median`, `q3`, `max`, and `iqr` as named properties. Read them directly when only one is needed (`q.median`, `q.iqr`), or print the whole value for the full summary.
+The return type is `Quartiles`, a typed value with `min`, `q1`, `median`, `q3`, `max`, and `iqr` as named properties. Read them directly when only one is needed (`q.median`, `q.iqr`), or print the whole value for the full summary. When the underlying data has clean rational cuts, `q1.asFraction()` and friends recover them — see <doc:Rendering-Math-Primer>.
 
 Quartiles are computed by linear interpolation between adjacent order statistics. For a sorted array of length `n`, the `p`-th percentile lives at index `(p / 100) · (n − 1)`. When that index falls between two integers, the result is the straight-line blend of the two surrounding values. Other tools use other quartile conventions, so a textbook reporting different quartile values for the same input is not contradicting Quiver; it is using a different definition. When `n = 1`, every position collapses to the single value and `iqr` is `0`.
 

@@ -18,6 +18,8 @@ Quiver solves this using the **normal equation** θ = (X'X)⁻¹X'y, which gives
 
 > Note: The iterative route exists for the cases where no closed form is available — and the same minimum is reached by walking there one step at a time. See <doc:Gradient-Descent>.
 
+> Note: When fitting a `Polynomial` rather than a hyperplane, the same least-squares solver returns coefficients that may carry numerical-noise terms near machine zero. See <doc:Rendering-Math-Primer> for how `relativeZeroTolerance` suppresses them at render time.
+
 ### Fitting a model
 
 The `fit(features:targets:intercept:)` static method computes the optimal coefficients and returns a ready-to-use model. There is no separate unfitted state, so the returned struct is immediately usable.

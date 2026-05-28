@@ -25,7 +25,7 @@ import Quiver
 }
 ```
 
-The Canvas shows the result inline as the code is written, and re-evaluates on every edit. Changing the input vector, swapping a method, or adjusting a parameter updates the result without a restart.
+The Canvas shows the result inline as the code is written, and re-evaluates on every edit. Changing the input vector, swapping a method, or adjusting a parameter updates the result without a restart. The `asFractions` call in the example above is one of the Quiver-native display methods catalogued in <doc:Rendering-Math-Primer>.
 
 ### Naming blocks for parallel experiments
 

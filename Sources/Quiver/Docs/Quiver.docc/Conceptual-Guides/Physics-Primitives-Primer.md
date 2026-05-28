@@ -18,11 +18,11 @@ import Quiver
 // A still watch lying face-up: roughly 1g pointing down through the screen.
 let sample: [Double] = [0.2, -0.1, 9.7]
 
-sample.magnitude()                    // ≈ 9.70  — close to g (9.81 m/s²)
+sample.magnitude                      // ≈ 9.70  — close to g (9.81 m/s²)
 sample.angle(with: [0, 0, 1])         // ≈ 0.024 rad — almost perfectly upright
 ```
 
-The same `magnitude()` we use to compute the length of an embedding vector in <doc:Semantic-Search> tells us the **strength** of an acceleration. The same `angle(with:)` we use to measure similarity between two documents tells us how tilted the watch is. The operations are identical. The units make them physics.
+The same `magnitude` we use to compute the length of an embedding vector in <doc:Semantic-Search> tells us the **strength** of an acceleration. The same `angle(with:)` we use to measure similarity between two documents tells us how tilted the watch is. The operations are identical. The units make them physics.
 
 ### The dot product is work
 

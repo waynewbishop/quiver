@@ -78,26 +78,9 @@ print(f)        // 3/5
 
 ### Presentation-only types
 
-Some Quiver methods exist purely to render results in a form that communicates. The pattern is consistent: compute in `Double`, render rationally or algebraically when communicating the result matters more than feeding it back into a calculation.
+Quiver computes in `Double` and renders in the form a reader can read. Two methods anchor the pattern: `asFraction` returns rational structure as a real `Fraction` value, and `asExpression` returns a Unicode-formatted string ready to display. They compose — chain `asFractions().asExpression()` to see the rational form of a vector or matrix as a bracketed block — and the underlying numeric values are never touched.
 
-```swift
-import Quiver
-
-// Rational rendering of floating-point results
-let ratio = 1.0 / 3.0
-let unit = [0.6, 0.8]
-let matrix = [[0.5, 0.25], [0.75, 0.125]]
-
-ratio.asFraction()      // 1/3
-unit.asFractions()      // [3/5, 4/5]
-matrix.asFractions()    // [[1/2, 1/4], [3/4, 1/8]]
-
-// Algebraic rendering of a polynomial
-let p = Polynomial([1, 3, 2])
-p.asAlgebra()           // "2x² + 3x + 1"
-```
-
-These never replace the underlying numeric values — `Fraction` and the algebraic string are display views, not new computation paths. Quiver continues to compute in `Double` underneath.
+See <doc:Rendering-Math-Primer> for the full catalog: the scalar, vector, and matrix forms; the column-default vector convention; the `relativeZeroTolerance` parameter for fitted polynomials; the edge-case rules for `NaN`, `±∞`, and sub-millisecond magnitudes.
 
 ### Typed summary returns
 

@@ -40,38 +40,25 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Conceptual Guides
 
 - <doc:Numerical-Literacy>
+- <doc:Rendering-Math-Primer>
 - <doc:Statistics-Primer>
 - <doc:Probability-Primer>
 - <doc:Inferential-Statistics-Primer>
+- <doc:Identifying-A-Distribution>
 - <doc:Linear-Algebra-Primer>
-- <doc:Calculus-Primer>
 - <doc:Determinants-Primer>
+- <doc:Calculus-Primer>
 - <doc:Physics-Primitives-Primer>
 - <doc:Machine-Learning-Primer>
 - <doc:Concurrency-Primer>
-
-### Platform Guides
-- <doc:iOS-Apps>
-- <doc:watchOS-Apps>
-- <doc:Vapor-Server>
 
 ### Vectors
 - <doc:Vector-Operations>
 - <doc:Vector-Projections>
 
-### Statistics
-- <doc:Identifying-A-Distribution>
-- <doc:Frequency-Tables>
-- <doc:Working-With-Distributions>
-- <doc:Boolean-Masking>
-
-### Algebra
-- <doc:Fraction>
-- <doc:Polynomials>
-
 ### Matrices
-- <doc:Matrix-Operations>
 - <doc:Shape-And-Size>
+- <doc:Matrix-Operations>
 - <doc:Broadcasting-Operations>
 - <doc:Array-Generation>
 - <doc:Random-Number-Generation>
@@ -80,40 +67,52 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Matrix-Transformations>
 - <doc:Composing-Transformations>
 
+### Statistics
+- <doc:Frequency-Tables>
+- <doc:Boolean-Masking>
+- <doc:Working-With-Distributions>
+
+### Signal Processing
+- <doc:Fourier-Transform>
+
 ### Similarity and Search
 - <doc:Text-Tokenization>
 - <doc:Similarity-Operations>
 - <doc:Semantic-Search>
 
-### Signal Processing
-- <doc:Fourier-Transform>
-
 ### Data Preparation
 - <doc:Panel>
 - <doc:Panel-Workflows>
-- <doc:Correlation>
 - <doc:Data-Visualization>
+- <doc:Correlation>
 - <doc:Train-Test-Split>
 - <doc:Feature-Scaling>
 - <doc:Pipeline>
 
 ### Models
-- <doc:Naive-Bayes>
 - <doc:Linear-Regression>
 - <doc:Gradient-Descent>
+- <doc:Polynomials>
+- <doc:Naive-Bayes>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:KMeans-Clustering>
-- <doc:Evaluation-Metrics>
 - <doc:Activation-Functions>
+- <doc:Evaluation-Metrics>
 - <doc:Model-Persistence>
 
+### Platform Guides
+- <doc:iOS-Apps>
+- <doc:watchOS-Apps>
+- <doc:Vapor-Server>
+
 ### Utilities
+- <doc:Fraction>
 - <doc:Quiver-Notebook>
-- <doc:Notebook-Datasets>
 - <doc:Quiver-Notebook-For-Classrooms>
+- <doc:Notebook-Datasets>
+- <doc:Xcode-Playground>
 - <doc:Quiver-Cookbook>
 - <doc:Quiver-Knowledge-File>
-- <doc:Xcode-Playground>
 
 ### Supporting Types
 - ``LogDeterminant``

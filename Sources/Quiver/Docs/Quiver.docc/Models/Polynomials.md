@@ -6,7 +6,7 @@ Represent, evaluate, differentiate, and fit single-variable polynomials.
 
 A **polynomial** is an expression of the form `a₀ + a₁x + a₂x² + ... + aₙxⁿ`, a linear combination of powers of a single variable. Polynomials describe trajectories, model curved trends in data, approximate complicated functions on a small interval, and underpin a great deal of numerical computing. Quiver's `Polynomial` type is a value type that stores those coefficients and provides evaluation, arithmetic, differentiation, least-squares fitting, and algebraic rendering in one place.
 
-The coefficients are stored in **ascending order of power**: `coefficients[0]` is the constant term, `coefficients[1]` is the linear term, `coefficients[2]` is the quadratic term, and so on. This matches the convention used in numerical computing libraries that work with polynomials as flat coefficient arrays. The `asAlgebra` method reverses the order to match human convention, rendering the highest-degree term first.
+The coefficients are stored in **ascending order of power**: `coefficients[0]` is the constant term, `coefficients[1]` is the linear term, `coefficients[2]` is the quadratic term, and so on. This matches the convention used in numerical computing libraries that work with polynomials as flat coefficient arrays. The `asExpression` method reverses the order to match human convention, rendering the highest-degree term first.
 
 ```swift
 import Quiver
@@ -17,7 +17,7 @@ let p = Polynomial([1, 3, 2])
 p(2)                    // 15.0  — evaluate at a single point
 p([0, 1, 2, 3])         // [1.0, 6.0, 15.0, 28.0] — vectorized
 p.derivative()          // 4x + 3
-p.asAlgebra()           // "2x² + 3x + 1"
+p.asExpression()        // "2x² + 3x + 1"
 ```
 
 ### Evaluating polynomials
@@ -112,14 +112,14 @@ Because `polyfit` is built on <doc:Linear-Regression>, calling `polyfit(degree: 
 
 ### Coefficient ordering and trimming
 
-Quiver stores coefficients in ascending order of power because that is the order arithmetic operations produce naturally and the order numerical solvers consume. The `asAlgebra` rendering uses descending order, with the highest-degree term first, because that matches how humans write polynomials. Both views describe the same value:
+Quiver stores coefficients in ascending order of power because that is the order arithmetic operations produce naturally and the order numerical solvers consume. The `asExpression` rendering uses descending order, with the highest-degree term first, because that matches how humans write polynomials. See <doc:Rendering-Math-Primer> for the full rendering family and the `relativeZeroTolerance` parameter that suppresses numerical noise in fitted polynomials. Both views describe the same value:
 
 ```swift
 import Quiver
 
 let p = Polynomial([1, 3, 2])
 p.coefficients              // [1.0, 3.0, 2.0]   — ascending: a₀, a₁, a₂
-p.asAlgebra()                // "2x² + 3x + 1"     — descending, human-readable
+p.asExpression()             // "2x² + 3x + 1"     — descending, human-readable
 ```
 
 Two polynomial values are `Equatable` when their coefficient arrays match exactly. Operations like `+` and `*` may introduce trailing zeros. A polynomial of degree two added to its negative is mathematically zero, but the resulting array may still carry trailing zeros that survive the addition. The `trimmed` property returns the canonical form by stripping trailing zeros, which is the right call before comparing two polynomials for equality:
@@ -153,7 +153,7 @@ The `degree` property reports the highest power with a non-zero coefficient rega
 - ``Polynomial/derivative()``
 
 ### Rendering
-- ``Polynomial/asAlgebra()``
+- ``Polynomial/asExpression(relativeZeroTolerance:)``
 
 ### Canonical form
 - ``Polynomial/trimmed()``
