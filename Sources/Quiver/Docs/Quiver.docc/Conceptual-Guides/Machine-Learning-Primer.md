@@ -197,6 +197,8 @@ For a full treatment of these metrics and the `ConfusionMatrix` type, see <doc:E
 
 **Linear Regression** predicts continuous values rather than categories. Its coefficients are directly interpretable ("each additional bedroom adds $X to the price"), but it assumes a linear relationship between features and target. See <doc:Linear-Regression>.
 
+**Polynomial regression** has two doors in Quiver. `LinearRegression.fit` returns a fitted model with the inferential machinery — standard errors, p-values, confidence intervals — available through `summary`. `polyfit` returns a `Polynomial`, a callable mathematical object we can evaluate, differentiate, scale, or compose. The choice rests on which return type the next call site needs: multi-feature work or inference reaches for `LinearRegression.fit`; single-variable curve work where the output benefits from being a `Polynomial` reaches for `polyfit`. The error contracts differ too — `polyfit` returns `nil` on bad input; `LinearRegression.fit` throws `MatrixError.singular`. See <doc:Polynomials>.
+
 **K-Means** is unsupervised and discovers natural groupings in data that has no labels. Useful for segmentation and anomaly detection, but we must choose the number of clusters in advance. See <doc:KMeans-Clustering>.
 
 > Tip: Start simple: Naive Bayes for classification, Linear Regression for continuous targets, Nearest Neighbors when the decision boundary is nonlinear, K-Means for unlabeled data. The evaluation techniques in the previous section tell us whether our choice is working.

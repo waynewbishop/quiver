@@ -80,6 +80,14 @@ print(f)        // 3/5
 
 Quiver computes in `Double` and renders in the form a reader can read. Two methods anchor the pattern: `asFraction` returns rational structure as a real `Fraction` value, and `asExpression` returns a Unicode-formatted string ready to display. They compose — chain `asFractions().asExpression()` to see the rational form of a vector or matrix as a bracketed block — and the underlying numeric values are never touched.
 
+```swift
+let v = [0.6, 0.75, 0.5]
+print(v.asFractions().asExpression())
+// ⎡ 3/5 ⎤
+// ⎢ 3/4 ⎥
+// ⎣ 1/2 ⎦
+```
+
 See <doc:Rendering-Math-Primer> for the full catalog: the scalar, vector, and matrix forms; the column-default vector convention; the `relativeZeroTolerance` parameter for fitted polynomials; the edge-case rules for `NaN`, `±∞`, and sub-millisecond magnitudes.
 
 ### Typed summary returns

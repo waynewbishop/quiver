@@ -12,7 +12,7 @@
 
 @Options(scope: local)
 
-A Swift package for statistics, linear algebra, and machine learning. 
+A Swift package for statistics, linear algebra, and machine learning.
 
 ## Overview
 
@@ -25,10 +25,10 @@ As Swift continues to expand beyond app development into domains like server-sid
 ### Why Quiver
 
 Quiver provides developers the tools to work with data directly. This includes analyzing data with statistics, transforming it with linear algebra, preparing it for modeling, or training machine learning models. As a pure Swift library with zero external dependencies, Quiver runs on every Apple platform — iOS, macOS, watchOS, tvOS, and visionOS — as well as server-side Swift with frameworks like Vapor, Linux environments, and containerized deployments. As a lightweight framework, Quiver is ideal for [teaching environments](<doc:Quiver-Notebook-For-Classrooms>), on-device processing, and any context where minimal dependencies and platform portability matter.
- 
+
 ### Learn by example
 
-This framework is companion to [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/), a comprehensive guide that teaches algorithmic thinking through hands-on Swift examples. 
+This framework is companion to [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/), a comprehensive guide that teaches algorithmic thinking through hands-on Swift examples.
 
 ## Topics
 
@@ -44,7 +44,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Statistics-Primer>
 - <doc:Probability-Primer>
 - <doc:Inferential-Statistics-Primer>
-- <doc:Identifying-A-Distribution>
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
 - <doc:Calculus-Primer>
@@ -71,9 +70,13 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Frequency-Tables>
 - <doc:Boolean-Masking>
 - <doc:Working-With-Distributions>
+- <doc:Identifying-A-Distribution>
 
 ### Signal Processing
 - <doc:Fourier-Transform>
+
+### Rendering
+- <doc:Fraction>
 
 ### Similarity and Search
 - <doc:Text-Tokenization>
@@ -91,6 +94,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Models
 - <doc:Linear-Regression>
+- <doc:Regression-Summary>
 - <doc:Gradient-Descent>
 - <doc:Polynomials>
 - <doc:Naive-Bayes>
@@ -106,7 +110,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Vapor-Server>
 
 ### Utilities
-- <doc:Fraction>
 - <doc:Quiver-Notebook>
 - <doc:Quiver-Notebook-For-Classrooms>
 - <doc:Notebook-Datasets>

@@ -4,291 +4,182 @@ Train an ordinary least squares regression model.
 
 ## Overview
 
-Linear regression finds the best-fit line (or hyperplane — the same idea extended to more than two dimensions) through training data by minimizing the sum of squared residuals. Unlike classification models that predict discrete categories, regression models predict continuous values like prices, temperatures, scores, or any numerical quantity.
+Linear regression finds the best-fit line — or hyperplane in higher dimensions — through training data by minimizing the sum of squared residuals. It predicts continuous values like prices, temperatures, scores, or any numerical quantity, and is the workhorse model when the relationship between features and a target is roughly linear.
 
-The fitted coefficients are estimates from a sample, and the same sample-versus-population thinking from the <doc:Inferential-Statistics-Primer> governs how much we should trust them. The `summary(features:targets:level:)` method returns the full inference machinery — standard errors, t-statistics, p-values, and confidence intervals — for every coefficient.
+> Important: Linear regression is **supervised** — every training row is paired with a known target value, and the model learns the relationship between the features and that target. Unlike clustering models like `KMeans` that discover structure on their own, linear regression needs labelled data to find anything at all.
 
 ![Scatter plot of training points with the fitted regression line passing through them](diagram-linear-regression)
 
 ### How it works
 
-Linear regression models the relationship between features and a target as a linear equation: ŷ = θ₀ + θ₁x₁ + θ₂x₂ + ... + θₙxₙ. The goal is to find the coefficients θ that minimize the total squared error between predicted and actual values.
+Linear regression models the relationship between features and a target as a linear equation: `ŷ = θ₀ + θ₁x₁ + θ₂x₂ + ... + θₙxₙ`. The goal is to find the coefficients θ that minimize the total squared error between predicted and actual values. Quiver solves this using the **normal equation** `θ = (XᵀX)⁻¹Xᵀy`, which gives an exact closed-form solution in a single pass — no iteration, no learning rate, no convergence check. The route uses the matrix operations already shipped in Quiver: transposition, multiplication, and inversion.
 
-Quiver solves this using the **normal equation** θ = (X'X)⁻¹X'y, which gives an exact closed-form solution. This approach uses the matrix operations already available in Quiver (transposition, multiplication, and inversion) rather than iterative gradient descent — repeatedly nudging the coefficients in the direction that reduces error. The result is a precise answer computed in a single pass.
+The two-point case shows the closed form on numbers we can check by hand. The line `y = 1 + 2x` passes exactly through `(1, 3)` and `(2, 5)`; the normal equation recovers the intercept and slope directly:
 
-> Note: The iterative route exists for the cases where no closed form is available — and the same minimum is reached by walking there one step at a time. See <doc:Gradient-Descent>.
+```swift
+let x = [1.0, 2.0]
+let y = [3.0, 5.0]
 
-> Note: When fitting a `Polynomial` rather than a hyperplane, the same least-squares solver returns coefficients that may carry numerical-noise terms near machine zero. See <doc:Rendering-Math-Primer> for how `relativeZeroTolerance` suppresses them at render time.
+let model = try LinearRegression.fit(features: x, targets: y)
+model.intercept     // 1.0
+model.coefficients  // [2.0]
+```
+
+Adding more points overdetermines the system. The normal equation then returns the line that minimizes the sum of squared vertical distances rather than passing through every point.
 
 ### Fitting a model
 
-The `fit(features:targets:intercept:)` static method computes the optimal coefficients and returns a ready-to-use model. There is no separate unfitted state, so the returned struct is immediately usable.
-
-> Note: Regression models predict continuous `Double` values, so targets are `[Double]`. To predict discrete categories like "approved" or "denied", use a classification model instead. See <doc:Machine-Learning-Primer> for more on the distinction.
+The `fit(features:targets:intercept:)` static method computes the optimal coefficients and returns a ready-to-use model. There is no separate unfitted state — the returned struct is immediately usable. Single-feature regression takes a flat `[Double]`:
 
 ```swift
 import Quiver
 
-// Training data: square footage → price
-let sqft   = [1000.0, 1500.0, 2000.0, 2500.0, 3000.0]
-let prices = [150000.0, 200000.0, 260000.0, 310000.0, 370000.0]
+// Square footage → price
+let sqft = [1200.0, 1800.0, 2400.0, 1600.0, 2000.0, 2800.0]
+let price = [180000.0, 260000.0, 350000.0, 230000.0, 290000.0, 420000.0]
 
-let model = try LinearRegression.fit(features: sqft, targets: prices)
+let model = try LinearRegression.fit(features: sqft, targets: price)
 print(model)
-// LinearRegression: 1 feature, intercept: 38000.00, slope: 110.00
+// LinearRegression: 1 feature, intercept: -7469.39, slope: 150.41
 ```
 
-> Experiment: **The Quiver Notebook** is the right place to see outlier leverage. Push one entry of `targets` far above the rest, re-fit, and compare R² and the slope — the line bends to chase the outlier and the metric drops. See <doc:Quiver-Notebook>.
+Multi-feature regression takes `[[Double]]` where each row is one sample:
 
-For single-feature regression, `fit` accepts a flat `[Double]` array directly — no need to wrap each value in `[[Double]]`. Multi-feature regression uses the standard `fit(features: [[Double]], targets:)` form shown below.
+```swift
+import Quiver
+
+// Each row: [square footage, bedrooms]
+let features: [[Double]] = [
+    [1200, 2], [1800, 3], [2400, 4],
+    [1600, 3], [2000, 3], [2800, 5]
+]
+let price = [180000.0, 260000.0, 350000.0, 230000.0, 290000.0, 420000.0]
+
+let model = try LinearRegression.fit(features: features, targets: price)
+print(model.coefficients)  // [137.84, 7162.16] — dollars per sqft, dollars per bedroom
+```
 
 ### Making predictions
 
-The `predict(_:)` method computes target values for new samples using the fitted coefficients:
+The `predict(_:)` method computes target values for new samples using the fitted coefficients. Each row of the input is one sample with the same features used in training:
 
 ```swift
 import Quiver
 
-// Each row is one sample with the same features used in training
-let newHomes: [[Double]] = [[1800], [3500]]
+let newHomes: [[Double]] = [[1800, 3], [3500, 5]]
 let prices = model.predict(newHomes)
-// prices ≈ [236000, 423000]
+// prices in the trained model's units (dollars)
 ```
 
-For single-feature models, a convenience overload accepts a flat `[Double]` instead of wrapping each value in an array. Combined with `linspace`, this generates a smooth trend line across the feature range:
-
-```swift
-import Quiver
-
-// Generate a trend line from x=500 to x=3500
-let trendX = Array.linspace(start: 500.0, end: 3500.0, count: 50)
-let trendY = model.predict(trendX)
-
-// trendX and trendY are parallel arrays ready for charting
-```
-
-> Important: The single-feature `predict(_:)` overload requires a model trained on exactly one feature. For multi-feature models, use the standard `predict([[Double]])` form.
-
-### Multiple features
-
-Linear regression naturally extends to multiple features. Each feature gets its own coefficient weight:
-
-```swift
-import Quiver
-
-// Each row: [square footage, bedrooms, age in years]
-let features: [[Double]] = [
-    [1200, 2, 20], [1800, 3, 10], [2400, 4, 5],
-    [1600, 3, 15], [2000, 3, 8], [2800, 5, 2]
-]
-let targets = [180000.0, 260000.0, 350000.0,
-               230000.0, 290000.0, 420000.0]
-
-// Fit produces one weight per feature plus an intercept
-let model = try LinearRegression.fit(features: features, targets: targets)
-print(model)
-// LinearRegression: 3 features, intercept: ..., weights: [...]
-```
+For single-feature models, a convenience overload accepts a flat `[Double]` directly — useful with `Array.linspace` to generate a smooth trend line across the feature range for charting.
 
 ### Evaluating the fit
 
-Regression metrics tell us how well the model's predictions match the actual values. R² (coefficient of determination) measures the fraction of variance explained, where 1.0 is perfect and 0.0 means the model is no better than predicting the mean:
+Regression metrics tell us how close the model's predictions land to the actual values. R² (coefficient of determination) measures the fraction of variance explained, where 1.0 is perfect and 0.0 means the model is no better than predicting the mean. Mean squared error and its square root express the average prediction error — RMSE in the same units as the target:
 
 ```swift
 import Quiver
 
-// Predict on the training data to check how well the model fits
 let predictions = model.predict(features)
-
-// R² measures fraction of variance explained (1.0 = perfect)
-let r2   = predictions.rSquared(actual: targets)
-
-// MSE and RMSE measure average prediction error
-let mse  = predictions.meanSquaredError(actual: targets)
-let rmse = predictions.rootMeanSquaredError(actual: targets)
-
-print("R²: \(r2)")      // closer to 1.0 is better
-print("RMSE: \(rmse)")  // in the same units as the target
+let r2 = predictions.rSquared(actual: price)
+let rmse = predictions.rootMeanSquaredError(actual: price)
 ```
 
-### Inference with RegressionSummary
+R² answers how well the line fits the points we trained on. A separate question is whether the slope itself is large enough — given how noisy the data is — to be confident the underlying relationship is real, rather than a pattern that happened to land in this sample. The fitted coefficients are estimates from a sample, and the same sample-versus-population thinking from the <doc:Inferential-Statistics-Primer> governs how much we should trust them.
 
-The `rSquared`, `meanSquaredError`, and `rootMeanSquaredError` properties describe how close the predictions are to the targets. They do not answer the question that determines whether a feature is worth keeping in the model: is the coefficient on this feature different from zero, given the noise in the data, or did we recover a non-zero weight by chance from a sample that happens to lean that way?
+That is what `summary` answers. The `summary(features:targets:level:)` method returns a `RegressionSummary` value carrying standard errors, p-values, confidence intervals, and adjusted R² for every coefficient. See <doc:Regression-Summary> for the full inferential vocabulary and how to read each field.
 
-The `LinearRegression.summary(features:targets:level:)` method answers that question. It returns a `RegressionSummary` value carrying everything downstream callers need to interpret a regression fit — the coefficients themselves, one standard error and one t-statistic per coefficient, two-tailed p-values, confidence intervals at the chosen level, R² and adjusted R², the sample size, the residual degrees of freedom, and the residual standard error:
+### Polynomial regression
+
+**Polynomial regression** extends the straight-line form `y = θ₀ + θ₁x` to a curve: `y = θ₀ + θ₁x + θ₂x² + ... + θₙxⁿ`. The fit is still ordinary least squares — the columns of the design matrix are `[x, x², ..., xⁿ]` instead of independent features — so `LinearRegression.fit` solves it directly when we hand-build that matrix. The convenience path is `[Double].polyfit(x:y:degree:)`, which builds the design matrix for us and returns a `Polynomial` we can evaluate, differentiate, and compose.
+
+Reach for `LinearRegression.fit` when standard errors and confidence intervals matter or when several features share the model; reach for `polyfit` when the input is a single variable and the curve itself is the return value. See <doc:Polynomials> for the polynomial path, the equivalence in code, and the conditioning limits that put a practical ceiling on degree.
+
+### When the normal equation fails
+
+The normal equation requires inverting `XᵀX`. If the features are linearly dependent — for example, including both temperature in Celsius and Fahrenheit — the matrix is [singular](<doc:Determinants-Primer>) and cannot be inverted. In this case `fit` throws `MatrixError.singular`, and the fix is to remove the redundant features before fitting. The determinant tells us in advance whether the fit will succeed:
 
 ```swift
 import Quiver
 
-// 12 homes — [square footage, bedrooms, age in years]
-let features: [[Double]] = [
-    [1200, 2, 20], [1800, 3, 10], [2400, 4, 5],
-    [1600, 3, 15], [2000, 3, 8],  [2800, 5, 2],
-    [1400, 2, 18], [2200, 4, 6],  [1700, 3, 12],
-    [2600, 4, 3],  [1500, 2, 22], [2100, 3, 7]
-]
-let targets = [180000.0, 260000.0, 350000.0,
-               230000.0, 290000.0, 420000.0,
-               195000.0, 320000.0, 240000.0,
-               380000.0, 175000.0, 295000.0]
+let healthy: [[Double]] = [[1, 3], [2, 5]]
+healthy.determinant     // -1.0 — independent columns, fit will succeed
 
-let model = try LinearRegression.fit(features: features, targets: targets)
-let report = try model.summary(features: features, targets: targets)
-
-print(report)
-// Linear Regression Summary
-// =========================
-// n = 12, df = 8
-// R²    = 0.9894
-// Adj R² = 0.9854
-// Resid SE = 9584.4677
-//
-// term       coef     std err       t   P>|t|     [95% lo      95% hi]
-// ---------------------------------------------------------------------
-// x0    72972.68   47589.51   1.5334  0.1637  -36768.94   182714.30
-// x1       92.02      21.64   4.2520  0.0028      42.12      141.93
-// x2    17454.85    9363.45   1.8641  0.0993   -4137.30    39047.01
-// x3    -2719.02    1315.04  -2.0676  0.0725   -5751.51      313.47
+let redundant: [[Double]] = [[1, 2], [1, 2]]
+redundant.determinant   //  0.0 — duplicate rows, fit will throw
 ```
 
-The output names every regression diagnostic the inference question requires. With `n = 12` and four fitted parameters (intercept + three features), the residual degrees of freedom land at `8` — comfortable for a t-based inference. The `x1` row (square footage) has a p-value of `0.0028` and a 95% confidence interval that excludes zero — strong evidence that square footage genuinely predicts price after accounting for bedrooms and age. The `x2` and `x3` rows (bedrooms and age) have p-values above `0.05` and confidence intervals that straddle zero — their effects are not statistically distinguishable from chance at this sample size, even though their point estimates look meaningful. The intercept `x0` is the predicted price for the hypothetical row of all-zero features — included for completeness, rarely interpretable on its own.
-
-The same value also reads like data. Each field on `RegressionSummary` is a parallel array indexed by coefficient position. When the model fits an intercept, position `0` is the intercept and positions `1...` are the feature weights in the same order they appeared in `features`:
-
-```swift
-report.coefficients[1]         // weight on square footage
-report.standardErrors[1]       // standard error of that weight
-report.tStatistics[1]          // weight / standard error
-report.pValues[1]              // two-tailed p-value
-report.confidenceIntervals[1]  // ConfidenceInterval(lower, upper)
-
-report.rSquared                // fraction of variance explained
-report.adjustedRSquared        // R² penalized for parameter count
-report.residualStandardError   // sqrt(residual variance), in target units
-
-report.n                       // sample size
-report.degreesOfFreedom        // n - p
-report.confidenceLevel         // 0.95 by default
-```
-
-The p-value answers the significance question directly. A small p-value means the data would be surprising if the true coefficient were zero, which is taken as evidence that the feature is contributing to the prediction. The confidence interval answers the same question visually: when the interval does not contain zero, the coefficient is significantly different from zero at the chosen level. The two views agree by construction — they read off the same standard error and the same t-critical value, just from different ends.
-
-Adjusted R² is the companion to plain R². Plain R² always rises as features are added, even when the new feature is pure noise. Adjusted R² subtracts a penalty for the parameter count, so adding a feature that does not pay for itself in residual reduction makes the metric fall. When the two diverge, the model is overfit.
-
-The `RegressionSummary` type is `Codable`, `Sendable`, and `Equatable`. Persisting a summary to disk for a later regression-diff is `JSONEncoder().encode(report)`. Comparing two summaries for an A/B model comparison is `==`. The `CustomStringConvertible` conformance is what makes `print(report)` reproduce the table. The `markdownTable()` and `csvRows()` formatters expose the same data in formats that paste cleanly into a PR comment or a spreadsheet.
-
-> Important: The `summary` method throws `MatrixError.singular` when the design matrix `X'X` cannot be inverted — the same condition that makes `fit` throw. Without a stable inverse, the variance-covariance matrix is unreliable and the standard errors that build on it would be silently meaningless. The throw is intentional: the caller learns immediately that inference is not available, rather than reading a struct of corrupted numbers.
+The same throw also stops `summary` from returning a corrupted variance-covariance matrix; the caller learns immediately that inference is not available rather than reading a struct of meaningless standard errors.
 
 ### The full pipeline
 
-A typical workflow combines data splitting, model fitting, and evaluation:
+A typical workflow combines holding out test data, fitting on the training portion, and evaluating on the held-out portion. The R² computed on the training rows always flatters the fit; the honest measure is performance on rows the model has never seen:
 
 ```swift
 import Quiver
 
-// 10 houses: [square footage, bedrooms]
 let features: [[Double]] = [
     [1200, 2], [1800, 3], [2400, 4], [1600, 3], [2000, 3],
     [2800, 5], [1400, 2], [2200, 4], [1000, 2], [3000, 5]
 ]
-let targets = [180000.0, 260000.0, 350000.0, 230000.0, 290000.0,
-               420000.0, 195000.0, 320000.0, 160000.0, 450000.0]
+let price = [180000.0, 260000.0, 350000.0, 230000.0, 290000.0,
+             420000.0, 195000.0, 320000.0, 160000.0, 450000.0]
 
-// Hold out 20% for evaluation — seed ensures reproducible splits
 let (trainX, testX) = features.trainTestSplit(testRatio: 0.2, seed: 42)
-let (trainY, testY) = targets.trainTestSplit(testRatio: 0.2, seed: 42)
+let (trainY, testY) = price.trainTestSplit(testRatio: 0.2, seed: 42)
 
-// Train on 80%, predict on the held-out 20%
 let model = try LinearRegression.fit(features: trainX, targets: trainY)
-let predictions = model.predict(testX)
-
-// Evaluate on data the model never saw during training
-let r2 = predictions.rSquared(actual: testY)
-let rmse = predictions.rootMeanSquaredError(actual: testY)
-print("R²: \(r2), RMSE: \(rmse)")
+let heldOutR2 = model.predict(testX).rSquared(actual: testY)
 ```
+
+The seeded split makes the partition reproducible — two runs with the same seed produce the same train and test rows.
 
 ### Organizing data with Panel
 
-The same pipeline using `Panel` eliminates the need to split features and targets separately. One split keeps all columns aligned automatically:
+The same pipeline using `Panel` keeps column names attached to the data throughout and partitions every column by the same rows in a single call:
 
 ```swift
 import Quiver
 
-// Named columns keep features and targets together in one structure
 let data = Panel([
-    ("sqft", [1200.0, 1800.0, 2400.0, 1600.0, 2000.0,
-              2800.0, 1400.0, 2200.0, 1000.0, 3000.0]),
-    ("bedrooms", [2.0, 3.0, 4.0, 3.0, 3.0,
-                  5.0, 2.0, 4.0, 2.0, 5.0]),
-    ("price", [180000.0, 260000.0, 350000.0, 230000.0, 290000.0,
-               420000.0, 195000.0, 320000.0, 160000.0, 450000.0])
+    ("sqft", [1200.0, 1800, 2400, 1600, 2000, 2800, 1400, 2200, 1000, 3000]),
+    ("bedrooms", [2.0, 3, 4, 3, 3, 5, 2, 4, 2, 5]),
+    ("price", [180000.0, 260000, 350000, 230000, 290000, 420000, 195000, 320000, 160000, 450000])
 ])
 
-// One split partitions all columns by the same rows automatically
 let (train, test) = data.trainTestSplit(testRatio: 0.2, seed: 42)
-let featureColumns = ["sqft", "bedrooms"]
-
-// Extract feature matrix and target vector by column name
 let model = try LinearRegression.fit(
-    features: train.toMatrix(columns: featureColumns),
+    features: train.toMatrix(columns: ["sqft", "bedrooms"]),
     targets: train["price"]
 )
-
-// Predict and evaluate on the held-out partition
-let predictions = model.predict(test.toMatrix(columns: featureColumns))
-let r2 = predictions.rSquared(actual: test["price"])
-print("R²: \(r2)")
+let heldOutR2 = model.predict(test.toMatrix(columns: ["sqft", "bedrooms"])).rSquared(actual: test["price"])
 ```
 
-The `Panel` type is entirely optional. The regression model accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns, including the typed snapshot a panel returns from `summary()`.
+The `Panel` type is entirely optional. The regression model accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns.
 
-> Tip: When scaling is part of the workflow, `Pipeline` bundles the scaler and model into a single value type. It scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
+### When to use linear regression
 
-### Polynomial regression
+Linear regression works best when the relationship between features and target is roughly linear, the features are not heavily collinear (no temperature-in-Celsius-and-Fahrenheit), and the residuals are roughly normal and constant in spread across the range of fitted values. The closed-form normal equation is exact and one pass — no learning rate to tune, no convergence to watch.
 
-Linear regression handles the form `y = θ₀ + θ₁x` — a straight line through the data. **Polynomial regression** is the natural extension: `y = θ₀ + θ₁x + θ₂x² + ... + θₙxⁿ` — a curve through the data. Quiver exposes it as `[Double].polyfit(x:y:degree:)`, which fits a polynomial of the given degree by ordinary least squares:
-
-```swift
-import Quiver
-
-// Underlying truth: 2x² + 3x + 1, evaluated at x = 1...5
-let x = [1.0, 2.0, 3.0, 4.0, 5.0]
-let y = [6.0, 15.0, 28.0, 45.0, 66.0]
-
-if let p = [Double].polyfit(x: x, y: y, degree: 2) {
-    p.coefficients   // ≈ [1.0, 3.0, 2.0]  — recovers a₀, a₁, a₂
-    p(6)             // ≈ 91.0              — predicted value at a new x
-}
-```
-
-Under the hood, `polyfit` builds a Vandermonde-style design matrix whose row `i` contains `[x[i], x[i]², ..., x[i]ⁿ]` and defers to `LinearRegression.fit` to solve the normal equation. The intercept of the fitted regression becomes the polynomial's constant term, and each weight becomes the next-higher-power coefficient. Same OLS math, same coefficients we would get from passing `[x, x², ..., xⁿ]` directly into `LinearRegression.fit` — `polyfit` is the convenience layer that handles the design-matrix construction and packages the result as a `Polynomial` value.
-
-> Note: For the full `Polynomial` type — evaluation, arithmetic, derivatives, coefficient ordering — see <doc:Polynomials>.
-
-### When the normal equation fails
-
-The normal equation requires inverting the matrix X'X. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), the matrix is [singular](<doc:Determinants-Primer>) and cannot be inverted. In this case, `fit` throws `MatrixError.singular`. The fix is to remove redundant features before fitting.
-
-To check beforehand, inspect the determinant of the feature matrix. A non-zero value means the columns are independent and the model can be fitted:
-
-```swift
-import Quiver
-
-// Independent columns — determinant is non-zero
-let healthy: [[Double]] = [[1.0, 3.0], [2.0, 5.0]]
-healthy.determinant  // -1.0 → safe to fit
-
-// Redundant columns — determinant is zero
-let redundant: [[Double]] = [[1.0, 2.0], [1.0, 2.0]]
-redundant.determinant  // 0.0 → fit will throw MatrixError.singular
-```
-
-> Note: A singular matrix means the determinant is zero, because the features collapse into a lower-dimensional space and the equation has no unique solution. For a deeper look at what determinants measure and why singularity matters, see <doc:Determinants-Primer>.
+Linear regression struggles with strongly non-linear relationships (try polynomial regression or a transformation of the inputs first), with very high feature counts where matrix inversion becomes expensive (reach for `GradientDescent` instead), and with the kind of categorical or sparse data that violates the linearity assumption outright. When inference matters — standard errors, p-values, confidence intervals — pair `LinearRegression.fit` with `summary` and read <doc:Regression-Summary> for the interpretive vocabulary.
 
 ### Safe by design
 
-The `LinearRegression` model follows the same immutable-struct pattern as `GaussianNaiveBayes`. The model is always ready to use after `fit`, training data stays separate from test data, and reproducible splits ensure consistent results. Models conform to Swift's `Equatable` protocol, so verifying two training runs produce the same coefficients is a single expression.
+The `LinearRegression` model follows the same immutable-struct pattern as `GaussianNaiveBayes`, `KMeans`, and `KNearestNeighbors`. The model is always ready to use after `fit`, the training data stays separate from the result, and seeded splits ensure reproducible runs.
+
+`LinearRegression` conforms to Swift's `Equatable` protocol. When two runs use the same data, the closed-form solver returns identical coefficients:
+
+```swift
+import Quiver
+
+let run1 = try LinearRegression.fit(features: features, targets: price)
+let run2 = try LinearRegression.fit(features: features, targets: price)
+run1 == run2  // true
+```
+
+This is useful for unit tests, debugging, and verifying that a pipeline produces stable output.
+
+> Experiment: **The Quiver Notebook** is the right place to see outlier leverage. Take the workflow above, push one entry of `price` far above the rest, refit, and compare R² and the coefficients — the line bends to chase the outlier and the metric drops. The bent line and the lower R² are the signal that one point is doing disproportionate work, leverage made visible. See <doc:Quiver-Notebook>.
 
 ## Topics
 
@@ -306,11 +197,10 @@ The `LinearRegression` model follows the same immutable-struct pattern as `Gauss
 
 ### Inference
 - ``LinearRegression/summary(features:targets:level:)``
-- ``RegressionSummary``
-- ``ConfidenceInterval``
 
 ### Related
+- <doc:Regression-Summary>
 - <doc:Gradient-Descent>
+- <doc:Polynomials>
 - <doc:Pipeline>
 - <doc:Machine-Learning-Primer>
-- <doc:Naive-Bayes>

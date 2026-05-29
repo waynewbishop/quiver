@@ -10,29 +10,27 @@ This is the same answer `LinearRegression` produces in a single matrix expressio
 
 ### How it works
 
-The optimizer repeats the same loop until the error stops falling: start with all coefficients set to zero, compute the current **loss** (how wrong the predictions are — `GradientDescent` uses mean squared error, the same calculation available directly on any prediction array as `meanSquaredError(actual:)`), compute the **gradient** (one number for each coefficient saying which way the loss is heading if that coefficient changes), move each coefficient a small amount in the direction that reduces the loss (the size of that move is the **learning rate**), and repeat — until the loss stops falling by more than a small relative amount, the **convergence tolerance**. When the model converges, additional iterations do not reduce the loss further; the coefficients have settled on the values that nearly minimize the error, and the descent is complete.
+`GradientDescent` walks an error formula to its minimum using the derivative. The mechanics of why this works — what a derivative tells us, why iterative optimization exists, why the closed-form normal equation is a special case — are covered in <doc:Calculus-Primer>. This section names the specific implementation choices Quiver makes.
 
-The one-coefficient case shows the idea on numbers we can check by hand. The error formula is a bowl with its lowest point at `x = 3`, and the derivative of that formula tells us, at any point, which way the bowl is sloping:
+The optimizer repeats one loop: compute the current **loss** (Quiver uses mean squared error, available directly as `meanSquaredError(actual:)`), compute the **gradient** (one number per coefficient saying which way the loss is heading if that coefficient changes), move each coefficient a small amount in the downhill direction (the size of the move is the **learning rate**), and repeat until the loss stops falling by more than a small relative amount (the **convergence tolerance**).
 
-> Note: `Polynomial` stores coefficients in ascending order — `[a₀, a₁, a₂]` represents `a₀ + a₁x + a₂x²`. The first element is the constant term, the second multiplies `x`, the third multiplies `x²`, and so on. See <doc:Polynomials> for the full type.
+The one-coefficient case shows the loop on numbers we can check by hand:
 
 ```swift
 import Quiver
 
-// A bowl-shaped error formula: lowest at x = 3.
-let error = Polynomial([9.0, -6.0, 1.0])    // x² − 6x + 9
+let error = Polynomial([9.0, -6.0, 1.0])    // x² − 6x + 9, minimum at x = 3
 let slope = error.derivative()              // 2x − 6
 
 error(0.0)   // 9.0  — the error if we start with x = 0
 slope(0.0)   // -6.0 — slope is negative, so the error falls if we move x to the right
 
-// Take one small step in the downhill direction.
 let learningRate = 0.1
 let next = 0.0 - learningRate * slope(0.0)  // 0.6
 error(next)  // 5.76 — the error after one step
 ```
 
-We started at `x = 0` with an error of `9.0`. The derivative said "the ground falls if you move right." We moved a small amount to the right; the error dropped to `5.76`. Repeating that move — recheck the slope, take another small step — walks `x` toward `3.0`, where the error is zero and the slope is flat. A real model has many coefficients instead of one, and the error formula is shaped by training data rather than written by hand, but the loop is the same — every coefficient gets its own slope, and every coefficient moves a small step in its own downhill direction.
+Repeating the move — recheck the slope, take another step — walks `x` toward `3.0`, where the error is zero and the slope is flat. A real model has many coefficients and the error formula is shaped by training data rather than written by hand, but the loop is the same: every coefficient gets its own slope, every coefficient moves a small step in its own downhill direction.
 
 The optimizer is **batch** and **deterministic**. Batch means every training sample contributes to every step. Deterministic means the same inputs always produce the same trajectory, with no randomness. The learning rate is constant for the whole run; it does not decay, and no penalty term is added to the loss. Variants of gradient descent exist that do those things; keeping the version here simple is what lets the trajectory be readable as a teaching artifact.
 

@@ -11,7 +11,7 @@ The coefficients are stored in **ascending order of power**: `coefficients[0]` i
 ```swift
 import Quiver
 
-// 2x² + 3x + 1 — coefficients ascending: a₀=1, a₁=3, a₂=2
+// Coefficients ascending: a₀=1, a₁=3, a₂=2
 let p = Polynomial([1, 3, 2])
 
 p(2)                    // 15.0  — evaluate at a single point
@@ -20,30 +20,27 @@ p.derivative()          // 4x + 3
 p.asExpression()        // "2x² + 3x + 1"
 ```
 
+> Tip: For the rendering side of `Polynomial` — how `asExpression` formats the descending-power form, the `relativeZeroTolerance` parameter that suppresses numerical noise in fitted coefficients, and the broader display family on vectors and matrices — see <doc:Rendering-Math-Primer>.
+
 ### Evaluating polynomials
 
-The `Polynomial` type adopts Swift's `callAsFunction` so the value behaves like a Swift function. Calling `p(x)` evaluates the polynomial at a single `Double`; calling `p(xs)` on a `[Double]` evaluates at every point in the array, which is the right shape for plotting. Internally the evaluation uses **Horner's method**, rewriting `a₀ + a₁x + a₂x² + ... + aₙxⁿ` as `a₀ + x·(a₁ + x·(a₂ + ... + x·aₙ))` to avoid repeated `pow(x, k)` calls and the precision loss that comes with them:
+A `Polynomial` value is callable. Pass a single `Double` to evaluate at one point, or pass a `[Double]` to evaluate at every point in the array — the second form is the right shape for plotting:
 
 ```swift
 import Quiver
 
-// 2x² + 3x + 1
 let p = Polynomial([1, 3, 2])
+p.asExpression()        // "2x² + 3x + 1"
 
-p(5)                    // 66.0
-p(-1)                   // 0.0
-p(0)                    // 1.0  — value of the constant term
+p(5)                    // 2·25 + 3·5 + 1 = 66.0
+p(-1)                   // 2·1 + 3·(-1) + 1 = 0.0
+p(0)                    // 2·0 + 3·0 + 1 = 1.0
 
-// Vectorized evaluation across a grid of points — useful for charting
 let xs = Array.linspace(start: -2.0, end: 2.0, count: 5)
 p(xs)                   // [3.0, 0.0, 1.0, 6.0, 15.0]
 ```
 
-Worth knowing what Horner's method is, even though we never write it ourselves. The textbook formula for evaluating `2 + 3x + 4x² + 5x³` walks each term, raises `x` to a power, multiplies by the coefficient, and sums — every power is its own rounding step, and the higher powers carry the largest errors. Horner's rewrite is the same expression nested: `2 + x·(3 + x·(4 + x·5))`. Each coefficient contributes one rounding step instead of one per power, and the work is `n` multiply-then-add operations instead of `n` calls to `pow`.
-
-Quiver's `Polynomial` type uses Horner's method behind `callAsFunction`. Calling `p(x)` returns the precision-stable answer with no math required on the caller's side — no manual loop, no decision about evaluation order, no `pow` calls to manage. The teaching point is that the textbook formula and the stable formulation produce different floating-point results, and the library hides the choice so the user does not have to make it.
-
-> Tip: <doc:Numerical-Literacy> covers the broader pattern of reformulating textbook formulas to keep floating-point error small. Horner's method is one example among several.
+Evaluation is numerically stable — Quiver uses Horner's method internally to avoid the precision loss that comes from repeated `pow` calls. See <doc:Numerical-Literacy> for the broader pattern of reformulating textbook formulas to keep floating-point error small.
 
 ### Polynomial arithmetic
 
@@ -99,14 +96,32 @@ let x = [1.0, 2.0, 3.0, 4.0, 5.0]
 let y = [6.0, 15.0, 28.0, 45.0, 66.0]
 
 if let p = [Double].polyfit(x: x, y: y, degree: 2) {
-    p.coefficients   // ≈ [1.0, 3.0, 2.0]  — recovers the original polynomial
-    p(6)             // ≈ 91.0  — predicted value at a new x
+    p.coefficients   // [1.0, 3.0, 2.0]  — recovers the original polynomial
+    p(6)             // 91.0             — predicted value at a new x
 }
 ```
 
-> Experiment: **The Quiver Notebook** is the right surface for watching polynomial fits go wrong. Sweep the degree from 1 to 8 and re-evaluate — R² on the training rows keeps rising, but the curve starts to chase noise between points. The gap between training fit and out-of-sample behaviour is why holdout matters. See <doc:Quiver-Notebook>.
-
 Because `polyfit` is built on <doc:Linear-Regression>, calling `polyfit(degree: 1)` returns the same line that `LinearRegression.fit(features: x, targets: y)` would. Two doors to the same math. Higher degrees fit curves that linear regression cannot. The function returns `nil` when the inputs are invalid (mismatched lengths, fewer points than `degree + 1`, negative degree) or when the underlying linear system is ill-conditioned.
+
+The equivalence generalizes to any degree. Building the same `[x, x²]` feature matrix by hand and passing it to `LinearRegression.fit` recovers identical coefficients, packaged as an intercept plus weight vector instead of a polynomial:
+
+```swift
+// Build the [x, x²] feature matrix. The intercept column is added by fit().
+var features: [[Double]] = []
+for value in x {
+    features.append([value, value * value])
+}
+
+let model = try LinearRegression.fit(features: features, targets: y)
+
+model.intercept           // 1.0          — matches polyfit's a₀
+model.coefficients        // [3.0, 2.0]   — matches polyfit's [a₁, a₂]
+model.predict([[6, 36]])  // [91.0]       — same prediction
+```
+
+Choose `LinearRegression.fit` when standard errors, p-values, or confidence intervals on the coefficients matter — `polyfit` does not surface them, and the path to get them is exactly the hand-built design matrix shown above followed by `summary`. Choose `polyfit` when the input is a single variable and the output benefits from being a `Polynomial` — evaluable, differentiable, composable. The error contracts also differ: `polyfit` returns `nil` on bad input, while `LinearRegression.fit` throws `MatrixError.singular`. See <doc:Linear-Regression> for the full inference treatment.
+
+> Note: The internal design matrix becomes severely ill-conditioned as degree rises — losing roughly 9 digits of double precision at degree 4 and reaching the edge of representable precision around degree 5 on a typical input range. `polyfit` returns `nil` when the conditioning fails outright; for degrees above 4 on real data, prefer regularization or a basis transformation. See <doc:Numerical-Literacy>.
 
 > Note: For the conceptual background on least squares (projection onto a column space) see <doc:Vector-Projections>. Polynomial regression projects `y` onto the column space spanned by `[1, x, x², ..., xⁿ]`.
 
@@ -136,6 +151,8 @@ a.trimmed() == b             // true  — canonical forms match
 
 The `degree` property reports the highest power with a non-zero coefficient regardless of trailing zeros, so `Polynomial([1, 2, 0])` reports a degree of `1`, not `2`. The zero polynomial, `Polynomial([0])`, has degree `0` by convention, the same as any other constant.
 
+> Experiment: **The Quiver Notebook** is the right surface for watching polynomial fits go wrong. Sweep the degree from 1 to 8 and re-evaluate — R² on the training rows keeps rising, but the curve starts to chase noise between points. The gap between training fit and out-of-sample behaviour is why holdout matters. See <doc:Quiver-Notebook>.
+
 ## Topics
 
 ### Creating a polynomial
@@ -162,6 +179,5 @@ The `degree` property reports the highest power with a non-zero coefficient rega
 - ``Swift/Array/polyfit(x:y:degree:)``
 
 ### Related
-- <doc:Linear-Regression>
 - <doc:Vector-Projections>
 
