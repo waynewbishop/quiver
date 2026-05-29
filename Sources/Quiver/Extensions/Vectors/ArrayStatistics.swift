@@ -579,6 +579,9 @@ public extension Array where Element == Double {
     func percentileCI(level: Double = 0.95) -> (lower: Double, upper: Double)? {
         guard !self.isEmpty else { return nil }
         guard level > 0.0 && level < 1.0 else { return nil }
+        // A non-finite entry corrupts the underlying percentile sort, which
+        // would return a silently wrong interval. Reject it instead.
+        guard self.allSatisfy({ $0.isFinite }) else { return nil }
 
         let alpha = 1.0 - level
         let lowerPercent = (alpha / 2.0) * 100.0

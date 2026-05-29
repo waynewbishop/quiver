@@ -309,4 +309,25 @@ final class ArrayChartsTests: XCTestCase {
         XCTAssertEqual(single.rollingMean(window: 1), [5.0])
         XCTAssertEqual(single.asPercentages(), [100.0])  // Single element is 100% of total
     }
+
+    // A non-finite element must be rejected loudly, not silently corrupt the
+    // sort that percentile, quartiles, and the histogram bin width depend on.
+    func testNonFiniteInputsRejected() {
+        let withNaN = [1.0, 2.0, .nan, 4.0]
+        XCTAssertNil(withNaN.percentile(50.0))
+        XCTAssertNil(withNaN.quartiles())
+        XCTAssertTrue(withNaN.histogram(bins: 4).isEmpty)
+        XCTAssertTrue(withNaN.histogram(rule: .squareRoot).isEmpty)
+
+        let withInfinity = [1.0, 2.0, .infinity, 4.0]
+        XCTAssertNil(withInfinity.percentile(50.0))
+        XCTAssertNil(withInfinity.quartiles())
+        XCTAssertTrue(withInfinity.histogram(bins: 4).isEmpty)
+
+        // A clean array still works — the guard only fires on non-finite input.
+        let clean = [1.0, 2.0, 3.0, 4.0]
+        XCTAssertNotNil(clean.percentile(50.0))
+        XCTAssertNotNil(clean.quartiles())
+        XCTAssertFalse(clean.histogram(bins: 4).isEmpty)
+    }
 }
