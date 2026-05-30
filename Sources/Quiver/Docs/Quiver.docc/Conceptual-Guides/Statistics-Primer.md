@@ -57,6 +57,8 @@ scores.standardDeviation() // 6.70 — a typical score is ~7 points from the mea
 scores.variance()          // 44.84 — the same information in squared units
 ```
 
+> Note: Standard deviation describes the spread of the data we have. A closely related quantity, the standard error, describes the spread of an estimate computed from that data, and the two are linked by the sample size. See <doc:Central-Limit-Theorem> for the distinction and the theorem that connects them.
+
 > Experiment: **The Quiver Notebook** is the right place to see why median resists outliers. Append one extreme value to `scores` and re-run. Mean and standard deviation move noticeably; median barely budges. The robustness claim becomes a visible difference. See <doc:Quiver-Notebook>.
 
 A low standard deviation means the values cluster tightly around the mean. A high standard deviation means they are scattered. Two classrooms with the same average test score can tell completely different stories once the standard deviation is known.

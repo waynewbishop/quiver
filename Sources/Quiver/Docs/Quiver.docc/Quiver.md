@@ -44,6 +44,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Statistics-Primer>
 - <doc:Probability-Primer>
 - <doc:Inferential-Statistics-Primer>
+- <doc:Central-Limit-Theorem>
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
 - <doc:Calculus-Primer>

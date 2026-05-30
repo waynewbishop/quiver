@@ -31,52 +31,9 @@ Between the population and the sample sits an operational list called the **samp
 
 ### The sampling distribution of the mean
 
-Imagine drawing the same-sized sample from the population over and over again. Each draw produces a slightly different sample mean. The collection of all those possible sample means has its own distribution, the **sampling distribution of the mean**. It describes how much the sample mean wobbles from one draw to the next.
+Imagine drawing the same-sized sample from the population over and over again. Each draw produces a slightly different sample mean, and the collection of all those possible means has its own distribution, the **sampling distribution of the mean**. The **Central Limit Theorem** is the remarkable fact that this distribution is approximately normal once the sample is large enough, regardless of the population's shape, as long as the population has finite variance. Almost every method in this primer rests on that single fact: it means we do not need to know the shape of the population, only a sample large enough for the theorem to apply.
 
-The remarkable fact about this distribution has a name. The **Central Limit Theorem** says that when we average many independent observations, the distribution of the sample mean approaches a normal (bell-shaped) distribution regardless of the population's shape, as long as the population has finite variance. Skewed populations, bimodal populations, populations with strange tails: once we average enough of them, the sample mean is approximately normal. Almost every method in this primer rests on this single fact. It means we do not need to know the shape of the population; we only need a sample large enough for the theorem to apply, and the math we use on the sample mean is allowed to assume the bell-shaped behavior of a normal distribution.
-
-### Seeing the theorem at work
-
-The theorem is easier to trust once we have seen it work. The next snippet builds a heavily skewed population from an exponential distribution, draws a thousand small samples from it, and records the mean of each sample. The exponential distribution models time-between-events: minutes until the next customer arrives at a coffee shop, seconds until the next request hits a server, days until a hard drive fails. Its `rate` parameter is the average number of events per unit time, so `rate = 0.5` means one event every two minutes on average — which is why the population mean equals `1/rate = 2.0`.
-
-Note the change of perspective. Earlier "sample" meant the one dataset we actually collected. Here we are simulating what would happen if we ran the same study a thousand times. Each of the thousand "samples" is one hypothetical study; the array `sampleMeans` is the collection of their averages.
-
-The population is obviously not bell-shaped — most values cluster near zero, with a long right tail — but the distribution of sample means is:
-
-```swift
-import Quiver
-
-// Build a skewed population with rate = 0.5, so the population mean is 1/0.5 = 2.0.
-// Exponential is asymmetric — most values are small, with a long right tail.
-let population = [Double].randomExponential(10_000, rate: 0.5)
-
-// Draw 1,000 samples of size 50 and record the mean of each.
-let sampleMeans = population.samplingDistributionOfMean(
-    sampleSize: 50,
-    iterations: 1000,
-    seed: 42
-)
-
-// The sampling distribution is centered on the population mean, with its own spread.
-sampleMeans.mean()              // ≈ 2.05  — recovers the population mean
-sampleMeans.standardDeviation() // ≈ 0.29  — the standard error of the mean
-
-// Confirm the bell shape: observed fractions match the Gaussian targets.
-if let check = sampleMeans.empiricalRule() {
-    print(check)
-    // Empirical rule check (n = 1000)
-    //               actual    expected    diff
-    //   within 1σ:  ~0.68     0.683       ~0.00
-    //   within 2σ:  ~0.95     0.955       ~0.00
-    //   within 3σ:  ~1.00     0.997       ~0.00
-}
-```
-
-If we plotted both on a histogram, the population would show a sharp spike near zero with a long tail of rare large values, while the 1,000 sample means would form a clean symmetric bell centered near `2.0`. The Quiver Notebook renders both histograms from this snippet; see <doc:Quiver-Notebook>.
-
-The empirical standard error of about `0.29` matches the theoretical prediction: the population standard deviation is `1 / 0.5 = 2.0` (for the exponential, the standard deviation equals the mean), and dividing by `√50` gives `≈ 0.283`. A skewed population produces a bell-shaped sampling distribution, and the math we use from this point on rests on that fact.
-
-> Note: A common rule of thumb is that samples of size 30 or more are usually large enough for the Central Limit Theorem to give a good approximation. Smaller samples can still be analyzed, but the t-distribution is the right tool when we cannot rely on a large sample.
+> Note: A common rule of thumb is that samples of size 30 or more are usually large enough for the Central Limit Theorem to give a good approximation, though more skewed populations need more. Smaller samples can still be analyzed, but the t-distribution is the right tool when we cannot rely on a large sample. For the full treatment, including the sampling distribution as a random variable and a runnable demonstration that a skewed population produces a bell-shaped sampling distribution, see <doc:Central-Limit-Theorem>.
 
 ### The standard error
 
@@ -95,7 +52,7 @@ if let se = sessionSeconds.standardError() {
 }
 ```
 
-> Note: Standard error uses the sample standard deviation, which divides by `n - 1`. Quiver's `standardDeviation()` and `standardError()` default to this — `ddof: 1` is the sample formula every inferential calculation in this primer assumes. For population statistics on a complete dataset, pass `ddof: 0` explicitly.
+> Note: Standard error uses the sample standard deviation, which divides by `n - 1`. Quiver's `standardDeviation()` and `standardError()` default to this; `ddof: 1` is the sample formula every inferential calculation in this primer assumes. For population statistics on a complete dataset, pass `ddof: 0` explicitly. For why the `√n` divisor holds, that it follows from how the variance of independent observations adds rather than being a rule to memorize, see <doc:Central-Limit-Theorem>.
 
 ### Small samples and the t-distribution
 
