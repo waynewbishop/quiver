@@ -82,6 +82,22 @@ p.derivative()(1)               // 7.0  — slope of p at x = 1
 Polynomial([5]).derivative()    // Polynomial([0])
 ```
 
+Because the coefficients are stored in ascending order of power, the rule has a plain-English reading that maps directly onto the array. Each coefficient lives in the slot numbered after its power, so the constant sits at index `0`, the `x` term at index `1`, and the `x²` term at index `2`. Differentiating multiplies each coefficient by its own power and moves it down one slot. The power that did the multiplying is exactly the old index, and the slot it lands in is one position lower — the constant has nowhere lower to go, so it drops out entirely:
+
+```swift
+import Quiver
+
+// 2x² + 3x + 1, stored low-to-high as [a₀, a₁, a₂]
+let p = Polynomial([1, 3, 2])
+
+// Indexing starts at 0, so each coefficient's index equals its power —
+// "multiply by the power" reads as "multiply by the index":
+// Index 1 holds 3 (the x term):   3 × 1 = 3, moves to index 0
+// Index 2 holds 2 (the x² term):  2 × 2 = 4, moves to index 1
+// Index 0 holds 1 (the constant): 1 × 0 = 0, drops out — a constant does not change
+p.derivative()                  // Polynomial([3, 4]) → 4x + 3
+```
+
 The derivative is a polynomial in its own right, so it composes with everything else: call `derivative` again for the second derivative, evaluate it at a grid of points, add it to another polynomial, or take its own derivative.
 
 ### Fitting polynomials to data

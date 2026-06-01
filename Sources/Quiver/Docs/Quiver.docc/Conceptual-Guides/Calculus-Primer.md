@@ -43,6 +43,8 @@ let acceleration = velocity.derivative()       // 9.8 (constant)
 
 Three formulas, two derivatives. The pattern that turns `4.9t²` into `9.8t` is the **power rule**: the exponent drops down as a multiplier (the `2` came down and turned `4.9` into `9.8`), and the new exponent is one smaller (`t²` became `t¹`, which we just write as `t`). The next derivative does the same again — the exponent on `t¹` was 1, it came down, and `t` itself disappeared (because anything raised to the zero power is 1). What is left is the constant `9.8`.
 
+Because the coefficients are stored low-to-high, that exponent is also the slot the coefficient sits in: `4.9` lives at index 2, the same as the power on `t²`. So the power rule reads off the array directly — multiply each coefficient by its own index and shift it down one slot. The `4.9` at index 2 becomes `4.9 × 2 = 9.8` at index 1, and the constant at index 0 multiplies by zero and disappears, which is the same reason a constant has a derivative of zero.
+
 A constant has a derivative of zero. The number `9.8` does not contain `t`; it does not change as time passes. Gravity is the same at every instant of the fall, so the rate of change of speed is the same number forever.
 
 ```swift
