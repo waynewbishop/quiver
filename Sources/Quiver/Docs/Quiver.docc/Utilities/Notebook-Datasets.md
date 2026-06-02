@@ -121,9 +121,9 @@ The same pattern works for every classifier and regressor in `Quiver` — substi
 
 ### Word embeddings
 
-A word embedding represents each word as a vector of numbers, arranged so that words with similar meanings sit close together in vector space. The bundled embeddings cover the 5,000 most-frequent English words from Stanford's GloVe corpus, each represented as a 50-dimensional vector. Words are looked up by string.
+A word embedding represents each word as a vector of numbers, arranged so that words with similar meanings sit close together in vector space. The bundled embeddings cover the 25,000 most-frequent English words from Stanford's GloVe corpus, each represented as a 50-dimensional vector. Each row carries the `word`, its frequency `rank`, the vector `magnitude`, and the fifty components `dim_01` through `dim_50`. Words are looked up by string.
 
-Embeddings ship with the Notebook because the alternative is a multi-gigabyte download from a research site, a parser to write, and a ten-minute wait before the first lesson can begin. The 5,000-word slice is small enough to load instantly on a student's laptop and large enough to demonstrate every property that matters — synonyms cluster, analogies hold, and unrelated words sit far apart. A class can move from "what is a vector" to "search by meaning" in the same session.
+Embeddings ship with the Notebook because the alternative is a multi-gigabyte download from a research site, a parser to write, and a ten-minute wait before the first lesson can begin. The 25,000-word slice is small enough to load quickly on a student's laptop and large enough to demonstrate every property that matters — synonyms cluster, analogies hold, and unrelated words sit far apart. A class can move from "what is a vector" to "search by meaning" in the same session.
 
 Once the dataset is loaded, the entire Quiver similarity surface applies directly to the returned vectors. The same vectors also feed clustering and document-search workflows with no conversion step.
 
@@ -151,6 +151,18 @@ for hit in glove.nearest(to: "paris", k: 3) {
 ```
 
 The `analogy(_:_:_:k:)` method evaluates the classic word-analogy pattern. The call `analogy("king", "man", "woman", k: 1)` typically returns `"queen"`. Both methods return ranked tuples — rank starts at 1, paired with a cosine similarity score.
+
+When a single closest word is all that is needed, `nearestWord(of:)` returns just that word — a thin convenience over `nearest(to:k:)` with `k` of 1 — and returns `nil` for a word outside the vocabulary:
+
+```swift
+glove.nearestWord(of: "paris")  // "france"
+```
+
+The `magnitude(of:)` method returns the length of a word's vector, the same value stored in the `magnitude` column, or `nil` when the word is absent:
+
+```swift
+glove.magnitude(of: "king")  // 5.37
+```
 
 For the underlying vector math, see <doc:Similarity-Operations> and <doc:Semantic-Search>.
 

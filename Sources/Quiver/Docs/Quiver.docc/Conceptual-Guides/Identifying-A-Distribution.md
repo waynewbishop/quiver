@@ -53,7 +53,7 @@ let reporting   = scores.histogram(bins: 20)                  // explicit
 
 ### Measuring the shape
 
-Eyes are an imperfect tool. A more honest reading uses a few summary statistics drawn from <doc:Statistics-Primer>. We want a measure of center, a measure of spread, and a measure of asymmetry. Quartiles give us all three at once: the median is the center, the interquartile range is the spread, and the gap between `q3 - median` and `median - q1` tells us whether the right tail is heavier than the left.
+A glance at the histogram suggests a shape, but a more honest reading uses a few summary statistics drawn from <doc:Statistics-Primer>. We want a measure of center, a measure of spread, and a measure of asymmetry. Quartiles give us all three at once: the median is the center, the interquartile range is the spread, and the gap between `q3 - median` and `median - q1` tells us whether the right tail is heavier than the left.
 
 ```swift
 import Quiver
@@ -68,9 +68,27 @@ if let q = times.quartiles() {
 
 A symmetric distribution has matching upper and lower halves of the IQR. A right-skewed distribution has `q3 - median` larger than `median - q1`. The sample above shows the reverse, with the lower half twice as wide as the upper half, which is a mild left skew. The gap is small enough that a normal family is still a plausible candidate, and we turn to the candidate families to decide.
 
+Comparing the two halves of the IQR by hand is a fair first read, and `skewnessReport()` turns it into a number we can trust. The report pairs two measures of asymmetry — a moment coefficient that weighs every value, and a robust quartile coefficient that listens only to the middle of the data — and tells us whether they agree. Skewness is the average cubed deviation from the mean, divided by the cubed standard deviation; cubing keeps the sign of each deviation, so a positive coefficient means a long tail toward high values and a negative one a long tail toward low values. The robust measure is the **Bowley coefficient**, named for the British statistician Arthur Lyon Bowley (1869–1957), who introduced it in the early twentieth century as a measure of asymmetry that holds up when the data carries extreme values. It is the same upper-minus-lower gap we just measured by hand, divided by the IQR to land it on a fixed scale.
+
+```swift
+import Quiver
+
+// The team-salary sample from the Statistics primer, where the mean-median gap first flagged the skew.
+let salaries = [50.0, 55.0, 58.0, 60.0, 62.0, 180.0]
+
+if let report = salaries.skewnessReport() {
+    print(report)
+    // shape:       long tail toward high values   (right-skewed)
+    // coefficient: 2.4109
+    // cross-check: -0.1304   ⚠ the robust measure leans the other way — a few extreme values may be distorting this; check your outliers
+}
+```
+
+The moment coefficient reads strongly right-skewed because the lone value at 180 dominates a sum of cubed distances, while the robust measure, reading only the quartiles, sees a nearly symmetric middle and leans slightly the other way. The two coefficients carry opposite signs, and the report says so plainly rather than collapsing them into a single verdict. The disagreement is the signal: the asymmetry lives in the tail, not the central body, and it points us back to the outlier before we trust either number alone. Where the two measures agree the skew is corroborated; where they part on strength or direction the right move is to investigate, not to read a cutoff.
+
 ### Naming candidate families
 
-Three questions discriminate among the big three. **Is the data continuous or integer-valued?** Continuous values point at the normal family; integer counts point at Poisson or binomial. **Is the count bounded?** A count with a fixed upper limit, like correct answers on a twenty-question quiz, points at the binomial family. A count with no natural ceiling, like support tickets per hour, points at the Poisson family. **Does the mean roughly equal the variance?** Mean-equals-variance is the defining diagnostic of the Poisson distribution; the normal and binomial families both decouple mean and variance.
+Three questions tell the big three apart. **Is the data continuous or integer-valued?** Continuous values point at the normal family; integer counts point at Poisson or binomial. **Is the count bounded?** A count with a fixed upper limit, like correct answers on a twenty-question quiz, points at the binomial family. A count with no natural ceiling, like support tickets per hour, points at the Poisson family. **Does the mean roughly equal the variance?** Mean-equals-variance is the defining diagnostic of the Poisson distribution; the normal and binomial families both decouple mean and variance.
 
 Answering these three questions in order narrows the candidate to one family per branch.
 
@@ -174,7 +192,7 @@ A named distribution is not the goal; it is a tool. Once the data is identified 
 
 The chain that gets us from raw data to a named family also tells us when no named family fits well. A histogram with two clear peaks is bimodal, and no single-peak distribution will describe it honestly. Heavy tails that the candidate cannot reproduce point at a different family or at a mixture. Recognizing that the named families do not fit is its own diagnostic, and it is often the moment when domain knowledge gets pulled into the modeling decision. Throughout the workflow, the candidate functions return `Double?` rather than trapping on out-of-domain input; see <doc:Numerical-Literacy> for the `nil` versus `NaN` contract that governs every `Distributions` call.
 
-> Experiment: **The Quiver Notebook** is the right place to walk this chain on data we shape ourselves. Start from a short array, then run the five steps: `histogram(rule: .freedmanDiaconis)` for the shape, `quartiles()` for the asymmetry, `mean()` and `variance()` for the candidate diagnostic, `Distributions.normal.cdf(x:mean:standardDeviation:)` for the comparison, and `empiricalRule()` for the standard-deviation bands. Add an outlier, spread the values wider, or introduce a second cluster, and watch the bands surface a defect a single glance would miss. Watching the chain react to a change we made by hand is the fastest way to internalize what identifying a distribution actually means. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to walk this chain on data we shape ourselves. Start from a short array, then run the five steps: `histogram(rule: .freedmanDiaconis)` for the shape, `skewnessReport()` for the asymmetry, `mean()` and `variance()` for the candidate diagnostic, `Distributions.normal.cdf(x:mean:standardDeviation:)` for the comparison, and `empiricalRule()` for the standard-deviation bands. Add an outlier, spread the values wider, or introduce a second cluster, and watch the bands surface a defect a single glance would miss. Watching the chain react to a change we made by hand is the fastest way to internalize what identifying a distribution actually means. See <doc:Quiver-Notebook>.
 
 ## Topics
 
@@ -188,6 +206,8 @@ The chain that gets us from raw data to a named family also tells us when no nam
 - ``Swift/Array/variance(ddof:)``
 - ``Swift/Array/standardDeviation(ddof:)``
 - ``Swift/Array/quartiles()``
+- ``Swift/Array/skewnessReport()``
+- ``SkewnessReport``
 
 ### Candidate distributions
 - ``Distributions/normal``

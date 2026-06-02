@@ -128,6 +128,37 @@ Once we have a <doc:Panel>, the rest of Quiver is one method call away. We can a
 
 Code written in the Notebook is ordinary Swift. A snippet that fits and uses a Quiver model in the Notebook is the same snippet that fits and uses the model inside an iOS or watchOS app — copy the file into an Xcode project, add Quiver as a dependency, and the code runs unchanged. The Notebook is a place to develop and verify the snippet; the app is where it ships.
 
+### Concurrency in the Notebook
+
+Swift Concurrency runs in the Notebook the same way it runs anywhere else. A snippet can use `async`/`await`, `async let`, `Task`, `Task.detached`, `withTaskGroup`, and actors, and Quiver's `Sendable` models flow across task boundaries without ceremony. The patterns in <doc:Concurrency-Primer> all compile and run here, which makes the Notebook a good place to develop and verify a concurrent fit before carrying it into an app.
+
+A common pattern is running a fit on a detached task so it proceeds independently of the calling context, then awaiting the fitted model back. Because the model is a `Sendable` value, nothing in the crossing needs special handling:
+
+```swift
+// Train off the calling context. `Task.detached` starts an independent task
+// that runs on its own — the right choice for a long-running fit.
+func trainClusters(from data: [[Double]]) async -> KMeans {
+    return await Task.detached {
+        KMeans.fit(data: data, k: 2, seed: 42)   // the work runs inside the detached task
+    }.value                                       // `.value` awaits the task and hands the model back
+}
+
+// Four 2-D points: two near the origin, two out at (8,8) — two natural clusters.
+// KMeans needs at least `k` points, so a single sample won't form 2 clusters.
+let examples = [
+    [1.0, 2.0],
+    [1.5, 1.8],
+    [8.0, 8.0],
+    [9.0, 8.5],
+]
+
+// `await` suspends here until the detached task finishes, then receives the fitted model.
+let results = await trainClusters(from: examples)
+print(results)
+```
+
+The fit runs inside the detached task, and `.value` is the join point where the caller waits for it and receives the model. Running this prints the fitted model: `KMeans: 2 clusters, 4 points, converged in 2 iterations (inertia: 0.77)`.
+
 ### Notebook Datasets
 
 The Notebook ships with a small library of bundled teaching datasets — iris measurements, housing prices, exam scores, and other classics that make it possible to write a working snippet without first hunting for a CSV. Each dataset loads through a single `Dataset.<name>` call and exposes a `toPanel()` method that hands back a named-column table ready for descriptive statistics, train-test splits, or a fitted model. For the full library and the recipes built on top of it, see <doc:Notebook-Datasets>.

@@ -121,6 +121,8 @@ Each `predict` runs the same Quiver call we would make sequentially; the task gr
 
 > Note: Running batches concurrently changes the order in which they finish, even though each is placed back in its original position. For most operations the recombined result is identical to the sequential one. Voting models such as `KNearestNeighbors` are the exception: when two classes tie within a neighborhood, the order in which votes are counted can settle the tie either way, so a concurrent split may differ from a single call on a few predictions. When exact reproducibility matters more than speed, predict in one call.
 
+> Experiment: **The Quiver Notebook** is a quick place to watch these patterns run before wiring them into an app. Try launching two fits with `async let`, printing on entry and exit, and watching the output interleave from run to run — that ordering is the visible proof the work ran concurrently. The Notebook has no view to update, so the SwiftUI hand-off above belongs in an app — see <doc:Quiver-Notebook>.
+
 ### What stays sequential
 
 Not every operation divides this way, and recognizing which ones do not is as useful as knowing which ones do. Some computations are a chain in which each step consumes the result of the step before it. Matrix inversion and the determinant both work by Gaussian elimination, where every pivot transforms the matrix that the next pivot depends on — there is no way to run a later step before an earlier one finishes. Iterative model fitting has the same shape: each `KMeans` iteration places its centroids based on the assignment from the previous iteration, so the iterations cannot overlap.
