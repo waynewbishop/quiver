@@ -60,6 +60,20 @@ internal enum _GradientDescent {
     /// with the squared feature magnitude and the constant step size diverges
     /// immediately. The caller is responsible for scaling.
     ///
+    /// **L2 penalty.** Passing `lambda > 0` adds a ridge (Tikhonov) penalty to
+    /// the objective: L(θ) = (1/n)‖Xθ − y‖² + λ‖θ‖², minimized by the gradient
+    /// ∇ = (2/n)Xᵀ(Xθ − y) + 2λθ. The penalty contributes from `penalizeFromIndex`
+    /// onward, so a caller that prepended a ones column passes
+    /// `penalizeFromIndex: 1` to leave the intercept unpenalized — the standard
+    /// statistical convention. The default `lambda: 0.0` makes every penalty
+    /// term identically zero, so the unregularized path is reproduced bit-for-bit
+    /// and the convergence/divergence test sees the same loss it always has.
+    ///
+    /// The monitored loss is the *penalized* objective, not the bare MSE: the
+    /// loss the convergence test compares must be the same loss whose gradient
+    /// is being followed, or the relative-delta test measures a different
+    /// function than the one descending.
+    ///
     /// - Parameters:
     ///   - features: Design matrix X. Each row is a sample, each column is a
     ///     feature. The caller prepends a leading ones column when an intercept
@@ -69,6 +83,11 @@ internal enum _GradientDescent {
     ///   - maxIterations: Hard cap on iterations. Must be positive.
     ///   - tolerance: Relative loss-delta threshold for convergence. Must be
     ///     positive.
+    ///   - lambda: L2 penalty strength. Must be non-negative. `0.0` (the default)
+    ///     disables regularization and reproduces the plain-MSE path exactly.
+    ///   - penalizeFromIndex: First parameter index the penalty applies to.
+    ///     `0` penalizes every coefficient; `1` skips a leading intercept term.
+    ///     Defaults to `0`. Ignored when `lambda == 0`.
     /// - Returns: A tuple of the converged parameter vector θ, the loss
     ///   trajectory (one entry per completed iteration, beginning with the
     ///   loss at the initial all-zeros θ), the iteration count when the loop
@@ -80,7 +99,9 @@ internal enum _GradientDescent {
         targets: [Double],
         learningRate: Double,
         maxIterations: Int,
-        tolerance: Double
+        tolerance: Double,
+        lambda: Double = 0.0,
+        penalizeFromIndex: Int = 0
     ) throws -> (parameters: [Double], lossHistory: [Double], iterations: Int, outcome: Outcome) {
 
         let n = features.count
@@ -93,8 +114,13 @@ internal enum _GradientDescent {
         lossHistory.reserveCapacity(maxIterations + 1)
 
         // Seed the trajectory with the initial loss so a reader watching
-        // `lossHistory` sees descent from the starting point.
-        var previousLoss = meanSquaredLoss(features: features, parameters: theta, targets: targets)
+        // `lossHistory` sees descent from the starting point. At θ⁰ = 0 the L2
+        // term is zero, but route through the penalized loss unconditionally so
+        // the seed and every later entry measure the same objective.
+        var previousLoss = penalizedLoss(
+            features: features, parameters: theta, targets: targets,
+            lambda: lambda, penalizeFromIndex: penalizeFromIndex
+        )
         lossHistory.append(previousLoss)
 
         // Safety against pathological inputs that produce non-finite loss
@@ -134,13 +160,27 @@ internal enum _GradientDescent {
                 gradient[j] *= twoOverN
             }
 
+            // L2 penalty contribution: ∂/∂θⱼ (λ‖θ‖²) = 2λθⱼ, applied from
+            // `penalizeFromIndex` onward so a leading intercept stays unpenalized.
+            // When lambda == 0 this loop adds exactly 0.0 to every component,
+            // leaving the plain-MSE gradient untouched.
+            if lambda > 0 {
+                for j in penalizeFromIndex..<p {
+                    gradient[j] += 2.0 * lambda * theta[j]
+                }
+            }
+
             // Step opposite the gradient.
             for j in 0..<p {
                 theta[j] -= learningRate * gradient[j]
             }
 
-            // Evaluate the new loss for the convergence and divergence tests.
-            let currentLoss = meanSquaredLoss(features: features, parameters: theta, targets: targets)
+            // Evaluate the new loss for the convergence and divergence tests —
+            // the penalized objective, matching the gradient just followed.
+            let currentLoss = penalizedLoss(
+                features: features, parameters: theta, targets: targets,
+                lambda: lambda, penalizeFromIndex: penalizeFromIndex
+            )
             lossHistory.append(currentLoss)
 
             // Divergence guard — the single most important guard. If the
@@ -211,6 +251,31 @@ internal enum _GradientDescent {
             sum += residual * residual
         }
         return sum / Double(n)
+    }
+
+    /// Penalized loss: L(θ) = (1/n)Σ(xᵢ·θ − yᵢ)² + λΣθⱼ² for j ≥ `penalizeFromIndex`.
+    ///
+    /// Composes the ridge (Tikhonov) penalty on top of ``meanSquaredLoss`` so
+    /// the two share one residual definition. The penalty sums squared
+    /// coefficients from `penalizeFromIndex` onward, leaving a leading intercept
+    /// out of the norm when the caller passes `1`. With `lambda == 0` the second
+    /// term is skipped entirely and the result equals the bare mean squared loss
+    /// — the property that makes the unregularized descent path bit-for-bit
+    /// unchanged.
+    static func penalizedLoss(
+        features: [[Double]],
+        parameters: [Double],
+        targets: [Double],
+        lambda: Double,
+        penalizeFromIndex: Int
+    ) -> Double {
+        let mse = meanSquaredLoss(features: features, parameters: parameters, targets: targets)
+        guard lambda > 0 else { return mse }
+        var penalty = 0.0
+        for j in penalizeFromIndex..<parameters.count {
+            penalty += parameters[j] * parameters[j]
+        }
+        return mse + lambda * penalty
     }
 
     /// Computes predictions ŷ = Xθ for the given features and parameters.
