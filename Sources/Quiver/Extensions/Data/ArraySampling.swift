@@ -17,6 +17,66 @@ import Foundation
 
 public extension Array {
 
+    /// Draws a single random sample of `count` elements from the array.
+    ///
+    /// Unlike the sampling-distribution methods, which draw many samples internally
+    /// and return only a statistic of each, this returns the drawn elements themselves
+    /// so they can be inspected, printed, or summarized directly. It is the atomic
+    /// draw those methods are built on.
+    ///
+    /// With replacement, each draw picks independently, so a value may appear more
+    /// than once and `count` may exceed the array's length. Without replacement, every
+    /// drawn value is distinct, so `count` may not exceed the array's length —
+    /// requesting more triggers a precondition failure. ``trainTestSplit(testRatio:seed:)``
+    /// is the task-specific form of a without-replacement draw, partitioned for model
+    /// evaluation rather than returned as a single sample.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let literacyRates = [73.4, 81.2, 64.9, 90.1, 55.3, 78.6, 88.0, 69.5]
+    ///
+    /// // Draw 5 districts with replacement, then take the sample mean as a point estimate.
+    /// let drawn = literacyRates.sample(5, replace: true, seed: 31208)
+    /// let estimate = drawn.mean()
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - count: The number of elements to draw. A `count` of `0` returns an empty array.
+    ///   - replace: Whether a value may be selected more than once. Defaults to `true`.
+    ///   - seed: A `UInt64` seed for reproducible sampling. A seed of `0` is remapped
+    ///     to `1` internally, so `seed: 0` and `seed: 1` produce the same sample —
+    ///     start a seed sweep at `1` to avoid the duplicate.
+    /// - Returns: An array of `count` drawn elements. Empty if the array is empty or
+    ///   `count <= 0`.
+    func sample(_ count: Int, replace: Bool = true, seed: UInt64) -> [Element] {
+        var generator = SeededRandomNumberGenerator(seed: seed)
+        return _Sampling.sample(self, count: count, replace: replace, using: &generator)
+    }
+
+    /// Draws a single random sample of `count` elements from the array, drawing from
+    /// a caller-supplied random number generator.
+    ///
+    /// Identical to ``sample(_:replace:seed:)`` except that the caller threads in an
+    /// existing generator, mirroring the standard library's `Array.shuffled(using:)`.
+    /// Pass a `SeededRandomNumberGenerator` to reuse one seeded stream across several
+    /// draws, or a `SystemRandomNumberGenerator` for unseeded sampling.
+    ///
+    /// - Parameters:
+    ///   - count: The number of elements to draw. A `count` of `0` returns an empty array.
+    ///   - replace: Whether a value may be selected more than once. Defaults to `true`.
+    ///   - generator: The random number generator to draw from, passed `inout`.
+    /// - Returns: An array of `count` drawn elements. Empty if the array is empty or
+    ///   `count <= 0`.
+    func sample(
+        _ count: Int,
+        replace: Bool = true,
+        using generator: inout some RandomNumberGenerator
+    ) -> [Element] {
+        return _Sampling.sample(self, count: count, replace: replace, using: &generator)
+    }
+
     /// Splits the array into training and testing subsets using a seeded shuffle
     /// for reproducible results.
     ///

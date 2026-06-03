@@ -420,4 +420,91 @@ final class ArraySamplingTests: XCTestCase {
         // The 90th percentile sits above the population mean (≈ 50).
         XCTAssertGreaterThan(p90s.mean()!, 50.0)
     }
+
+    // MARK: - Single Sample
+
+    // A basic draw returns the requested number of elements.
+    func testSampleReturnsRequestedCount() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        let drawn = data.sample(5, replace: true, seed: 42)
+        XCTAssertEqual(drawn.count, 5)
+    }
+
+    // Every drawn element comes from the source array.
+    func testSampleDrawsOnlyFromSource() {
+        let data = [10.0, 20.0, 30.0, 40.0, 50.0]
+        let drawn = data.sample(20, replace: true, seed: 7)
+        XCTAssertTrue(drawn.allSatisfy { data.contains($0) })
+    }
+
+    // Same seed produces an identical sample.
+    func testSampleReproducibility() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        let first = data.sample(5, replace: true, seed: 42)
+        let second = data.sample(5, replace: true, seed: 42)
+        XCTAssertEqual(first, second)
+    }
+
+    // Without replacement, every drawn element is distinct.
+    func testSampleWithoutReplacementIsDistinct() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        let drawn = data.sample(6, replace: false, seed: 42)
+        XCTAssertEqual(drawn.count, 6)
+        XCTAssertEqual(Set(drawn).count, 6)
+        // A without-replacement draw is a subset of the source.
+        XCTAssertTrue(Set(drawn).isSubset(of: Set(data)))
+    }
+
+    // Drawing the full length without replacement is a permutation of the source.
+    func testSampleWithoutReplacementFullLengthIsPermutation() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let drawn = data.sample(5, replace: false, seed: 99)
+        XCTAssertEqual(Set(drawn), Set(data))
+    }
+
+    // With replacement, over-drawing past the source length is allowed.
+    func testSampleWithReplacementAllowsOverdraw() {
+        let data = [1.0, 2.0, 3.0]
+        let drawn = data.sample(10, replace: true, seed: 1)
+        XCTAssertEqual(drawn.count, 10)
+    }
+
+    // An empty source returns an empty sample.
+    func testSampleEmptySourceReturnsEmpty() {
+        let empty: [Double] = []
+        XCTAssertTrue(empty.sample(5, replace: true, seed: 1).isEmpty)
+    }
+
+    // A count of zero returns an empty sample.
+    func testSampleZeroCountReturnsEmpty() {
+        let data = [1.0, 2.0, 3.0]
+        XCTAssertTrue(data.sample(0, replace: true, seed: 1).isEmpty)
+    }
+
+    // The generator overload matches the seeded overload for the same seed.
+    func testSampleGeneratorOverloadMatchesSeeded() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        var generator = SeededRandomNumberGenerator(seed: 42)
+        let viaGenerator = data.sample(5, replace: true, using: &generator)
+        let viaSeed = data.sample(5, replace: true, seed: 42)
+        XCTAssertEqual(viaGenerator, viaSeed)
+    }
+
+    // The generator overload advances its stream, so successive draws differ.
+    func testSampleGeneratorAdvancesStream() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        var generator = SeededRandomNumberGenerator(seed: 42)
+        let first = data.sample(5, replace: true, using: &generator)
+        let second = data.sample(5, replace: true, using: &generator)
+        XCTAssertNotEqual(first, second)
+    }
+
+    // sample() is element-agnostic — it works on non-numeric arrays.
+    func testSampleWorksOnNonNumericElements() {
+        let words = ["alpha", "bravo", "charlie", "delta", "echo"]
+        let drawn = words.sample(3, replace: false, seed: 5)
+        XCTAssertEqual(drawn.count, 3)
+        XCTAssertEqual(Set(drawn).count, 3)
+        XCTAssertTrue(Set(drawn).isSubset(of: Set(words)))
+    }
 }

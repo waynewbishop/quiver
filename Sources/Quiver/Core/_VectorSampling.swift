@@ -21,6 +21,49 @@ import Foundation
 /// constraint — splitting works on arrays of any type.
 internal enum _Sampling {
 
+    /// Draws a single sample of `count` elements from `elements`, with or without replacement.
+    ///
+    /// With replacement, each draw picks an independent uniform index, so a value may
+    /// appear more than once and `count` may exceed `elements.count`. Without replacement,
+    /// the indices are shuffled with the seeded generator and the first `count` are taken,
+    /// so every drawn value is distinct and `count` may not exceed `elements.count`.
+    ///
+    /// - Parameters:
+    ///   - elements: The source array to draw from.
+    ///   - count: The number of elements to draw.
+    ///   - replace: Whether a value may be selected more than once.
+    ///   - generator: The random number generator to draw from, passed `inout`.
+    /// - Returns: An array of `count` drawn elements, or an empty array when `elements`
+    ///   is empty or `count <= 0`.
+    static func sample<T, G: RandomNumberGenerator>(
+        _ elements: [T],
+        count: Int,
+        replace: Bool,
+        using generator: inout G
+    ) -> [T] {
+        precondition(replace || count <= elements.count,
+            "Cannot draw \(count) elements without replacement from \(elements.count) elements")
+
+        guard !elements.isEmpty, count > 0 else { return [] }
+
+        let n = elements.count
+
+        if replace {
+            // Draw count independent uniform indices; a value may repeat.
+            var result: [T] = []
+            result.reserveCapacity(count)
+            for _ in 0..<count {
+                let index = Int.random(in: 0..<n, using: &generator)
+                result.append(elements[index])
+            }
+            return result
+        }
+
+        // Without replacement: shuffle the indices and take the first count.
+        let shuffledIndices = (0..<n).shuffled(using: &generator)
+        return shuffledIndices[..<count].map { elements[$0] }
+    }
+
     /// Splits array elements into training and testing partitions using a seeded shuffle.
     ///
     /// The algorithm shuffles an index array using the seeded generator, then slices

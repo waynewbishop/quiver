@@ -43,8 +43,8 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Rendering-Math-Primer>
 - <doc:Statistics-Primer>
 - <doc:Probability-Primer>
-- <doc:Inferential-Statistics-Primer>
 - <doc:Central-Limit-Theorem>
+- <doc:Inferential-Statistics-Primer>
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
 - <doc:Calculus-Primer>
@@ -67,31 +67,29 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Matrix-Transformations>
 - <doc:Composing-Transformations>
 
+### Signal Processing
+- <doc:Fourier-Transform>
+
 ### Statistics
 - <doc:Frequency-Tables>
 - <doc:Boolean-Masking>
 - <doc:Working-With-Distributions>
 - <doc:Identifying-A-Distribution>
 
-### Signal Processing
-- <doc:Fourier-Transform>
-
-### Rendering
-- <doc:Fraction>
-
-### Similarity and Search
-- <doc:Text-Tokenization>
-- <doc:Similarity-Operations>
-- <doc:Semantic-Search>
-
 ### Data Preparation
 - <doc:Panel>
 - <doc:Panel-Workflows>
 - <doc:Data-Visualization>
 - <doc:Correlation>
+- <doc:Random-Sampling>
 - <doc:Train-Test-Split>
 - <doc:Feature-Scaling>
 - <doc:Pipeline>
+
+### Similarity and Search
+- <doc:Text-Tokenization>
+- <doc:Similarity-Operations>
+- <doc:Semantic-Search>
 
 ### Models
 - <doc:Linear-Regression>
@@ -109,6 +107,9 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:iOS-Apps>
 - <doc:watchOS-Apps>
 - <doc:Vapor-Server>
+
+### Rendering
+- <doc:Fraction>
 
 ### Utilities
 - <doc:Quiver-Notebook>
