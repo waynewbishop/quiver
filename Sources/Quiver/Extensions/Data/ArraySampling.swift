@@ -109,6 +109,52 @@ public extension Array {
         return _Sampling.trainTestSplit(self, testRatio: testRatio, seed: seed)
     }
 
+    /// Partitions the array's sample positions into `k` train/validation folds for
+    /// cross-validation, using a seeded shuffle for reproducible results.
+    ///
+    /// Where ``trainTestSplit(testRatio:seed:)`` holds out one test set, k-fold
+    /// cross-validation rotates the held-out set through the whole dataset: the
+    /// samples are shuffled once and divided into `k` near-equal groups, and each
+    /// group takes a turn as the validation set while the other `k − 1` groups
+    /// train. Every sample is validated exactly once across the `k` folds, which
+    /// gives a steadier estimate of out-of-sample performance than a single split —
+    /// the basis for choosing a model's tuning parameters honestly.
+    ///
+    /// This returns **index sets**, not sliced data. The caller drives the fitting
+    /// loop, applying the same fold indices to parallel arrays — features and
+    /// targets — and deciding what happens inside each fold. Returning indices
+    /// rather than data is what lets a scaler be fit on the training indices alone,
+    /// keeping validation statistics out of the fit.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let features: [[Double]] = [
+    ///     [1400, 3], [1600, 3], [1700, 2], [1875, 3], [1100, 2],
+    ///     [1550, 2], [2350, 4], [2450, 4], [1425, 3], [1700, 3]
+    /// ]
+    /// let prices = [245000.0, 312000, 279000, 308000, 199000,
+    ///                219000, 405000, 324000, 319000, 255000]
+    ///
+    /// // Five folds over the ten samples, applied to features and prices alike.
+    /// let folds = features.kFoldIndices(k: 5, seed: 42)
+    /// for fold in folds {
+    ///     let trainFeatures = fold.train.map { features[$0] }
+    ///     let trainPrices = fold.train.map { prices[$0] }
+    ///     // fit on (trainFeatures, trainPrices), score on fold.validation
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - k: The number of folds. Must be at least 2 and at most the array's count.
+    ///   - seed: A UInt64 seed for the random number generator, ensuring reproducibility.
+    /// - Returns: An array of `k` named tuples `(train: [Int], validation: [Int])`,
+    ///   each holding sample indices into this array and any parallel array.
+    func kFoldIndices(k: Int, seed: UInt64) -> [(train: [Int], validation: [Int])] {
+        return _Sampling.kFoldIndices(count: self.count, k: k, seed: seed)
+    }
+
     /// Splits paired feature and label arrays into training and testing subsets,
     /// preserving the class distribution from the labels in both sets.
     ///

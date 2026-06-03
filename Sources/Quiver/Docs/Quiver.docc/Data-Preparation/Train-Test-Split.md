@@ -1,6 +1,6 @@
 # Train-Test Split
 
-Splitting arrays into training and testing subsets with reproducible, class-balanced partitions.
+Splitting arrays into training, testing, and rotating cross-validation subsets with reproducible, class-balanced partitions.
 
 ## Overview
 
@@ -82,6 +82,32 @@ Quiver takes a different approach. Each call splits one array and returns a name
 A `testRatio` of `0.2` (80% training, 20% testing) is the most common choice and a good default for most datasets. For smaller datasets where every training sample matters, `0.1` reserves more data for learning. For very large datasets, even `0.3` or higher can work since there are enough training samples either way.
 
 The ratio must be between 0 and 1, exclusive — a ratio of 0 or 1 would produce an empty partition, which is never useful.
+
+### Rotating the holdout with cross-validation
+
+A single split spends its whole verdict on one arbitrary slice of the data, and a lucky or unlucky slice can flatter or punish a model that does not deserve it. **Cross-validation** removes that luck by rotating the holdout: the samples are shuffled once and divided into `k` near-equal folds, and each fold takes a turn as the validation set while the other folds train. Every sample is validated exactly once, so the score read back is an average over the whole dataset rather than a bet on one partition. The steadier estimate is the basis for choosing a model's tuning parameters honestly.
+
+`kFoldIndices(k:seed:)` produces the folds. Each one holds the sample positions to train on and the positions to validate on:
+
+```swift
+import Quiver
+
+let scores = [55.0, 62, 68, 74, 79, 83]
+let folds = scores.kFoldIndices(k: 3, seed: 42)
+
+for fold in folds {
+    print(fold.train, fold.validation)
+}
+// [1, 3, 2, 5] [0, 4]   — train on four samples, validate on two
+// [0, 4, 2, 5] [1, 3]   — a different two held out
+// [0, 4, 1, 3] [2, 5]   — and the last two
+```
+
+The method returns `k` named tuples of `(train: [Int], validation: [Int])` — sample positions, not sliced data. Across the three folds every position from `0` to `5` lands in `validation` exactly once. The same indices subscript any parallel array, so a feature matrix and its target array stay aligned through the loop: fit a model on `fold.train`, score it on `fold.validation`, and average the scores.
+
+### Why folds return indices
+
+`kFoldIndices` hands back index lists rather than ready-made train and validation arrays, and the choice is deliberate. The caller drives the fitting loop and applies the same fold indices to every parallel array — features and targets alike — which keeps the rows aligned across all of them. It also keeps the validation rows genuinely unseen. When a scaler is fit on the training indices alone and only then applied to the validation indices, no information leaks backward from the data the model is about to be scored on. Ready-sliced arrays would invite the shortcut of scaling the whole dataset once before the loop, which quietly folds validation statistics into the fit and inflates every score that follows.
 
 ### Stratified splitting
 
@@ -168,6 +194,7 @@ The method auto-detects which classes are smaller and generates new samples by i
 ### Splitting
 - ``Swift/Array/trainTestSplit(testRatio:seed:)``
 - ``Swift/Array/stratifiedSplit(labels:testRatio:seed:)``
+- ``Swift/Array/kFoldIndices(k:seed:)``
 - ``Swift/Array/oversample(labels:)``
 
 ### Related

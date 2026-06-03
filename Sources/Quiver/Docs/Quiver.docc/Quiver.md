@@ -50,6 +50,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Calculus-Primer>
 - <doc:Physics-Primitives-Primer>
 - <doc:Machine-Learning-Primer>
+- <doc:Regularization-Primer>
 - <doc:Concurrency-Primer>
 
 ### Vectors
@@ -95,6 +96,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Linear-Regression>
 - <doc:Regression-Summary>
 - <doc:Gradient-Descent>
+- <doc:Ridge-Regression>
 - <doc:Polynomials>
 - <doc:Naive-Bayes>
 - <doc:Nearest-Neighbors-Classification>

@@ -102,7 +102,7 @@ A model can fail in two opposite ways:
 
 **Underfitting** means the model is too simple to capture the pattern in the data. It performs poorly on both training and test data. This can happen when the model lacks the capacity to represent the relationship, or when important features are missing.
 
-The goal is a model that generalizes, one that learns the true pattern well enough to make accurate predictions on data it has never seen. Splitting data into training and test sets (and checking both scores) is the primary tool for detecting these problems.
+The goal is a model that generalizes, one that learns the true pattern well enough to make accurate predictions on data it has never seen. Splitting data into training and test sets (and checking both scores) is the primary tool for detecting these problems. The <doc:Ridge-Regression> page shows both failures as worked examples with training and test scores, and the <doc:Regularization-Primer> covers one direct cure for overfitting — penalizing a model for leaning too hard on any one feature.
 
 ### Classification and regression
 

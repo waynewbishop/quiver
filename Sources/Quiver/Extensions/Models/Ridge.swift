@@ -25,7 +25,7 @@ import Foundation
 /// vanishes and the fit is ordinary least squares; as `lambda` rises the weights
 /// shrink. This is the quadratic, or Tikhonov, instance of regularization, and
 /// the same λ that defines it is the term that stabilizes a near-singular XᵀX —
-/// the situation ``Array/conditionNumber`` flags.
+/// the situation a matrix `conditionNumber` flags.
 ///
 /// The model is fit by gradient descent on the penalized objective, sharing the
 /// optimizer behind ``GradientDescent``. It conforms to ``Regressor``, so it is
