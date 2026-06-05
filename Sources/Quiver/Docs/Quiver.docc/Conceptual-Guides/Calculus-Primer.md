@@ -10,7 +10,7 @@ A car on the highway covers 60 miles in one hour. Its speed is 60 miles per hour
 
 ### A familiar rate
 
-A walk up a hill produces elevation readings as we go. After the first second we have risen two meters. After the next, three more. Then four. Then five. The hill is getting steeper. The list of "how much we rose this second" is what calculus calls the rate of change of elevation over time.
+A walk up a hill produces elevation readings as we go. After the first second we have risen two meters. After the next, three more. Then four. Then five. Then six. The hill is getting steeper. The list of "how much we rose this second" is what calculus calls the rate of change of elevation over time.
 
 ```swift
 import Quiver
@@ -118,8 +118,19 @@ That iterative walk has a name. It is called **gradient descent**, and it is the
 ```swift
 import Quiver
 
-let model = try GradientDescent.fit(features: scaled, targets: targets)
-// GradientDescent: 4 features, converged in 87 iterations (loss: 0.2530)
+// Four features whose targets follow the exact rule y = a + 2b + 3c + 4d.
+let rawFeatures: [[Double]] = [[1, 0, 0, 0], [0, 1, 0, 0],
+                               [0, 0, 1, 0], [0, 0, 0, 1],
+                               [1, 1, 0, 0], [0, 1, 1, 0],
+                               [0, 0, 1, 1], [1, 1, 1, 1]]
+let targets = [1.0, 2, 3, 4, 3, 5, 7, 10]
+
+// Standardize, then let the optimizer walk to the minimum.
+let scaler = StandardScaler.fit(features: rawFeatures)
+let scaled = scaler.transform(rawFeatures)
+
+let model = try GradientDescent.fit(features: scaled, targets: targets, learningRate: 0.1)
+// GradientDescent: 4 features, converged in 174 iterations (loss: 0.0000)
 ```
 
 Linear regression's closed form is the case where calculus reaches the answer in a single matrix expression. Gradient descent is the case where calculus reaches the answer over many small ones. Both are calculus. The difference is whether the math can be solved directly or only followed step by step.

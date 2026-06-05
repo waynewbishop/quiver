@@ -69,13 +69,9 @@ The same seed produces the same index permutation regardless of element type. A 
 
 ### Splitting features and labels together
 
-In other numerical computing ecosystems, train-test splitting is typically a single function that accepts multiple arrays and returns all partitions at once. This produces four or more return values that must be unpacked in the correct positional order — and getting that order wrong is a common source of silent bugs.
+Each call splits one array and returns a named tuple with exactly two values: `.train` and `.test`. To keep features and labels aligned, we call it once per array with the same seed, and the matching index permutation does the rest.
 
-Quiver takes a different approach. Each call splits one array and returns a named tuple with exactly two values: `.train` and `.test`. This design has three advantages:
-
-**No positional ordering bugs**. With a single multi-array function, swapping two variables in the unpack silently corrupts the data. With named tuples, each destructure is self-contained — `trainFeatures` and `testFeatures` cannot be confused with `trainPrices` and `testPrices`.
-
-**Works with any number of arrays**. If we have features, labels, and sample weights, we add a third call with the same seed. A single-function approach would need a new parameter for every additional array.
+Naming each partition at the point it is created keeps the destructure self-contained, so `trainFeatures` and `testFeatures` cannot be confused with `trainPrices` and `testPrices`. The pattern also scales to as many parallel arrays as a model needs. When features, labels, and sample weights all have to travel together, we add one more call with the same seed and every array lands in the same partition, row for row.
 
 ### Choosing a test ratio
 
@@ -152,8 +148,8 @@ Before training, `imbalanceRatio` measures how skewed the class distribution is.
 import Quiver
 
 let labels = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
-labels.classDistribution()  // [0: 8, 1: 2]
-labels.imbalanceRatio()     // 4.0
+labels.classDistribution()  // 8 zeros, 2 ones (Dictionary order is not guaranteed)
+labels.imbalanceRatio()     // Optional(4.0)
 ```
 
 Developers set their own threshold based on the domain. A common guideline: ratios above 3.0 suggest oversampling before training:

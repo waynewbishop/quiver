@@ -31,7 +31,9 @@ import Quiver
 
 // Build a skewed population with rate = 0.5, so the population mean is 1 / 0.5 = 2.0.
 // Exponential is asymmetric: most values are small, with a long right tail.
-let population = [Double].randomExponential(10_000, rate: 0.5)
+// Seed the draw so the whole demonstration reproduces exactly.
+var rng = SeededRandomNumberGenerator(seed: 7)
+let population = [Double].randomExponential(10_000, rate: 0.5, using: &rng)
 
 // Draw 1,000 samples of size 50 and record the mean of each.
 let sampleMeans = population.samplingDistributionOfMean(
@@ -41,7 +43,7 @@ let sampleMeans = population.samplingDistributionOfMean(
 )
 
 // The sampling distribution centers on the population mean, with its own spread.
-sampleMeans.mean()              // ≈ 2.05  — recovers the population mean
+sampleMeans.mean()              // ≈ 2.01  — recovers the population mean
 sampleMeans.standardDeviation() // ≈ 0.29  — the standard error of the mean
 
 // Confirm the bell shape: observed fractions match the Gaussian targets.
@@ -49,13 +51,13 @@ if let check = sampleMeans.empiricalRule() {
     print(check)
     // Empirical rule check (n = 1000)
     //               actual    expected    diff
-    //   within 1σ:  ~0.68     0.683       ~0.00
-    //   within 2σ:  ~0.95     0.955       ~0.00
-    //   within 3σ:  ~1.00     0.997       ~0.00
+    //   within 1σ:  0.678     0.683       -0.005
+    //   within 2σ:  0.961     0.955       +0.006
+    //   within 3σ:  0.995     0.997       -0.002
 }
 ```
 
-The mean of the sample means lands near `2.05` rather than exactly on the population mean of `2.0`. That small gap is honest sampling noise from a finite simulation, not an error: a thousand samples is enough to recover the population mean closely, not perfectly. The `empiricalRule()` check is the bell test in code. It reports the fraction of sample means falling within one, two, and three standard deviations of their own mean, and those fractions matching the Gaussian targets of `0.683`, `0.955`, and `0.997` is exactly what "approximately normal" means in practice.
+The mean of the sample means lands very close to the population mean of `2.0`, recovering it from a thousand draws without ever measuring the whole population. The `empiricalRule()` check is the bell test in code. It reports the fraction of sample means falling within one, two, and three standard deviations of their own mean, and those fractions sitting within a few thousandths of the Gaussian targets of `0.683`, `0.955`, and `0.997` is exactly what "approximately normal" means in practice.
 
 <!-- DIAGRAM (fast-follow): skewed exponential population collapsing into a bell-shaped sampling distribution of the mean. Filename TBD by the visual team per the visual design guide. -->
 
@@ -95,7 +97,7 @@ let medianSpread = population
     .standardDeviation()    // ≈ 1.58 — wider, by roughly the √(π/2) factor
 ```
 
-### Where to go next
+### From the theorem to inference
 
 The standard error this guide derives is the input to every interval and test that follows. The <doc:Inferential-Statistics-Primer> puts it to work: it shows `standardError()` in a confidence interval, switches to the t-distribution when the sample is too small for the theorem to dominate, and uses resampling to build a sampling distribution directly from the data without assuming a shape. For the normal distribution that the theorem promises, with worked `pdf`, `cdf`, and `quantile` examples, see <doc:Working-With-Distributions>.
 

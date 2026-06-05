@@ -43,7 +43,7 @@ let scaled = scaler.transform(features)
 
 let model = try Ridge.fit(features: scaled, targets: prices, lambda: 0.1)
 print(model)
-// Ridge: 2 features, λ=0.1, converged in 386 iterations (loss: 1146834644.93)
+// Ridge: 2 features, λ=0.1, converged in 386 iterations (loss: 1146834644.9318)
 ```
 
 The `lambda` parameter is the only one specific to ridge. The remaining parameters — `learningRate`, `maxIterations`, `tolerance`, `intercept` — match `GradientDescent` and carry the same defaults, calibrated for standardized features.
@@ -118,6 +118,8 @@ The `Panel` type is entirely optional — `Ridge` accepts arrays directly. See <
 ### Choosing lambda
 
 `lambda` is a dial, and a dial needs a gauge. The operational rule is short: score a small grid of candidate values on data the model did not train on, and keep the one whose held-out error is lowest. Training error cannot make this choice — it falls as `lambda` falls, always nominating zero, the unpenalized fit. The <doc:Regularization-Primer> covers the reasoning, the bias-variance trade behind it, and how cross-validation supplies the held-out score.
+
+Each candidate in that grid fits independently, so the sweep parallelizes cleanly: `Ridge` is `Sendable` and `fit` is a synchronous value-returning call, which lets each `lambda` be fit in its own task and the held-out scores gathered as they finish. See <doc:Concurrency-Primer> for the task-based pattern.
 
 ### Taming unstable coefficients
 

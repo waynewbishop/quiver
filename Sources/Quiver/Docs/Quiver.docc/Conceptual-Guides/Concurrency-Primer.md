@@ -4,11 +4,11 @@ Training models off the main thread and passing fitted results back to the inter
 
 ## Overview
 
-Swift Concurrency is the language's built-in way to run work without blocking the main thread. Tasks describe units of work, `async` functions suspend and resume, and the compiler verifies that values crossing between tasks are safe to share. Quiver fits into this model naturally because its models are value types and defined as an immutable Swift `struct`. A fitted model can be trained inside a task, returned from it, and handed to a view without locks, wrappers, or `@unchecked` annotations.
+Swift Concurrency is the language's built-in way to run work without blocking the main thread. Tasks describe units of work, `async` functions suspend and resume, and the compiler verifies that values crossing between tasks are safe to share. Quiver fits into this model naturally because its models are value types, each defined as an immutable Swift `struct`. A fitted model can be trained inside a task, returned from it, and handed to a view without locks, wrappers, or `@unchecked` annotations.
 
 This primer covers the core patterns — training a model inside a task, keeping long-running fits off the main thread, and updating a SwiftUI view when training completes.
 
-> Note: New to Quiver's machine learning workflow? Start with <doc:Machine-Learning-Primer> for core vocabulary like features, `labels`, `fit`, and `predict` before diving into the concurrency patterns below.
+> Note: For core vocabulary like `features`, `labels`, `fit`, and `predict`, start with <doc:Machine-Learning-Primer> before working through the concurrency patterns below.
 
 ### What Sendable means for Quiver
 
@@ -121,8 +121,6 @@ Each `predict` runs the same Quiver call we would make sequentially; the task gr
 
 > Note: Running batches concurrently changes the order in which they finish, even though each is placed back in its original position. For most operations the recombined result is identical to the sequential one. Voting models such as `KNearestNeighbors` are the exception: when two classes tie within a neighborhood, the order in which votes are counted can settle the tie either way, so a concurrent split may differ from a single call on a few predictions. When exact reproducibility matters more than speed, predict in one call.
 
-> Experiment: **The Quiver Notebook** is a quick place to watch these patterns run before wiring them into an app. Try launching two fits with `async let`, printing on entry and exit, and watching the output interleave from run to run — that ordering is the visible proof the work ran concurrently. The Notebook has no view to update, so the SwiftUI hand-off above belongs in an app — see <doc:Quiver-Notebook>.
-
 ### What stays sequential
 
 Not every operation divides this way, and recognizing which ones do not is as useful as knowing which ones do. Some computations are a chain in which each step consumes the result of the step before it. Matrix inversion and the determinant both work by Gaussian elimination, where every pivot transforms the matrix that the next pivot depends on — there is no way to run a later step before an earlier one finishes. Iterative model fitting has the same shape: each `KMeans` iteration places its centroids based on the assignment from the previous iteration, so the iterations cannot overlap.
@@ -161,4 +159,10 @@ final class WorkoutAnalysisViewModel {
 `@MainActor` is Swift's way of saying "everything in this class runs on the main thread." When `Task.detached` suspends the function, the actual training runs elsewhere. When the task finishes and execution returns to the `await` line, Swift puts the function back on the main thread before the next statement. The assignment to `model` happens there, and any SwiftUI view observing the view model updates without extra work.
 
 > Tip: The same pattern works for `UIKit` view controllers marked `@MainActor`. The `await` marks the boundary, the training runs off the main thread, and the fitted model arrives back on the main thread as a `Sendable` value.
+
+### From off the main thread to into an app
+
+The patterns here all rest on one property: a fitted Quiver model is an immutable, `Sendable` value, so it crosses task and actor boundaries without a copy ceremony or a lock. Splitting a batch, fitting off the main thread, and handing the result back to a view are three uses of that single guarantee. The <doc:Machine-Learning-Primer> covers the models these patterns wrap, and <doc:Pipeline> shows how scaling and fitting compose into one `Sendable` unit that moves across threads as cleanly as a single model does.
+
+> Experiment: **The Quiver Notebook** is a quick place to watch these patterns run before wiring them into an app. Try launching two fits with `async let`, printing on entry and exit, and watching the output interleave from run to run — that ordering is the visible proof the work ran concurrently. The Notebook has no view to update, so the SwiftUI hand-off above belongs in an app — see <doc:Quiver-Notebook>.
 

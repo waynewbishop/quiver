@@ -4,7 +4,7 @@ Reading the standard errors, p-values, and confidence intervals returned by a fi
 
 ## Overview
 
-After we have fitted a `LinearRegression` model on training data, `summary(features:targets:level:)` returns a `RegressionSummary` value carrying the inference table. The fit answers a prediction question — given features, the model returns the expected target. The summary answers an estimation question — given a fitted coefficient, the table tells us how confident to be that the underlying relationship is real. The vocabulary it uses — standard error, t-statistic, p-value, confidence interval — is the foundation of sample-to-population reasoning covered in <doc:Inferential-Statistics-Primer>. This article walks the printed summary field by field, naming what each column means, how the numbers relate, and which assumptions every claim rests on. For the fit-and-predict workflow itself, see <doc:Linear-Regression>.
+After we have fitted a `LinearRegression` model on training data, `summary(features:targets:level:)` returns a `RegressionSummary` value carrying the inference table. The fit answers a prediction question — given features, the model returns the expected target. The summary answers an estimation question — given a fitted coefficient, the table tells us how confident to be that the underlying relationship is real. The vocabulary it uses — standard error, t-statistic, p-value, confidence interval — is the foundation of sample-to-population reasoning covered in <doc:Inferential-Statistics-Primer>. Each field of the printed summary names a column, how the numbers relate, and which assumptions underlie every claim. For the fit-and-predict workflow itself, see <doc:Linear-Regression>.
 
 ### What the summary carries
 
@@ -43,7 +43,7 @@ The **p-value** converts that t-statistic into a probability via the t-distribut
 
 The **confidence interval** answers the same question in coefficient units. The interval is `coef ± t_crit · SE`, where `t_crit = t.quantile(1 − α/2, df)` is the critical value at the chosen confidence level (default `α = 0.05`, so `1 − α/2 = 0.975`). An interval that does not contain zero corresponds to a p-value below the chosen `α`; an interval that straddles zero corresponds to a p-value above it. The two views read off the same standard error and the same critical value, just from different ends.
 
-> Important: A p-value of `0.03` does not mean there is a `3%` chance the coefficient is zero, and a 95% confidence interval does not mean there is a 95% chance the true coefficient falls inside the interval. The p-value is the probability of observing data this extreme *if the coefficient were zero*; the confidence interval has 95% long-run coverage across hypothetical repeated sampling. The values describe a procedure's behaviour, not the probability of the underlying parameter.
+> Important: A p-value of `0.03` does not mean there is a `3%` chance the coefficient is zero, and a 95% confidence interval does not mean there is a 95% chance the true coefficient falls inside the interval. The p-value is the probability of observing data this extreme *if the coefficient were zero*; the confidence interval has 95% long-run coverage across hypothetical repeated sampling. The values describe a procedure's behavior, not the probability of the underlying parameter.
 
 ### Confidence intervals and the level parameter
 
@@ -90,7 +90,7 @@ The same singular-matrix condition that makes `fit` throw also makes `summary` t
 
 ### From the summary to deeper inference
 
-The vocabulary here — standard error, t-statistic, p-value, confidence interval, degrees of freedom — is the foundation of sample-to-population reasoning. The <doc:Inferential-Statistics-Primer> covers that foundation in general terms, including the distinction between point estimates and interval estimates, the role of the sampling distribution, and the conditions under which a test's stated error rate is the actual long-run rate. For the model that produces the fit this article reads, see <doc:Linear-Regression>. For the iterative optimizer that solves regression problems without a closed form, see <doc:Gradient-Descent>.
+The vocabulary here — standard error, t-statistic, p-value, confidence interval, degrees of freedom — is the foundation of sample-to-population reasoning. The <doc:Inferential-Statistics-Primer> covers that foundation in general terms, including the distinction between point estimates and interval estimates, the role of the sampling distribution, and the conditions under which a test's stated error rate is the actual long-run rate. For the model that produces the fit read here, see <doc:Linear-Regression>. For the iterative optimizer that solves regression problems without a closed form, see <doc:Gradient-Descent>.
 
 > Experiment: **The Quiver Notebook** is the right place to watch standard errors widen as `n` shrinks. Fit a regression on the full dataset and print the summary; then refit on the first half of the rows and compare. Every standard error grows by roughly `√2`; every interval widens by the same factor; every p-value rises. The relationship between sample size and confidence is the most concrete in regression. See <doc:Quiver-Notebook>.
 

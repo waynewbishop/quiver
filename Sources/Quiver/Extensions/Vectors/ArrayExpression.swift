@@ -10,8 +10,7 @@
 //
 //  Defaults to column form because Quiver teaches linear algebra and
 //  textbook convention is that vectors are columns. Pass `.inline` for the
-//  angle-bracket form (`⟨3, 4, 5⟩`) used in prose contexts and familiar to
-//  NumPy users.
+//  angle-bracket form (`⟨3, 4, 5⟩`) used in prose contexts.
 //
 
 import Foundation
@@ -36,8 +35,7 @@ public extension Array where Element == Double {
     /// formatted multi-line string.
     ///
     /// The default `.column` form matches linear-algebra textbook
-    /// convention. NumPy users who expect inline rendering should pass
-    /// `.inline`.
+    /// convention. Pass `.inline` for the angle-bracket form used in prose.
     ///
     /// ```swift
     /// [3.0, 4.0, 5.0].asExpression()

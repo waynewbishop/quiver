@@ -1,6 +1,6 @@
 # Rendering Math
 
-Reading a numeric result in the form mathematics uses — fractions, column vectors, bracketed matrices, descending polynomials.
+Reading a numeric result in the form mathematics uses, including fractions, column vectors, bracketed matrices, and descending polynomials.
 
 ## Overview
 
@@ -132,7 +132,7 @@ Polynomial([1, 3, 2, 4.3e-17]).asExpression(relativeZeroTolerance: 0)
 // "4.3e-17x³ + 2x² + 3x + 1"
 ```
 
-The tolerance is *relative* rather than absolute by design. A polynomial whose true coefficients all live near `1e-13`, which is rare but possible in physical-constant or small-scale fits, would have every term suppressed by an absolute `1e-12` cutoff. Comparing against `max(|aⱼ|)` makes the test "is this coefficient negligible *relative to the dominant term*," which is the question the reader actually wants answered. See <doc:Numerical-Literacy> for the matching diagnostic at fit time. The `.conditionNumber` on a `LinearRegression` signals when Vandermonde conditioning has crossed from "noise floor" to "result not reliable."
+The tolerance is *relative* rather than absolute by design. A polynomial whose true coefficients all live near `1e-13`, which is rare but possible in physical-constant or small-scale fits, would have every term suppressed by an absolute `1e-12` cutoff. Comparing against `max(|aⱼ|)` makes the test "is this coefficient negligible *relative to the dominant term*," which is the question the reader actually wants answered. See <doc:Numerical-Literacy> for the matching diagnostic at fit time. The `conditionNumber` of a fit's design matrix signals when Vandermonde conditioning has crossed from "noise floor" to "result not reliable."
 
 The rendering preserves the other IEEE-754 signals exactly as Quiver's contract requires. A `Double.nan` cell — a correlation entry on a flat column, the square root of a negative number — renders as `"NaN"`, unmistakable in any context. Positive infinity renders as `"∞"` and negative infinity as `"-∞"`, using the Unicode infinity symbol because it reads unambiguously inside a mathematical expression. Negative zero is normalized to `"0"`. IEEE-754 allows `-0.0` to differ from `+0.0` by sign bit alone, and the normalization keeps a rendered cell from carrying a leading minus that nothing in the math justifies. The rule is consistent across vectors, matrices, polynomials, and standalone scalars: every cell passes through the same formatter.
 
@@ -146,4 +146,4 @@ The rendered string is not a round-trip-safe encoding. Parsing `"0.3846"` back t
 
 Rendering is the first half of working with a numeric result, turning the stored representation into a form the reader can interpret. The second half is judging when to trust what the rendering shows. See <doc:Numerical-Literacy> for the broader treatment of floating-point precision, the `nil` versus `NaN` contract, and the cases where the math is well-defined but the conditioning of the inputs is not. See <doc:Determinants-Primer> for the worked example of why the inverse of `[[3, 1], [2, 5]]` shares `13` as a denominator across every cell, and what a determinant near zero says about the matrix's invertibility. See <doc:Polynomials> for the type that the `relativeZeroTolerance` parameter belongs to, including the `polyfit` entry point where machine-noise coefficients first appear.
 
-> Experiment: **The Quiver Notebook** is the right place to see the chained rendering pay for itself. Invert the 3×3 Lo Shu magic square `[[8, 1, 6], [3, 5, 7], [4, 9, 2]]` and chain `.asFractions().asExpression()` on the result. Before running it, compute the determinant by hand. It is `-360`. Predict that every cell of the rendered inverse will share `360` as its denominator, then run the cell and confirm the prediction. The shared-denominator pattern is the determinant of the original matrix showing through the inverse. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to see the chained rendering pay for itself. Invert the 3×3 Lo Shu magic square `[[8, 1, 6], [3, 5, 7], [4, 9, 2]]` and chain `.asFractions().asExpression()` on the result. Before running it, compute the determinant by hand. It is `-360`, and that number is what every denominator is built from. Predict that the rendered inverse will carry `360` and its factors as denominators, then run the cell and watch GCD reduction collapse several cells to `90`, `180`, and `45`. The determinant of the original matrix is showing through the inverse, factored down to lowest terms. See <doc:Quiver-Notebook>.

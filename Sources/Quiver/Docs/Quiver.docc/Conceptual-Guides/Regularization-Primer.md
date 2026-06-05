@@ -4,7 +4,7 @@ Curbing overfitting by adding a penalty that shrinks coefficients toward zero.
 
 ## Overview
 
-A model is **overfitted** when it has memorized the quirks of its training data instead of the real pattern — it scores well on the data it learned from and poorly on data it has never seen. Detecting that gap is the job of comparing training and test scores; fixing it is the job of **regularization** — adding a small penalty that discourages a model from leaning too hard on any one feature, so it follows the real pattern and not the quirks. The penalty trades a little accuracy on the training set for steadier predictions in the world, which is the trade that matters whenever a model has to work beyond the dataset it was born from.
+A model is **overfitted** when it has memorized the quirks of its training data instead of the real pattern — it scores well on its training data and poorly on data it has never seen. Detecting that gap is the job of comparing training and test scores; fixing it is the job of **regularization** — adding a small penalty that discourages a model from leaning too hard on any one feature, so it follows the real pattern and not the quirks. The penalty trades a little accuracy on the training set for steadier predictions in the world, which is the trade that matters whenever a model must generalize beyond its original training data.
 
 > Note: This primer builds on the overfitting and generalization concepts introduced in the <doc:Machine-Learning-Primer>, and the `conditionNumber` diagnostic from the <doc:Determinants-Primer>.
 
@@ -41,7 +41,7 @@ The two columns describe the same thing, yet one weight is a large positive numb
 
 ### The penalty
 
-Regularization changes what the fit is trying to minimize. Ordinary least squares minimizes the squared error alone. Ridge regression minimizes the squared error **plus** a penalty proportional to the squared size of the weights:
+Regularization changes what the fit is trying to minimize. Ordinary least squares minimizes the squared error alone. Ridge regression minimizes the squared error plus a penalty proportional to the squared size of the weights:
 
 ```
 minimize   (1/n)‖Xθ − y‖²  +  λ‖θ‖²
@@ -80,14 +80,14 @@ Adding the penalty to that matrix nudges it back to safe ground. The effect is d
 let gram = scaled.transposed().multiplyMatrix(scaled)
 gram.conditionNumber  // 402610 — almost impossible to invert
 
-// Adding the penalty to the diagonal is what ridge does internally.
+// Adding the penalty to the diagonal is what stabilizes the inversion.
 var penalized = gram
 penalized[0][0] += 1
 penalized[1][1] += 1
 penalized.conditionNumber  // 17 — the same matrix, made stable
 ```
 
-The penalty that shrinks the coefficients is the same penalty that makes the matrix tractable. The penalty that keeps the weights honest is the penalty that keeps the arithmetic stable — one dial, two payoffs.
+The penalty that shrinks the coefficients is the same penalty that makes the matrix tractable. The penalty that keeps the weights honest is the penalty that keeps the arithmetic stable — one dial, two payoffs. Quiver's `Ridge` reaches the same minimum by gradient descent on the penalized objective rather than by inverting this matrix directly, but the stabilizing effect of the penalty is exactly the one shown here.
 
 > Tip: The <doc:Determinants-Primer> introduces `conditionNumber` as the diagnostic that flags a near-singular matrix. Regularization is the response that diagnostic points toward.
 
@@ -95,9 +95,9 @@ The penalty that shrinks the coefficients is the same penalty that makes the mat
 
 The dial needs a gauge. A small `lambda` leaves the model free to overfit; a large `lambda` shrinks the weights so far the model underfits, too rigid to follow the real pattern. Overfitting and underfitting are not two separate problems to solve one at a time — they are the two ends of a single dial, and `lambda` is the hand that turns it. The art is not eliminating either failure but finding the setting between them where the model generalizes best, and that setting is something we measure rather than guess.
 
-The measurement cannot come from training error. As `lambda` falls, training error only ever falls with it, so training error always nominates a `lambda` of zero — the very overfit we set out to cure. The honest gauge is performance on data the model did not fit. **Cross-validation** supplies it: split the data into folds, fit on most of them, score on the held-out fold, and rotate so every fold takes a turn. The `lambda` with the best average score across folds is a defensible choice rather than an artifact of the data the model trained on. See <doc:Train-Test-Split> for the held-out evaluation this builds on.
+The measurement cannot come from training error. As `lambda` falls, training error only ever falls with it, so training error always nominates a `lambda` of zero — the very overfit we set out to cure. The honest gauge is performance on data the model did not fit. **Cross-validation** supplies it: split the data into folds, fit on most of them, score on the held-out fold, and rotate so every fold takes a turn. The `lambda` with the best average score across folds is a defensible choice rather than an artifact of the data on which the model trained. See <doc:Train-Test-Split> for the held-out evaluation underneath this approach.
 
-> Important: Training error cannot choose `lambda`. It falls as `lambda` falls, so it always points back to no penalty at all. Choose `lambda` by measuring on held-out data — the cross-validated score — not by reading the error on the data the model already learned from.
+> Important: Training error cannot choose `lambda`. It falls as `lambda` falls, so it always points back to no penalty at all. Choose `lambda` by measuring on held-out data — the cross-validated score — not by reading the error on the data the model already used for fitting.
 
 ### Where regularization goes from here
 
