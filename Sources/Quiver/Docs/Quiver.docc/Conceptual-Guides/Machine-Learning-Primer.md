@@ -71,7 +71,7 @@ The fix is simple: fit on training data only, then transform both sets using the
 import Quiver
 
 // Correct: fit on training data, transform both
-let scaler = FeatureScaler.fit(features: trainFeatures)
+let scaler = StandardScaler.fit(features: trainFeatures)
 let scaledTrain = scaler.transform(trainFeatures)
 let scaledTest = scaler.transform(testFeatures)
 ```
@@ -103,6 +103,10 @@ A model can fail in two opposite ways:
 **Underfitting** means the model is too simple to capture the pattern in the data. It performs poorly on both training and test data. This can happen when the model lacks the capacity to represent the relationship, or when important features are missing.
 
 These two failures are the two ends of the **bias-variance tradeoff** — underfitting is high bias (the model is too rigid to fit the pattern), and overfitting is high variance (the model swings too far to fit the noise). The goal is a model that generalizes, one that learns the true pattern well enough to make accurate predictions on data it has never seen. Splitting data into training and test sets (and checking both scores) is the primary tool for detecting these problems. The <doc:Ridge-Regression> page shows both failures as worked examples with training and test scores, and the <doc:Regularization-Primer> covers one direct cure for overfitting — penalizing a model for leaning too hard on any one feature.
+
+### Fitting remedies
+
+The two scores also tell us which failure we have, and the cures run in opposite directions. When the training score is high and the test score is much lower, the gap is the signature of overfitting, and the remedy is to simplify — add a regularization penalty, or reduce the model's reach. When both scores are low and close together, the model is underfitting, and the remedy is the opposite: give it more to work with. That means adding features that carry real signal, combining existing columns into interaction terms or higher-order ones (see the feature-engineering note above), or, if regularization is already in play, easing the penalty so the model is free to fit more closely. A model cannot learn a pattern it has no way to represent, so the underfitting cure is almost always about capacity rather than restraint.
 
 ### Classification and regression
 

@@ -18,10 +18,10 @@ import Quiver
 let elevation = [100.0, 102.0, 105.0, 109.0, 114.0, 120.0]   // meters, one per second
 
 let grade = elevation.derivative(sampleRate: 1.0)
-// [2.0, 3.0, 4.0, 5.0, 6.0]
+// [2.0, 3.0, 4.0, 5.0, 6.0] — 102−100, 105−102, 109−105, 114−109, 120−114
 ```
 
-The output of `derivative(sampleRate:)` is the **derivative** of the elevation samples — the formal name for "how fast one quantity changes as another quantity changes." Each output is the rise from one second to the next. Speed is a derivative. Acceleration is a derivative of speed. Grade is a derivative of elevation. We have been computing derivatives all along; today we get the name.
+The output of `derivative(sampleRate:)` is the **derivative** of the elevation samples — the formal name for "how fast one quantity changes as another quantity changes." Each output is the rise from one second to the next, which is why the result has one fewer value than the input: each grade is the change between two readings, and six readings leave five changes. Speed is a derivative. Acceleration is a derivative of speed. Grade is a derivative of elevation. We have been computing derivatives all along; today we get the name.
 
 > Note: `Array.derivative(sampleRate:)` uses the simplest possible numerical derivative — the difference between adjacent samples, divided by the time between them. When the underlying math is not written as a formula, the derivative is recovered from the data itself.
 
@@ -113,6 +113,8 @@ Not every error formula has a clean answer. For some, taking the derivative and 
 
 For those, the derivative still does something useful. It tells us which direction the minimum lies in. Not the exact spot, but the way to walk from where we are. So instead of solving the equation, we walk: start anywhere, look at the derivative to see which way is downhill, take a small step in that direction, and look again. Repeat until the derivative is essentially zero — meaning the ground is flat and we have arrived at the lowest point.
 
+A model has more than one coefficient to adjust, so there is more than one direction to consider. The derivative with respect to a single coefficient, holding the others fixed, is its **partial derivative** — the slope along that one coefficient's axis. Collecting the partial derivative for every coefficient into a list gives the **gradient**, the combined downhill direction the walk follows. Each step moves every coefficient a small amount along its own partial derivative at once.
+
 That iterative walk has a name. It is called **gradient descent**, and it is the algorithm Quiver's `GradientDescent` implements:
 
 ```swift
@@ -135,12 +137,14 @@ let model = try GradientDescent.fit(features: scaled, targets: targets, learning
 
 Linear regression's closed form is the case where calculus reaches the answer in a single matrix expression. Gradient descent is the case where calculus reaches the answer over many small ones. Both are calculus. The difference is whether the math can be solved directly or only followed step by step.
 
-This matters now because the models that come after linear regression — logistic regression and the support vector machines beyond it — minimize error formulas for which no closed form exists. There is no normal equation for them. The only way to fit them is iteratively. The optimizer Quiver just introduced is the engine the next models will need.
+Gradient descent is a **first-order** method: it uses only the first derivative — the slope — to decide which way to walk. A second family of optimizers also uses the second derivative, the rate at which the slope itself changes, to judge how far to step as well as which way. Those second-order methods — Newton's method and the Taylor approximations behind it — converge in fewer steps on some problems, at the cost of computing and inverting the matrix of second derivatives. Quiver's optimizer is first-order throughout; the second-order family is a separate track it does not implement.
+
+This matters now because the models that come after linear regression — logistic regression and the support vector machines beyond it — minimize error formulas for which no closed form exists. There is no normal equation for them. The only way to fit them is iteratively. The optimizer Quiver just introduced is the one the next models will need.
 
 ### From calculus to optimization
 
 Calculus runs through Quiver in four places. `Polynomial.derivative()` returns the derivative of a known formula. `Array.derivative(sampleRate:)` returns the derivative of a list of samples. `LinearRegression.fit` uses calculus to find the line of least squared error in one step. `GradientDescent` uses calculus to walk to a minimum when no closed form exists.
 
-The same idea, four shapes. A derivative tells a model how fast something is changing, which direction is downhill, and when the ground is flat. That is everything calculus does here, and it is everything the models that follow will need.
+The same idea, four shapes. A derivative tells a model how fast something is changing, which direction is downhill, and when the ground is flat. That is everything calculus does here, and it is everything the models that follow will need. The inverse operation — accumulating the area under a curve to recover a total from a rate — appears as integration in the <doc:Physics-Primitives-Primer>, where a signal's samples are summed back into a quantity like distance or energy.
 
 > Experiment: **The Quiver Notebook** is the right place to watch a derivative show up as data. Take a polynomial that models something physical — `Polynomial([0.0, 0.0, 4.9])` for a falling object, or build one from sample data with `polyfit(x:y:degree:)` — then sample its derivative across an interval and plot both side by side. Watching the curve's slope become a second curve is what makes the rate-of-change idea concrete. See <doc:Quiver-Notebook>.
