@@ -57,7 +57,7 @@ let run2 = KMeans.fit(data: points, k: 3, seed: 42)
 run1 == run2  // true
 ```
 
-Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`.
+Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`.
 
 ---
 
@@ -263,7 +263,12 @@ if let m = data.mode().first { print(m) }         // [Element] — empty for emp
 if let lo = data.argMin() { print(lo) }            // Int?
 if let hi = data.argMax() { print(hi) }            // Int?
 if let p = data.percentile(90) { print(p) }        // Double?
+if let sk = data.skewness() { print(sk) }          // Double? — asymmetry (1.3.0)
+if let ku = data.kurtosis() { print(ku) }          // Double? — tail weight (1.3.0)
+if let r = data.skewnessReport() { print(r) }      // SkewnessReport? (1.3.0)
 ```
+
+**Shape diagnostics (1.3.0):** `skewness(bias:)` and `kurtosis(bias:)` return `Element?` (nil for too-small input). `skewnessReport()` pairs an outlier-sensitive measure with an outlier-resistant one and flags when they disagree — a signal that extreme values are warping the distribution.
 
 **Critical rule (1.2.0):** `variance(ddof:)`, `standardDeviation(ddof:)`, and `standardError(ddof:)` all default to `ddof: 1` (sample statistics, dividing by `n - 1`). This matches the formula in introductory statistics textbooks. Pass `ddof: 0` explicitly when the array represents an entire population rather than a sample. The 1.2.0 rename from `std()` to `standardDeviation()` shipped with this default flip in the same commit.
 
@@ -530,7 +535,16 @@ logits.sigmoid()    // element-wise 1/(1+e^-x), each in (0,1)
 series.rollingMean(window: 3)
 series.diff(lag: 1)
 series.percentChange(lag: 1)
+
+// Rate of change — discrete derivative (difference ÷ spacing); output is one shorter
+series.derivative(sampleRate: 1.0)        // [Double]
+
+// Total from a rate — discrete integral via the trapezoid rule (1.3.0)
+series.trapezoidalIntegral(dt: 1.0)       // Double? (nil if fewer than 2 samples)
+series.cumulativeTrapezoidal(dt: 1.0)     // [Double] — running total at each step
 ```
+
+`derivative(sampleRate:)` and `trapezoidalIntegral(dt:)` are inverse operations: the derivative turns a quantity into its rate (speed → acceleration), the integral turns a rate back into a total (speed → distance, power → energy). `dt`/`sampleRate` is the spacing between samples.
 
 ## Data Visualization Helpers
 
@@ -596,6 +610,9 @@ p([0, 1, 2, 3])     // [1.0, 6.0, 15.0, 28.0] — vectorized for plotting
 p.derivative()      // 4x + 3
 p.trimmed()         // strips trailing zero coefficients
 
+// Math rendering (1.3.0) — legible expression for teaching and console output
+p.asExpression()    // "2x² + 3x + 1"
+
 // Arithmetic
 let q = Polynomial([4, -3, -2])
 p + q               // term-by-term addition
@@ -622,7 +639,13 @@ if let p = [Double].polyfit(x: x, y: y, degree: 2) {
 ```swift
 [1.0, 2.0, 3.0].info()             // pretty-printed stats
 [[1.0, 2.0], [3.0, 4.0]].info()    // matrix info with shape
+
+// Math rendering (1.3.0) — arrays, matrices, and polynomials as legible math
+[1.0, 2.0, 3.0].asExpression()           // column or row vector notation
+[[1.0, 2.0], [3.0, 4.0]].asExpression()  // bracketed matrix
 ```
+
+`asExpression()` is presentation only — every value is still computed in `Double`; it changes how a result reads in the console, not what it equals.
 
 ## Sampling and Splitting
 
@@ -635,7 +658,18 @@ let (trainY, testY) = labels.trainTestSplit(testRatio: 0.2, seed: 42)
 let (trainF, testF, trainL, testL) = features.stratifiedSplit(
     labels: labels, testRatio: 0.2, seed: 42
 )
+
+// Single random sample (1.3.0) — reproducible subset, with or without replacement
+let draw = data.sample(3, replace: false, seed: 42)   // [Element]
+
+// K-fold cross-validation (1.3.0) — leak-free index pairs, caller drives the loop
+let folds = features.kFoldIndices(k: 5, seed: 42)      // [(train: [Int], validation: [Int])]
+for fold in folds {
+    // fit on fold.train indices, score on fold.validation; every index validated once
+}
 ```
+
+`kFoldIndices(k:seed:)` returns index sets, not sliced data — so a scaler can fit on the training indices alone and validation rows never leak into the fit. Bounds: `2 ≤ k ≤ count`. Every position is validated exactly once across the `k` folds; fold sizes differ by at most one. After cross-validation picks the best configuration, retrain that choice on the full dataset before deploying.
 
 ## Feature Scaling
 
@@ -719,9 +753,31 @@ let predictions = gd.predict(testX)             // [[Double]] → [Double]
 let singleFeature = gd.predict(xValues)         // [Double] → [Double] (featureCount == 1)
 ```
 
-Same `Regressor` protocol as `LinearRegression`. Same `coefficients` layout (intercept at index 0 when `hasIntercept` is true). The iterative route exists for the cases where no closed form is available — currently nothing in Quiver, but the optimizer is the engine future iterative models (logistic regression, SVM) will reuse.
+Same `Regressor` protocol as `LinearRegression`. Same `coefficients` layout (intercept at index 0 when `hasIntercept` is true). The iterative route exists for the cases where no closed form is available, or where a penalty is added to the objective — `Ridge` (below) is the first model built on this optimizer, and the same descent loop will fit the iterative models that follow (logistic regression, SVM).
 
 `Outcome.maxIterationsReached` is necessary but not sufficient for trustworthiness — confirm meaningful descent by comparing `lossHistory.first` to `lossHistory.last` before relying on the coefficients.
+
+## Ridge Regression (1.3.0)
+
+```swift
+// Standardize first — the penalty compares coefficient magnitudes across features.
+let scaled = StandardScaler.fit(features: trainX).transform(trainX)
+
+let ridge = try Ridge.fit(
+    features: scaled, targets: trainY,
+    lambda: 0.1, learningRate: 0.01, maxIterations: 1000, tolerance: 1.0e-6
+)
+// throws GradientDescentError on divergence — shares Gradient Descent's failure modes
+
+ridge.coefficients  // [Double] — [intercept, weight1, ...]; the intercept is never penalized
+ridge.lambda        // Double — the penalty strength used
+ridge.lossHistory   // [Double] — same observable trajectory as GradientDescent
+ridge.outcome       // .converged | .maxIterationsReached
+
+let predictions = ridge.predict(testX)
+```
+
+L2-regularized regression: minimizes `(1/n)‖Xθ − y‖² + λ‖θ‖²`, the squared-error objective plus a penalty on coefficient size that curbs overfitting and steadies the unstable fits collinear features produce. At `lambda` of zero the penalty vanishes and the fit reproduces ordinary least squares; as `lambda` grows the slopes shrink toward zero. The intercept is never penalized. Conforms to `Regressor`, so it substitutes for `LinearRegression` in any pipeline, and is fit by the same descent optimizer behind `GradientDescent`. Note `lambda` scales a bare penalty against a `1/n` error term, so its values are not interchangeable with conventions that fold in a `1/2m` or `λ/2m` factor. When the need for regularization is unclear, a large `conditionNumber` on the feature matrix is the collinearity the penalty is built to absorb.
 
 ## K-Means Clustering
 
@@ -967,7 +1023,7 @@ Quiver's ML models follow a consistent pattern: `fit()` → `predict()` → eval
 - **Features and labels.** Features are the input measurements (`[[Double]]` matrix, rows = samples, columns = measurements). Labels are what we predict (`[Int]` for classification, `[Double]` for regression).
 - **Train/test split.** Never evaluate on training data. Use `trainTestSplit(testRatio:seed:)` or `stratifiedSplit(labels:testRatio:seed:)` to hold out evaluation data.
 - **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) and iterative optimizers (`GradientDescent`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling.
-- **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent. All use static `fit()` methods — no unfitted state exists.
+- **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent, Ridge. All use static `fit()` methods — no unfitted state exists.
 - **Model persistence.** All models conform to `Codable`. Train once, encode to JSON with `JSONEncoder`, decode on any platform with `JSONDecoder` — identical predictions guaranteed by `Equatable`. When scaling is used, persist both the scaler and model together. See the Model-Persistence documentation page for platform-specific guidance (iOS, watchOS, Vapor, SwiftData).
 - **Naive Bayes variance.** The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
 - **Evaluation (after training):** `confusionMatrix(actual:)` for classification (accuracy, precision, recall, F1). `rSquared(actual:)`, `meanSquaredError(actual:)` for regression. `classificationReport(actual:)` for a formatted summary.
