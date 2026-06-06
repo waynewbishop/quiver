@@ -48,6 +48,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Linear-Algebra-Primer>
 - <doc:Determinants-Primer>
 - <doc:Calculus-Primer>
+- <doc:Optimization-Primer>
 - <doc:Physics-Primitives-Primer>
 - <doc:Machine-Learning-Primer>
 - <doc:Regularization-Primer>

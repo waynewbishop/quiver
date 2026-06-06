@@ -119,6 +119,28 @@ The `Panel` type is entirely optional — `Ridge` accepts arrays directly. See <
 
 `lambda` is a dial, and a dial needs a gauge. The operational rule is short: score a small grid of candidate values on data the model did not train on, and keep the one whose held-out error is lowest. Training error cannot make this choice — it falls as `lambda` falls, always nominating zero, the unpenalized fit. The <doc:Regularization-Primer> covers the reasoning, the bias-variance trade behind it, and how cross-validation supplies the held-out score.
 
+The grid itself is a multiplicative ladder, not an even spacing. Because `lambda` acts on the loss across orders of magnitude, the useful candidates spread out geometrically — start at zero, then climb in roughly doubling steps until the penalty is clearly too strong. A ladder like `0, 0.01, 0.02, 0.04, 0.08, ...` up into the tens covers four orders of magnitude in a dozen fits:
+
+```swift
+import Quiver
+
+// A doubling ladder from no penalty up into the tens.
+let grid = [0.0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24]
+
+var best: (lambda: Double, error: Double)? = nil
+for lambda in grid {
+    let model = try Ridge.fit(features: scaled, targets: prices, lambda: lambda)
+    let error = model.predict(scaler.transform(testHouses)).meanSquaredError(actual: testPrices)
+    if best == nil || error < best!.error {
+        best = (lambda, error)   // keep the lambda with the lowest held-out error
+    }
+}
+```
+
+The exact ratio between rungs is not sacred — doubling is convenient, tripling is just as valid. What matters is that the rungs multiply rather than add, so a single short ladder reaches both the gentle penalties near zero and the heavy ones that begin to underfit.
+
+> Warning: Quiver's `lambda` is the bare coefficient on `λ‖θ‖²` added to the `1/n` mean squared error — it is not the `λ/2m` convention some textbooks write. A `lambda` value does not port across that difference: the same number means a different penalty strength under each, so a `lambda` chosen against one formula must be re-tuned, not copied, for the other.
+
 Each candidate in that grid fits independently, so the sweep parallelizes cleanly: `Ridge` is `Sendable` and `fit` is a synchronous value-returning call, which lets each `lambda` be fit in its own task and the held-out scores gathered as they finish. See <doc:Concurrency-Primer> for the task-based pattern.
 
 ### Taming unstable coefficients
@@ -214,6 +236,7 @@ run1 == run2  // true
 - ``Ridge/finalLoss``
 - ``Ridge/outcome``
 - ``Ridge/Outcome``
+- ``Ridge/learningRate``
 
 ### Evaluation
 - ``Swift/Array/rSquared(actual:)``

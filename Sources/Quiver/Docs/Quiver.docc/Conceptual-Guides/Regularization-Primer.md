@@ -39,6 +39,27 @@ ols.coefficients  // [344750, 608719, -512315] — intercept, then two huge oppo
 
 The two columns describe the same thing, yet one weight is a large positive number and the other a large negative one that nearly cancels it. That `608719` and `-512315` are not findings about floor area — they are the model chasing quirks across two near-identical columns, and a different sample would swing them just as violently the other way. The <doc:Machine-Learning-Primer> names this failure mode; regularization is the standard response to it.
 
+### When three fits diverge
+
+The same near-identical columns expose a deeper point: how a model is fit decides what it does with data it cannot pin down. The floor-area features push every regressor toward the same wall, and each one meets it differently.
+
+Ordinary least squares, above, hands back the lopsided pair. Push the collinearity all the way — two columns that are exact multiples of each other — and the matrix it inverts becomes singular, and `LinearRegression` throws `MatrixError.singular` rather than return a number it cannot justify. The refusal is honest: with no unique answer to give, it gives none.
+
+Gradient descent meets the same data and does something quieter. It never inverts a matrix; it only walks downhill on the error. So on the near-collinear floor-area features it converges without complaint:
+
+```swift
+import Quiver
+
+// The same scaled floor-area features, fit by gradient descent instead.
+let descent = try GradientDescent.fit(features: scaled, targets: prices, learningRate: 0.1)
+descent.coefficients  // [344747, 48231, 48173] — converged, two near-equal weights
+descent.outcome       // .converged
+```
+
+The two weights come back near-equal and far smaller than the least-squares pair, and the outcome reports `.converged` with no warning attached. This looks like the better answer — and for predictions, it is fine: the fitted values are sound. But the individual coefficients are not trustworthy. When two columns carry nearly the same information, the valley of near-equal fits is so shallow that gradient descent stops partway down it — at the point its path from a zero start happens to reach before the loss stops falling by more than the tolerance. Begin the descent from a different point and the two weights land somewhere else entirely, with predictions just as good. Push the columns to perfectly identical and the valley floor goes truly flat — then infinitely many weight pairs fit identically, there is no single bottom at all, and the closed form has nothing to invert. The model predicts; the individual coefficients do not mean anything on their own.
+
+That is the trap the penalty closes. Least squares fails loudly, gradient descent succeeds quietly onto an arbitrary answer, and neither has settled which coefficients to believe. Regularization is what turns the flat valley of equally-good answers into a single defensible one.
+
 ### The penalty
 
 Regularization changes what the fit is trying to minimize. Ordinary least squares minimizes the squared error alone. Ridge regression minimizes the squared error plus a penalty proportional to the squared size of the weights:
@@ -88,6 +109,8 @@ penalized.conditionNumber  // 17 — the same matrix, made stable
 ```
 
 The penalty that shrinks the coefficients is the same penalty that makes the matrix tractable. The penalty that keeps the weights honest is the penalty that keeps the arithmetic stable — one dial, two payoffs. Quiver's `Ridge` reaches the same minimum by gradient descent on the penalized objective rather than by inverting this matrix directly, but the stabilizing effect of the penalty is exactly the one shown here.
+
+Both routes arrive at the same minimum, and the choice between them is a tradeoff: the closed form is exact and finishes in one pass but must invert a matrix, while descent gives up the one-pass exactness to reuse the shared optimizer and scale to larger problems where forming and inverting that matrix is the expensive step.
 
 > Tip: The <doc:Determinants-Primer> introduces `conditionNumber` as the diagnostic that flags a near-singular matrix. Regularization is the response that diagnostic points toward.
 

@@ -83,7 +83,7 @@ The ratio must be between 0 and 1, exclusive — a ratio of 0 or 1 would produce
 
 A single split spends its whole verdict on one arbitrary slice of the data, and a lucky or unlucky slice can flatter or punish a model that does not deserve it. **Cross-validation** removes that luck by rotating the holdout: the samples are shuffled once and divided into `k` near-equal folds, and each fold takes a turn as the validation set while the other folds train. Every sample is validated exactly once, so the score read back is an average over the whole dataset rather than a bet on one partition. The steadier estimate is the basis for choosing a model's tuning parameters honestly.
 
-`kFoldIndices(k:seed:)` produces the folds. Each one holds the sample positions to train on and the positions to validate on:
+`kFoldIndices(k:seed:)` produces the folds. The fold count `k` must satisfy `2 <= k <= count`; ten folds is the common choice, and `k` can run all the way up to the sample count, where each fold holds out a single sample. A higher `k` buys a steadier estimate at the cost of more work, since `k` folds mean `k` model fits. Each fold holds the sample positions to train on and the positions to validate on:
 
 ```swift
 import Quiver
@@ -100,6 +100,10 @@ for fold in folds {
 ```
 
 The method returns `k` named tuples of `(train: [Int], validation: [Int])` — sample positions, not sliced data. Across the three folds every position from `0` to `5` lands in `validation` exactly once. The same indices subscript any parallel array, so a feature matrix and its target array stay aligned through the loop: fit a model on `fold.train`, score it on `fold.validation`, and average the scores.
+
+The fold models are scaffolding, not the deliverable. Once the averaged scores name the best configuration, we discard the `k` fold models and retrain that single choice on the entire dataset, and that one model is what we deploy.
+
+Cross-validation and the two-way split solve different halves of the same problem. Cross-validation chooses the model and its tuning parameters; a separate test set, held out from the start with `trainTestSplit` and touched exactly once, reports the final honest score. Selecting a configuration on the same data we report it on biases the estimate optimistically, which is why the deciding and the reporting must draw on different data.
 
 ### Why folds return indices
 

@@ -31,7 +31,7 @@ print(model == restored)  // true
 print(restored.predict([[6.0]]))
 ```
 
-The same pattern works for every model type — `LinearRegression`, `GaussianNaiveBayes`, `KNearestNeighbors`, `KMeans`, and `FeatureScaler`.
+The same pattern works for every model type — `LinearRegression`, `GradientDescent`, `Ridge`, `GaussianNaiveBayes`, `KNearestNeighbors`, `KMeans`, and `FeatureScaler`.
 
 ### Saving and loading from disk
 

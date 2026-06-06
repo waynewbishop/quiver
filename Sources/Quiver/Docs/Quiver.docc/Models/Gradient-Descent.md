@@ -8,6 +8,8 @@ Think of a ball placed in a bowl — gravity rolls it to the bottom. `GradientDe
 
 This is the same answer `LinearRegression` produces in a single matrix expression, only reached step by step instead of computed directly. Both routes converge to the same coefficients on a squared-error problem. The iterative route exists for the regression models that follow this one — logistic regression first — where the error formula has no closed-form answer and stepping toward the minimum is the only way to find it. The fitted model carries every step of the descent as a stored property, so we can see the error fall across iterations, confirm the run converged, and diagnose a run that crawled or diverged.
 
+`GradientDescent` is both a standalone regression model and the public face of the descent algorithm that `Ridge` and the models after it reuse. It is the one case where naming the model apart from the algorithm buys nothing: a straight-line fit under squared error leaves no separate object to wrap around the optimizer, so the type carries the algorithm's name and stands in for the model too. Richer models keep the same algorithm and add a model on top, and the two names separate. The <doc:Optimization-Primer> covers that shared-algorithm family view.
+
 ### How it works
 
 `GradientDescent` walks an error formula to its minimum using the derivative. The mechanics of why this works — what a derivative tells us, why iterative optimization exists, why the closed-form normal equation is a special case — are covered in <doc:Calculus-Primer>. This section names the specific implementation choices Quiver makes.
@@ -32,7 +34,7 @@ error(next)  // 5.76 — the error after one step
 
 Repeating the move — recheck the slope, take another step — walks `x` toward `3.0`, where the error is zero and the slope is flat. A real model has many coefficients and the error formula is shaped by training data rather than written by hand, but the loop is the same: every coefficient gets its own slope, every coefficient moves a small step in its own downhill direction.
 
-The optimizer is **batch** and **deterministic**. Batch means every training sample contributes to every step. Deterministic means the same inputs always produce the same trajectory, with no randomness. The learning rate is constant for the whole run; it does not decay, and no penalty term is added to the loss. Variants of gradient descent exist that do those things; keeping the version here simple is what lets the trajectory be readable as a teaching artifact.
+The optimizer is **batch** and **deterministic**. Batch means every training sample contributes to every step — which keeps each step exact, and also ties the cost of a step to the size of the dataset, so the variants that trade exactness for sampling a subset per step are the ones reached for when the data grows too large to revisit in full. Deterministic means the same inputs always produce the same trajectory, with no randomness. The learning rate is constant for the whole run; it does not decay, and no penalty term is added to the loss. Variants of gradient descent exist that do those things; keeping the version here simple is what lets the trajectory be readable as a teaching artifact.
 
 ### Fitting a model
 
@@ -146,11 +148,15 @@ The two answers agree because gradient descent converges to the same minimum the
 
 ### When to use which
 
-`LinearRegression` is the right choice for ordinary least squares — it is closed-form, exact, and one pass. Reach for `GradientDescent` for three reasons: when the loss function has no closed form (logistic regression and beyond), when the feature count is large enough that matrix inversion becomes expensive, or when the descent itself is the lesson — when watching the loss fall is the point. For the first two reasons the choice is forced. For the third it is a teaching choice, and the optimizer's first-class trajectory is what makes it the right one.
+`LinearRegression` is the right choice for ordinary least squares — it is closed-form, exact, and one pass. It solves the normal equation in O(*n*·*f*² + *f*³) time, where *n* is the number of samples and *f* the number of features: the *f*³ term is the cost of inverting the *f*×*f* matrix XᵀX, and it is exact but grows quickly as the feature count rises.
+
+`GradientDescent` takes O(*k*·*n*·*f*) time — *k* iterations, each one pass over the *n* samples and *f* features to form the gradient Xᵀ(Xθ − y). Each step is linear in the feature count rather than cubic, so as *f* grows the per-step cost rises far more slowly than the closed-form inversion; the trade is that the descent pays for *k* of those steps and must converge. Where the two routes break even depends on all three of *n*, *f*, and *k* together, not on the feature count alone.
+
+Reach for `GradientDescent` for three reasons. When the loss has no closed form — logistic regression and the margin classifiers beyond it — the iterative route is the only route. When the feature count is large enough that the *f*³ inversion dominates, stepping with a per-iteration cost linear in *f* scales better. And when the descent itself is the lesson — when watching the loss fall is the point — its first-class trajectory is what makes it the right teaching choice. For the first reason the choice is forced; for the other two it is a judgment the two complexities above make possible on a given dataset.
 
 ### Safe by design
 
-The optimizer is built so that the only models the caller sees are trustworthy ones, and three guarantees enforce that contract.
+The optimizer is built so that the failures it can detect are surfaced rather than hidden, and three guarantees enforce that contract. One failure it cannot detect is named at the end.
 
 Divergence throws rather than returning corrupted coefficients. When the descent overshoots into non-finite loss, or the loss strictly increases beyond the convergence band between iterations, `fit` throws `GradientDescentError`. The alternative — returning a model with `NaN` or `±∞` parameters — would let corrupted numbers propagate silently into prediction pipelines and into downstream models that share this optimizer.
 
@@ -158,9 +164,11 @@ The descent is observable, not implied. `lossHistory` carries the loss at every 
 
 Cap-reached is distinguished from convergence. The `Outcome` enum is a typed value the type system makes the caller acknowledge. A run that hit the iteration cap is not silently labeled "successful"; it is labeled `.maxIterationsReached`, and the caller's downstream code must handle the two cases on purpose.
 
+One failure these guarantees do not catch is non-identifiable coefficients. When two features carry nearly the same information, infinitely many coefficient vectors fit the data equally well, and the descent converges to one of them — reporting `.converged` with a clean loss and no warning. The predictions are sound, but the individual coefficients are arbitrary: a different starting point would yield different weights with identical predictions. Where the closed-form <doc:Linear-Regression> throws on perfectly collinear features, gradient descent succeeds quietly onto an answer the data cannot justify. The <doc:Regularization-Primer> covers how a penalty resolves this, and <doc:Ridge-Regression> is the model that applies it.
+
 ### From iterative to non-linear
 
-Gradient descent on squared error is the simplest case — the loss is convex, the minimum is unique, and the closed form is available as a check. The same optimizer also powers regularized regression: <doc:Ridge-Regression> adds a penalty on coefficient size to this same descent, trading a little training accuracy for stability on collinear data, and the <doc:Regularization-Primer> covers when and why to reach for it. Looking further ahead, logistic regression replaces squared error with log loss to predict probabilities rather than continuous values. Log loss is also convex, but it has no closed-form minimum — the same descent loop, the same learning rate, the same convergence test, applied to a different loss, will be how that model is fit. See <doc:Activation-Functions> for the `sigmoid` function that will sit at the center of that next step.
+Gradient descent on squared error is the simplest case — the loss is convex, the minimum is unique, and the closed form is available as a check. The same optimizer also powers regularized regression: <doc:Ridge-Regression> adds a penalty on coefficient size to this same descent, trading a little training accuracy for stability on collinear data, and the <doc:Regularization-Primer> covers when and why to reach for it. Looking further ahead, logistic regression replaces squared error with log loss to predict probabilities rather than continuous values. Log loss is also convex, but it has no closed-form minimum — the same descent loop, the same learning rate, the same convergence test, applied to a different loss, will be how that model is fit. See <doc:Activation-Functions> for the `sigmoid` function that will sit at the center of that next step, and the <doc:Optimization-Primer> for why one descent algorithm serves several models at once.
 
 > Experiment: **The Quiver Notebook** is the right place to feel the learning-rate cliff. Pick a small standardized dataset, then sweep `learningRate` from `0.001` through `0.5` in steps and print `outcome`, `iterations`, and `lossHistory.last` for each run. Watching the trajectory shorten as the rate grows, then watching it explode into `divergedIncreasing` past the threshold, is what makes the optimizer's failure mode concrete. See <doc:Quiver-Notebook>.
 
@@ -175,6 +183,7 @@ Gradient descent on squared error is the simplest case — the loss is convex, t
 - ``GradientDescent/finalLoss``
 - ``GradientDescent/outcome``
 - ``GradientDescent/Outcome``
+- ``GradientDescent/learningRate``
 
 ### Errors
 - ``GradientDescentError``

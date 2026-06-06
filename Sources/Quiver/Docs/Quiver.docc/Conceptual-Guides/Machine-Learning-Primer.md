@@ -87,12 +87,12 @@ Raw data rarely arrives in a form that works well for models. **Feature engineer
 ```swift
 import Quiver
 
-// Min-max scaling: transforms each column to 0–1 range
-let scaler = FeatureScaler.fit(features: trainFeatures)
+// Standardization: transforms each column to zero mean and unit variance
+let scaler = StandardScaler.fit(features: trainFeatures)
 let scaled = scaler.transform(trainFeatures)
 ```
 
-Quiver's `FeatureScaler` uses min-max normalization by default, scaling each column independently based on its observed range in the training data. For details on custom ranges and constant-column handling, see <doc:Feature-Scaling>.
+Quiver's `StandardScaler` standardizes each column independently, subtracting the column's mean and dividing by its standard deviation so every feature ends up centered at zero with unit variance. This z-score approach is the default choice because it handles outliers gracefully and assumes no fixed bounds. When features do have a known bounded range, min-max normalization (`FeatureScaler`) is the natural alternative, mapping each column into a 0–1 interval instead. For details on both scalers and constant-column handling, see <doc:Feature-Scaling>.
 
 ### Overfitting and underfitting
 
@@ -102,7 +102,7 @@ A model can fail in two opposite ways:
 
 **Underfitting** means the model is too simple to capture the pattern in the data. It performs poorly on both training and test data. This can happen when the model lacks the capacity to represent the relationship, or when important features are missing.
 
-The goal is a model that generalizes, one that learns the true pattern well enough to make accurate predictions on data it has never seen. Splitting data into training and test sets (and checking both scores) is the primary tool for detecting these problems. The <doc:Ridge-Regression> page shows both failures as worked examples with training and test scores, and the <doc:Regularization-Primer> covers one direct cure for overfitting — penalizing a model for leaning too hard on any one feature.
+These two failures are the two ends of the **bias-variance tradeoff** — underfitting is high bias (the model is too rigid to fit the pattern), and overfitting is high variance (the model swings too far to fit the noise). The goal is a model that generalizes, one that learns the true pattern well enough to make accurate predictions on data it has never seen. Splitting data into training and test sets (and checking both scores) is the primary tool for detecting these problems. The <doc:Ridge-Regression> page shows both failures as worked examples with training and test scores, and the <doc:Regularization-Primer> covers one direct cure for overfitting — penalizing a model for leaning too hard on any one feature.
 
 ### Classification and regression
 

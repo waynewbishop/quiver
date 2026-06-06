@@ -14,7 +14,7 @@ For each new sample, the algorithm measures the **distance** from that sample to
 
 ### The distance connection
 
-Nearest Neighbors relies on the same `distance(to:)` operation used throughout Quiver's vector mathematics. This is Euclidean distance — the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². The same function powers centroid assignment in `KMeans` and similarity operations in <doc:Similarity-Operations>. Understanding this single linear algebra concept, that vectors are points in space and distance measures how far apart they are, unlocks classification, clustering, and similarity search simultaneously.
+Nearest Neighbors relies on Euclidean distance — the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². The prediction loop inlines this formula directly rather than building intermediate vectors, keeping each query fast. The same concept powers centroid assignment in `KMeans` and similarity operations in <doc:Similarity-Operations>. Understanding this single linear algebra concept, that vectors are points in space and distance measures how far apart they are, unlocks classification, clustering, and similarity search simultaneously.
 
 > Note: Distance builds on vector subtraction. Each (aᵢ − bᵢ) term is one element of the difference vector. For a deeper look at how vector arithmetic works geometrically, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
 
@@ -53,7 +53,7 @@ let predictions = model.predict(newSamples)
 
 The parameter `k` determines how many training vectors the algorithm consults when classifying a new point. After measuring the distance from the new sample to every training vector, the algorithm selects the `k` closest ones and uses their labels to vote on the prediction. A higher `k` means more vectors influence the decision, while a lower `k` means fewer, potentially just one, determine the outcome.
 
-The value of `k` controls the tradeoff between sensitivity and smoothness. A small `k` (e.g., 1 or 3) is sensitive to local patterns, capturing fine-grained boundaries but may [overfit](<doc:Machine-Learning-Primer>) to noisy data points. A large `k` (e.g., 15 or 21) produces smoother decision boundaries that are more robust to noise but may miss local structure. Choosing an odd value avoids ties in binary classification: with two classes and `k=4`, a 2-2 split requires a tiebreaker, while `k=3` guarantees one class always wins. A common starting point is `k = √n` where `n` is the number of training samples, rounded to the nearest odd number.
+The value of `k` controls the tradeoff between sensitivity and smoothness. A small `k` (e.g., 1 or 3) is sensitive to local patterns, capturing fine-grained boundaries but may [overfit](<doc:Machine-Learning-Primer>) to noisy data points. A large `k` (e.g., 15 or 21) produces smoother decision boundaries that are more robust to noise but may miss local structure. Choosing an odd value avoids ties in binary classification: with two classes and `k=4`, a 2-2 split requires a tiebreaker, while `k=3` guarantees one class always wins. A common starting point is `k = √n` where `n` is the number of training samples, rounded to the nearest odd number. That heuristic gives a reasonable first guess, but the principled way to choose `k` is cross-validation: try a range of values, measure accuracy on held-out data for each, and keep the `k` that performs best.
 
 ### Distance metrics
 
@@ -213,7 +213,7 @@ Nearest Neighbors works best when:
 - There is no strong prior about data distribution
 - Interpretability matters, because it is easy to explain "these are the 5 most similar cases"
 
-Nearest Neighbors struggles with large datasets (prediction scans every training point), high-dimensional data (the "curse of dimensionality" makes distances less meaningful), and features on different scales (use `StandardScaler` to mitigate).
+Nearest Neighbors struggles with large datasets (prediction scans every training point), high-dimensional data (the "curse of dimensionality" makes distances less meaningful), and features on different scales (use `StandardScaler` to mitigate). The curse of dimensionality has a concrete mechanism: as the number of features grows, the nearest and farthest neighbors become almost equidistant, so the majority vote loses its power to discriminate between classes.
 
 ### Safe by design
 
