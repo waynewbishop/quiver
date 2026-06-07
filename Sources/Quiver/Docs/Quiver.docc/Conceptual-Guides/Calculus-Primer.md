@@ -55,6 +55,8 @@ acceleration(2.0)    // 9.8  — meters per second squared, at every instant
 
 Three numbers, three meanings, one formula behind all of them. That is what `Polynomial.derivative()` does — applies the power rule to every term and returns a new polynomial.
 
+> Tip: The power rule reads straight off the coefficient array. Fit `polyfit(x:y:degree:)` to points on `y = 2x² + 3x + 1` and the coefficients come back as `[1, 3, 2]` — constant, then `x`, then `x²`. Call `.derivative()` and the result is `[3, 4]`: the `2` at index 2 became `4` at index 1, the `3` stayed as `3` at index 0, and the constant `1` dropped away. Each coefficient multiplied by its own index, shifted down one slot.
+
 ### Two faces of the same idea
 
 The same word — derivative — names two operations in Quiver, one for each of the two situations where rates of change come up.
@@ -79,13 +81,21 @@ Same idea, different inputs. This is the same teaching move <doc:Linear-Algebra-
 
 > Note: The numerical derivative returns one fewer sample than the input array. Every difference needs two adjacent values, so a 100-sample input gives a 99-sample derivative.
 
+> Experiment: **The Quiver Notebook** is the right place to watch a derivative show up as data. Take a polynomial that models something physical — `Polynomial([0.0, 0.0, 4.9])` for a falling object — then sample its derivative across an interval and plot both curves side by side. Watching the curve's slope become a second curve is what makes the rate-of-change idea concrete. See <doc:Quiver-Notebook>.
+
 ### Finding the lowest point
 
 So far the derivative has told us how fast something is changing. It can also tell us something more powerful, and this is the reason calculus shows up in machine learning: where the lowest point of a formula is.
 
 Think of an error formula — a formula that says how wrong a model's predictions are on a given dataset. The model has knobs we can turn (the coefficients of a regression line, for example). Turning the knobs changes the error. Somewhere, there is a setting of those knobs that makes the error as small as it can be. That setting is the **minimum** of the error formula, and it is the answer the model wants.
 
+It is worth being exact about what **error** means, because the word carries the whole idea. The error is a single number measuring how far the model's predictions fall from the actual values — the gap between guess and truth, squared so that overshooting and undershooting both count as wrong and large misses count for more, then averaged across the dataset. This averaged squared error is the quantity that code and machine-learning writing usually call the **loss** — the two words name the same number, and the <doc:Gradient-Descent> model carries it step by step as its `lossHistory`. A large error means the predictions are far off; an error of zero means they match the data exactly. Squaring is also why the error formula is bowl-shaped: a squared quantity traces a parabola, a bowl with a single lowest point.
+
+### Where the derivative is zero
+
 The connection to derivatives is this: at a minimum, the rate of change is zero. The error formula has stopped going down — it has reached its lowest point — and from there, any small turn of a knob in either direction makes the error go up again. So to find the minimum, take the derivative of the error formula, and find the spot where the derivative equals zero.
+
+Two different quantities are in play here, and keeping them apart is the key to reading any of this. The **error** is how wrong the model is — picture it as altitude, the height of the bowl at the current knob setting. The **derivative of the error** is the slope underfoot — which way the ground tilts and how steeply. They are not the same thing: one is the height of the landscape, the other is its tilt. Both reach zero at the minimum — the error is at its lowest, and the ground is flat — but they measure different things, and a slope near zero is the signal that the bottom is close, not the value of the error itself.
 
 ### The closed-form answer
 
@@ -147,4 +157,4 @@ Calculus runs through Quiver in four places. `Polynomial.derivative()` returns t
 
 The same idea, four shapes. A derivative tells a model how fast something is changing, which direction is downhill, and when the ground is flat. That is everything calculus does here, and it is everything the models that follow will need. The inverse operation — accumulating the area under a curve to recover a total from a rate — appears as integration in the <doc:Physics-Primitives-Primer>, where a signal's samples are summed back into a quantity like distance or energy.
 
-> Experiment: **The Quiver Notebook** is the right place to watch a derivative show up as data. Take a polynomial that models something physical — `Polynomial([0.0, 0.0, 4.9])` for a falling object, or build one from sample data with `polyfit(x:y:degree:)` — then sample its derivative across an interval and plot both side by side. Watching the curve's slope become a second curve is what makes the rate-of-change idea concrete. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to watch the derivative find a minimum. Fit `GradientDescent` to a small dataset and plot its `lossHistory` against the iteration count: the error falls steeply at first, then flattens toward zero as each step follows the slope downhill and the slope itself shrinks to nothing. The flattening is the derivative reaching zero — the bottom of the bowl. Fit `LinearRegression` to the same data to confirm both routes reach the same predictions, one walked and one solved in a single step. See <doc:Quiver-Notebook>.
