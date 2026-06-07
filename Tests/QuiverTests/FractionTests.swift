@@ -125,4 +125,22 @@ final class FractionTests: XCTestCase {
         XCTAssertEqual(f.denominator, 2)
         XCTAssertEqual(f.description, "3/2")
     }
+
+    // MARK: - asExpression()
+
+    // asExpression returns the same string as description for every shape
+    // of fraction the type produces.
+    func testAsExpression() {
+        XCTAssertEqual(Fraction(2.0).asExpression(), "2")
+        XCTAssertEqual(Fraction(-3.0).asExpression(), "-3")
+        XCTAssertEqual(Fraction(0.0).asExpression(), "0")
+        XCTAssertEqual((0.5).asFraction().asExpression(), "1/2")
+        XCTAssertEqual((-3.0 / 4.0).asFraction().asExpression(), "-3/4")
+
+        // description forwards to asExpression — the two always agree.
+        let samples = [Fraction(2.0), Fraction(0.0), (5.0 / 13.0).asFraction()]
+        for f in samples {
+            XCTAssertEqual(f.asExpression(), f.description)
+        }
+    }
 }

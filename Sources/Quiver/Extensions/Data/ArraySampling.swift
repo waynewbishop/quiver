@@ -17,6 +17,66 @@ import Foundation
 
 public extension Array {
 
+    /// Draws a single random sample of `count` elements from the array.
+    ///
+    /// Unlike the sampling-distribution methods, which draw many samples internally
+    /// and return only a statistic of each, this returns the drawn elements themselves
+    /// so they can be inspected, printed, or summarized directly. It is the atomic
+    /// draw those methods are built on.
+    ///
+    /// With replacement, each draw picks independently, so a value may appear more
+    /// than once and `count` may exceed the array's length. Without replacement, every
+    /// drawn value is distinct, so `count` may not exceed the array's length —
+    /// requesting more triggers a precondition failure. ``trainTestSplit(testRatio:seed:)``
+    /// is the task-specific form of a without-replacement draw, partitioned for model
+    /// evaluation rather than returned as a single sample.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let literacyRates = [73.4, 81.2, 64.9, 90.1, 55.3, 78.6, 88.0, 69.5]
+    ///
+    /// // Draw 5 districts with replacement, then take the sample mean as a point estimate.
+    /// let drawn = literacyRates.sample(5, replace: true, seed: 31208)
+    /// let estimate = drawn.mean()
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - count: The number of elements to draw. A `count` of `0` returns an empty array.
+    ///   - replace: Whether a value may be selected more than once. Defaults to `true`.
+    ///   - seed: A `UInt64` seed for reproducible sampling. A seed of `0` is remapped
+    ///     to `1` internally, so `seed: 0` and `seed: 1` produce the same sample —
+    ///     start a seed sweep at `1` to avoid the duplicate.
+    /// - Returns: An array of `count` drawn elements. Empty if the array is empty or
+    ///   `count <= 0`.
+    func sample(_ count: Int, replace: Bool = true, seed: UInt64) -> [Element] {
+        var generator = SeededRandomNumberGenerator(seed: seed)
+        return _Sampling.sample(self, count: count, replace: replace, using: &generator)
+    }
+
+    /// Draws a single random sample of `count` elements from the array, drawing from
+    /// a caller-supplied random number generator.
+    ///
+    /// Identical to ``sample(_:replace:seed:)`` except that the caller threads in an
+    /// existing generator, mirroring the standard library's `Array.shuffled(using:)`.
+    /// Pass a `SeededRandomNumberGenerator` to reuse one seeded stream across several
+    /// draws, or a `SystemRandomNumberGenerator` for unseeded sampling.
+    ///
+    /// - Parameters:
+    ///   - count: The number of elements to draw. A `count` of `0` returns an empty array.
+    ///   - replace: Whether a value may be selected more than once. Defaults to `true`.
+    ///   - generator: The random number generator to draw from, passed `inout`.
+    /// - Returns: An array of `count` drawn elements. Empty if the array is empty or
+    ///   `count <= 0`.
+    func sample(
+        _ count: Int,
+        replace: Bool = true,
+        using generator: inout some RandomNumberGenerator
+    ) -> [Element] {
+        return _Sampling.sample(self, count: count, replace: replace, using: &generator)
+    }
+
     /// Splits the array into training and testing subsets using a seeded shuffle
     /// for reproducible results.
     ///
@@ -47,6 +107,52 @@ public extension Array {
     /// - Returns: A named tuple of `(train: [Element], test: [Element])`.
     func trainTestSplit(testRatio: Double, seed: UInt64) -> (train: [Element], test: [Element]) {
         return _Sampling.trainTestSplit(self, testRatio: testRatio, seed: seed)
+    }
+
+    /// Partitions the array's sample positions into `k` train/validation folds for
+    /// cross-validation, using a seeded shuffle for reproducible results.
+    ///
+    /// Where ``trainTestSplit(testRatio:seed:)`` holds out one test set, k-fold
+    /// cross-validation rotates the held-out set through the whole dataset: the
+    /// samples are shuffled once and divided into `k` near-equal groups, and each
+    /// group takes a turn as the validation set while the other `k − 1` groups
+    /// train. Every sample is validated exactly once across the `k` folds, which
+    /// gives a steadier estimate of out-of-sample performance than a single split —
+    /// the basis for choosing a model's tuning parameters honestly.
+    ///
+    /// This returns **index sets**, not sliced data. The caller drives the fitting
+    /// loop, applying the same fold indices to parallel arrays — features and
+    /// targets — and deciding what happens inside each fold. Returning indices
+    /// rather than data is what lets a scaler be fit on the training indices alone,
+    /// keeping validation statistics out of the fit.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let features: [[Double]] = [
+    ///     [1400, 3], [1600, 3], [1700, 2], [1875, 3], [1100, 2],
+    ///     [1550, 2], [2350, 4], [2450, 4], [1425, 3], [1700, 3]
+    /// ]
+    /// let prices = [245000.0, 312000, 279000, 308000, 199000,
+    ///                219000, 405000, 324000, 319000, 255000]
+    ///
+    /// // Five folds over the ten samples, applied to features and prices alike.
+    /// let folds = features.kFoldIndices(k: 5, seed: 42)
+    /// for fold in folds {
+    ///     let trainFeatures = fold.train.map { features[$0] }
+    ///     let trainPrices = fold.train.map { prices[$0] }
+    ///     // fit on (trainFeatures, trainPrices), score on fold.validation
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - k: The number of folds. Must be at least 2 and at most the array's count.
+    ///   - seed: A UInt64 seed for the random number generator, ensuring reproducibility.
+    /// - Returns: An array of `k` named tuples `(train: [Int], validation: [Int])`,
+    ///   each holding sample indices into this array and any parallel array.
+    func kFoldIndices(k: Int, seed: UInt64) -> [(train: [Int], validation: [Int])] {
+        return _Sampling.kFoldIndices(count: self.count, k: k, seed: seed)
     }
 
     /// Splits paired feature and label arrays into training and testing subsets,
@@ -228,20 +334,19 @@ public extension Array where Element == Double {
     ///
     /// Draws `iterations` samples of size `sampleSize` with replacement from `self`,
     /// applies `statistic` to each sample, and returns the resulting array. The
-    /// random generator is seeded for reproducibility — the same `seed` always
-    /// produces the same array.
+    /// engine is generic over the random number generator so a caller can either
+    /// seed one internally or thread an existing generator through the loop.
     ///
     /// `sampleSize` is allowed to exceed `self.count`; sampling with replacement
     /// makes that mathematically legal.
-    fileprivate func _samplingDistribution(
+    fileprivate func _samplingDistribution<G: RandomNumberGenerator>(
         sampleSize: Int,
         iterations: Int,
-        seed: UInt64,
+        using generator: inout G,
         statistic: ([Double]) -> Double
     ) -> [Double] {
         guard !self.isEmpty, iterations > 0, sampleSize > 0 else { return [] }
 
-        var rng = SeededRandomNumberGenerator(seed: seed)
         let n = self.count
         var results: [Double] = []
         results.reserveCapacity(iterations)
@@ -249,12 +354,95 @@ public extension Array where Element == Double {
         var sample = [Double](repeating: 0.0, count: sampleSize)
         for _ in 0..<iterations {
             for i in 0..<sampleSize {
-                let index = Int.random(in: 0..<n, using: &rng)
+                let index = Int.random(in: 0..<n, using: &generator)
                 sample[i] = self[index]
             }
             results.append(statistic(sample))
         }
         return results
+    }
+
+    /// Returns the sampling distribution of an arbitrary statistic.
+    ///
+    /// Draws `iterations` samples of size `sampleSize` with replacement from `self`,
+    /// applies `statistic` to each sample, and returns the resulting array. This is
+    /// the general engine behind the named convenience methods — `mean`, `median`,
+    /// and standard deviation are three instances of it. Reach for it directly when
+    /// the statistic is something the named methods do not cover, such as a
+    /// percentile or the range, at a sample size of your choosing.
+    ///
+    /// Unlike ``resampled(iterations:seed:statistic:)``, which fixes the sample
+    /// size to the population size `n` (the bootstrap), this method lets the
+    /// caller pick any `sampleSize`. Sampling is with replacement, so a
+    /// `sampleSize` larger than `self.count` is allowed.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let population = [Double].randomNormal(10_000, mean: 50, standardDeviation: 8)
+    ///
+    /// // Sampling distribution of the 90th percentile at sample size 40
+    /// let p90s = population.samplingDistribution(sampleSize: 40, iterations: 1000, seed: 42) { sample in
+    ///     sample.percentile(90.0) ?? .nan
+    /// }
+    /// p90s.mean()  // the average 90th-percentile estimate across samples
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
+    ///   - iterations: Number of samples to draw. Defaults to 1,000.
+    ///   - seed: A `UInt64` seed for reproducible sampling. A seed of `0` is
+    ///     remapped to `1` internally, so `seed: 0` and `seed: 1` produce the
+    ///     same distribution — start a seed sweep at `1` to avoid the duplicate.
+    ///   - statistic: A closure that takes a sample and returns a single value.
+    /// - Returns: An array of length `iterations` containing the statistic computed
+    ///   on each sample. Empty if `self` is empty, `iterations <= 0`, or
+    ///   `sampleSize <= 0`.
+    func samplingDistribution(
+        sampleSize: Int,
+        iterations: Int = 1000,
+        seed: UInt64,
+        statistic: ([Double]) -> Double
+    ) -> [Double] {
+        var generator = SeededRandomNumberGenerator(seed: seed)
+        return _samplingDistribution(
+            sampleSize: sampleSize,
+            iterations: iterations,
+            using: &generator,
+            statistic: statistic
+        )
+    }
+
+    /// Returns the sampling distribution of an arbitrary statistic, drawing from
+    /// a caller-supplied random number generator.
+    ///
+    /// Identical to ``samplingDistribution(sampleSize:iterations:seed:statistic:)``
+    /// except that the caller threads in an existing generator, mirroring the
+    /// standard library's `Array.shuffled(using:)`. Pass a
+    /// `SeededRandomNumberGenerator` to reuse one seeded stream across a pipeline,
+    /// or a `SystemRandomNumberGenerator` for unseeded sampling.
+    ///
+    /// - Parameters:
+    ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
+    ///   - iterations: Number of samples to draw. Defaults to 1,000.
+    ///   - generator: The random number generator to draw from, passed `inout`.
+    ///   - statistic: A closure that takes a sample and returns a single value.
+    /// - Returns: An array of length `iterations` containing the statistic computed
+    ///   on each sample. Empty if `self` is empty, `iterations <= 0`, or
+    ///   `sampleSize <= 0`.
+    func samplingDistribution(
+        sampleSize: Int,
+        iterations: Int = 1000,
+        using generator: inout some RandomNumberGenerator,
+        statistic: ([Double]) -> Double
+    ) -> [Double] {
+        return _samplingDistribution(
+            sampleSize: sampleSize,
+            iterations: iterations,
+            using: &generator,
+            statistic: statistic
+        )
     }
 
     /// Returns the sampling distribution of the sample mean.
@@ -285,7 +473,9 @@ public extension Array where Element == Double {
     /// - Parameters:
     ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
     ///   - iterations: Number of samples to draw. Defaults to 1,000.
-    ///   - seed: A `UInt64` seed for reproducible sampling.
+    ///   - seed: A `UInt64` seed for reproducible sampling. A seed of `0` is
+    ///     remapped to `1` internally, so `seed: 0` and `seed: 1` produce the
+    ///     same distribution — start a seed sweep at `1` to avoid the duplicate.
     /// - Returns: An array of length `iterations` containing the sample means.
     ///   Empty if `self` is empty, `iterations <= 0`, or `sampleSize <= 0`.
     func samplingDistributionOfMean(
@@ -293,11 +483,39 @@ public extension Array where Element == Double {
         iterations: Int = 1000,
         seed: UInt64
     ) -> [Double] {
+        var generator = SeededRandomNumberGenerator(seed: seed)
         return _samplingDistribution(
             sampleSize: sampleSize,
             iterations: iterations,
-            seed: seed
-        ) { sample in sample.mean() ?? 0.0 }
+            using: &generator
+        ) { sample in sample.mean() ?? .nan }
+    }
+
+    /// Returns the sampling distribution of the sample mean, drawing from a
+    /// caller-supplied random number generator.
+    ///
+    /// Identical to ``samplingDistributionOfMean(sampleSize:iterations:seed:)``
+    /// except that the caller threads in an existing generator, mirroring the
+    /// standard library's `Array.shuffled(using:)`. Pass a
+    /// `SeededRandomNumberGenerator` to reuse one seeded stream across a pipeline,
+    /// or a `SystemRandomNumberGenerator` for unseeded sampling.
+    ///
+    /// - Parameters:
+    ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
+    ///   - iterations: Number of samples to draw. Defaults to 1,000.
+    ///   - generator: The random number generator to draw from, passed `inout`.
+    /// - Returns: An array of length `iterations` containing the sample means.
+    ///   Empty if `self` is empty, `iterations <= 0`, or `sampleSize <= 0`.
+    func samplingDistributionOfMean(
+        sampleSize: Int,
+        iterations: Int = 1000,
+        using generator: inout some RandomNumberGenerator
+    ) -> [Double] {
+        return _samplingDistribution(
+            sampleSize: sampleSize,
+            iterations: iterations,
+            using: &generator
+        ) { sample in sample.mean() ?? .nan }
     }
 
     /// Returns the sampling distribution of the sample median.
@@ -311,7 +529,9 @@ public extension Array where Element == Double {
     /// - Parameters:
     ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
     ///   - iterations: Number of samples to draw. Defaults to 1,000.
-    ///   - seed: A `UInt64` seed for reproducible sampling.
+    ///   - seed: A `UInt64` seed for reproducible sampling. A seed of `0` is
+    ///     remapped to `1` internally, so `seed: 0` and `seed: 1` produce the
+    ///     same distribution — start a seed sweep at `1` to avoid the duplicate.
     /// - Returns: An array of length `iterations` containing the sample medians.
     ///   Empty if `self` is empty, `iterations <= 0`, or `sampleSize <= 0`.
     func samplingDistributionOfMedian(
@@ -319,11 +539,39 @@ public extension Array where Element == Double {
         iterations: Int = 1000,
         seed: UInt64
     ) -> [Double] {
+        var generator = SeededRandomNumberGenerator(seed: seed)
         return _samplingDistribution(
             sampleSize: sampleSize,
             iterations: iterations,
-            seed: seed
-        ) { sample in sample.median() ?? 0.0 }
+            using: &generator
+        ) { sample in sample.median() ?? .nan }
+    }
+
+    /// Returns the sampling distribution of the sample median, drawing from a
+    /// caller-supplied random number generator.
+    ///
+    /// Identical to ``samplingDistributionOfMedian(sampleSize:iterations:seed:)``
+    /// except that the caller threads in an existing generator, mirroring the
+    /// standard library's `Array.shuffled(using:)`. Pass a
+    /// `SeededRandomNumberGenerator` to reuse one seeded stream across a pipeline,
+    /// or a `SystemRandomNumberGenerator` for unseeded sampling.
+    ///
+    /// - Parameters:
+    ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
+    ///   - iterations: Number of samples to draw. Defaults to 1,000.
+    ///   - generator: The random number generator to draw from, passed `inout`.
+    /// - Returns: An array of length `iterations` containing the sample medians.
+    ///   Empty if `self` is empty, `iterations <= 0`, or `sampleSize <= 0`.
+    func samplingDistributionOfMedian(
+        sampleSize: Int,
+        iterations: Int = 1000,
+        using generator: inout some RandomNumberGenerator
+    ) -> [Double] {
+        return _samplingDistribution(
+            sampleSize: sampleSize,
+            iterations: iterations,
+            using: &generator
+        ) { sample in sample.median() ?? .nan }
     }
 
     /// Returns the sampling distribution of the sample standard deviation.
@@ -333,10 +581,19 @@ public extension Array where Element == Double {
     /// the resulting array. Reads as the spread of an estimator: how much the
     /// sample standard deviation varies from one sample to the next.
     ///
+    /// > Note: The sample standard deviation is undefined for `sampleSize: 1` —
+    /// > it divides by `n − 1 = 0` — so each such entry is `.nan` rather than a
+    /// > fabricated `0.0`. A single `.nan` propagates through any aggregate of the
+    /// > result: `mean()`, `standardDeviation()`, and histogramming all return or
+    /// > render `.nan` once one entry is non-finite. Use a `sampleSize` of at least
+    /// > 2, or filter the result with `filter { $0.isFinite }` before aggregating.
+    ///
     /// - Parameters:
     ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
     ///   - iterations: Number of samples to draw. Defaults to 1,000.
-    ///   - seed: A `UInt64` seed for reproducible sampling.
+    ///   - seed: A `UInt64` seed for reproducible sampling. A seed of `0` is
+    ///     remapped to `1` internally, so `seed: 0` and `seed: 1` produce the
+    ///     same distribution — start a seed sweep at `1` to avoid the duplicate.
     /// - Returns: An array of length `iterations` containing the sample standard
     ///   deviations. Empty if `self` is empty, `iterations <= 0`, or `sampleSize <= 0`.
     func samplingDistributionOfStandardDeviation(
@@ -344,10 +601,43 @@ public extension Array where Element == Double {
         iterations: Int = 1000,
         seed: UInt64
     ) -> [Double] {
+        var generator = SeededRandomNumberGenerator(seed: seed)
         return _samplingDistribution(
             sampleSize: sampleSize,
             iterations: iterations,
-            seed: seed
-        ) { sample in sample.standardDeviation() ?? 0.0 }
+            using: &generator
+        ) { sample in sample.standardDeviation() ?? .nan }
+    }
+
+    /// Returns the sampling distribution of the sample standard deviation,
+    /// drawing from a caller-supplied random number generator.
+    ///
+    /// Identical to
+    /// ``samplingDistributionOfStandardDeviation(sampleSize:iterations:seed:)``
+    /// except that the caller threads in an existing generator, mirroring the
+    /// standard library's `Array.shuffled(using:)`. Pass a
+    /// `SeededRandomNumberGenerator` to reuse one seeded stream across a pipeline,
+    /// or a `SystemRandomNumberGenerator` for unseeded sampling.
+    ///
+    /// > Note: As with the seeded overload, `sampleSize: 1` yields `.nan` entries
+    /// > because the sample standard deviation is undefined for a single
+    /// > observation. Filter with `filter { $0.isFinite }` before aggregating.
+    ///
+    /// - Parameters:
+    ///   - sampleSize: Size of each sample drawn from `self` (with replacement).
+    ///   - iterations: Number of samples to draw. Defaults to 1,000.
+    ///   - generator: The random number generator to draw from, passed `inout`.
+    /// - Returns: An array of length `iterations` containing the sample standard
+    ///   deviations. Empty if `self` is empty, `iterations <= 0`, or `sampleSize <= 0`.
+    func samplingDistributionOfStandardDeviation(
+        sampleSize: Int,
+        iterations: Int = 1000,
+        using generator: inout some RandomNumberGenerator
+    ) -> [Double] {
+        return _samplingDistribution(
+            sampleSize: sampleSize,
+            iterations: iterations,
+            using: &generator
+        ) { sample in sample.standardDeviation() ?? .nan }
     }
 }

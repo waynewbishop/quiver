@@ -348,4 +348,163 @@ final class ArraySamplingTests: XCTestCase {
         // Mean of sample standard deviations should be close to the population std (≈ 2)
         XCTAssertEqual(stds.mean()!, 2.0, accuracy: 0.2)
     }
+
+    // The sample standard deviation is undefined at sampleSize 1 (divides by
+    // n - 1 = 0), so each entry must be .nan rather than a fabricated 0.0.
+    func testStandardDeviationSampleSizeOneYieldsNaN() {
+        let population = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let stds = population.samplingDistributionOfStandardDeviation(
+            sampleSize: 1, iterations: 100, seed: 42
+        )
+        XCTAssertEqual(stds.count, 100)
+        XCTAssertTrue(stds.allSatisfy { $0.isNaN })
+
+        // Mean and median always exist for a non-empty sample, so their
+        // sampleSize-1 distributions stay finite.
+        let means = population.samplingDistributionOfMean(
+            sampleSize: 1, iterations: 100, seed: 42
+        )
+        XCTAssertTrue(means.allSatisfy { $0.isFinite })
+    }
+
+    // A seed of 0 is remapped to 1 internally, so the two seeds collide.
+    func testSeedZeroAndOneCollide() {
+        let population = [Double].randomNormal(500, mean: 10, standardDeviation: 2)
+        let withZero = population.samplingDistributionOfMean(sampleSize: 30, iterations: 200, seed: 0)
+        let withOne = population.samplingDistributionOfMean(sampleSize: 30, iterations: 200, seed: 1)
+        XCTAssertEqual(withZero, withOne)
+    }
+
+    // The seed-based call and an externally-threaded generator seeded the same
+    // way must produce identical arrays — the using: overload is the same engine.
+    func testUsingGeneratorMatchesSeed() {
+        let population = [Double].randomNormal(1_000, mean: 10, standardDeviation: 2)
+
+        let viaSeed = population.samplingDistributionOfMean(sampleSize: 40, iterations: 300, seed: 42)
+        var generator = SeededRandomNumberGenerator(seed: 42)
+        let viaGenerator = population.samplingDistributionOfMean(
+            sampleSize: 40, iterations: 300, using: &generator
+        )
+        XCTAssertEqual(viaSeed, viaGenerator)
+
+        // The same holds for the median and standard-deviation overloads.
+        let medianViaSeed = population.samplingDistributionOfMedian(sampleSize: 40, iterations: 300, seed: 7)
+        var g2 = SeededRandomNumberGenerator(seed: 7)
+        let medianViaGenerator = population.samplingDistributionOfMedian(
+            sampleSize: 40, iterations: 300, using: &g2
+        )
+        XCTAssertEqual(medianViaSeed, medianViaGenerator)
+    }
+
+    // The named mean function is one instance of the general engine: the same
+    // seed and a mean closure must reproduce it exactly.
+    func testGeneralSamplingDistributionMatchesNamedMean() {
+        let population = [Double].randomNormal(1_000, mean: 10, standardDeviation: 2)
+
+        let named = population.samplingDistributionOfMean(sampleSize: 50, iterations: 500, seed: 42)
+        let general = population.samplingDistribution(sampleSize: 50, iterations: 500, seed: 42) { sample in
+            sample.mean() ?? .nan
+        }
+        XCTAssertEqual(named, general)
+    }
+
+    // The general function applies an arbitrary statistic the named methods
+    // do not cover — here, the 90th percentile at a custom sample size.
+    func testGeneralSamplingDistributionCustomStatistic() {
+        let population = [Double].randomNormal(5_000, mean: 50, standardDeviation: 8)
+        let p90s = population.samplingDistribution(sampleSize: 40, iterations: 500, seed: 42) { sample in
+            sample.percentile(90.0) ?? .nan
+        }
+        XCTAssertEqual(p90s.count, 500)
+        XCTAssertTrue(p90s.allSatisfy { $0.isFinite })
+        // The 90th percentile sits above the population mean (≈ 50).
+        XCTAssertGreaterThan(p90s.mean()!, 50.0)
+    }
+
+    // MARK: - Single Sample
+
+    // A basic draw returns the requested number of elements.
+    func testSampleReturnsRequestedCount() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        let drawn = data.sample(5, replace: true, seed: 42)
+        XCTAssertEqual(drawn.count, 5)
+    }
+
+    // Every drawn element comes from the source array.
+    func testSampleDrawsOnlyFromSource() {
+        let data = [10.0, 20.0, 30.0, 40.0, 50.0]
+        let drawn = data.sample(20, replace: true, seed: 7)
+        XCTAssertTrue(drawn.allSatisfy { data.contains($0) })
+    }
+
+    // Same seed produces an identical sample.
+    func testSampleReproducibility() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        let first = data.sample(5, replace: true, seed: 42)
+        let second = data.sample(5, replace: true, seed: 42)
+        XCTAssertEqual(first, second)
+    }
+
+    // Without replacement, every drawn element is distinct.
+    func testSampleWithoutReplacementIsDistinct() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        let drawn = data.sample(6, replace: false, seed: 42)
+        XCTAssertEqual(drawn.count, 6)
+        XCTAssertEqual(Set(drawn).count, 6)
+        // A without-replacement draw is a subset of the source.
+        XCTAssertTrue(Set(drawn).isSubset(of: Set(data)))
+    }
+
+    // Drawing the full length without replacement is a permutation of the source.
+    func testSampleWithoutReplacementFullLengthIsPermutation() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let drawn = data.sample(5, replace: false, seed: 99)
+        XCTAssertEqual(Set(drawn), Set(data))
+    }
+
+    // With replacement, over-drawing past the source length is allowed.
+    func testSampleWithReplacementAllowsOverdraw() {
+        let data = [1.0, 2.0, 3.0]
+        let drawn = data.sample(10, replace: true, seed: 1)
+        XCTAssertEqual(drawn.count, 10)
+    }
+
+    // An empty source returns an empty sample.
+    func testSampleEmptySourceReturnsEmpty() {
+        let empty: [Double] = []
+        XCTAssertTrue(empty.sample(5, replace: true, seed: 1).isEmpty)
+    }
+
+    // A count of zero returns an empty sample.
+    func testSampleZeroCountReturnsEmpty() {
+        let data = [1.0, 2.0, 3.0]
+        XCTAssertTrue(data.sample(0, replace: true, seed: 1).isEmpty)
+    }
+
+    // The generator overload matches the seeded overload for the same seed.
+    func testSampleGeneratorOverloadMatchesSeeded() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        var generator = SeededRandomNumberGenerator(seed: 42)
+        let viaGenerator = data.sample(5, replace: true, using: &generator)
+        let viaSeed = data.sample(5, replace: true, seed: 42)
+        XCTAssertEqual(viaGenerator, viaSeed)
+    }
+
+    // The generator overload advances its stream, so successive draws differ.
+    func testSampleGeneratorAdvancesStream() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        var generator = SeededRandomNumberGenerator(seed: 42)
+        let first = data.sample(5, replace: true, using: &generator)
+        let second = data.sample(5, replace: true, using: &generator)
+        XCTAssertNotEqual(first, second)
+    }
+
+    // sample() is element-agnostic — it works on non-numeric arrays.
+    func testSampleWorksOnNonNumericElements() {
+        let words = ["alpha", "bravo", "charlie", "delta", "echo"]
+        let drawn = words.sample(3, replace: false, seed: 5)
+        XCTAssertEqual(drawn.count, 3)
+        XCTAssertEqual(Set(drawn).count, 3)
+        XCTAssertTrue(Set(drawn).isSubset(of: Set(words)))
+    }
 }

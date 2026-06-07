@@ -184,6 +184,44 @@ final class PolynomialTests: XCTestCase {
         XCTAssertEqual(String(describing: Polynomial([5, -2, 0, 1])), "x³ - 2x + 5")
     }
 
+    func testAsExpression() {
+        XCTAssertEqual(Polynomial([1, 3, 2]).asExpression(), "2x² + 3x + 1")
+        XCTAssertEqual(Polynomial([0, 1]).asExpression(), "x")
+        XCTAssertEqual(Polynomial([5]).asExpression(), "5")
+        XCTAssertEqual(Polynomial([0]).asExpression(), "0")
+        XCTAssertEqual(Polynomial([0, -1]).asExpression(), "-x")
+        XCTAssertEqual(Polynomial([5, -2, 0, 1]).asExpression(), "x³ - 2x + 5")
+
+        // asExpression() and description always agree.
+        let samples: [Polynomial] = [
+            Polynomial([1, 3, 2]),
+            Polynomial([0]),
+            Polynomial([0, -1]),
+            Polynomial([5, -2, 0, 1])
+        ]
+        for p in samples {
+            XCTAssertEqual(p.asExpression(), String(describing: p))
+        }
+    }
+
+    // The default zero-suppression tolerance drops numerical-noise leading
+    // terms a fitted polynomial would carry from a least-squares solve.
+    func testAsExpressionRelativeZeroTolerance() {
+        // A "cubic" fit whose x³ coefficient is machine noise should render
+        // as the quadratic it numerically is.
+        let noisyCubic = Polynomial([1, 3, 2, 4.3e-17])
+        XCTAssertEqual(noisyCubic.asExpression(), "2x² + 3x + 1")
+
+        // Disabling the tolerance shows every coefficient, even the noise.
+        let raw = noisyCubic.asExpression(relativeZeroTolerance: 0)
+        XCTAssertTrue(raw.contains("x³"), "got \(raw)")
+
+        // A polynomial whose coefficients all live near machine zero must
+        // not collapse to "0" under the relative threshold.
+        let allTiny = Polynomial([1e-13, 5e-13, 2e-13])
+        XCTAssertNotEqual(allTiny.asExpression(), "0")
+    }
+
     // MARK: - Zero polynomial
 
     func testZeroPolynomial() {

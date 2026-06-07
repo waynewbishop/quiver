@@ -138,19 +138,50 @@ public struct Polynomial: Equatable, Codable, Sendable, CustomStringConvertible 
 
     /// Returns the derivative polynomial.
     ///
-    /// For `a₀ + a₁x + a₂x² + ... + aₙxⁿ`, the derivative is
-    /// `a₁ + 2a₂x + 3a₃x² + ... + n·aₙxⁿ⁻¹`. A constant polynomial differentiates
-    /// to the zero polynomial.
+    /// Differentiation follows the **power rule** applied term by term: the
+    /// derivative of `aᵢ · xⁱ` is `i · aᵢ · xⁱ⁻¹`. The constant term `a₀`
+    /// vanishes because its derivative is zero, and every higher-degree term
+    /// is multiplied by its exponent and dropped one power. For a polynomial
+    /// stored as `a₀ + a₁x + a₂x² + ... + aₙxⁿ`, the result is
+    /// `a₁ + 2a₂x + 3a₃x² + ... + n·aₙxⁿ⁻¹` — the storage shifts down by one
+    /// index and each coefficient is scaled by its original index.
+    ///
+    /// A constant polynomial differentiates to the zero polynomial. The
+    /// returned value is canonical: trailing zeros that would arise from a
+    /// `0` leading coefficient on the original polynomial are trimmed, so
+    /// the degree of the derivative is exactly one less than the degree of
+    /// the input whenever the input has degree ≥ 1.
     ///
     /// Example:
     /// ```swift
     /// import Quiver
     ///
-    /// let p = Polynomial([1, 3, 2])  // 2x² + 3x + 1
-    /// p.derivative()                  // 4x + 3
+    /// // 2x² + 3x + 1 → derivative is 4x + 3
+    /// let p = Polynomial([1, 3, 2])
+    /// p.derivative().asExpression()    // "4x + 3"
+    ///
+    /// // A constant polynomial has a zero derivative.
+    /// Polynomial([-7]).derivative()    // 0
+    ///
+    /// // Sparse polynomials work the same way — interior zeros stay zero.
+    /// // -2x³ + 5 → derivative is -6x²
+    /// Polynomial([5, 0, 0, -2]).derivative().asExpression()   // "-6x²"
+    ///
+    /// // x⁴ - 3x² + 1 → derivative is 4x³ - 6x
+    /// Polynomial([1, 0, -3, 0, 1]).derivative().asExpression()  // "4x³ - 6x"
     /// ```
     ///
-    /// - Returns: The derivative polynomial.
+    /// The chain rule for composing derivatives is not provided directly; for
+    /// a `Polynomial` composed with another function, take the derivative
+    /// here and combine with the outer derivative manually. See
+    /// <doc:Calculus-Primer> for the broader treatment of differentiation in
+    /// Quiver, and <doc:Polynomials> for the type's evaluation,
+    /// least-squares fitting, and arithmetic surface.
+    ///
+    /// - Returns: A new `Polynomial` whose coefficients are the
+    ///   power-rule-scaled coefficients of `self`, with the constant term
+    ///   dropped. The zero polynomial is returned for constants.
+    /// - Complexity: O(*n*) where *n* is `coefficients.count`.
     public func derivative() -> Polynomial {
         guard coefficients.count > 1 else {
             return Polynomial([0])
@@ -260,35 +291,64 @@ public struct Polynomial: Equatable, Codable, Sendable, CustomStringConvertible 
         return Polynomial(_trimmingTrailingZeros(scaled))
     }
 
-    /// A human-readable rendering of the polynomial in the conventional
-    /// highest-power-first form.
+    /// Returns the polynomial as a string in the conventional
+    /// highest-power-first form, using Unicode superscript digits for powers
+    /// of two or more.
     ///
-    /// Coefficients of `0` are omitted, coefficients of `1` and `-1` are
-    /// rendered without the leading digit (writing `x²` instead of `1x²`),
-    /// and negative terms are joined with ` - ` rather than ` + -`. Powers
-    /// of two or more use Unicode superscript digits. The zero polynomial
+    /// Sibling to `Double.asFraction(maxDenominator:)`. Both methods convert
+    /// a value into a display form: `asFraction` returns rational structure as
+    /// a `Fraction`; `asExpression` returns mathematical structure as a
+    /// `String`. The returned string is identical to ``description`` — use
+    /// this method in code where the rendering is the point, so the call
+    /// itself signals intent.
+    ///
+    /// Coefficients of `0` are omitted, coefficients of `±1` are rendered
+    /// without the leading digit (writing `x²` instead of `1x²`), and negative
+    /// terms are joined with ` - ` rather than ` + -`. The zero polynomial
     /// renders as `"0"`.
+    ///
+    /// Fitted polynomials commonly carry numerical-noise coefficients near
+    /// machine zero — a degree-3 fit to quadratic data produces a leading
+    /// `x³` coefficient of order `1e-17`. The `relativeZeroTolerance`
+    /// parameter suppresses such terms by dropping any coefficient whose
+    /// magnitude is below `tolerance · max(|aᵢ|)`. The default of `1e-12`
+    /// matches the conditioning floor of Quiver's least-squares solver.
+    /// Pass `0` to disable suppression and see every coefficient as
+    /// computed.
     ///
     /// Example:
     /// ```swift
     /// import Quiver
     ///
-    /// String(describing: Polynomial([1, 3, 2]))   // "2x² + 3x + 1"
-    /// String(describing: Polynomial([0, -1]))     // "-x"
-    /// String(describing: Polynomial([0]))         // "0"
+    /// Polynomial([1, 3, 2]).asExpression()   // "2x² + 3x + 1"
+    /// Polynomial([0, -1]).asExpression()     // "-x"
+    /// Polynomial([0]).asExpression()         // "0"
     /// ```
-    public var description: String {
-        // Find the highest-degree non-zero coefficient. If none exists, we are
-        // the zero polynomial.
+    ///
+    /// See <doc:Rendering-Math-Primer> for the full family.
+    ///
+    /// - Parameter relativeZeroTolerance: Coefficients with `|aᵢ| <
+    ///   tolerance · max(|aⱼ|)` are treated as zero. Defaults to `1e-12`.
+    ///   Pass `0` to render every coefficient.
+    /// - Returns: The polynomial as a Unicode mathematical expression.
+    public func asExpression(relativeZeroTolerance: Double = 1e-12) -> String {
+        // Find the largest-magnitude coefficient. The relative tolerance is
+        // scaled against this so that a polynomial whose coefficients all
+        // live near `1e-13` doesn't suppress every term.
+        let maxMagnitude = coefficients.map { abs($0) }.max() ?? 0
+        let threshold = maxMagnitude * relativeZeroTolerance
+
+        // The zero polynomial — every coefficient is below threshold (or
+        // there are none) — renders as "0".
         let highest = degree
-        if highest == 0 && coefficients[0] == 0 {
+        if maxMagnitude == 0 || (highest == 0 && abs(coefficients[0]) <= threshold) {
             return "0"
         }
 
         var pieces: [String] = []
         for i in stride(from: highest, through: 0, by: -1) {
             let c = coefficients[i]
-            if c == 0 { continue }
+            if abs(c) <= threshold { continue }
 
             let isFirstPiece = pieces.isEmpty
             let sign: String
@@ -304,7 +364,7 @@ public struct Polynomial: Equatable, Codable, Sendable, CustomStringConvertible 
                 // Coefficients of ±1 on x or higher powers: drop the "1".
                 coefficientText = ""
             } else {
-                coefficientText = Polynomial._formatCoefficient(magnitude)
+                coefficientText = UnicodeMath.formatCell(magnitude)
             }
 
             let powerText: String
@@ -314,13 +374,25 @@ public struct Polynomial: Equatable, Codable, Sendable, CustomStringConvertible 
             case 1:
                 powerText = "x"
             default:
-                powerText = "x" + Polynomial._superscript(i)
+                powerText = "x" + UnicodeMath.superscript(i)
             }
 
             pieces.append(sign + coefficientText + powerText)
         }
 
-        return pieces.joined()
+        // If the threshold suppressed every term, fall back to "0".
+        return pieces.isEmpty ? "0" : pieces.joined()
+    }
+
+    /// A human-readable rendering of the polynomial in the conventional
+    /// highest-power-first form.
+    ///
+    /// Identical to ``asExpression(relativeZeroTolerance:)``. Use that method
+    /// directly in code where the rendering is the point; this property exists so
+    /// `String(describing:)`, `print(_:)`, and string interpolation produce
+    /// the same output without an explicit method call.
+    public var description: String {
+        asExpression()
     }
 
     // MARK: - Internal helpers
@@ -335,30 +407,4 @@ public struct Polynomial: Equatable, Codable, Sendable, CustomStringConvertible 
         return trimmed
     }
 
-    /// Renders a non-negative coefficient as a string, omitting unnecessary
-    /// decimal noise on whole values (so `2.0` becomes `"2"`).
-    internal static func _formatCoefficient(_ value: Double) -> String {
-        if value == value.rounded() && value.isFinite {
-            return String(Int(value))
-        }
-        return String(value)
-    }
-
-    /// Returns the Unicode superscript representation of a non-negative
-    /// integer power. Multi-digit powers concatenate the per-digit superscript
-    /// characters — `10` becomes `"¹⁰"`.
-    internal static func _superscript(_ power: Int) -> String {
-        let map: [Character: Character] = [
-            "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
-            "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹"
-        ]
-        let digits = String(power)
-        var result = ""
-        for ch in digits {
-            if let s = map[ch] {
-                result.append(s)
-            }
-        }
-        return result
-    }
 }

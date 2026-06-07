@@ -4,7 +4,7 @@ Understanding Quiver's architecture as a layer over the Swift array type.
 
 ## Overview
 
-Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
+Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`, with a small number of value types reserved for objects that carry their own algebra — `Polynomial` is one such example. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
 
 ```swift
 import Quiver
@@ -72,11 +72,27 @@ Every model and result type produces a readable summary when printed. This makes
 print(model)    // KNearestNeighbors: k=3, euclidean, 6 training points, 2 features
 print(cluster)  // Cluster: center [1.23, 1.97], 3 points
 print(cm)       // TP: 3  FP: 1  TN: 3  FN: 1  (accuracy: 75.0%)
+print(p)        // 2x² + 3x + 1
+print(f)        // 3/5
 ```
+
+### Presentation-only types
+
+Quiver computes in `Double` and renders in the form a reader can read. Two methods anchor the pattern: `asFraction` returns rational structure as a real `Fraction` value, and `asExpression` returns a Unicode-formatted string ready to display. They compose — chain `asFractions().asExpression()` to see the rational form of a vector or matrix as a bracketed block — and the underlying numeric values are never touched.
+
+```swift
+let v = [0.6, 0.75, 0.5]
+print(v.asFractions().asExpression())
+// ⎡ 3/5 ⎤
+// ⎢ 3/4 ⎥
+// ⎣ 1/2 ⎦
+```
+
+See <doc:Rendering-Math-Primer> for the full catalog: the scalar, vector, and matrix forms; the column-default vector convention; the `relativeZeroTolerance` parameter for fitted polynomials; the edge-case rules for `NaN`, `±∞`, and sub-millisecond magnitudes.
 
 ### Typed summary returns
 
-When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The `Quartiles`, `ColumnSummary`, `PanelSummary`, and `RegressionSummary` types are the patterns we will see repeatedly.
+When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The `Quartiles`, `ColumnSummary`, `PanelSummary`, `RegressionSummary`, `ClassificationReport`, `ConfidenceInterval`, `EmpiricalRule`, `ContingencyTable`, and the `BayesPrior` / `BayesLikelihood` / `BayesPosterior` trio are the patterns we will see repeatedly.
 
 ```swift
 let summary: PanelSummary = panel.summary()
@@ -90,10 +106,12 @@ if let price = summary.columns["price"] {
 
 ### A focused and intentional scope
 
-Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. GPU acceleration, automatic differentiation, and distributed training are outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
+Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. Quiver provides analytic derivatives for polynomials, sample-based derivatives for sequences, and iterative optimization through `GradientDescent`; what it does not provide is reverse-mode automatic differentiation over arbitrary computation graphs. GPU acceleration and distributed training are similarly outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
 
 ### Performance characteristics
 
 The design prioritizes clarity and portability: the same code runs identically on macOS, iOS, watchOS, visionOS, and Linux. Most operations (vector arithmetic, statistics, broadcasting, boolean masking, element-wise math) are linear and scale predictably to millions of elements. Fourier analysis is `O(n log n)` and scales efficiently to tens of thousands of samples.
 
-> Important: The operations worth thinking about are matrix multiplication, matrix inversion, and pairwise comparisons like `findDuplicates(threshold:)` and `clusterCohesion`. These grow quadratically or cubically with input size, so they perform well for the hundreds-to-low-thousands range typical in educational and on-device use cases.
+> Important: The operations worth thinking about are matrix multiplication, matrix inversion, the determinant, and pairwise comparisons like `findDuplicates(threshold:)`, `clusterCohesion`, and `correlationMatrix()`. These grow quadratically or cubically with input size, so they perform well for the hundreds-to-low-thousands range typical in educational and on-device use cases.
+
+For larger inputs, many of these operations can be implemented to run across multiple CPU cores. The <doc:Concurrency-Primer> shows how.

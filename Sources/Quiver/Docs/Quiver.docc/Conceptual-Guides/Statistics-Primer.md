@@ -57,6 +57,8 @@ scores.standardDeviation() // 6.70 — a typical score is ~7 points from the mea
 scores.variance()          // 44.84 — the same information in squared units
 ```
 
+> Note: Standard deviation describes the spread of the data we have. A closely related quantity, the standard error, describes the spread of an estimate computed from that data, and the two are linked by the sample size. See <doc:Central-Limit-Theorem> for the distinction and the theorem that connects them.
+
 > Experiment: **The Quiver Notebook** is the right place to see why median resists outliers. Append one extreme value to `scores` and re-run. Mean and standard deviation move noticeably; median barely budges. The robustness claim becomes a visible difference. See <doc:Quiver-Notebook>.
 
 A low standard deviation means the values cluster tightly around the mean. A high standard deviation means they are scattered. Two classrooms with the same average test score can tell completely different stories once the standard deviation is known.
@@ -90,7 +92,7 @@ if let q = responseTimes.quartiles() {
 }
 ```
 
-The return type is `Quartiles`, a typed value with `min`, `q1`, `median`, `q3`, `max`, and `iqr` as named properties. Read them directly when only one is needed (`q.median`, `q.iqr`), or print the whole value for the full summary.
+The return type is `Quartiles`, a typed value with `min`, `q1`, `median`, `q3`, `max`, and `iqr` as named properties. Read them directly when only one is needed (`q.median`, `q.iqr`), or print the whole value for the full summary. When the underlying data has clean rational cuts, `q1.asFraction()` and friends recover them — see <doc:Rendering-Math-Primer>.
 
 Quartiles are computed by linear interpolation between adjacent order statistics. For a sorted array of length `n`, the `p`-th percentile lives at index `(p / 100) · (n − 1)`. When that index falls between two integers, the result is the straight-line blend of the two surrounding values. Other tools use other quartile conventions, so a textbook reporting different quartile values for the same input is not contradicting Quiver; it is using a different definition. When `n = 1`, every position collapses to the single value and `iqr` is `0`.
 

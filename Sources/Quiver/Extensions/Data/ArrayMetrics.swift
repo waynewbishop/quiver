@@ -256,7 +256,7 @@ public extension Array where Element == Int {
     ///
     /// let labels = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
     /// let counts = labels.classDistribution()
-    /// // [0: 8, 1: 2]
+    /// // 8 zeros, 2 ones (Dictionary order is not guaranteed)
     /// ```
     ///
     /// - Returns: A dictionary mapping each unique label to its sample count.

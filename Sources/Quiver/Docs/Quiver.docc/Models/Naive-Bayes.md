@@ -173,6 +173,10 @@ The `GaussianNaiveBayes` model is a Swift struct, which means it cannot be accid
 
 Naive Bayes multiplies together one probability for every feature in every class. With many features, these probabilities become extremely small numbers that can round to zero, causing the model to stop distinguishing between classes. Quiver handles this internally by working with logarithms, which keeps the arithmetic accurate regardless of how many features the data contains.
 
+A second instability comes from the variance itself. The Gaussian density divides by the variance, so a feature that is constant within a class produces zero variance — and zero variance drives the density toward infinity through division by zero. Quiver guards against this by applying a small variance floor of `1e-9` during fitting: any variance below the floor is raised to it. This floor is the Gaussian event model's form of smoothing. Where count-based formulations add one to a tally to avoid a zero probability, the Gaussian model instead keeps the variance strictly positive, so the density stays finite and the class remains comparable.
+
+> Note: This model implements the Gaussian event model, which treats each feature as a continuous value drawn from a normal distribution. Count-based formulations that tally discrete events take a different mathematical form and are not part of Quiver.
+
 > Note: The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
 
 ## Topics

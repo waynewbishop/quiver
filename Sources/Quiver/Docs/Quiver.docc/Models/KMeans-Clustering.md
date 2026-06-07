@@ -20,7 +20,7 @@ Because initial centroid positions are random, different starting positions can 
 
 ### The distance connection
 
-At its core, K-Means relies on the same `distance(to:)` operation used throughout Quiver's vector mathematics. This is Euclidean distance — the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². The same function powers nearest-neighbor search in `KNearestNeighbors` and similarity operations in <doc:Similarity-Operations>. 
+At its core, K-Means relies on Euclidean distance — the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². Assignment compares squared distances, since the squares preserve the same ordering as the distances themselves and the lowest one wins. The same measure powers nearest-neighbor search in `KNearestNeighbors` and similarity operations in <doc:Similarity-Operations>.
 
 > Note: Distance builds on vector subtraction — each (aᵢ − bᵢ) term is one element of the difference vector. For a deeper look at how vector arithmetic works geometrically, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
 
@@ -109,7 +109,7 @@ let assignments = model.predict(newPoints)
 
 The parameter `k` determines how many clusters the algorithm creates. Each cluster is defined by a centroid — a point in vector space that represents the center of the group. Every data point is assigned to the cluster whose centroid is closest. Choosing too few clusters forces dissimilar points together; choosing too many splits natural groups apart.
 
-The right number of clusters depends on the data. A common approach is the **elbow method** — fit models with increasing `k` and plot inertia. The "elbow" where inertia stops decreasing sharply suggests a good `k`:
+The right number of clusters depends on the data. A common approach is the **elbow method** — fit models across a range of `k` and compare inertia. The `elbowMethod(data:kRange:maxIterations:seed:)` static method runs this sweep and returns a `(k, inertia)` tuple for each value, so there is no need to write the loop by hand. The "elbow" where inertia stops decreasing sharply suggests a good `k`:
 
 ```swift
 import Quiver
@@ -120,17 +120,19 @@ let data: [[Double]] = [
     [9.0, 8.0], [8.5, 8.5], [9.2, 7.8]
 ]
 
-// Fit models with increasing k and compare inertia
-for k in 1...5 {
-    let model = KMeans.fit(data: data, k: k, seed: 42)
-    print("k=\(k): inertia=\(model.inertia)")
+// Sweep k and compare inertia in one call
+let results = KMeans.elbowMethod(data: data, kRange: 1...5, seed: 7)
+for result in results {
+    print("k=\(result.k): inertia=\(result.inertia)")
 }
-// k=1: inertia=~120   (big drop ahead)
-// k=2: inertia=~30    (big drop ahead)
-// k=3: inertia=~2     ← elbow
-// k=4: inertia=~1.5   (diminishing returns)
-// k=5: inertia=~0.8
+// k=1: inertia=145.63
+// k=2: inertia=37.26
+// k=3: inertia=1.03    ← elbow
+// k=4: inertia=0.55    (diminishing returns)
+// k=5: inertia=0.25
 ```
+
+The three natural groups in this data produce a sharp drop from `k=2` to `k=3`, then only marginal gains after. Because centroid initialization is random, an unlucky `seed` can settle into a poor clustering at a given `k` and inflate its inertia — `bestFit(data:k:maxIterations:attempts:)` guards against that by running several initializations and keeping the tightest result.
 
 ### The full pipeline
 
@@ -215,6 +217,7 @@ This is useful for unit tests, debugging, and verifying that a pipeline produces
 ### Training
 - ``KMeans/fit(data:k:maxIterations:seed:)``
 - ``KMeans/bestFit(data:k:maxIterations:attempts:)``
+- ``KMeans/elbowMethod(data:kRange:maxIterations:seed:)``
 
 ### Prediction
 - ``KMeans/predict(_:)``

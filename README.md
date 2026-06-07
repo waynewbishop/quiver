@@ -25,7 +25,9 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
   * Pearson correlation — pairwise `correlation(with:)` on two arrays, matrix-wide `correlationMatrix()` on `[[Double]]`, labeled `Panel.correlationMatrix()`
   * Cumulative operations (sum, product)
   * Outlier detection (z-score method)
+  * Shape diagnostics — `skewness()` and `kurtosis()`, paired with `skewnessReport()` which flags when an outlier-sensitive measure disagrees with an outlier-resistant one
   * Probability distributions — normal `pdf`, `logPDF`, `cdf`, and `quantile` via `Distributions.normal`
+  * Random sampling — `sample(_:replace:seed:)` draws a single reproducible subset of any array, with or without replacement
   * Resampling for inference — `resampled` for the bootstrap distribution of any statistic, paired with `percentileCI` for confidence intervals
 
 * **Array Generation**
@@ -38,6 +40,8 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
   * `Polynomial` value type with evaluation, derivative, arithmetic (`+`, `*`), and trimming
   * `polyfit(x:y:degree:)` for least-squares polynomial regression
   * `solve(_:)` for linear systems `Ax = b`
+  * Numerical integration — `trapezoidalIntegral(dt:)` for the area under a sampled curve (total from a rate), with a running `cumulativeTrapezoidal(dt:)`
+  * Math rendering — `asExpression()` turns arrays, matrices, and polynomials into legible math (`2x² + 3x + 1`) for teaching and console inspection
   * `Fraction` type for exact rational representation of matrix and vector results
 
 * **Data Preparation**
@@ -45,6 +49,7 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
   * Pipeline — bundles a `StandardScaler` and a model into one value type, so the scaler trained on the training set is the exact scaler applied at predict time
   * Feature scaling — `StandardScaler` for z-score scaling (default for distance-based models) and `FeatureScaler` for min-max scaling, both with fit-then-transform
   * Train/test split with reproducible seeded shuffling
+  * K-fold cross-validation — `kFoldIndices(k:seed:)` returns leak-free train/validation index pairs so a tuning choice is judged on data the model did not fit
   * Stratified splitting preserving class proportions
   * Boolean masking and conditional selection
   * Class distribution, imbalance ratio, and oversampling for imbalanced data
@@ -60,6 +65,8 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
   * Gaussian Naive Bayes with calibrated `predictProbabilities` for soft-output classification
   * K-Nearest Neighbors (classification with Euclidean and cosine distance)
   * Linear Regression with single-feature convenience predict
+  * Gradient Descent — fits a regression by iterative optimization, exposing the full `lossHistory` and a typed `Outcome` so convergence is observable rather than hidden
+  * Ridge Regression — L2-regularized regression that curbs overfitting and absorbs collinear-feature instability, fit by the same descent optimizer
   * K-Means Clustering with elbow method and multi-seed best fit
   * Consistent `fit`/`predict` API across all models
   * Full transparency — inspect coefficients, centroids, priors, means, variances
@@ -125,9 +132,9 @@ import Quiver
 
 let sales = [45.0, 52.0, 48.0, 61.0, 55.0, 58.0, 49.0, 67.0, 72.0, 69.0]
 
-sales.mean()    // 57.6
-sales.median()  // 56.5
-sales.std()     // 8.9
+sales.mean()                 // 57.6
+sales.median()               // 56.5
+sales.standardDeviation()    // 9.4 (sample, ddof: 1 by default)
 
 let smoothed = sales.rollingMean(window: 3)
 let outliers = sales.outlierMask(threshold: 1.2).trueIndices
@@ -163,7 +170,7 @@ Full API documentation at [waynewbishop.github.io/quiver](https://waynewbishop.g
 * Statistical function reference
 * Matrix operations and transformations
 * Data preparation and visualization guides
-* Machine learning model guides (Naive Bayes, K-Nearest Neighbors, Linear Regression, K-Means)
+* Machine learning model guides (Naive Bayes, K-Nearest Neighbors, Linear Regression, Gradient Descent, Ridge Regression, K-Means)
 
 Quiver is the companion numerical computing package for [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/).
 

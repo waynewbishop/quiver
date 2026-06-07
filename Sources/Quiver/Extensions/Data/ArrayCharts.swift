@@ -299,6 +299,11 @@ public extension Array where Element: FloatingPoint {
     func histogram(bins: Int) -> [(midpoint: Element, count: Int)] where Element: BinaryFloatingPoint {
         guard bins > 0 && !isEmpty else { return [] }
 
+        // A non-finite element makes the bin-index arithmetic trap on `Int(NaN)`.
+        // `min()`/`max()` cannot be trusted to surface it — every comparison
+        // against NaN is false — so the whole array must be checked for finiteness.
+        guard self.allSatisfy({ $0.isFinite }) else { return [] }
+
         guard let minVal = self.min(), let maxVal = self.max() else {
             return []
         }
@@ -422,6 +427,9 @@ public extension Array where Element: FloatingPoint {
     /// - Returns: A `Quartiles` value containing the five-number summary and IQR, or nil if the array is empty.
     func quartiles() -> Quartiles<Element>? where Element: BinaryFloatingPoint {
         guard !isEmpty else { return nil }
+        // A non-finite element corrupts the sort, so min/max and every quartile
+        // would be unreliable. Reject the input loudly rather than report them.
+        guard self.allSatisfy({ $0.isFinite }) else { return nil }
 
         let sorted = self.sorted()
         guard let minVal = sorted.first, let maxVal = sorted.last else {
@@ -465,6 +473,9 @@ public extension Array where Element: FloatingPoint {
     func percentile(_ p: Double) -> Element? where Element: BinaryFloatingPoint {
         guard !isEmpty else { return nil }
         guard p >= 0 && p <= 100 else { return nil }
+        // A non-finite element makes `sorted()` produce an order that is not
+        // actually sorted, which would return a silently wrong percentile.
+        guard self.allSatisfy({ $0.isFinite }) else { return nil }
 
         let sorted = self.sorted()
         let indexDouble = (p / 100.0) * Double(sorted.count - 1)

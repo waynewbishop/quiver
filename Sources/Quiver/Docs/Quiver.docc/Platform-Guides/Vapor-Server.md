@@ -80,7 +80,7 @@ A second pattern covers experiment significance. When a server runs an experimen
 
 ## Linear algebra on Vapor
 
-Keyword search looks for the words a user typed. Meaning search looks for what the user was after. The bridge between the two is a small stack of ideas that share one geometric picture: words become vectors, queries become vectors, and the catalog answers a question about distance. The next five subsections walk that stack from the words on the wire to the vector database serving the response.
+Keyword search looks for the words a user typed. Meaning search looks for what the user was after. The bridge between the two is a small stack of ideas that share one geometric picture: words become vectors, queries become vectors, and the catalog answers a question about distance. The next five subsections walk that stack from the words on the wire to the in-memory similarity search that serves the response.
 
 ### Tokenization and embedding
 
@@ -158,13 +158,13 @@ struct SearchResult: Content {
 
 > Tip: Embedding the catalog is the expensive step. The server pays that cost exactly once per document, at the moment the document enters the system, never at search time. The same pipeline drives both sides of the catalog, so the create-time path and the query-time path stay in sync without a second representation.
 
-### Why this is a vector database
+### In-memory similarity search
 
-The pattern above has a name. A **vector database** is any system that stores precomputed embeddings and serves nearest-neighbor queries against them. The Vapor process running this code is a vector database — small, in-memory, single-tenant, but conceptually identical in shape to the commercial vector-database products a backend developer might have heard of. The pieces are the same: an embedding step at write time, a stored collection of vectors, a query path that embeds the input, and a similarity computation that returns the top-k.
+The pattern above is **in-memory similarity search**: store precomputed embeddings in a process-local collection, then serve nearest-neighbor queries against them. The Vapor process running this code holds the catalog, embeds incoming queries, and returns the top-k by cosine similarity. The pieces are an embedding step at write time, a stored collection of vectors, a query path that embeds the input, and a similarity computation that returns the top-k.
 
 The most common application of this shape today is **retrieval-augmented generation**, or RAG: the retrieval half of the pipeline finds the top-k most relevant documents for a user's question, and a language model receives those documents as context for its answer. Quiver's role in a RAG system is the retrieval half. Quiver does not ship a language model, does not call out to one, and does not pretend to. The Vapor route shown above is the retrieval surface; the generation step belongs to whatever model the application chooses to call afterward.
 
-Two practical observations follow from that framing. First, the vector database does not have to be a separate service. For catalogs the Vapor process can hold in memory — thousands to low millions of vectors — the database is the in-process value the routes already read from. Second, the vector database does not have to be permanent. Catalogs that fit in memory are fast to read but do not survive a restart. When the catalog needs to outlast process lifetime or grow beyond memory, the embedding and ranking math stays in the Vapor process and the storage moves to the application's existing data layer.
+Two practical observations follow from that framing. First, the retrieval layer does not have to be a separate service. For catalogs the Vapor process can hold in memory — thousands to low millions of vectors — the catalog is the in-process value the routes already read from. Second, the catalog does not have to be permanent. Catalogs that fit in memory are fast to read but do not survive a restart. When the catalog needs to outlast process lifetime or grow beyond memory, the embedding and ranking math stays in the Vapor process and the storage moves to the application's existing data layer.
 
 ### Exact versus approximate nearest neighbors
 

@@ -35,6 +35,8 @@ v.normalized  // [0.6, 0.8]
 v.normalized.asFractions()  // [3/5, 4/5]
 ```
 
+The `asFractions` method belongs to a broader rendering family — `asFraction` on a single `Double`, `asExpression` on vectors, matrices, and polynomials — that the <doc:Rendering-Math-Primer> article catalogs.
+
 The `magnitude` property is calculated using the Pythagorean theorem extended to any dimension. For a 2D vector `[x, y]`, magnitude equals √(x² + y²). For vector `[3, 4]`, that gives √(9 + 16) = √25 = 5. The same formula works whether the vector has 2 dimensions or 200.
 
 **Normalization** separates "how much" from "which way" by dividing each element by the `magnitude`. The result is a **unit vector** — an `Array` with length 1 that preserves only the direction of the original. This matters when comparing arrays where scale varies but direction is what we care about. Two customer profiles with the same preference ratios but different spending levels point in the same direction. Normalization reveals that similarity by removing the magnitude.

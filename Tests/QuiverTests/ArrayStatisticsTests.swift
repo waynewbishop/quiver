@@ -151,4 +151,18 @@ final class ArrayStatisticsTests: XCTestCase {
         let one = [42]
         XCTAssertEqual(one.mode(), [42])
     }
+
+    // A non-finite entry corrupts the underlying percentile sort, so the
+    // interval is rejected rather than reported as a silently wrong bound.
+    func testPercentileCIRejectsNonFinite() {
+        let withNaN = [1.0, 2.0, .nan, 4.0, 5.0]
+        XCTAssertNil(withNaN.percentileCI(level: 0.95))
+
+        let withInfinity = [1.0, 2.0, .infinity, 4.0, 5.0]
+        XCTAssertNil(withInfinity.percentileCI(level: 0.95))
+
+        // A clean distribution still produces an interval.
+        let clean = [1.0, 2.0, 3.0, 4.0, 5.0]
+        XCTAssertNotNil(clean.percentileCI(level: 0.95))
+    }
 }

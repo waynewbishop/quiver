@@ -71,7 +71,7 @@ The fix is simple: fit on training data only, then transform both sets using the
 import Quiver
 
 // Correct: fit on training data, transform both
-let scaler = FeatureScaler.fit(features: trainFeatures)
+let scaler = StandardScaler.fit(features: trainFeatures)
 let scaledTrain = scaler.transform(trainFeatures)
 let scaledTest = scaler.transform(testFeatures)
 ```
@@ -87,12 +87,12 @@ Raw data rarely arrives in a form that works well for models. **Feature engineer
 ```swift
 import Quiver
 
-// Min-max scaling: transforms each column to 0–1 range
-let scaler = FeatureScaler.fit(features: trainFeatures)
+// Standardization: transforms each column to zero mean and unit variance
+let scaler = StandardScaler.fit(features: trainFeatures)
 let scaled = scaler.transform(trainFeatures)
 ```
 
-Quiver's `FeatureScaler` uses min-max normalization by default, scaling each column independently based on its observed range in the training data. For details on custom ranges and constant-column handling, see <doc:Feature-Scaling>.
+Quiver's `StandardScaler` standardizes each column independently, subtracting the column's mean and dividing by its standard deviation so every feature ends up centered at zero with unit variance. This z-score approach is the default choice because it handles outliers gracefully and assumes no fixed bounds. When features do have a known bounded range, min-max normalization (`FeatureScaler`) is the natural alternative, mapping each column into a 0–1 interval instead. For details on both scalers and constant-column handling, see <doc:Feature-Scaling>.
 
 ### Overfitting and underfitting
 
@@ -102,7 +102,11 @@ A model can fail in two opposite ways:
 
 **Underfitting** means the model is too simple to capture the pattern in the data. It performs poorly on both training and test data. This can happen when the model lacks the capacity to represent the relationship, or when important features are missing.
 
-The goal is a model that generalizes, one that learns the true pattern well enough to make accurate predictions on data it has never seen. Splitting data into training and test sets (and checking both scores) is the primary tool for detecting these problems.
+These two failures are the two ends of the **bias-variance tradeoff** — underfitting is high bias (the model is too rigid to fit the pattern), and overfitting is high variance (the model swings too far to fit the noise). The goal is a model that generalizes, one that learns the true pattern well enough to make accurate predictions on data it has never seen. Splitting data into training and test sets (and checking both scores) is the primary tool for detecting these problems. The <doc:Ridge-Regression> page shows both failures as worked examples with training and test scores, and the <doc:Regularization-Primer> covers one direct cure for overfitting — penalizing a model for leaning too hard on any one feature.
+
+### Fitting remedies
+
+The two scores also tell us which failure we have, and the cures run in opposite directions. When the training score is high and the test score is much lower, the gap is the signature of overfitting, and the remedy is to simplify — add a regularization penalty, or reduce the model's reach. When both scores are low and close together, the model is underfitting, and the remedy is the opposite: give it more to work with. That means adding features that carry real signal, combining existing columns into interaction terms or higher-order ones (see the feature-engineering note above), or, if regularization is already in play, easing the penalty so the model is free to fit more closely. A model cannot learn a pattern it has no way to represent, so the underfitting cure is almost always about capacity rather than restraint.
 
 ### Classification and regression
 
@@ -196,6 +200,8 @@ For a full treatment of these metrics and the `ConfusionMatrix` type, see <doc:E
 **K-Nearest Neighbors** makes no assumptions about data distribution and classifies new points by finding the most similar training examples. The tradeoff is performance: every prediction scans the entire training set, and feature scaling is critical because `distance(to:)` is sensitive to magnitude differences. See <doc:Nearest-Neighbors-Classification>.
 
 **Linear Regression** predicts continuous values rather than categories. Its coefficients are directly interpretable ("each additional bedroom adds $X to the price"), but it assumes a linear relationship between features and target. See <doc:Linear-Regression>.
+
+**Polynomial regression** has two doors in Quiver. `LinearRegression.fit` returns a fitted model with the inferential machinery — standard errors, p-values, confidence intervals — available through `summary`. `polyfit` returns a `Polynomial`, a callable mathematical object we can evaluate, differentiate, scale, or compose. The choice rests on which return type the next call site needs: multi-feature work or inference reaches for `LinearRegression.fit`; single-variable curve work where the output benefits from being a `Polynomial` reaches for `polyfit`. The error contracts differ too — `polyfit` returns `nil` on bad input; `LinearRegression.fit` throws `MatrixError.singular`. See <doc:Polynomials>.
 
 **K-Means** is unsupervised and discovers natural groupings in data that has no labels. Useful for segmentation and anomaly detection, but we must choose the number of clusters in advance. See <doc:KMeans-Clustering>.
 

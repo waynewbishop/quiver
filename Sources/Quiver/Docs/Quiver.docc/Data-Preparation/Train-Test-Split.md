@@ -1,6 +1,6 @@
 # Train-Test Split
 
-Splitting arrays into training and testing subsets with reproducible, class-balanced partitions.
+Splitting arrays into training, testing, and rotating cross-validation subsets with reproducible, class-balanced partitions.
 
 ## Overview
 
@@ -69,19 +69,45 @@ The same seed produces the same index permutation regardless of element type. A 
 
 ### Splitting features and labels together
 
-In other numerical computing ecosystems, train-test splitting is typically a single function that accepts multiple arrays and returns all partitions at once. This produces four or more return values that must be unpacked in the correct positional order — and getting that order wrong is a common source of silent bugs.
+Each call splits one array and returns a named tuple with exactly two values: `.train` and `.test`. To keep features and labels aligned, we call it once per array with the same seed, and the matching index permutation does the rest.
 
-Quiver takes a different approach. Each call splits one array and returns a named tuple with exactly two values: `.train` and `.test`. This design has three advantages:
-
-**No positional ordering bugs**. With a single multi-array function, swapping two variables in the unpack silently corrupts the data. With named tuples, each destructure is self-contained — `trainFeatures` and `testFeatures` cannot be confused with `trainPrices` and `testPrices`.
-
-**Works with any number of arrays**. If we have features, labels, and sample weights, we add a third call with the same seed. A single-function approach would need a new parameter for every additional array.
+Naming each partition at the point it is created keeps the destructure self-contained, so `trainFeatures` and `testFeatures` cannot be confused with `trainPrices` and `testPrices`. The pattern also scales to as many parallel arrays as a model needs. When features, labels, and sample weights all have to travel together, we add one more call with the same seed and every array lands in the same partition, row for row.
 
 ### Choosing a test ratio
 
 A `testRatio` of `0.2` (80% training, 20% testing) is the most common choice and a good default for most datasets. For smaller datasets where every training sample matters, `0.1` reserves more data for learning. For very large datasets, even `0.3` or higher can work since there are enough training samples either way.
 
 The ratio must be between 0 and 1, exclusive — a ratio of 0 or 1 would produce an empty partition, which is never useful.
+
+### Rotating the holdout with cross-validation
+
+A single split spends its whole verdict on one arbitrary slice of the data, and a lucky or unlucky slice can flatter or punish a model that does not deserve it. **Cross-validation** removes that luck by rotating the holdout: the samples are shuffled once and divided into `k` near-equal folds, and each fold takes a turn as the validation set while the other folds train. Every sample is validated exactly once, so the score read back is an average over the whole dataset rather than a bet on one partition. The steadier estimate is the basis for choosing a model's tuning parameters honestly.
+
+`kFoldIndices(k:seed:)` produces the folds. The fold count `k` must satisfy `2 <= k <= count`; ten folds is the common choice, and `k` can run all the way up to the sample count, where each fold holds out a single sample. A higher `k` buys a steadier estimate at the cost of more work, since `k` folds mean `k` model fits. Each fold holds the sample positions to train on and the positions to validate on:
+
+```swift
+import Quiver
+
+let scores = [55.0, 62, 68, 74, 79, 83]
+let folds = scores.kFoldIndices(k: 3, seed: 42)
+
+for fold in folds {
+    print(fold.train, fold.validation)
+}
+// [1, 3, 2, 5] [0, 4]   — train on four samples, validate on two
+// [0, 4, 2, 5] [1, 3]   — a different two held out
+// [0, 4, 1, 3] [2, 5]   — and the last two
+```
+
+The method returns `k` named tuples of `(train: [Int], validation: [Int])` — sample positions, not sliced data. Across the three folds every position from `0` to `5` lands in `validation` exactly once. The same indices subscript any parallel array, so a feature matrix and its target array stay aligned through the loop: fit a model on `fold.train`, score it on `fold.validation`, and average the scores.
+
+The fold models are scaffolding, not the deliverable. Once the averaged scores name the best configuration, we discard the `k` fold models and retrain that single choice on the entire dataset, and that one model is what we deploy.
+
+Cross-validation and the two-way split solve different halves of the same problem. Cross-validation chooses the model and its tuning parameters; a separate test set, held out from the start with `trainTestSplit` and touched exactly once, reports the final honest score. Selecting a configuration on the same data we report it on biases the estimate optimistically, which is why the deciding and the reporting must draw on different data.
+
+### Why folds return indices
+
+`kFoldIndices` hands back index lists rather than ready-made train and validation arrays, and the choice is deliberate. The caller drives the fitting loop and applies the same fold indices to every parallel array — features and targets alike — which keeps the rows aligned across all of them. It also keeps the validation rows genuinely unseen. When a scaler is fit on the training indices alone and only then applied to the validation indices, no information leaks backward from the data the model is about to be scored on. Ready-sliced arrays would invite the shortcut of scaling the whole dataset once before the loop, which quietly folds validation statistics into the fit and inflates every score that follows.
 
 ### Stratified splitting
 
@@ -126,8 +152,8 @@ Before training, `imbalanceRatio` measures how skewed the class distribution is.
 import Quiver
 
 let labels = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
-labels.classDistribution()  // [0: 8, 1: 2]
-labels.imbalanceRatio()     // 4.0
+labels.classDistribution()  // 8 zeros, 2 ones (Dictionary order is not guaranteed)
+labels.imbalanceRatio()     // Optional(4.0)
 ```
 
 Developers set their own threshold based on the domain. A common guideline: ratios above 3.0 suggest oversampling before training:
@@ -168,6 +194,7 @@ The method auto-detects which classes are smaller and generates new samples by i
 ### Splitting
 - ``Swift/Array/trainTestSplit(testRatio:seed:)``
 - ``Swift/Array/stratifiedSplit(labels:testRatio:seed:)``
+- ``Swift/Array/kFoldIndices(k:seed:)``
 - ``Swift/Array/oversample(labels:)``
 
 ### Related

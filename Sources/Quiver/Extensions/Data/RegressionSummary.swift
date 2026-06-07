@@ -71,7 +71,7 @@ public struct RegressionSummary: Equatable, Codable, Sendable {
     public let rSquared: Double
 
     /// The adjusted coefficient of determination,
-    /// `1 - (1 - R²) · (n - 1) / (n - p - 1)` where `p` is the number of fitted
+    /// `1 - (1 - R²) · (n - 1) / (n - p)` where `p` is the number of fitted
     /// coefficients (intercept counts when present in this convention).
     public let adjustedRSquared: Double
 
