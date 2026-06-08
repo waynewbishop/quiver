@@ -33,3 +33,28 @@ public protocol Regressor {
     /// - Returns: An array of predicted values, one per sample.
     func predict(_ features: [[Double]]) -> [Double]
 }
+
+extension Regressor {
+
+    /// Predicts a single target value from one single-feature sample.
+    ///
+    /// A scalar convenience for single-feature models: pass one feature value
+    /// and get one prediction back, with no array to wrap on the way in or
+    /// unwrap on the way out.
+    ///
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let sqft   = [1000.0, 1500.0, 2000.0, 2500.0, 3000.0]
+    /// let prices = [150000.0, 200000.0, 260000.0, 310000.0, 370000.0]
+    ///
+    /// let model = try LinearRegression.fit(features: sqft, targets: prices)
+    /// let price = model.predict(3500.0)
+    /// ```
+    ///
+    /// - Parameter value: A single feature value for a model trained on one feature.
+    /// - Returns: The predicted target value.
+    public func predict(_ value: Double) -> Double {
+        return predict([[value]])[0]
+    }
+}

@@ -22,7 +22,7 @@ let model = try LinearRegression.fit(features: sqft, targets: prices)
 
 Task {
     // The model crosses into the task as a value — the compiler verifies it's safe
-    let prediction = model.predict([2000.0])
+    let prediction = model.predict(2000.0)
     print(prediction)
 }
 ```

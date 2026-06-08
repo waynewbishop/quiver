@@ -279,4 +279,21 @@ final class RidgeTests: XCTestCase {
         // Monotone targets → second prediction should exceed the first.
         XCTAssertGreaterThan(preds[1], preds[0])
     }
+
+    // Scalar convenience predict returns a single Double for a single-feature sample
+    func testScalarPredict() throws {
+        let single: [[Double]] = [[1.0], [2.0], [3.0], [4.0], [5.0]]
+        let targets = [2.0, 4.0, 6.0, 8.0, 10.0]
+
+        let model = try Ridge.fit(
+            features: single, targets: targets, lambda: 0.0,
+            learningRate: 0.01, maxIterations: 20000, tolerance: 1.0e-12
+        )
+
+        // Scalar overload must agree with the batch path's first element.
+        let scalar = model.predict(6.0)
+        let batch = model.predict([[6.0]])[0]
+
+        XCTAssertEqual(scalar, batch, accuracy: 1.0e-9)
+    }
 }

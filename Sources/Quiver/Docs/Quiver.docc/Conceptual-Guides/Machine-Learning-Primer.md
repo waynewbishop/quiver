@@ -140,8 +140,8 @@ let prices = [250000.0, 320000.0, 380000.0, 440000.0]
 let model = try LinearRegression.fit(features: sqft, targets: prices)
 
 // Predict a continuous value for a new listing
-let prediction = model.predict([2000.0])
-print(prediction)  // [~421000.0]
+let prediction = model.predict(2000.0)
+print(prediction)  // ~421000.0
 ```
 
 The distinction matters because evaluation metrics differ. Classification uses accuracy, precision, and recall. Regression uses measures like mean squared error and R².

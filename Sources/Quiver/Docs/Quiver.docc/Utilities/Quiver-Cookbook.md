@@ -28,8 +28,8 @@ import Quiver
     print(model)
 
     // Predict lift at an angle the tunnel hasn't tested
-    let predicted = model.predict([7.0])
-    print("Angle: 7° → CL: \(String(format: "%.2f", predicted[0]))")
+    let predicted = model.predict(7.0)
+    print("Angle: 7° → CL: \(String(format: "%.2f", predicted))")
 
     // How well does the linear model fit?
     let r2 = model.predict(angle).rSquared(actual: liftCL)

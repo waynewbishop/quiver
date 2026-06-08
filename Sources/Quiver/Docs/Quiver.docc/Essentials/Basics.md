@@ -79,7 +79,7 @@ let heights = [165.0, 170.0, 175.0, 180.0, 185.0]
 let weights = [60.0, 68.0, 75.0, 82.0, 90.0]
 
 let model = try LinearRegression.fit(features: heights, targets: weights)
-model.predict([172.0])   // [70.56], predicted weight for a 172cm person
+model.predict(172.0)   // 70.56, predicted weight for a 172cm person
 ```
 
 Every Quiver model follows the same shape: `fit` takes the training data, `predict` takes new inputs and returns answers. The `LinearRegression` model predicts a number, `KNearestNeighbors` predicts a category, and `KMeans` finds groupings. The choice between them depends on what we are trying to answer, not on a library to learn. They all read from the same `[Double]` arrays the rest of Quiver uses.

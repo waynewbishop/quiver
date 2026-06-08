@@ -342,4 +342,22 @@ final class GradientDescentTests: XCTestCase {
         XCTAssertTrue(increasing.description.contains("iteration 3"))
         XCTAssertTrue(increasing.description.contains("loss increased"))
     }
+
+    // Scalar convenience predict returns a single Double for a single-feature sample
+    func testScalarPredict() throws {
+        // y = 2x + 3 — single feature, exact relationship.
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0], [5.0]]
+        let targets = [5.0, 7.0, 9.0, 11.0, 13.0]
+
+        let model = try GradientDescent.fit(
+            features: features, targets: targets,
+            learningRate: 0.01, maxIterations: 50000, tolerance: 1.0e-12
+        )
+
+        // Scalar overload must agree with the batch path's first element.
+        let scalar = model.predict(6.0)
+        let batch = model.predict([[6.0]])[0]
+
+        XCTAssertEqual(scalar, batch, accuracy: 1.0e-9)
+    }
 }

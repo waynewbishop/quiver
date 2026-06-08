@@ -724,6 +724,7 @@ model.hasIntercept    // Bool
 
 let predictions = model.predict(testX)          // [[Double]] → [Double]
 let singleFeature = model.predict(xValues)      // [Double] → [Double] (featureCount == 1)
+let oneValue = model.predict(2000.0)            // Double → Double (single sample, featureCount == 1)
 ```
 
 ## Gradient Descent
@@ -751,6 +752,7 @@ print(gd)           // GradientDescent: 2 features, converged in 142 iterations 
 
 let predictions = gd.predict(testX)             // [[Double]] → [Double]
 let singleFeature = gd.predict(xValues)         // [Double] → [Double] (featureCount == 1)
+let oneValue = gd.predict(2000.0)               // Double → Double (single sample, featureCount == 1)
 ```
 
 Same `Regressor` protocol as `LinearRegression`. Same `coefficients` layout (intercept at index 0 when `hasIntercept` is true). The iterative route exists for the cases where no closed form is available, or where a penalty is added to the objective — `Ridge` (below) is the first model built on this optimizer, and the same descent loop will fit the iterative models that follow (logistic regression, SVM).
@@ -775,6 +777,7 @@ ridge.lossHistory   // [Double] — same observable trajectory as GradientDescen
 ridge.outcome       // .converged | .maxIterationsReached
 
 let predictions = ridge.predict(testX)
+let oneValue = ridge.predict(2000.0)            // Double → Double (single sample, featureCount == 1)
 ```
 
 L2-regularized regression: minimizes `(1/n)‖Xθ − y‖² + λ‖θ‖²`, the squared-error objective plus a penalty on coefficient size that curbs overfitting and steadies the unstable fits collinear features produce. At `lambda` of zero the penalty vanishes and the fit reproduces ordinary least squares; as `lambda` grows the slopes shrink toward zero. The intercept is never penalized. Conforms to `Regressor`, so it substitutes for `LinearRegression` in any pipeline, and is fit by the same descent optimizer behind `GradientDescent`. Note `lambda` scales a bare penalty against a `1/n` error term, so its values are not interchangeable with conventions that fold in a `1/2m` or `λ/2m` factor. When the need for regularization is unclear, a large `conditionNumber` on the feature matrix is the collinearity the penalty is built to absorb.
@@ -808,6 +811,7 @@ let knn = KNearestNeighbors.fit(
 // VoteWeight: .uniform, .distance
 
 knn.predict(testX)   // [Int] — raw labels for evaluation pipelines
+knn.predict(8.0)     // Int — single sample, featureCount == 1
 knn.classify(testX)  // [Classification] — grouped by predicted label
 knn.k                // Int
 knn.metric           // DistanceMetric
@@ -828,6 +832,7 @@ let gnb = GaussianNaiveBayes.fit(features: trainX, labels: trainY)
 print(gnb)  // GaussianNaiveBayes: 2 classes, 2 features
 
 gnb.predict(testX)                    // [Int] — raw labels for evaluation pipelines
+gnb.predict(8.0)                      // Int — single sample, featureCount == 1
 gnb.classify(testX)                   // [Classification] — grouped by predicted label
 gnb.predictLogProbabilities(testX)    // [[Double]] — unnormalized log-probabilities
 gnb.predictProbabilities(testX)       // [[Double]] — calibrated probabilities, each row sums to 1.0

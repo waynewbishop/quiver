@@ -113,7 +113,7 @@ let hr: [Double] = [100, 110, 120, 130, 150, 160, 170]
 let model = try LinearRegression.fit(features: power, targets: hr)
 
 // Score 200 watts against this wearer's fitted slope.
-print(model.predict([[200.0]])[0]) // 140.0 — expected HR at 200W for this wearer
+print(model.predict(200.0)) // 140.0 — expected HR at 200W for this wearer
 ```
 
 The fitted `model` is a value with a `predict` method. Passing in 200 watts returns the heart rate the wearer's slope expects at that effort — here, 140 bpm. A different wearer's data would fit a different slope and a different intercept, and the predicted HR at 200W would land somewhere else; the model is *personal* in exactly that sense.
