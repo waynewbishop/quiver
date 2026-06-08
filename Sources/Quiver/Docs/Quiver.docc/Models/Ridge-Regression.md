@@ -173,7 +173,7 @@ for lambda in [1.0, 10.0] {
 // lambda = 10 → [344320,  8034,  8033]   smaller still, the slopes nearly equal
 ```
 
-The intercept stays near the same value throughout because it is never penalized; only the slopes give ground. The wild `608719 / -512315` pair becomes a steady one a new sample will not overturn. This is what ridge buys on collinear data: not a better fit to the training rows, but coefficients that mean something.
+The intercept stays near the same value throughout because it is never penalized; only the slopes give ground. The wild `608719 / -512315` pair becomes a steady one a new sample will not overturn. This is what ridge buys on collinear data: not a better fit to the training rows, but coefficients that mean something. Recognizing the lopsided-pair signature in the first place — and reading the condition number that predicts it before any fit — is covered in <doc:Model-Interpretation-Primer>.
 
 ### When to use ridge
 

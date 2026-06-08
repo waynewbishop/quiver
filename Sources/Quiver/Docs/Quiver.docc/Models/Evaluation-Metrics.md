@@ -154,6 +154,7 @@ print(predictions.classificationReport(actual: testY))
 
 ### Related
 - <doc:Machine-Learning-Primer>
+- <doc:Model-Interpretation-Primer>
 - <doc:Naive-Bayes>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:Linear-Regression>

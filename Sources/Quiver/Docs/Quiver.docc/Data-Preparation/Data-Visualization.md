@@ -58,7 +58,7 @@ let percents = series.stackedPercentage()
 
 ### Box plots from a column summary
 
-A box plot is the chart that draws the five-number summary directly. The fields on a `ColumnSummary` map onto the marks of the plot one to one: `q1` and `q3` form the edges of the box, `median` is the line inside it, and the whiskers extend out to the most extreme data points still within `1.5 · iqr` of the box. Any value beyond those fences is drawn as a separate point — the convention statistics courses use to flag outliers without letting them stretch the whiskers. See <doc:Statistics-Primer> for what each field means mathematically.
+A box plot is the chart that draws the five-number summary directly. The fields on a ``ColumnSummary`` map onto the marks of the plot one to one: `q1` and `q3` form the edges of the box, `median` is the line inside it, and the whiskers extend out to the most extreme data points still within `1.5 · iqr` of the box. Any value beyond those fences is drawn as a separate point — the convention statistics courses use to flag outliers without letting them stretch the whiskers. See <doc:Statistics-Primer> for what each field means mathematically.
 
 Quiver does not draw the chart, but it computes every field the chart needs in one call:
 
@@ -92,7 +92,7 @@ if let stats = responseTimes.summary() {
 
 Each piece maps to a Swift Charts mark. A `RectangleMark` spans from `q1` to `q3` for the box, a `RuleMark` at `median` draws the line inside it, two more `RuleMark` shapes carry the whiskers from `whiskerLow` to `q1` and from `q3` to `whiskerHigh`, and a `PointMark` for each value in `outliers` draws the dots beyond the fences.
 
-The same shape works for one column or for several drawn side by side. Calling `summary()` on a `Panel` produces one `ColumnSummary` per column, all stored under their original names in the returned `PanelSummary`, and a chart that iterates the panel's `columnNames` renders one box per column with the labels already in place. See <doc:Panel-Workflows> for the typed-summary surface end to end.
+The same shape works for one column or for several drawn side by side. Calling `summary()` on a ``Panel`` produces one `ColumnSummary` per column, all stored under their original names in the returned ``PanelSummary``, and a chart that iterates the panel's `columnNames` renders one box per column with the labels already in place. See <doc:Panel-Workflows> for the typed-summary surface end to end.
 
 ### Correlation heatmaps
 
@@ -143,7 +143,7 @@ let sixHourlyMax = hourlyTemps.downsample(factor: 6, using: .max)
 // [18.0, 26.0, 27.5, 21.0]
 ```
 
-The `AggregationMethod` parameter controls how values within each window are combined: `.mean` for smoothed trends, `.max` or `.min` for extremes, `.sum` for totals, `.count` for frequency, and `.percentage` for group sums normalized to 100%.
+The ``AggregationMethod`` parameter controls how values within each window are combined: `.mean` for smoothed trends, `.max` or `.min` for extremes, `.sum` for totals, `.count` for frequency, and `.percentage` for group sums normalized to 100%.
 
 ### Time series smoothing and differentiation
 
@@ -219,7 +219,7 @@ The two arrays — normal and outlier — are parallel arrays ready for separate
 
 Quiver's ML models produce outputs that map directly to Swift Charts marks.
 
-**Confusion matrix heatmap.** A binary classifier's `ConfusionMatrix` contains four counts — true positives, false positives, true negatives, and false negatives. These map to a 2×2 `RectangleMark` heatmap using `heatmapData`:
+**Confusion matrix heatmap.** A binary classifier's ``ConfusionMatrix`` contains four counts — true positives, false positives, true negatives, and false negatives. These map to a 2×2 `RectangleMark` heatmap using `heatmapData`:
 
 ```swift
 import Quiver
@@ -274,7 +274,7 @@ let yValues = model.predict(xValues)
 
 The scatter shows the raw data, and the line shows what the model learned. The gap between points and line is the residual error — visible at a glance.
 
-**Polynomial trend line.** When the relationship between `x` and `y` is curved rather than linear, `polyfit(x:y:degree:)` returns a `Polynomial` that captures the curve. Evaluating the polynomial across an evenly spaced grid produces a smooth overlay for Swift Charts, the same shape as the linear regression overlay above but with a quadratic (or higher-degree) fit:
+**Polynomial trend line.** When the relationship between `x` and `y` is curved rather than linear, `polyfit(x:y:degree:)` returns a ``Polynomial`` that captures the curve. Evaluating the polynomial across an evenly spaced grid produces a smooth overlay for Swift Charts, the same shape as the linear regression overlay above but with a quadratic (or higher-degree) fit:
 
 ```swift
 import Quiver

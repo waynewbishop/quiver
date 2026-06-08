@@ -203,7 +203,7 @@ The parametric interval `[~245, ~255]` lands within rounding of the resampled in
 
 ### The normal approximation
 
-When the sample is large enough, the Central Limit Theorem makes the sampling distribution of the mean approximately normal, and we can build confidence intervals and p-values directly from the normal distribution without resampling. Quiver exposes the normal CDF and quantile through `Distributions.normal`:
+When the sample is large enough, the Central Limit Theorem makes the sampling distribution of the mean approximately normal, and we can build confidence intervals and p-values directly from the normal distribution without resampling. Quiver exposes the normal CDF and quantile through ``Distributions/normal``:
 
 ```swift
 import Foundation
@@ -246,6 +246,6 @@ Significance and effect size are independent dimensions. A small p-value with a 
 
 ### From summaries to models
 
-Three pieces of this primer reappear directly in Quiver's machine learning stack. The z-score, the subtract-the-mean-and-divide-by-the-spread operation we used to put values on a universal ruler, is what `StandardScaler` applies column-by-column before a model touches the data — the same formula at a larger scale, with one small twist that the scaler uses the population standard deviation while the primer's `standardDeviation()` defaults to the sample form. Resampling carries forward as the engine behind `percentileCI` on any statistic, not only the mean we used here.
+Three pieces of this primer reappear directly in Quiver's machine learning stack. The z-score, the subtract-the-mean-and-divide-by-the-spread operation we used to put values on a universal ruler, is what ``StandardScaler`` applies column-by-column before a model touches the data — the same formula at a larger scale, with one small twist that the scaler uses the population standard deviation while the primer's `standardDeviation()` defaults to the sample form. Resampling carries forward as the engine behind `percentileCI` on any statistic, not only the mean we used here.
 
 The confidence-interval idea has its richest payoff in `LinearRegression.summary(features:targets:level:)`, which returns standard errors, t-statistics, p-values, and CIs for every fitted coefficient — the same machinery from this primer, applied to a regression slope instead of a sample mean.

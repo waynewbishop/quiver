@@ -92,7 +92,7 @@ if let q = responseTimes.quartiles() {
 }
 ```
 
-The return type is `Quartiles`, a typed value with `min`, `q1`, `median`, `q3`, `max`, and `iqr` as named properties. Read them directly when only one is needed (`q.median`, `q.iqr`), or print the whole value for the full summary. When the underlying data has clean rational cuts, `q1.asFraction()` and friends recover them — see <doc:Rendering-Math-Primer>.
+The return type is ``Quartiles``, a typed value with `min`, `q1`, `median`, `q3`, `max`, and `iqr` as named properties. Read them directly when only one is needed (`q.median`, `q.iqr`), or print the whole value for the full summary. When the underlying data has clean rational cuts, `q1.asFraction()` and friends recover them — see <doc:Rendering-Math-Primer>.
 
 Quartiles are computed by linear interpolation between adjacent order statistics. For a sorted array of length `n`, the `p`-th percentile lives at index `(p / 100) · (n − 1)`. When that index falls between two integers, the result is the straight-line blend of the two surrounding values. Other tools use other quartile conventions, so a textbook reporting different quartile values for the same input is not contradicting Quiver; it is using a different definition. When `n = 1`, every position collapses to the single value and `iqr` is `0`.
 
@@ -139,7 +139,7 @@ let zScores = scores.standardized()
 // The 95 appears as ≈ 1.77 standard deviations above the mean
 ```
 
-Rough rules of thumb help interpret a z-score. Values with absolute z-score below 1 are ordinary, within the normal range of variation, covering about 68% of values in a typical distribution. Values between 1 and 2 are somewhat above or below average but not remarkable, covering about another 27%. Values between 2 and 3 are notably unusual and worth investigating, covering about 4.5%. Values above 3 are rare, accounting for less than 0.3% of a normal distribution. These percentages describe a true normal distribution and real data will vary, but the categories hold as useful guides. See <doc:Working-With-Distributions> for the `Distributions.normal` API that computes these probabilities exactly.
+Rough rules of thumb help interpret a z-score. Values with absolute z-score below 1 are ordinary, within the normal range of variation, covering about 68% of values in a typical distribution. Values between 1 and 2 are somewhat above or below average but not remarkable, covering about another 27%. Values between 2 and 3 are notably unusual and worth investigating, covering about 4.5%. Values above 3 are rare, accounting for less than 0.3% of a normal distribution. These percentages describe a true normal distribution and real data will vary, but the categories hold as useful guides. See <doc:Working-With-Distributions> for the ``Distributions/normal`` API that computes these probabilities exactly.
 
 Z-scores are the bridge between descriptive statistics and machine learning. Once every value is measured on a universal ruler, comparisons across different datasets, different units, and different scales become possible.
 
@@ -180,4 +180,4 @@ A different kind of question shows up the moment we start treating our data as e
 
 Between describing and inferring sits a third step: naming what kind of distribution the data follows. The summaries we have computed so far are the inputs to that question, and the answer unlocks the right inferential tool for the job. See <doc:Identifying-A-Distribution> for the workflow that turns a histogram and a few summary statistics into a named family.
 
-The same `summary()` surface scales from a single array to a labeled table. Calling it on a `Panel` returns one snapshot per column with the same nine fields, indexed by column name. See <doc:Panel-Workflows> for the applied workflow that uses `summary()` across a multi-column panel during an ML pipeline.
+The same `summary()` surface scales from a single array to a labeled table. Calling it on a ``Panel`` returns one snapshot per column with the same nine fields, indexed by column name. See <doc:Panel-Workflows> for the applied workflow that uses `summary()` across a multi-column panel during an ML pipeline.

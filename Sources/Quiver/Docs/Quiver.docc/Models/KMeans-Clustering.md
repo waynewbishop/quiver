@@ -132,7 +132,7 @@ for result in results {
 // k=5: inertia=0.25
 ```
 
-The three natural groups in this data produce a sharp drop from `k=2` to `k=3`, then only marginal gains after. Because centroid initialization is random, an unlucky `seed` can settle into a poor clustering at a given `k` and inflate its inertia — `bestFit(data:k:maxIterations:attempts:)` guards against that by running several initializations and keeping the tightest result.
+The three natural groups in this data produce a sharp drop from `k=2` to `k=3`, then only marginal gains after. Because centroid initialization is random, an unlucky `seed` can settle into a poor clustering at a given `k` and inflate its inertia — `bestFit(data:k:maxIterations:attempts:)` guards against that by running several initializations and keeping the tightest result. Inertia, the elbow, and `clusterCohesion()` are the geometric tools for verifying a clustering when there are no coefficients to read; see <doc:Model-Interpretation-Primer> for the full non-parametric audit.
 
 ### The full pipeline
 

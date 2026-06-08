@@ -52,6 +52,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Physics-Primitives-Primer>
 - <doc:Machine-Learning-Primer>
 - <doc:Regularization-Primer>
+- <doc:Model-Interpretation-Primer>
 - <doc:Concurrency-Primer>
 
 ### Vectors

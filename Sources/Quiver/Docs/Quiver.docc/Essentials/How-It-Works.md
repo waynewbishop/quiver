@@ -4,7 +4,7 @@ Understanding Quiver's architecture as a layer over the Swift array type.
 
 ## Overview
 
-Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`, with a small number of value types reserved for objects that carry their own algebra — `Polynomial` is one such example. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
+Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`, with a small number of value types reserved for objects that carry their own algebra — ``Polynomial`` is one such example. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
 
 ```swift
 import Quiver
@@ -58,7 +58,7 @@ let model = KNearestNeighbors.fit(features: trainingData, labels: labels, k: 3)
 let predictions = model.predict(newData)
 ```
 
-Because `fit` is the only way to create a model, the compiler makes it impossible to call `predict` on something that has not been trained. There is no runtime error for "model not fitted"; the situation cannot arise. Every model in Quiver follows this pattern including `LinearRegression`, `GaussianNaiveBayes`, `KNearestNeighbors`, and `KMeans`.
+Because `fit` is the only way to create a model, the compiler makes it impossible to call `predict` on something that has not been trained. There is no runtime error for "model not fitted"; the situation cannot arise. Every model in Quiver follows this pattern including ``LinearRegression``, ``GaussianNaiveBayes``, ``KNearestNeighbors``, and ``KMeans``.
 
 Models are also immutable. Once created, their coefficients, centroids, and learned parameters cannot change. This eliminates an entire category of bugs where a model is accidentally retrained or modified between predictions.
 
@@ -78,7 +78,7 @@ print(f)        // 3/5
 
 ### Presentation-only types
 
-Quiver computes in `Double` and renders in the form a reader can read. Two methods anchor the pattern: `asFraction` returns rational structure as a real `Fraction` value, and `asExpression` returns a Unicode-formatted string ready to display. They compose — chain `asFractions().asExpression()` to see the rational form of a vector or matrix as a bracketed block — and the underlying numeric values are never touched.
+Quiver computes in `Double` and renders in the form a reader can read. Two methods anchor the pattern: `asFraction` returns rational structure as a real ``Fraction`` value, and `asExpression` returns a Unicode-formatted string ready to display. They compose — chain `asFractions().asExpression()` to see the rational form of a vector or matrix as a bracketed block — and the underlying numeric values are never touched.
 
 ```swift
 let v = [0.6, 0.75, 0.5]
@@ -92,7 +92,7 @@ See <doc:Rendering-Math-Primer> for the full catalog: the scalar, vector, and ma
 
 ### Typed summary returns
 
-When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The `Quartiles`, `ColumnSummary`, `PanelSummary`, `RegressionSummary`, `ClassificationReport`, `ConfidenceInterval`, `EmpiricalRule`, `ContingencyTable`, and the `BayesPrior` / `BayesLikelihood` / `BayesPosterior` trio are the patterns we will see repeatedly.
+When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The ``Quartiles``, ``ColumnSummary``, ``PanelSummary``, ``RegressionSummary``, ``ClassificationReport``, ``ConfidenceInterval``, ``EmpiricalRule``, ``ContingencyTable``, and the ``BayesPrior`` / ``BayesLikelihood`` / ``BayesPosterior`` trio are the patterns we will see repeatedly.
 
 ```swift
 let summary: PanelSummary = panel.summary()
@@ -106,7 +106,7 @@ if let price = summary.columns["price"] {
 
 ### A focused and intentional scope
 
-Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. Quiver provides analytic derivatives for polynomials, sample-based derivatives for sequences, and iterative optimization through `GradientDescent`; what it does not provide is reverse-mode automatic differentiation over arbitrary computation graphs. GPU acceleration and distributed training are similarly outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
+Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. Quiver provides analytic derivatives for polynomials, sample-based derivatives for sequences, and iterative optimization through ``GradientDescent``; what it does not provide is reverse-mode automatic differentiation over arbitrary computation graphs. GPU acceleration and distributed training are similarly outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
 
 ### Performance characteristics
 

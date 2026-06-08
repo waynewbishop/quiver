@@ -213,7 +213,7 @@ Nearest Neighbors works best when:
 - There is no strong prior about data distribution
 - Interpretability matters, because it is easy to explain "these are the 5 most similar cases"
 
-Nearest Neighbors struggles with large datasets (prediction scans every training point), high-dimensional data (the "curse of dimensionality" makes distances less meaningful), and features on different scales (use `StandardScaler` to mitigate). The curse of dimensionality has a concrete mechanism: as the number of features grows, the nearest and farthest neighbors become almost equidistant, so the majority vote loses its power to discriminate between classes.
+Nearest Neighbors struggles with large datasets (prediction scans every training point), high-dimensional data (the "curse of dimensionality" makes distances less meaningful), and features on different scales (use `StandardScaler` to mitigate). The curse of dimensionality has a concrete mechanism: as the number of features grows, the nearest and farthest neighbors become almost equidistant, so the majority vote loses its power to discriminate between classes. Because a lazy learner has no coefficients to inspect, we judge it entirely by how it classifies held-out data; see <doc:Model-Interpretation-Primer> for evaluating non-parametric models by their prediction structure.
 
 ### Safe by design
 

@@ -57,7 +57,7 @@ This is the default pattern for training in response to a user action, a file lo
 let model = await trainClassifier(features: data, labels: labels)
 ```
 
-Some Quiver models can throw when their inputs don't support a solution. `LinearRegression.fit()` throws `MatrixError.singular` when the normal equation has no unique answer — which happens when the feature columns are linearly dependent, meaning one feature is an exact combination of the others. Combining a throwing fit with an `async` function is straightforward: mark the wrapper `async throws` and use `try await` at the call site.
+Some Quiver models can throw when their inputs don't support a solution. `LinearRegression.fit()` throws ``MatrixError/singular`` when the normal equation has no unique answer — which happens when the feature columns are linearly dependent, meaning one feature is an exact combination of the others. Combining a throwing fit with an `async` function is straightforward: mark the wrapper `async throws` and use `try await` at the call site.
 
 ```swift
 import Quiver
@@ -74,7 +74,7 @@ let model = try await trainRegression(features: sqft, targets: prices)
 
 ### Long-running training
 
-Some training workloads are the work itself. A `KMeans` fit over a large dataset, or a clustering run with a high iteration count, can take long enough that we want the work to run independently of the calling context. `Task.detached` starts a new top-level task that runs on its own — the right choice when training should complete regardless of what the surrounding code is doing.
+Some training workloads are the work itself. A ``KMeans`` fit over a large dataset, or a clustering run with a high iteration count, can take long enough that we want the work to run independently of the calling context. `Task.detached` starts a new top-level task that runs on its own — the right choice when training should complete regardless of what the surrounding code is doing.
 
 ```swift
 import Quiver
@@ -119,7 +119,7 @@ func predict(_ batches: [[[Double]]], with model: LinearRegression) async -> [[D
 
 Each `predict` runs the same Quiver call we would make sequentially; the task group only decides which core runs which batch. The same shape applies to any independent work, such as a pairwise comparison like `clusterCohesion` or a batch handed to `KMeans.predict`.
 
-> Note: Running batches concurrently changes the order in which they finish, even though each is placed back in its original position. For most operations the recombined result is identical to the sequential one. Voting models such as `KNearestNeighbors` are the exception: when two classes tie within a neighborhood, the order in which votes are counted can settle the tie either way, so a concurrent split may differ from a single call on a few predictions. When exact reproducibility matters more than speed, predict in one call.
+> Note: Running batches concurrently changes the order in which they finish, even though each is placed back in its original position. For most operations the recombined result is identical to the sequential one. Voting models such as ``KNearestNeighbors`` are the exception: when two classes tie within a neighborhood, the order in which votes are counted can settle the tie either way, so a concurrent split may differ from a single call on a few predictions. When exact reproducibility matters more than speed, predict in one call.
 
 ### What stays sequential
 

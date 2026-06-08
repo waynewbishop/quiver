@@ -76,7 +76,7 @@ let scaledTrain = scaler.transform(trainFeatures)
 let scaledTest = scaler.transform(testFeatures)
 ```
 
-This pattern — fit once on training data, apply everywhere — prevents leakage and gives us an honest evaluation. The `Pipeline` type enforces this automatically by bundling the scaler and model together, so the caller passes raw features and Pipeline handles scaling internally. See <doc:Pipeline> for details.
+This pattern — fit once on training data, apply everywhere — prevents leakage and gives us an honest evaluation. The ``Pipeline`` type enforces this automatically by bundling the scaler and model together, so the caller passes raw features and Pipeline handles scaling internally. See <doc:Pipeline> for details.
 
 ### Feature engineering and scaling
 
@@ -92,7 +92,7 @@ let scaler = StandardScaler.fit(features: trainFeatures)
 let scaled = scaler.transform(trainFeatures)
 ```
 
-Quiver's `StandardScaler` standardizes each column independently, subtracting the column's mean and dividing by its standard deviation so every feature ends up centered at zero with unit variance. This z-score approach is the default choice because it handles outliers gracefully and assumes no fixed bounds. When features do have a known bounded range, min-max normalization (`FeatureScaler`) is the natural alternative, mapping each column into a 0–1 interval instead. For details on both scalers and constant-column handling, see <doc:Feature-Scaling>.
+Quiver's ``StandardScaler`` standardizes each column independently, subtracting the column's mean and dividing by its standard deviation so every feature ends up centered at zero with unit variance. This z-score approach is the default choice because it handles outliers gracefully and assumes no fixed bounds. When features do have a known bounded range, min-max normalization (``FeatureScaler``) is the natural alternative, mapping each column into a 0–1 interval instead. For details on both scalers and constant-column handling, see <doc:Feature-Scaling>.
 
 ### Overfitting and underfitting
 
@@ -148,7 +148,7 @@ The distinction matters because evaluation metrics differ. Classification uses a
 
 ### Fit and predict
 
-Every Quiver model follows the same two-step pattern: **fit**, then **predict**. Fitting is the learning phase where the model examines the training data and builds whatever internal representation it needs. For `LinearRegression`, fitting computes the optimal coefficients. For `GaussianNaiveBayes`, it calculates the mean and variance of each feature per class. For `KNearestNeighbors`, fitting simply stores the training data (all the real work happens later). The result of `fit` is always a ready-to-use model.
+Every Quiver model follows the same two-step pattern: **fit**, then **predict**. Fitting is the learning phase where the model examines the training data and builds whatever internal representation it needs. For ``LinearRegression``, fitting computes the optimal coefficients. For ``GaussianNaiveBayes``, it calculates the mean and variance of each feature per class. For ``KNearestNeighbors``, fitting simply stores the training data (all the real work happens later). The result of `fit` is always a ready-to-use model.
 
 Predicting is the application phase. We hand the fitted model new samples it has never seen, and it returns answers. Classification models return class labels; regression models return continuous values:
 
@@ -191,7 +191,7 @@ let report = predictions.classificationReport(actual: actual)
 print(report)
 ```
 
-For a full treatment of these metrics and the `ConfusionMatrix` type, see <doc:Evaluation-Metrics>.
+For a full treatment of these metrics and the ``ConfusionMatrix`` type, see <doc:Evaluation-Metrics>.
 
 ### Choosing an algorithm
 
@@ -199,9 +199,9 @@ For a full treatment of these metrics and the `ConfusionMatrix` type, see <doc:E
 
 **K-Nearest Neighbors** makes no assumptions about data distribution and classifies new points by finding the most similar training examples. The tradeoff is performance: every prediction scans the entire training set, and feature scaling is critical because `distance(to:)` is sensitive to magnitude differences. See <doc:Nearest-Neighbors-Classification>.
 
-**Linear Regression** predicts continuous values rather than categories. Its coefficients are directly interpretable ("each additional bedroom adds $X to the price"), but it assumes a linear relationship between features and target. See <doc:Linear-Regression>.
+**Linear Regression** predicts continuous values rather than categories. Its coefficients are directly interpretable ("each additional bedroom adds $X to the price"), but that reading holds only when the features are well separated — see <doc:Model-Interpretation-Primer> for how to read coefficients honestly and when collinearity makes them arbitrary. It also assumes a linear relationship between features and target. See <doc:Linear-Regression>.
 
-**Polynomial regression** has two doors in Quiver. `LinearRegression.fit` returns a fitted model with the inferential machinery — standard errors, p-values, confidence intervals — available through `summary`. `polyfit` returns a `Polynomial`, a callable mathematical object we can evaluate, differentiate, scale, or compose. The choice rests on which return type the next call site needs: multi-feature work or inference reaches for `LinearRegression.fit`; single-variable curve work where the output benefits from being a `Polynomial` reaches for `polyfit`. The error contracts differ too — `polyfit` returns `nil` on bad input; `LinearRegression.fit` throws `MatrixError.singular`. See <doc:Polynomials>.
+**Polynomial regression** has two doors in Quiver. `LinearRegression.fit` returns a fitted model with the inferential machinery — standard errors, p-values, confidence intervals — available through `summary`. `polyfit` returns a ``Polynomial``, a callable mathematical object we can evaluate, differentiate, scale, or compose. The choice rests on which return type the next call site needs: multi-feature work or inference reaches for `LinearRegression.fit`; single-variable curve work where the output benefits from being a `Polynomial` reaches for `polyfit`. The error contracts differ too — `polyfit` returns `nil` on bad input; `LinearRegression.fit` throws ``MatrixError/singular``. See <doc:Polynomials>.
 
 **K-Means** is unsupervised and discovers natural groupings in data that has no labels. Useful for segmentation and anomaly detection, but we must choose the number of clusters in advance. See <doc:KMeans-Clustering>.
 

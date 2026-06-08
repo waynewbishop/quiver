@@ -91,7 +91,7 @@ dependent.determinant  // 0.0
 
 The third equation adds no new information. We have three unknowns but only two independent equations. That is not enough to find a unique solution.
 
-> Important: Calling `.inverted()` on a singular matrix throws a `MatrixError.singular` error. Handle this with `do-catch`, `try?`, or check the determinant first:
+> Important: Calling `.inverted()` on a singular matrix throws a ``MatrixError/singular`` error. Handle this with `do-catch`, `try?`, or check the determinant first:
 
 ```swift
 import Quiver
@@ -153,7 +153,7 @@ inverse.asFractions()
 A.determinant.asFraction()  // 13
 ```
 
-Every element shares the determinant as its denominator. This pattern is hidden by decimal representation. The `Fraction` type is presentation-only; all operations continue to use standard `Double` values internally. Use `asFractions` on any `[Double]` or `[[Double]]` result, or `asFraction` on a single `Double`.
+Every element shares the determinant as its denominator. This pattern is hidden by decimal representation. The ``Fraction`` type is presentation-only; all operations continue to use standard `Double` values internally. Use `asFractions` on any `[Double]` or `[[Double]]` result, or `asFraction` on a single `Double`.
 
 ### Solving linear systems
 
@@ -236,9 +236,9 @@ if cond < 1_000 {
 
 The determinant and matrix inversion are not just abstract concepts — they power linear regression behind the scenes. When we call `LinearRegression.fit(features:targets:)`, Quiver solves the normal equation θ = (X'X)⁻¹X'y to find the best-fit coefficients. That formula requires inverting the matrix `X'X`, which is only possible when its determinant is non-zero.
 
-If the feature vectors are linearly dependent — for example, temperature in both Celsius and Fahrenheit — the matrix `X'X` becomes singular (`determinant = 0`) and the inversion fails. That is why `fit` throws `MatrixError.singular`. This is the determinant telling us that the features do not contain enough independent information to solve the problem.
+If the feature vectors are linearly dependent — for example, temperature in both Celsius and Fahrenheit — the matrix `X'X` becomes singular (`determinant = 0`) and the inversion fails. That is why `fit` throws `MatrixError.singular`. This is the determinant telling us that the features do not contain enough independent information to solve the problem. The <doc:Model-Interpretation-Primer> uses this same pair as an advance warning — reading the condition number before a fit, and the lopsided coefficients after one, to judge whether a model can be trusted.
 
-> Note: The same math used in <doc:Matrix-Transformations> to rotate and scale points is what `LinearRegression` applies to find coefficients. The difference is context: in graphics we transform geometry, in regression we solve for the line that best fits the data.
+> Note: The same math used in <doc:Matrix-Transformations> to rotate and scale points is what ``LinearRegression`` applies to find coefficients. The difference is context: in graphics we transform geometry, in regression we solve for the line that best fits the data.
 
 ### Putting it all together
 

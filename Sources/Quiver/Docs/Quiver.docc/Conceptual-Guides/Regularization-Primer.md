@@ -6,7 +6,7 @@ Curbing overfitting by adding a penalty that shrinks coefficients toward zero.
 
 A model is **overfitted** when it has memorized the quirks of its training data instead of the real pattern — it scores well on its training data and poorly on data it has never seen. Detecting that gap is the job of comparing training and test scores; fixing it is the job of **regularization** — adding a small penalty that discourages a model from leaning too hard on any one feature, so it follows the real pattern and not the quirks. The penalty trades a little accuracy on the training set for steadier predictions in the world, which is the trade that matters whenever a model must generalize beyond its original training data.
 
-> Note: This primer builds on the overfitting and generalization concepts introduced in the <doc:Machine-Learning-Primer>, and the `conditionNumber` diagnostic from the <doc:Determinants-Primer>.
+> Note: This primer builds on the overfitting and generalization concepts introduced in the <doc:Machine-Learning-Primer>, and the `conditionNumber` diagnostic from the <doc:Determinants-Primer>. For the diagnostic side — reading the lopsided-coefficient signature off the console and recognizing the failure before reaching for the cure — see <doc:Model-Interpretation-Primer>.
 
 ### When a fit is too good
 
@@ -43,7 +43,7 @@ The two columns describe the same thing, yet one weight is a large positive numb
 
 The same near-identical columns expose a deeper point: how a model is fit decides what it does with data it cannot pin down. The floor-area features push every regressor toward the same wall, and each one meets it differently.
 
-Ordinary least squares, above, hands back the lopsided pair. Push the collinearity all the way — two columns that are exact multiples of each other — and the matrix it inverts becomes singular, and `LinearRegression` throws `MatrixError.singular` rather than return a number it cannot justify. The refusal is honest: with no unique answer to give, it gives none.
+Ordinary least squares, above, hands back the lopsided pair. Push the collinearity all the way — two columns that are exact multiples of each other — and the matrix it inverts becomes singular, and ``LinearRegression`` throws ``MatrixError/singular`` rather than return a number it cannot justify. The refusal is honest: with no unique answer to give, it gives none.
 
 Gradient descent meets the same data and does something quieter. It never inverts a matrix; it only walks downhill on the error. So on the near-collinear floor-area features it converges without complaint:
 
@@ -108,7 +108,7 @@ penalized[1][1] += 1
 penalized.conditionNumber  // 17 — the same matrix, made stable
 ```
 
-The penalty that shrinks the coefficients is the same penalty that makes the matrix tractable. The penalty that keeps the weights honest is the penalty that keeps the arithmetic stable — one dial, two payoffs. Quiver's `Ridge` reaches the same minimum by gradient descent on the penalized objective rather than by inverting this matrix directly, but the stabilizing effect of the penalty is exactly the one shown here.
+The penalty that shrinks the coefficients is the same penalty that makes the matrix tractable. The penalty that keeps the weights honest is the penalty that keeps the arithmetic stable — one dial, two payoffs. Quiver's ``Ridge`` reaches the same minimum by gradient descent on the penalized objective rather than by inverting this matrix directly, but the stabilizing effect of the penalty is exactly the one shown here.
 
 Both routes arrive at the same minimum, and the choice between them is a tradeoff: the closed form is exact and finishes in one pass but must invert a matrix, while descent gives up the one-pass exactness to reuse the shared optimizer and scale to larger problems where forming and inverting that matrix is the expensive step.
 

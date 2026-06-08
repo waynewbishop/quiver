@@ -76,6 +76,8 @@ If a feature column has the same value for every training sample, scaling would 
 
 When a model requires scaled features, the scaler and model must stay paired for correct predictions. `Pipeline` bundles a `StandardScaler` and a model into a single value type that scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
 
+Scaling also changes what a coefficient means: a weight fitted on standardized features reports the change in target per one standard deviation, which is what makes coefficients comparable across features. See <doc:Model-Interpretation-Primer> for reading scaled and unscaled coefficients.
+
 ## Topics
 
 ### Scalers

@@ -31,7 +31,7 @@ Sometimes the relationship between two quantities is known exactly, not just mea
 
 Knowing the formula, calculus produces a new formula — one that says how fast the ball is moving at any instant. We can also take the derivative of that formula, to get how fast the speed itself is changing:
 
-> Note: `Polynomial` stores coefficients in ascending order — `[a₀, a₁, a₂]` represents `a₀ + a₁t + a₂t²`. The first element is the constant term, the second multiplies `t`, the third multiplies `t²`, and so on. See <doc:Polynomials> for the full type.
+> Note: ``Polynomial`` stores coefficients in ascending order — `[a₀, a₁, a₂]` represents `a₀ + a₁t + a₂t²`. The first element is the constant term, the second multiplies `t`, the third multiplies `t²`, and so on. See <doc:Polynomials> for the full type.
 
 ```swift
 import Quiver
@@ -125,7 +125,7 @@ For those, the derivative still does something useful. It tells us which directi
 
 A model has more than one coefficient to adjust, so there is more than one direction to consider. The derivative with respect to a single coefficient, holding the others fixed, is its **partial derivative** — the slope along that one coefficient's axis. Collecting the partial derivative for every coefficient into a list gives the **gradient**, the combined downhill direction the walk follows. Each step moves every coefficient a small amount along its own partial derivative at once.
 
-That iterative walk has a name. It is called **gradient descent**, and it is the algorithm Quiver's `GradientDescent` implements:
+That iterative walk has a name. It is called **gradient descent**, and it is the algorithm Quiver's ``GradientDescent`` implements:
 
 ```swift
 import Quiver
@@ -157,4 +157,4 @@ Calculus runs through Quiver in four places. `Polynomial.derivative()` returns t
 
 The same idea, four shapes. A derivative tells a model how fast something is changing, which direction is downhill, and when the ground is flat. That is everything calculus does here, and it is everything the models that follow will need. The inverse operation — accumulating the area under a curve to recover a total from a rate — appears as integration in the <doc:Physics-Primitives-Primer>, where a signal's samples are summed back into a quantity like distance or energy.
 
-> Experiment: **The Quiver Notebook** is the right place to watch the derivative find a minimum. Fit `GradientDescent` to a small dataset and plot its `lossHistory` against the iteration count: the error falls steeply at first, then flattens toward zero as each step follows the slope downhill and the slope itself shrinks to nothing. The flattening is the derivative reaching zero — the bottom of the bowl. Fit `LinearRegression` to the same data to confirm both routes reach the same predictions, one walked and one solved in a single step. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to watch the derivative find a minimum. Fit `GradientDescent` to a small dataset and plot its `lossHistory` against the iteration count: the error falls steeply at first, then flattens toward zero as each step follows the slope downhill and the slope itself shrinks to nothing. The flattening is the derivative reaching zero — the bottom of the bowl. Fit ``LinearRegression`` to the same data to confirm both routes reach the same predictions, one walked and one solved in a single step. See <doc:Quiver-Notebook>.
