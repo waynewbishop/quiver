@@ -6,9 +6,15 @@ Fit a regression model by adjusting its coefficients one small step at a time.
 
 Think of a ball placed in a bowl — gravity rolls it to the bottom. `GradientDescent` does the same with math instead of gravity. It finds the best coefficients for a linear model by repeating a simple process: check how wrong the current predictions are, figure out which way to adjust each coefficient to make them less wrong, then move each one a small amount in that direction. After enough repetitions, the error stops falling and the model has settled on its answer — the bottom of the bowl.
 
-This is the same answer `LinearRegression` produces in a single matrix expression, only reached step by step instead of computed directly. Both routes converge to the same coefficients on a squared-error problem. The iterative route exists for the regression models that follow this one — logistic regression first — where the error formula has no closed-form answer and stepping toward the minimum is the only way to find it. The fitted model carries every step of the descent as a stored property, so we can see the error fall across iterations, confirm the run converged, and diagnose a run that crawled or diverged.
+This is the same answer ``LinearRegression`` produces in a single matrix expression, only reached step by step instead of computed directly. Both routes converge to the same coefficients on a squared-error problem. The iterative route exists for the models with no closed-form answer — ``Ridge`` adds a penalty to the loss, and <doc:Logistic-Regression> swaps in a cross-entropy loss — where stepping toward the minimum is the only way to find it. The fitted model carries every step of the descent as a stored property, so we can see the error fall across iterations, confirm the run converged, and diagnose a run that crawled or diverged.
 
-`GradientDescent` is both a standalone regression model and the public face of the descent algorithm that `Ridge` and the models after it reuse. It is the one case where naming the model apart from the algorithm buys nothing: a straight-line fit under squared error leaves no separate object to wrap around the optimizer, so the type carries the algorithm's name and stands in for the model too. Richer models keep the same algorithm and add a model on top, and the two names separate. The <doc:Optimization-Primer> covers that shared-algorithm family view.
+`GradientDescent` is both a standalone regression model and the public face of the descent algorithm that the other iterative models reuse. Three models run on this one shared loop:
+
+- `GradientDescent` — squared-error loss, the plain linear fit.
+- ``Ridge`` — squared-error loss plus an L2 penalty on coefficient size.
+- ``LogisticRegression`` — cross-entropy loss with a sigmoid hypothesis, predicting class probabilities.
+
+It is the one case where naming the model apart from the algorithm buys nothing: a straight-line fit under squared error leaves no separate object to wrap around the optimizer, so the type carries the algorithm's name and stands in for the model too. The richer models keep the same step rule, convergence test, and divergence guard, and change only the gradient and loss handed to the loop. The <doc:Optimization-Primer> covers that shared-algorithm family view.
 
 ### How it works
 
@@ -148,7 +154,7 @@ iterative.coefficients   // [7.0, 2.83] — reached step by step
 closedForm.coefficients  // [7.0, 2.83] — the same answer in one pass
 ```
 
-The two answers agree because gradient descent converges to the same minimum the normal equation solves analytically. The iterative route exists for the case the closed form cannot solve: the next regression model, logistic regression, has a loss function with no closed form. The optimizer that found the linear answer here is the one that will find the logistic answer there, where no shortcut exists.
+The two answers agree because gradient descent converges to the same minimum the normal equation solves analytically. The iterative route exists for the case the closed form cannot solve: <doc:Logistic-Regression> has a cross-entropy loss with no closed form. The optimizer that found the linear answer here is the one that finds the logistic answer there, where no shortcut exists.
 
 ### When to use which
 
@@ -172,7 +178,7 @@ One failure these guarantees do not catch is non-identifiable coefficients. When
 
 ### From iterative to non-linear
 
-Gradient descent on squared error is the simplest case — the loss is convex, the minimum is unique, and the closed form is available as a check. The same optimizer also powers regularized regression: <doc:Ridge-Regression> adds a penalty on coefficient size to this same descent, trading a little training accuracy for stability on collinear data, and the <doc:Regularization-Primer> covers when and why to reach for it. Looking further ahead, logistic regression replaces squared error with log loss to predict probabilities rather than continuous values. Log loss is also convex, but it has no closed-form minimum — the same descent loop, the same learning rate, the same convergence test, applied to a different loss, will be how that model is fit. See <doc:Activation-Functions> for the `sigmoid` function that will sit at the center of that next step, and the <doc:Optimization-Primer> for why one descent algorithm serves several models at once.
+Gradient descent on squared error is the simplest case — the loss is convex, the minimum is unique, and the closed form is available as a check. The same optimizer also powers regularized regression: <doc:Ridge-Regression> adds a penalty on coefficient size to this same descent, trading a little training accuracy for stability on collinear data, and the <doc:Regularization-Primer> covers when and why to reach for it. <doc:Logistic-Regression> takes the step further from continuous prediction: it replaces squared error with log loss to predict probabilities rather than values. Log loss is also convex, but it has no closed-form minimum — so the same descent loop, the same learning rate, the same convergence test, applied to a cross-entropy loss, is exactly how that model is fit. See <doc:Activation-Functions> for the `sigmoid` function at the center of it, and the <doc:Optimization-Primer> for why one descent algorithm serves several models at once.
 
 > Experiment: **The Quiver Notebook** is the right place to feel the learning-rate cliff. Pick a small standardized dataset, then sweep `learningRate` from `0.001` through `0.5` in steps and print `outcome`, `iterations`, and `lossHistory.last` for each run. Watching the trajectory shorten as the rate grows, then watching it explode into `divergedIncreasing` past the threshold, is what makes the optimizer's failure mode concrete. See <doc:Quiver-Notebook>.
 

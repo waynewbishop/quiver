@@ -4,7 +4,7 @@ Reading, auditing, and troubleshooting the coefficients and geometry that Quiver
 
 ## Overview
 
-A trained model does not return arbitrary numbers — it returns geometric adjustments. Parametric models (``LinearRegression``, ``GradientDescent``, ``Ridge``) expose those adjustments as **coefficients**, one weight per feature. Non-parametric models (``KNearestNeighbors``, ``KMeans``) hold no weights at all; they store positions in space and are judged by **distance and cohesion** instead.
+A trained model does not return arbitrary numbers — it returns geometric adjustments. Parametric models (``LinearRegression``, ``GradientDescent``, ``Ridge``, ``LogisticRegression``) expose those adjustments as **coefficients**, one weight per feature. Non-parametric models (``KNearestNeighbors``, ``KMeans``) hold no weights at all; they store positions in space and are judged by **distance and cohesion** instead.
 
 This primer covers three reading skills: interpreting parametric coefficients, diagnosing the collinearity failure mode, and verifying non-parametric structure geometrically.
 
@@ -167,3 +167,15 @@ A scaled feature set that produces clean, well-separated classes shows high accu
 Reading coefficients and geometry is the first move; trusting what we read is the second, and the two sections that follow most directly are about exactly that gap. The <doc:Regularization-Primer> takes the collinearity signature diagnosed here and supplies the cure — the penalty that turns a flat valley of equally-good answers into a single defensible one. The <doc:Optimization-Primer> explains why ``GradientDescent`` converges quietly onto an arbitrary point in that valley, and what its loss history reveals about the walk. For the broader arc — how fitting, evaluating, and generalizing fit together — the <doc:Machine-Learning-Primer> is the map, and <doc:Feature-Scaling> is the transform that makes most of these readings honest in the first place.
 
 > Experiment: **The Quiver Notebook** is the right place to watch a coefficient lose its meaning. Take the two near-identical floor-area columns, standardize them, and fit ``LinearRegression`` — then print `conditionNumber` and the coefficients side by side. Append a third column that is the first one plus a trickle of noise and refit, watching the condition number climb and the lopsided pair grow. Now swap in ``Ridge`` and sweep `lambda` upward until the opposing weights collapse into a small, balanced pair. Seeing the same data go from honest to pathological and back is the fastest way to feel why a coefficient is only as trustworthy as the matrix behind it. See <doc:Quiver-Notebook>.
+
+## Further reading
+
+The intercept-first layout and the readings built on it connect to several other pages. These continue the thread from here:
+
+- [Linear Regression](https://waynewbishop.github.io/quiver/documentation/quiver/linear-regression) — where the coefficients and intercept come from, and how `fit` produces them.
+- [Feature Scaling](https://waynewbishop.github.io/quiver/documentation/quiver/feature-scaling) — the transform that decides whether a coefficient reads in raw units or standard deviations.
+- [Regularization Primer](https://waynewbishop.github.io/quiver/documentation/quiver/regularization-primer) — the cure for the collinearity tug-of-war diagnosed above.
+- [Ridge Regression](https://waynewbishop.github.io/quiver/documentation/quiver/ridge-regression) — the model that collapses the opposing pair into small, balanced weights.
+- [Optimization Primer](https://waynewbishop.github.io/quiver/documentation/quiver/optimization-primer) — why ``GradientDescent`` converges quietly onto one point in a flat collinear valley.
+- [Determinants Primer](https://waynewbishop.github.io/quiver/documentation/quiver/determinants-primer) — the condition-number and singularity diagnostics that warn a fit will fail.
+- [Machine Learning Primer](https://waynewbishop.github.io/quiver/documentation/quiver/machine-learning-primer) — the broader map of how fitting, evaluating, and generalizing fit together.

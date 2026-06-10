@@ -101,6 +101,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Ridge-Regression>
 - <doc:Polynomials>
 - <doc:Naive-Bayes>
+- <doc:Logistic-Regression>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:KMeans-Clustering>
 - <doc:Activation-Functions>

@@ -64,6 +64,48 @@ Models are also immutable. Once created, their coefficients, centroids, and lear
 
 > Note: Models also conform to `Codable`. Because every stored property is a basic Swift type (arrays of numbers, integers, and booleans), the compiler auto-synthesizes JSON encoding and decoding. A model trained once can be saved to disk and loaded on the next app launch without retraining. See <doc:Model-Persistence> for platform-specific guidance.
 
+### Shared behavior through protocols
+
+Quiver's models share their prediction interface through two protocols. The ``Regressor`` protocol guarantees that a model predicts continuous values, and the ``Classifier`` protocol guarantees that a model predicts class labels, so any code written against a protocol works for every model that adopts it. The guarantee lives in the type system, which means a model that fails to provide `predict` does not compile.
+
+Conforming models gain the protocol's prediction surface, including a scalar convenience for single-feature models that the protocol supplies once for the whole family:
+
+```swift
+import Quiver
+
+// LinearRegression is a Regressor, so it predicts continuous values
+let model = try LinearRegression.fit(features: sqft, targets: prices)
+model.predict([[3500.0]])  // an array of predictions
+
+// The Regressor protocol supplies a scalar overload for single-feature models
+model.predict(3500.0)      // one value in, one value out
+```
+
+> Note: Writing one function against ``Regressor`` lets it accept ``LinearRegression``, ``Ridge``, and ``GradientDescent`` interchangeably, and writing against ``Classifier`` accepts ``GaussianNaiveBayes``, ``KNearestNeighbors``, and ``LogisticRegression`` the same way. The protocol is the contract every model in its family keeps.
+
+### Failure is in the return type
+
+Every model's `fit` method states in its signature whether training can fail. A method that throws can fail and forces us to handle the failure, a method that returns a plain value cannot fail at all, and a method that returns an optional reports failure by handing back `nil`. The compiler reads that signature, so the obligation to handle a bad fit is checked before the program ever runs.
+
+The three shapes sit side by side, and each one tells us at the call site exactly how much care the result demands:
+
+```swift
+import Quiver
+
+// Throwing fit — training can fail, so the call must handle it
+let regression = try LinearRegression.fit(features: sqft, targets: prices)
+
+// Plain-value fit — training cannot fail, so there is nothing to handle
+let classifier = KNearestNeighbors.fit(features: points, labels: labels, k: 3)
+
+// Optional fit — failure is reported as nil
+if let curve = [Double].polyfit(x: xs, y: ys, degree: 2) {
+    curve.coefficients  // the fit succeeded
+}
+```
+
+> Tip: When a `fit` call returns a plain value rather than throwing or returning an optional, the type is telling us the operation is total — there is no failure path to write, because none exists. ``GaussianNaiveBayes``, ``KNearestNeighbors``, and ``StandardScaler`` follow this pattern.
+
 ### Clean output by default
 
 Every model and result type produces a readable summary when printed. This makes Playground exploration and debugging straightforward; there is no wall of raw properties to parse:
@@ -107,6 +149,8 @@ if let price = summary.columns["price"] {
 ### A focused and intentional scope
 
 Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. Quiver provides analytic derivatives for polynomials, sample-based derivatives for sequences, and iterative optimization through ``GradientDescent``; what it does not provide is reverse-mode automatic differentiation over arbitrary computation graphs. GPU acceleration and distributed training are similarly outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
+
+> Note: This focus shows up in the package manifest as well — Quiver depends on nothing beyond the Swift standard library and Foundation. There is no third-party package to resolve, no version graph to keep in sync, and no supply chain to audit before a build can proceed, so a Quiver project built today resolves identically a year from now. See <doc:Numerical-Literacy> for the related guarantee that numeric results are reproducible across platforms.
 
 ### Performance characteristics
 

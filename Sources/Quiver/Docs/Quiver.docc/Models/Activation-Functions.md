@@ -61,7 +61,7 @@ let categoryScores = [2.0, 1.0, 0.1].softMax()  // [0.659, 0.242, 0.099]
 
 A useful mathematical property: σ(x) + σ(−x) = 1.0. This symmetry means the sigmoid of a positive score and the sigmoid of its negation always sum to 1, which is why a single sigmoid output captures both P(positive) and P(negative) without needing two outputs. This is also the bridge to softMax: softMax generalizes sigmoid from two classes to many. With exactly two classes the two functions coincide — a softMax over the positive and negative scores reduces to a single sigmoid output, just as the symmetry above implies.
 
-> Note: Because sigmoid is the logistic-regression hypothesis, it is the link function at the heart of that model — the next regression model after <doc:Linear-Regression>. The loss that pairs with it has no closed form, so the iterative optimizer in <doc:Gradient-Descent> is what fits it.
+> Note: Because sigmoid is the logistic-regression hypothesis, it is the link function at the heart of ``LogisticRegression``. The loss that pairs with it — cross-entropy — has no closed form, so the iterative optimizer in <doc:Gradient-Descent> is what fits it. See <doc:Logistic-Regression> for the model.
 
 ### Where activation functions fit
 

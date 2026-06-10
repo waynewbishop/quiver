@@ -15,39 +15,66 @@ import Foundation
 
 // MARK: - Gradient Descent
 
-/// A regression model trained by batch gradient descent on mean squared error
-/// loss.
+/// A regression model trained by batch gradient descent, and the shared optimizer
+/// behind every iterative model in Quiver.
 ///
 /// Where ``LinearRegression`` solves the normal equation θ = (X'X)⁻¹X'y in one
-/// shot, ``GradientDescent`` reaches the same minimum iteratively — starting
-/// from θ = 0 and stepping opposite the gradient of the loss at each iteration.
-/// For a linear hypothesis with squared-error loss, both routes converge to the
-/// same coefficient vector. The iterative route exists because the models that
-/// follow this one — logistic regression, support vector machines — have loss
-/// functions with no closed-form minimum.
+/// shot, `GradientDescent` reaches the same minimum iteratively — starting from
+/// θ = 0 and stepping opposite the gradient of the loss at each iteration. For a
+/// linear hypothesis with squared-error loss, both routes converge to the same
+/// coefficient vector. The iterative route exists because the models that build
+/// on it have loss functions with no closed-form minimum.
 ///
-/// This is a value type — once created via one of the `fit` methods,
-/// the model is immutable. The fitted instance carries the full loss trajectory
-/// so a reader can observe convergence rather than infer it from the final
-/// number alone.
+/// `GradientDescent` is both a standalone model and the descent loop the other
+/// iterative models reuse. One loop — the same step rule, convergence test, and
+/// divergence guard — serves all three; only the gradient and loss handed to it
+/// change:
 ///
-/// **Standardize features before fitting.** The defaults assume input features
-/// already have unit variance — typically via ``StandardScaler``. On raw-scale
-/// features the curvature of the loss surface scales with the squared feature
-/// magnitude and the default learning rate diverges immediately. When in doubt,
-/// scale.
+/// - ``GradientDescent`` — squared-error loss on a linear hypothesis; the plain fit.
+/// - ``Ridge`` — squared-error loss with an added L2 penalty on coefficient size.
+/// - ``LogisticRegression`` — cross-entropy loss with a sigmoid hypothesis.
 ///
-/// Example:
+/// The difference between them is the objective, not the mechanics, so a reader
+/// who understands this model understands the optimizer inside the other two. The
+/// <doc:Optimization-Primer> covers that shared-algorithm family view.
+///
+/// This is a value type — once created via one of the `fit` methods, the model is
+/// immutable. The fitted instance carries the full loss trajectory so a reader can
+/// observe convergence rather than infer it from the final number alone.
+///
+/// **Standardize features before fitting.** The default `learningRate` of `0.01`
+/// assumes input features already have unit variance — typically via
+/// ``StandardScaler``. On raw-scale features the curvature of the loss surface
+/// scales with the squared feature magnitude and the default rate diverges
+/// immediately. When in doubt, scale. The same scaler must transform any points
+/// passed to `predict`, so they live on the scale the model was trained on.
+///
 /// ```swift
 /// import Quiver
 ///
-/// let features: [[Double]] = [
+/// let rawFeatures: [[Double]] = [
 ///     [1.0], [2.0], [3.0], [4.0], [5.0]
 /// ]
 /// let targets = [2.1, 3.9, 6.1, 8.0, 9.8]
 ///
-/// let model = try GradientDescent.fit(features: features, targets: targets)
-/// let predictions = model.predict([[6.0], [7.0]])
+/// // Standardize, then fit at the default learning rate (0.01).
+/// let scaler = StandardScaler.fit(features: rawFeatures)
+/// let model = try GradientDescent.fit(features: scaler.transform(rawFeatures), targets: targets)
+///
+/// // Transform query points through the same scaler before predicting.
+/// let predictions = model.predict(scaler.transform([[6.0], [7.0]]))
+/// ```
+///
+/// To carry the scaler with the model so query points are scaled automatically,
+/// use ``Pipeline``. The type annotation selects this regressor over
+/// ``LinearRegression``, which shares the `fit(features:targets:)` signature.
+///
+/// ```swift
+/// let pipeline: Pipeline<GradientDescent> =
+///     try Pipeline.fit(features: rawFeatures, targets: targets)
+///
+/// // predict takes raw points — the pipeline scales them internally.
+/// let predictions = pipeline.predict([[6.0], [7.0]])
 /// ```
 public struct GradientDescent: Regressor, Codable, CustomStringConvertible, Equatable, Sendable {
 

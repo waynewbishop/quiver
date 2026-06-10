@@ -4,13 +4,13 @@ Shrinking regression coefficients with a penalty that curbs overfitting.
 
 ## Overview
 
-Ridge is a regularized alternative to `LinearRegression` — it uses the same linear model, then adds a penalty on the size of the coefficients to curb [overfitting](<doc:Machine-Learning-Primer>). The penalty is the squared [magnitude](<doc:Vector-Operations>) of the coefficients, and its strength is set by a single parameter, `lambda`. As `lambda` grows, the penalty bites harder, shrinking the coefficients toward zero and making the model less sensitive to the noise and collinearity in the training data.
+Ridge is a regularized alternative to ``LinearRegression`` — it uses the same linear model, then adds a penalty on the size of the coefficients to curb [overfitting](<doc:Machine-Learning-Primer>). The penalty is the squared [magnitude](<doc:Vector-Operations>) of the coefficients, and its strength is set by a single parameter, `lambda`. As `lambda` grows, the penalty bites harder, shrinking the coefficients toward zero and making the model less sensitive to the noise and collinearity in the training data.
 
 The two models are interchangeable in code, because both conform to the `Regressor` protocol — the same `fit` and `predict` — so Ridge drops into any pipeline written for `LinearRegression` without structural changes. They sit on a spectrum in concept too: at a `lambda` of zero the penalty vanishes and ridge reproduces ordinary least squares exactly, while raising `lambda` trades a little accuracy on the training data for steadier predictions on data the model has never seen.
 
 > Note: This page documents the `Ridge` model. For the concept behind it — why a penalty curbs overfitting, what shrinkage does to the coefficients, and how to choose `lambda` — see the <doc:Regularization-Primer>.
 
-> Important: Ridge assumes the features share a scale. The penalty compares coefficient magnitudes across features, so a feature measured in thousands and a feature measured in fractions cannot be penalized fairly until both are standardized. Standardize with `StandardScaler` before fitting. The intercept is never penalized — only the slopes are asked to shrink.
+> Important: Ridge assumes the features share a scale. The penalty compares coefficient magnitudes across features, so a feature measured in thousands and a feature measured in fractions cannot be penalized fairly until both are standardized. Standardize with ``StandardScaler`` before fitting. The intercept is never penalized — only the slopes are asked to shrink.
 
 ### How it works
 
@@ -20,7 +20,7 @@ Ordinary least squares minimizes the squared error alone. Ridge minimizes the sq
 minimize   (1/n)‖Xθ − y‖²  +  λ‖θ‖²
 ```
 
-The dial `lambda` sets how much the penalty counts. At `lambda` of zero the penalty vanishes and the result is ordinary least squares — exactly. The <doc:Regularization-Primer> walks through what the penalty does to the coefficients and why; this page is the model that applies it. Ridge is fit by gradient descent on the penalized objective, sharing the optimizer behind <doc:Gradient-Descent>, so the same convergence and divergence behavior applies here.
+The dial `lambda` sets how much the penalty counts. At `lambda` of zero the penalty vanishes and the result is ordinary least squares — exactly. The <doc:Regularization-Primer> walks through what the penalty does to the coefficients and why; this page is the model that applies it. Ridge is fit on the penalized objective by the same descent loop that powers <doc:Gradient-Descent> and <doc:Logistic-Regression> — one shared optimizer, handed a different loss for each — so the same convergence and divergence behavior applies here.
 
 ### Fitting a model
 
@@ -248,7 +248,5 @@ run1 == run2  // true
 
 ### Related
 - <doc:Regularization-Primer>
-- <doc:Linear-Regression>
-- <doc:Gradient-Descent>
 - <doc:Feature-Scaling>
 - <doc:Train-Test-Split>
