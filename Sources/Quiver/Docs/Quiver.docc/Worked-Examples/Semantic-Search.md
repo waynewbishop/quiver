@@ -179,7 +179,7 @@ for result in results {
 }
 ```
 
-The full pipeline chains five Quiver methods in order: `tokenize`, `embed(using:)`, `meanVector`, `cosineSimilarities(to:)`, and `topIndices(k:labels:)`.
+The full pipeline chains five Quiver methods in order: `tokenize`, `embed(using:)`, `meanVector`, `cosineSimilarities(to:)`, and `topIndices(k:labels:)`. For a reusable, swappable source of those vectors, see <doc:Embedding-Sources>.
 
 > Tip: For large collections, pre-compute and store document vectors rather than recalculating them for each query. Only the query vector needs to be built at search time.
 

@@ -146,6 +146,16 @@ if let price = summary.columns["price"] {
 }
 ```
 
+### Designed to feed other frameworks
+
+Quiver is built to plug into the frameworks at the center of a developer's toolkit. It shapes its output to match what is needed, so the numerical result drops straight into Swift Charts, a search ranker, or an on-device model and that framework takes it from there.
+
+Three parts of the framework show this in action. In <doc:Data-Visualization>, Quiver computes every field a chart needs — heatmap tuples, the five numbers of a box plot, stacked series — as plain values that map straight onto Swift Charts marks, ready to draw. In <doc:Embedding-Sources>, the ``Embedder`` protocol names a single operation, text to vector, so a hand-built table, an on-device sentence model, or a custom model can all feed the same ranking surface through one method.
+
+The retrieval pipeline in <doc:Retrieving-Context-For-Generation> is the principle taken end to end. Quiver supplies the scaffolding that turns a document and a question into a ready-to-use answer source: chunk the text, index the fragments, rank them by meaning, and assemble the context block a language model reads from. An embedding source feeds the vectors in and a language model takes the context block out, and Quiver builds the structure that connects them — the indexing and ranking that make the whole pipeline work. Every seam is a plain value, a `String` or a `[Double]`, so the same retrieval code carries cleanly across an on-device model, a different one, or a server. Quiver is the connective scaffolding, and it travels wherever the code does.
+
+> Note: Shaping output to a known contract is what makes a source swappable. Because the ranking and rendering depend on the contract rather than on any one source, moving from a teaching baseline to a production model is a one-line change, and the work that prepared the data carries straight over.
+
 ### A focused and intentional scope
 
 Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. Quiver provides analytic derivatives for polynomials, sample-based derivatives for sequences, and iterative optimization through ``GradientDescent``; what it does not provide is reverse-mode automatic differentiation over arbitrary computation graphs. GPU acceleration and distributed training are similarly outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.

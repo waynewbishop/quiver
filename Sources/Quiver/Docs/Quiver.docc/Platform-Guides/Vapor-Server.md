@@ -27,6 +27,8 @@ func configure(_ app: Application) throws {
 
 The seeded `ProductStore` holds the catalog, the embeddings dictionary, and the precomputed vector for every product. Building it is the expensive operation. Reading from it is fast. Doing the build inside a request handler would put that cost on every request and degrade the server under load.
 
+> Tip: The search pipeline this guide surveys is assembled end to end in two worked examples — <doc:Semantic-Search> for the tokenize-embed-rank flow, and <doc:Embedding-Sources> for swapping the vector source behind one contract.
+
 ## Statistics on Vapor
 
 A server is a stream of events. Requests arrive, handlers run, and latencies accumulate. The question the dashboard, the alert, and the SLO report all ask is the same: what is the 95th percentile of the last ten thousand request latencies, and is it inside our budget? Quiver answers that with one call against a `[Double]`, and the same primitives that compute the percentile compute the median, the IQR, and the typed snapshot the report renders from.
@@ -93,6 +95,8 @@ An **embedding** is a learned mapping from discrete tokens — words, items, use
 The lookup itself runs against an **embedding dictionary**, a precomputed `[String: [Double]]` the server loads once at boot. Every token the system can recognize has a row in this table; tokens the dictionary does not contain are dropped or routed to an `<unknown>` vector. In production the dictionary's contents typically come from a downloaded model file such as GloVe, word2vec, or the per-token outputs of a sentence-transformer. The server treats those files as data, not code.
 
 Two practical numbers shape how the dictionary lives in memory. The first is **dimensionality** — the length of each vector. Common choices are 50, 100, 200, or 300 dimensions for word-level embeddings, and 384, 768, or 1,024 for sentence-transformer outputs. A 300-dimensional vector of `Double` is 2,400 bytes; a 100,000-word dictionary at that dimensionality is roughly 230 megabytes in memory. The second number is **vocabulary coverage** — how much of the language the server has to recognize. A consumer search box needs a broad vocabulary; a domain-specific catalog (medical, legal, technical) often does better with a smaller, specialized dictionary trained on the relevant corpus. The right dictionary is the smallest one that covers the queries the server will actually see.
+
+The dictionary shown here is the simplest source of vectors, and Quiver names that source as a contract: the `Embedder` protocol is text in, `[Double]` out. A server that outgrows a word-vector table swaps in an on-device sentence model behind the same contract, and every line that tokenizes, ranks, and reports stays as written. See <doc:Embedding-Sources> for the swappable-source pattern and the levels from a hand-built table to a custom model.
 
 ```swift
 import Vapor
@@ -182,7 +186,7 @@ Training and inference are two different jobs. **Training** is the slow, one-sho
 
 ### The shape of a fitted value
 
-A fitted model is what the server reads at boot, so the shape of that fitted value is worth seeing first. On the developer machine, <doc:Linear-Regression> takes a feature matrix and a target vector and returns a `LinearRegression` value with a `predict` method.
+A fitted model is what the server reads at boot, so the shape of that fitted value is worth seeing first. On the developer machine, <doc:Linear-Regression> takes a feature matrix and a target vector and returns a `LinearRegression` value with a `predict` method. When the feature columns carry overlapping information — the multi-signal case where a plain least-squares fit turns unstable — <doc:Ridge-Regression> swaps in behind the identical request-handling shape, fit offline and decoded at boot the same way.
 
 ```swift
 import Quiver
@@ -242,8 +246,10 @@ The same shape covers any scoring service the server needs to provide. A classif
 
 > Note: Quiver's fitted models are `Sendable` and immutable after `fit`. Many concurrent requests can read the same model in parallel with no locks, no copies, and no race conditions. The boot-time-load-immutable-share pattern is the entire story.
 
+> Tip: A server has the compute to run every fitted model Quiver ships — `LinearRegression` and `Ridge` for prediction, `LogisticRegression` for binary scoring, `KNearestNeighbors` and `GaussianNaiveBayes` for classification, `KMeans` for grouping, and `GradientDescent` for the iterative fits underneath them. Each fits offline, encodes once, decodes at boot, and serves many concurrent readers through the same store.
+
 ## Where to go from here
 
-The three sections above each have a deeper layer of math underneath them, and that math is the next step for server developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and percentiles the latency-summary route leans on. <doc:Inferential-Statistics-Primer> covers standard error, t-distribution quantiles, and the confidence-interval framework the experiment-significance route depends on. <doc:Linear-Algebra-Primer> extends vectors and cosine similarity into matrices and projections, and <doc:Semantic-Search> walks the end-to-end embedding-and-ranking pipeline the search route follows. <doc:Machine-Learning-Primer> closes the loop with features, labels, training, and the trade-offs that decide which model to fit offline and load at boot.
+The three sections above each have a deeper layer of math underneath them, and that math is the next step for server developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and percentiles the latency-summary route leans on. <doc:Inferential-Statistics-Primer> covers standard error, t-distribution quantiles, and the confidence-interval framework the experiment-significance route depends on. <doc:Linear-Algebra-Primer> extends vectors and cosine similarity into matrices and projections, <doc:Semantic-Search> walks the end-to-end embedding-and-ranking pipeline the search route follows, and <doc:Embedding-Sources> shows how to swap the vector source behind one contract. <doc:Machine-Learning-Primer> closes the loop with features, labels, training, and the trade-offs that decide which model to fit offline and load at boot.
 
 > Experiment: **The Quiver Notebook** is the right place to feel how a fitted model crosses the deploy boundary. Fit a `LinearRegression` in the Notebook, encode it to JSON, then decode the same file in a Vapor route and call `predict()` on a request body. The model on the server is the same model that ran in the Notebook; the boundary is one `JSONDecoder` call. See <doc:Quiver-Notebook>.

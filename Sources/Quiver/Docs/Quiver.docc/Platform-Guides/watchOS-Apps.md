@@ -8,17 +8,19 @@ On watchOS, statistics, linear algebra, and machine learning share a single purp
 
 The same pattern holds across every athletic discipline: running, cycling, swimming, hiking, climbing, and strength training. We turn data from the wrist into a model of the wearer, compute it on the wearer's own watch, and keep it owned by the wearer, never leaving the device.
 
+> Tip: To see these pieces assembled into one working model — a personal baseline, a residual read against it, and an effort classifier, all built from the primitives this guide surveys — see <doc:Building-An-Effort-Model>, the worked example this guide accompanies.
+
 ### Setup and lifecycle
 
 A watchOS app reads samples from `HKWorkoutSession` and `HKAnchoredObjectQuery`, decodes them into `[Double]` at the boundary, and feeds them to Quiver. Anything that should outlive a single workout — a baseline, a fitted classifier, a stored set of feature vectors — encodes to JSON at session end and writes to `Documents/`. The next session decodes the same value at launch. Every model and baseline is `Codable` and `Sendable`, so it crosses task boundaries during a live session and persists across sessions without ceremony. See <doc:Model-Persistence> for the encode-and-decode shape every persisted value on the watch shares.
 
 ## Statistics on watchOS
 
-A workout produces a stream of samples: heart rate every second, pace every stride, power every cadence cycle. Sixty heart-rate samples are not a workout summary. The job of descriptive statistics here is to compare a fresh window of samples against the wearer's own baseline, so the watch can say "this is hard for you" instead of "this is 168 BPM." Quiver computes the baseline once, stores the typed snapshot to disk, and reads it back at session start to score every incoming sample.
+A workout produces a stream of samples: heart rate every second, pace every stride, power every cadence cycle. Sixty heart-rate samples are not a workout summary. The job of descriptive statistics here is to compare a fresh window of samples against the wearer's own baseline, so the watch can say "this window is drifting from the wearer's normal" instead of reporting a raw number with no reference. Quiver computes the baseline once, stores the typed snapshot to disk, and reads it back at session start to score every incoming sample.
 
 ### The baseline and its summary
 
-That comparison requires the baseline introduced above, a stored description of what is normal for this wearer, and two summary statistics describe its core. The **mean** is the arithmetic average of a buffer; it answers "what is typical right now." The **standard deviation** is the typical distance of a sample from the mean; it answers "how steady is the current effort." A standard deviation that doubles between mile one and mile five is a stability signal the app can act on, even without knowing what the absolute pace number means. See <doc:Statistics-Primer> for the vocabulary of central tendency and spread, and <doc:Frequency-Tables> for the categorical analog when the baseline counts events rather than averages values.
+That comparison requires the baseline introduced above, a stored description of what is normal for this wearer, and two summary statistics describe its core. The **mean** is the arithmetic average of a buffer; it answers "what is typical right now." The **standard deviation** is the typical distance of a sample from the mean; it answers "how steady is the current pace." A standard deviation that doubles between mile one and mile five is a stability signal the app can act on, even without knowing what the absolute pace number means. See <doc:Statistics-Primer> for the vocabulary of central tendency and spread, and <doc:Frequency-Tables> for the categorical analog when the baseline counts events rather than averages values.
 
 The lead example is running pace stability. A 60-second buffer of pace samples gives a standard deviation that measures how steady the runner is holding pace. The `empiricalRule()` call compares the current buffer's distribution against the wearer's personal baseline.
 
@@ -40,13 +42,13 @@ print(rule.expected1Sigma) // 0.6827 — what a normal distribution predicts
 
 ### Reading the gap as a signal
 
-The `empiricalRule()` method returns the fraction of samples that fall within one, two, and three standard deviations of the mean, alongside the theoretical fractions a normal distribution predicts. A real workout produces real numbers; the theoretical numbers are what a textbook predicts. The interesting product signal is the gap between them. When the within-1σ fraction sits noticeably below 68.27%, the underlying distribution is not normal, and that gap itself is the signal: fatigue, sensor noise, or a session that does not belong in the baseline. See <doc:Inferential-Statistics-Primer> for the framework that lets the app act on a gap of that size with confidence.
+The `empiricalRule()` method returns the fraction of samples that fall within one, two, and three standard deviations of the mean, alongside the theoretical fractions a normal distribution predicts. A real workout produces real numbers; the theoretical numbers are what a textbook predicts. The interesting product signal is the gap between them. When the within-1σ fraction sits noticeably below 68.27%, the buffered effort is not a steady, normally distributed window — the pace is doing something structured: a hill, a surge, an interval, or a stretch that does not belong in the steady-state baseline. The gap flags that the window is not steady; it does not, on its own, say why. See <doc:Inferential-Statistics-Primer> for the framework that lets the app act on a gap of that size with confidence.
 
-> Note: When the watch reports a within-1σ fraction far below the theoretical 68.27%, the underlying distribution is not normal. That gap is the signal: fatigue, sensor noise, or a session that does not belong in the baseline.
+> Note: A within-1σ fraction far below the theoretical 68.27% means the buffered effort is not steady and normally distributed. That gap is a flag to investigate — a terrain change, a surge, or a window that does not belong in the baseline — not a diagnosis of its cause.
 
 ### Generalizing across disciplines
 
-The same shape generalizes across disciplines. A standard deviation over a rolling buffer of pace, power, stroke rate, or HR-recovery samples reads as a stability measure for the current effort, and a percentile against the wearer's stored baseline answers whether the current value sits in the wearer's normal range. The math does not change when the sport changes; only the column being summarized does.
+The same shape generalizes across disciplines. A standard deviation over a rolling buffer of pace, power, stroke rate, or HR-recovery samples reads as a stability measure for the current signal, and a percentile against the wearer's stored baseline answers whether the current value sits in the wearer's normal range. The math does not change when the sport changes; only the column being summarized does.
 
 ## Linear algebra on watchOS
 
@@ -61,7 +63,7 @@ The lead example is hiking incline from gravity. At rest, the accelerometer read
 ```swift
 import Quiver
 
-// A 3-axis accelerometer reading taken on a hike.
+// A 3-axis accelerometer reading taken with the wrist momentarily still.
 let sample: [Double] = [1.0, 1.36, 9.66]
 
 let gravity = sample.normalized
@@ -70,6 +72,8 @@ print(gravity.dot(vertical)) // ≈ 0.985 — cosine of the angle between the wa
 ```
 
 The dot product of the normalized gravity vector and the vertical reference returned `0.985` — that is the cosine of the angle between the watch and vertical. A flat surface scores close to `1.0`; a vertical wall scores close to `0`.
+
+> Note: This holds for a gravity reading isolated at rest, or for Core Motion's sensor-fused `gravity` vector. A raw accelerometer triple taken mid-stride also carries the arm's own acceleration, so a slope read from a single moving sample is noisy — average over a short still window, or read the fused gravity vector, before trusting the angle.
 
 ### From cosine to degrees
 
@@ -91,7 +95,7 @@ These primitives compose into a deeper signal-processing surface. `powerSpectral
 
 > Tip: These primitives compose into a deeper signal-processing surface — `powerSpectralDensity` and `trapezoidalIntegral` — that detects rhythmic motion, cumulative effort, and frequency content from the same `[Double]` arrays. See <doc:Physics-Primitives-Primer>.
 
-> Note: For HR-derived signal analysis in the respiratory band (0.15–0.40 Hz), the spectral resolution `Δf = sampleRate / paddedLength` must reach 0.0083 Hz before the band is legible. A window shorter than 60 seconds collapses the resolution and reads as noise.
+> Note: An HR-derived signal in the respiratory band (0.15–0.40 Hz, the high-frequency band that carries respiratory sinus arrhythmia, roughly 9 to 24 breaths per minute) needs spectral resolution `Δf = sampleRate / paddedLength` fine enough to separate structure inside that 0.25-Hz-wide band. Reaching `Δf ≈ 0.008 Hz` takes about a 120-second window; shorter windows blur the band toward noise.
 
 ## Machine learning on watchOS
 
@@ -118,6 +122,8 @@ print(model.predict(200.0)) // 140.0 — expected HR at 200W for this wearer
 
 The fitted `model` is a value with a `predict` method. Passing in 200 watts returns the heart rate the wearer's slope expects at that effort — here, 140 bpm. A different wearer's data would fit a different slope and a different intercept, and the predicted HR at 200W would land somewhere else; the model is *personal* in exactly that sense.
 
+With a single feature there is no overlap between predictors to destabilize the fit, so the closed-form least-squares line is exact and stable. The moment several correlated signals enter the same fit — power alongside pace and grade, which carry much of the same information — the plain fit turns unstable and the regression needs a regularized form (`Ridge`) instead. That multi-signal case is worked end to end in <doc:Building-An-Effort-Model>, the effort-model demonstration this guide accompanies.
+
 ### Persisting the model across sessions
 
 A model fit at the end of one ride is only useful if the next ride can read it. The fitted value is `Codable`, which means one `JSONEncoder` call turns it into bytes the watch can write to `Documents/` and decode at the next launch. See <doc:Model-Persistence> for the encode-once, decode-on-launch shape every persisted model on the watch shares.
@@ -139,7 +145,7 @@ let encoded = try JSONEncoder().encode(model)
 try encoded.write(to: documentsURL.appendingPathComponent("hr-power.json"))
 ```
 
-The next ride decodes the stored model and checks whether today's HR-at-200W is in line with the wearer's historical baseline. A large residual against the stored slope is the signal: fatigue, dehydration, or a fitness shift.
+The next ride decodes the stored model and checks whether today's HR-at-200W lines up with the wearer's historical slope. A large residual flags that today's HR-to-power relationship has shifted from baseline — heat, altitude, cardiac drift, caffeine, or a genuine fitness change can all move it. The residual surfaces the divergence; interpreting it is the wearer's call.
 
 ### Activity classification from a calibration session
 

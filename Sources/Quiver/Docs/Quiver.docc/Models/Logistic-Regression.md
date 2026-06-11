@@ -4,15 +4,17 @@ Train a binary classifier that predicts class probabilities.
 
 ## Overview
 
-Logistic regression answers a yes-or-no question with a probability. Where <doc:Linear-Regression> predicts a continuous value and <doc:Gradient-Descent> reaches that value iteratively, logistic regression predicts the *probability* that a sample belongs to class 1 — then thresholds that probability at 0.5 to decide the class. It is the workhorse binary classifier: spam or not, churn or retain, pass or fail.
+Logistic regression answers a yes-or-no question with a probability. Where <doc:Linear-Regression> predicts a continuous value and <doc:Gradient-Descent> reaches that value iteratively, logistic regression predicts the probability that a sample belongs to class 1 — then thresholds that probability at 0.5 to decide the class. It is the workhorse binary classifier: spam or not, churn or retain, pass or fail.
 
-The name is a known source of confusion. Despite the word *regression*, logistic regression is a **classification** model — it predicts a discrete label, not a continuous quantity. The "regression" refers to what happens underneath: the model fits a straight line in *log-odds* space, then squashes that line through the sigmoid function to turn it into a probability between 0 and 1.
+The name is a known source of confusion. Despite the word regression, logistic regression is a **classification** model — it predicts a discrete label, not a continuous quantity. The "regression" refers to what happens underneath: the model fits a straight line in log-odds space, then squashes that line through the sigmoid function to turn it into a probability between 0 and 1.
 
 ### How it works
 
 The model computes the same linear score `Xθ` that a linear model would — a weighted sum of the features — and passes it through the **sigmoid** function σ, which maps any real number into the open interval (0, 1). A large positive score becomes a probability near 1, a large negative score becomes a probability near 0, and a score of exactly 0 becomes 0.5, the decision boundary. The `sigmoid` function is covered on its own in <doc:Activation-Functions>.
 
-Fitting follows the same path as <doc:Gradient-Descent> — start from θ = 0 and step opposite the gradient of the loss at each iteration — but the loss is **cross-entropy** (log loss) rather than squared error. The two gradients share a shape: design-matrix transpose times the residual, ∇L = (1/n)Xᵀ(σ(Xθ) − y). Only the prediction the residual is built from differs — σ(Xθ) here, the raw Xθ for least squares — which is why cross-entropy is the natural loss for a sigmoid hypothesis. The <doc:Optimization-Primer> covers why one descent algorithm serves several models at once.
+Fitting follows the same path as <doc:Gradient-Descent> — start from θ = 0 and step opposite the gradient of the loss at each iteration — but the loss is **cross-entropy** (log loss) rather than squared error. The two gradients share a shape: design-matrix transpose times the residual, ∇L = (1/n)Xᵀ(σ(Xθ) − y). Only the prediction the residual is built from differs — σ(Xθ) here, the raw Xθ for least squares — which is why cross-entropy is the natural loss for a sigmoid hypothesis.
+
+Reusing the squared error that <doc:Linear-Regression> minimizes would wrap the sigmoid inside a square, producing a loss surface with many local dips that gradient descent can settle into short of the best fit. Cross-entropy avoids that: paired with the sigmoid it is convex, a single bowl with one lowest point, so descent that keeps reducing the loss is descending toward the global minimum rather than a local one. The <doc:Optimization-Primer> covers why one descent algorithm serves several models at once.
 
 ### Fitting a model
 
@@ -79,7 +81,7 @@ for probability in probs {
 // flagged is [0, 0]
 ```
 
-For inspecting the model in log-odds space — plotting the decision boundary, comparing per-sample margins, or thresholding somewhere other than 0.5 — `decisionFunction(_:)` returns the raw score `Xθ` *before* the sigmoid. Zero is the boundary, positive favors class 1, negative favors class 0:
+For inspecting the model in log-odds space — plotting the decision boundary, comparing per-sample margins, or thresholding somewhere other than 0.5 — `decisionFunction(_:)` returns the raw score `Xθ` before the sigmoid. Zero is the boundary, positive favors class 1, negative favors class 0:
 
 ```swift
 import Quiver
@@ -94,16 +96,11 @@ The label, the probability, and the log-odds are three views of one quantity: `p
 
 ### Standardize features
 
-Logistic regression's default learning rate is calibrated for features with unit variance. On raw-scale features the loss-surface curvature scales with the squared feature magnitude, and the default rate stops descending cleanly. The fix is to fit a `StandardScaler` on the training features and apply it to both the training data and every prediction input — the same transform on both sides, so training and prediction never drift apart. See <doc:Feature-Scaling>.
-
-The single most common mistake is scaling the training data but forgetting to scale the query points at prediction time. A raw query value then reads as many standard deviations from the mean, and the prediction is silently wrong. `Pipeline` removes the hazard by bundling the scaler and the model into one value whose `predict(_:)` scales raw inputs internally:
+Because the fit is iterative, the query must pass through the same scaler the model trained on, or a raw value reads as the wrong number of standard deviations and the prediction is silently wrong. `Pipeline` removes the hazard by bundling the scaler and the model into one value whose `predict(_:)` scales raw inputs internally, so the forgotten-scaling mistake becomes impossible:
 
 ```swift
 import Quiver
 
-// Pipeline fits the scaler and the model together, then scales
-// query points automatically — the forgotten-scaling mistake
-// becomes impossible.
 let pipeline = try Pipeline.fit(
     features: hours, labels: labels, learningRate: 0.5)
 
@@ -111,11 +108,11 @@ let predictions = pipeline.predict([[6.5], [2.5]])
 // [1, 0]
 ```
 
-See <doc:Pipeline> for the bundled training-and-prediction pattern.
+See <doc:Feature-Scaling> for why standardization matters and <doc:Pipeline> for the bundled training-and-prediction pattern.
 
-### The full pipeline
+### An end-to-end run
 
-A typical workflow combines data splitting, feature scaling, fitting, and evaluation.
+Split, scale, fit, predict, and evaluate in one pass. The split uses a shared seed so features and labels partition the same way; see <doc:Train-Test-Split> for the mechanics.
 
 ```swift
 import Quiver
@@ -128,11 +125,9 @@ let features: [[Double]] = [
 ]
 let labels = [1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0]
 
-// Split features and labels separately — seeds must match.
 let (trainX, testX) = features.trainTestSplit(testRatio: 0.25, seed: 42)
 let (trainY, testY) = labels.trainTestSplit(testRatio: 0.25, seed: 42)
 
-// Scale, fit, predict, evaluate.
 let scaler = StandardScaler.fit(features: trainX)
 let model = try LogisticRegression.fit(
     features: scaler.transform(trainX), labels: trainY,
@@ -142,7 +137,7 @@ let cm = predictions.confusionMatrix(actual: testY)
 print("Accuracy: \(cm.accuracy)")
 ```
 
-> Tip: For imbalanced datasets where one class is much rarer than the other, use `stratifiedSplit(labels:testRatio:seed:)` instead of `trainTestSplit` — it preserves the class ratios in both partitions.
+> Tip: When one class is much rarer than the other, use `stratifiedSplit(labels:testRatio:seed:)` to preserve the class ratios in both partitions.
 
 ### Grouping results by predicted class
 
@@ -160,7 +155,7 @@ for group in results {
 }
 ```
 
-Each `Classification` result conforms to `Sequence` — the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives us its data points directly, just like iterating an `Array`.
+Each `Classification` result conforms to `Sequence`, so iterating a group yields its data points directly.
 
 > Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy`, `classificationReport`, or `confusionMatrix`.
 
@@ -168,9 +163,11 @@ Each `Classification` result conforms to `Sequence` — the same Swift protocol 
 
 Like <doc:Gradient-Descent>, a fitted model carries the full loss trajectory and an outcome flag, so convergence is observable rather than assumed. The `lossHistory` array begins with the cross-entropy at θ = 0 — which is exactly log 2, since every sample starts at probability 0.5 — and ends at `finalLoss`. The `outcome` distinguishes a converged run from one that exhausted the iteration cap.
 
+The shape of that trajectory is the diagnostic. A healthy run falls steeply at first and then flattens as it nears the minimum; a trajectory that rises instead of falls signals a learning rate too large for the data, and one that barely moves across all its iterations signals a rate too small. Reading the curve says more than the final number alone, which is why <doc:Gradient-Descent> plots it.
+
 The coefficients follow the intercept-first layout: when the model fits a bias term, `coefficients[0]` is the intercept and the remaining elements are the feature weights in input order. Reading a weight back out means indexing past the intercept.
 
-> Important: A `.maxIterationsReached` outcome is necessary but not sufficient for trustworthiness. On *linearly separable* data — data a single boundary splits with no errors — the maximum-likelihood fit has no finite minimum. The coefficients grow without bound and the loss keeps shrinking, so the run reaches the cap by design. The predictions are still correct, but the coefficient magnitudes are arbitrary. Compare `lossHistory.first` to `lossHistory.last` to confirm meaningful descent, and treat a clean `.converged` on overlapping data as the trustworthy case.
+> Important: A `.maxIterationsReached` outcome is not automatically a failure. On linearly separable data the fit has no finite minimum, so the loss keeps shrinking and the run reaches the cap by design — the predictions stay correct, but the coefficient magnitudes are arbitrary. Compare `lossHistory.first` to `lossHistory.last` to confirm meaningful descent.
 
 ### When to use logistic regression
 
@@ -180,11 +177,7 @@ Two constraints define its scope. The labels must be binary; more than two class
 
 ### Safe by design
 
-The `LogisticRegression` model is a Swift struct, which means it cannot be accidentally changed after creation. This design prevents several common mistakes.
-
-The model is always ready to use, because calling `fit(features:labels:)` returns a fully trained model in one step. There is no way to create an empty model and forget to train it before making predictions. Training data also stays separate from test data: both `LogisticRegression` and `StandardScaler` are immutable once created, so fitting the scaler on training data and applying it to both sets ensures that test data never influences the scaling — a subtle but common source of [data leakage](<doc:Machine-Learning-Primer>) in ML pipelines.
-
-Divergence is surfaced rather than hidden. When an over-large learning rate makes the loss climb, `fit` throws rather than returning a model full of meaningless coefficients, so the caller must acknowledge the failure, exactly as the closed-form <doc:Linear-Regression> throws on a singular system. And because models and their `Classification` results conform to Swift's `Equatable` protocol, verifying that two training runs produce the same model is a single expression.
+`LogisticRegression` is an immutable struct created only through `fit`, so an untrained model cannot exist to misuse and a fitted one cannot drift between predictions. When an over-large learning rate makes the loss climb, `fit` throws rather than handing back meaningless coefficients, so the caller acknowledges the failure instead of trusting a silent one. The model and its `Classification` results conform to `Equatable`, so confirming that two runs agree is a single comparison.
 
 ## Topics
 

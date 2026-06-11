@@ -30,45 +30,62 @@ final class EmbedderTests: XCTestCase {
 
     // MARK: embedded(using:)
 
-    func testEmbeddedMapsEveryString() {
-        let vectors = ["a", "b", "c"].embedded(using: stub)
-        XCTAssertEqual(vectors, [[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    func testEmbeddedPairsEveryString() {
+        let embedded = ["a", "b", "c"].embedded(using: stub)
+        XCTAssertEqual(embedded.map(\.text), ["a", "b", "c"])
+        XCTAssertEqual(embedded.map(\.vector), [[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
     }
 
     func testEmbeddedPreservesOrder() {
-        let vectors = ["c", "a", "b"].embedded(using: stub)
-        XCTAssertEqual(vectors, [[1.0, 1.0], [1.0, 0.0], [0.0, 1.0]])
+        let embedded = ["c", "a", "b"].embedded(using: stub)
+        XCTAssertEqual(embedded.map(\.text), ["c", "a", "b"])
+        XCTAssertEqual(embedded.map(\.vector), [[1.0, 1.0], [1.0, 0.0], [0.0, 1.0]])
     }
 
-    func testEmbeddedDropsUnembeddableStrings() {
-        // "x" and "y" are absent → dropped; result is shorter than input.
-        let vectors = ["a", "x", "b", "y"].embedded(using: stub)
-        XCTAssertEqual(vectors, [[1.0, 0.0], [0.0, 1.0]])
+    func testEmbeddedKeepsTextAlignedWhenStringsDrop() {
+        // "x" and "y" are absent → dropped. Each surviving vector stays paired
+        // with its own text, so the drops can't misalign "b" onto "a"'s vector.
+        let embedded = ["a", "x", "b", "y"].embedded(using: stub)
+        XCTAssertEqual(embedded.map(\.text), ["a", "b"])
+        XCTAssertEqual(embedded.map(\.vector), [[1.0, 0.0], [0.0, 1.0]])
     }
 
     func testEmbeddedOnEmptyArrayReturnsEmpty() {
-        let vectors = [String]().embedded(using: stub)
-        XCTAssertTrue(vectors.isEmpty)
+        let embedded = [String]().embedded(using: stub)
+        XCTAssertTrue(embedded.isEmpty)
     }
 
     func testEmbeddedAllUnembeddableReturnsEmpty() {
-        let vectors = ["x", "y", "z"].embedded(using: stub)
-        XCTAssertTrue(vectors.isEmpty)
+        let embedded = ["x", "y", "z"].embedded(using: stub)
+        XCTAssertTrue(embedded.isEmpty)
     }
 
     // MARK: Integration with the similarity surface
 
     func testEmbeddedFlowsIntoSimilaritySearch() throws {
         let docs = ["a", "b", "c"]
-        let vectors = docs.embedded(using: stub)
+        let embedded = docs.embedded(using: stub)
 
         // Query identical to "a": cosine 1.0 with a, 0.0 with b, ~0.707 with c.
         let query = try XCTUnwrap(stub.embed("a"))
-        let hits = vectors.cosineSimilarities(to: query).topIndices(k: 3, labels: docs)
+        let hits = embedded.mostSimilar(to: query, k: 3)
 
-        XCTAssertEqual(hits.map(\.label), ["a", "c", "b"])
+        XCTAssertEqual(hits.map(\.text), ["a", "c", "b"])
         XCTAssertEqual(hits[0].score, 1.0, accuracy: 1e-10)
         XCTAssertEqual(hits[1].score, 1.0 / 2.0.squareRoot(), accuracy: 1e-10)
         XCTAssertEqual(hits[2].score, 0.0, accuracy: 1e-10)
+    }
+
+    func testMostSimilarKeepsTextAlignedAfterDrops() throws {
+        // "x" drops out; "b" must not inherit "a"'s position in the results.
+        let embedded = ["a", "x", "b"].embedded(using: stub)
+
+        // Query identical to "b": cosine 1.0 with b, 0.0 with a.
+        let query = try XCTUnwrap(stub.embed("b"))
+        let hits = embedded.mostSimilar(to: query, k: 2)
+
+        XCTAssertEqual(hits.map(\.text), ["b", "a"])
+        XCTAssertEqual(hits[0].score, 1.0, accuracy: 1e-10)
+        XCTAssertEqual(hits[1].score, 0.0, accuracy: 1e-10)
     }
 }

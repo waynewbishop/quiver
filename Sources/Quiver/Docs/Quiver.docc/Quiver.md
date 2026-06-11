@@ -55,6 +55,11 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Model-Interpretation-Primer>
 - <doc:Concurrency-Primer>
 
+### Platform Guides
+- <doc:iOS-Apps>
+- <doc:watchOS-Apps>
+- <doc:Vapor-Server>
+
 ### Vectors
 - <doc:Vector-Operations>
 - <doc:Vector-Projections>
@@ -81,7 +86,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Data Preparation
 - <doc:Panel>
-- <doc:Panel-Workflows>
 - <doc:Data-Visualization>
 - <doc:Correlation>
 - <doc:Random-Sampling>
@@ -92,7 +96,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Similarity and Search
 - <doc:Text-Tokenization>
 - <doc:Similarity-Operations>
-- <doc:Semantic-Search>
 
 ### Models
 - <doc:Linear-Regression>
@@ -108,13 +111,12 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Evaluation-Metrics>
 - <doc:Model-Persistence>
 
-### Platform Guides
-- <doc:iOS-Apps>
-- <doc:watchOS-Apps>
-- <doc:Vapor-Server>
-
-### Rendering
-- <doc:Fraction>
+### Worked Examples
+- <doc:Semantic-Search>
+- <doc:Embedding-Sources>
+- <doc:Retrieving-Context-For-Generation>
+- <doc:Panel-Workflows>
+- <doc:Building-An-Effort-Model>
 
 ### Utilities
 - <doc:Quiver-Notebook>
@@ -123,6 +125,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Xcode-Playground>
 - <doc:Quiver-Cookbook>
 - <doc:Quiver-Knowledge-File>
+- <doc:Fraction>
 
 ### Supporting Types
 - ``LogDeterminant``
