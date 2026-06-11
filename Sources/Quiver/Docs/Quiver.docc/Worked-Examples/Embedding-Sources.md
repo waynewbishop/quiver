@@ -1,10 +1,10 @@
 # Embedding Sources
 
-Connect Quiver's search surface to Core AI, sentence models, and other embedding sources through a single contract.
+Connect Quiver's search surface to other embedding sources through a single contract.
 
 ## Overview
 
-Quiver provides a contract that bridges text embeddings and ranked search. Just as <doc:Data-Visualization> prepares data that maps directly to Swift Charts marks without rendering them, the **Embedder** protocol consumes vectors that an embedding source produces without computing them. Quiver owns the ranking and reporting and the source owns the vectors.
+Quiver provides a protocol that bridges text embeddings and ranked search. Just as <doc:Data-Visualization> prepares data that maps directly to Swift Charts marks without rendering them, the **Embedder** protocol consumes vectors that an embedding source produces without computing them. Quiver owns the ranking and reporting and the source owns the vectors.
 
 To create a semantic search solution one needs a way to turn text into vectors. Quiver assembles that conversion by hand — tokenize, look up each word, average the results — but the source of the vectors is left open. A small word-vector table works for learning. A production app reaches for an on-device sentence model. A research prototype calls a custom Core AI model running on Apple silicon. These sources differ enormously in quality, yet the code that ranks and reports results should not have to change when we move between them.
 
@@ -39,20 +39,21 @@ struct TableEmbedder: Embedder {
     let table: [String: [Double]]
 
     func embed(_ text: String) -> [Double]? {
+        // Split the text into the words the table is keyed on.
         let words = text.tokenize()
+        // Look each word up, producing one vector per recognized word.
         let vectors = words.embed(using: table)
+        // Collapse those many word vectors into a single document vector, since the table knows only words.
         return vectors.meanVector()
     }
 }
 ```
 
-We write the type; Quiver ships the contract, not the embedder. The `nil` return falls out naturally — no recognized words means no vectors, and `meanVector` returns `nil` for an empty array.
-
-Averaging token vectors is deliberately coarse. Because it sums and divides, it ignores word order entirely — "a long slow rise" and "a slow long rise" collapse to the same vector. It is the right starting point for learning the pipeline and a serviceable baseline; a richer source that encodes order and context conforms through the very same method when we need it.
+Averaging token vectors is deliberately coarse. Because it sums and divides, it ignores word order entirely — "a long slow rise" and "a slow long rise" collapse to the same vector. Averaging is the right starting point for learning the pipeline and a serviceable baseline; a richer source that encodes order and context conforms through the very same method when we need it.
 
 ## Embedding a collection
 
-The `embedded(using:)` method runs an array of strings through an embedder and returns one `(text, vector)` pair per string it can embed. Pairing the text with its own vector is what keeps labels honest: a string the embedder skips can never shift the label of the strings that follow it.
+Quiver adds `embedded(using:)` to `Array` where the element is `String`, so we call it on an array of documents, passing the embedder in. The method runs each string through that embedder and returns one `(text, vector)` pair per string it can embed. Pairing the text with its own vector is what keeps labels aligned and organized.
 
 ```swift
 import Quiver
@@ -75,11 +76,11 @@ let embedded = docs.embedded(using: embedder)
 // 3 pairs: each document with its averaged vector
 ```
 
-Each pair holds the original text and the vector built from it. Documents the embedder cannot process drop out, and the rest keep their text attached.
+Each pair holds the original text and the vector built from it. Documents the embedder cannot process drop out, and the rest keep their text attached. Keeping the text beside its vector is a deliberate choice, not a convenience: the vector is the searchable form, but it cannot be read back into the words that produced it. Pairing the two means what ranks is also what we read — there is no separate, readable copy to recover once a vector wins.
 
 ## Ranking against a query
 
-The `mostSimilar(to:k:)` method ranks the embedded pairs against a query vector in a single call. It scores every vector by cosine similarity, sorts, and returns the top matches as `(rank, text, score)` — the text drawn from the same pair that produced the score:
+Ranking is another array method, this time on the array of pairs that `embedded(using:)` returned. We call `mostSimilar(to:k:)` directly on `embedded` and pass the query vector in. The call ranks the pairs against that query in one pass: it scores every vector by cosine similarity, sorts, and returns the top matches as `(rank, text, score)`. The text is drawn from the same pair that produced the score:
 
 ```swift
 // Using embedded and embedder from the previous example
@@ -96,7 +97,7 @@ if let query = embedder.embed("a slow long rise") {
 // #3 knead the dough well  0.460
 ```
 
-The query "a slow long rise" scores a perfect 1.000 against "a long slow rise" — the same words in a different order. That perfect score is averaging's order-blindness on display: the two phrases share every token, so their averaged vectors are identical. A source that encoded word order would tell them apart.
+The query "a slow long rise" scores a perfect 1.000 against "a long slow rise" — the same words in a different order. That perfect score is the order-blindness of averaging: the two phrases share every token, so their averaged vectors are identical. A source that encoded word order would tell them apart.
 
 > Tip: For large collections, pre-compute and store the embedded pairs rather than rebuilding them for each query. Only the query vector needs to be built at search time.
 

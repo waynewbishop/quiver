@@ -184,9 +184,9 @@ The `Panel` type is entirely optional. The clustering algorithm accepts arrays d
 
 ### When to use K-Means
 
-K-Means works best when clusters are roughly spherical and similarly sized, the number of clusters is known or can be estimated, and features are continuous and scaled to similar ranges. The `StandardScaler` type is the recommended choice for distance-based algorithms because it centers each feature at zero with unit variance, preventing high-magnitude features from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred. It is a natural fit for customer segmentation, anomaly detection, and exploring structure in unlabeled data.
+K-Means works best when clusters are roughly spherical and similarly sized, the number of clusters is known or can be estimated, and features are continuous and scaled to similar ranges. The `StandardScaler` type is the recommended choice for distance-based algorithms because it centers each feature at zero with unit variance, preventing high-magnitude features from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred. K-Means is a natural fit for customer segmentation, anomaly detection, and exploring structure in unlabeled data.
 
-K-Means struggles with non-spherical cluster shapes (elongated, curved, or nested), clusters of very different sizes or densities, and categorical data. It also cannot determine the "right" `k` automatically — the elbow method helps, but the final choice requires domain knowledge. Note that K-Means assigns every point to a cluster — there are no unassigned outliers, so unusual data points will be forced into the nearest group.
+K-Means struggles with non-spherical cluster shapes (elongated, curved, or nested), clusters of very different sizes or densities, and categorical data. The algorithm also cannot determine the "right" `k` automatically — the elbow method helps, but the final choice requires domain knowledge. Note that K-Means assigns every point to a cluster — there are no unassigned outliers, so unusual data points will be forced into the nearest group.
 
 ### Safe by design
 

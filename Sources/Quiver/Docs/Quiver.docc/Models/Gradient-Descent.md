@@ -4,7 +4,7 @@ Fit a regression model by adjusting its coefficients one small step at a time.
 
 ## Overview
 
-Think of a ball placed in a bowl — gravity rolls it to the bottom. `GradientDescent` does the same with math instead of gravity. It finds the best coefficients for a linear model by repeating a simple process: check how wrong the current predictions are, figure out which way to adjust each coefficient to make them less wrong, then move each one a small amount in that direction. After enough repetitions, the error stops falling and the model has settled on its answer — the bottom of the bowl.
+Think of a ball placed in a bowl — gravity rolls it to the bottom. `GradientDescent` does the same with math instead of gravity. The optimizer finds the best coefficients for a linear model by repeating a simple process: check how wrong the current predictions are, figure out which way to adjust each coefficient to make them less wrong, then move each one a small amount in that direction. After enough repetitions, the error stops falling and the model has settled on its answer — the bottom of the bowl.
 
 This is the same answer ``LinearRegression`` produces in a single matrix expression, only reached step by step instead of computed directly. Both routes converge to the same coefficients on a squared-error problem. The iterative route exists for the models with no closed-form answer — ``Ridge`` adds a penalty to the loss, and <doc:Logistic-Regression> swaps in a cross-entropy loss — where stepping toward the minimum is the only way to find it. The fitted model carries every step of the descent as a stored property, so we can see the error fall across iterations, confirm the run converged, and diagnose a run that crawled or diverged.
 
@@ -158,7 +158,7 @@ The two answers agree because gradient descent converges to the same minimum the
 
 ### When to use which
 
-`LinearRegression` is the right choice for ordinary least squares — it is closed-form, exact, and one pass. It solves the normal equation in O(*n*·*f*² + *f*³) time, where *n* is the number of samples and *f* the number of features: the *f*³ term is the cost of inverting the *f*×*f* matrix XᵀX, and it is exact but grows quickly as the feature count rises.
+`LinearRegression` is the right choice for ordinary least squares — it is closed-form, exact, and one pass. The closed form solves the normal equation in O(*n*·*f*² + *f*³) time, where *n* is the number of samples and *f* the number of features: the *f*³ term is the cost of inverting the *f*×*f* matrix XᵀX, and it is exact but grows quickly as the feature count rises.
 
 `GradientDescent` takes O(*k*·*n*·*f*) time — *k* iterations, each one pass over the *n* samples and *f* features to form the gradient Xᵀ(Xθ − y). Each step is linear in the feature count rather than cubic, so as *f* grows the per-step cost rises far more slowly than the closed-form inversion; the trade is that the descent pays for *k* of those steps and must converge. Where the two routes break even depends on all three of *n*, *f*, and *k* together, not on the feature count alone.
 

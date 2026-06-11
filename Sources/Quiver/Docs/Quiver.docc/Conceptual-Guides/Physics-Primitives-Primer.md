@@ -67,7 +67,7 @@ let totalWorkJ = powerWatts.trapezoidalIntegral(dt: 1.0) ?? 0
 let totalWorkKJ = totalWorkJ / 1000.0             // kilojoules, the unit cyclists use
 ```
 
-For a running total — work done so far at each time step, plotted as a curve — use `cumulativeTrapezoidal(dt:)`. It returns an array the same length as the input, so we can chart it directly:
+For a running total — work done so far at each time step, plotted as a curve — use `cumulativeTrapezoidal(dt:)`. The function returns an array the same length as the input, so we can chart it directly:
 
 ```swift
 let workCurve = powerWatts.cumulativeTrapezoidal(dt: 1.0)

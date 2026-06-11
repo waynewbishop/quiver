@@ -59,7 +59,7 @@ Interval width scales as `1 / √n` through the `SE` formula. Doubling `n` shrin
 
 **Adjusted R²** modifies the plain R² to penalize parameter count: `1 − (1 − R²) · (n − 1) / (n − p)` where `p` is the number of fitted coefficients including the intercept. Adjusted R² is always less than R² when `p > 1` and `R² < 1`; the interesting case is when adjusted R² falls *as a feature is added*, which is the signal that the new feature does not justify its complexity. Plain R² mechanically rises whenever we add a feature, even pure noise; only adjusted R² can tell us when the addition is paying for itself.
 
-**Residual standard error** is the square root of the residual variance: `√(RSS / df)`. It reads in the units of the target. A residual SE of `9584` on house prices means the typical prediction misses by about `$9,584` once the model's degrees of freedom are accounted for. RMSE on the same fit (available through `predictions.rootMeanSquaredError(actual:)`) divides by `n` instead of `df`, so the residual SE is slightly larger than RMSE — by exactly the factor `√(n / df)`.
+**Residual standard error** is the square root of the residual variance: `√(RSS / df)`. The residual SE reads in the units of the target. A residual SE of `9584` on house prices means the typical prediction misses by about `$9,584` once the model's degrees of freedom are accounted for. RMSE on the same fit (available through `predictions.rootMeanSquaredError(actual:)`) divides by `n` instead of `df`, so the residual SE is slightly larger than RMSE — by exactly the factor `√(n / df)`.
 
 ### The assumptions every claim rests on
 

@@ -18,7 +18,7 @@ Scaling all features to a common range gives each one equal influence in the mod
 
 ### Choosing between StandardScaler and FeatureScaler
 
-`StandardScaler` is the default choice for most machine learning workflows and is the scaler used by `Pipeline`. It works well when features have different units or ranges, and it is more robust to outliers than min-max scaling. A single extreme value will not compress the rest of the data into a narrow band, because the formula uses mean and standard deviation rather than minimum and maximum. For the concept behind z-scores, see <doc:Statistics-Primer>.
+`StandardScaler` is the default choice for most machine learning workflows and is the scaler used by `Pipeline`. The scaler works well when features have different units or ranges, and it is more robust to outliers than min-max scaling. A single extreme value will not compress the rest of the data into a narrow band, because the formula uses mean and standard deviation rather than minimum and maximum. For the concept behind z-scores, see <doc:Statistics-Primer>.
 
 `FeatureScaler` applies min-max scaling, which is the right choice when the target range matters. Image pipelines that expect pixel intensities in 0...1, visualizations bounded to a fixed axis, and neural network layers that assume bounded inputs all benefit from a scaler that produces values in a known interval. The trade-off is that an outlier in the training data will compress the rest of the values toward one end of the range.
 

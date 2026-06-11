@@ -107,7 +107,7 @@ Cross-validation and the two-way split solve different halves of the same proble
 
 ### Why folds return indices
 
-`kFoldIndices` hands back index lists rather than ready-made train and validation arrays, and the choice is deliberate. The caller drives the fitting loop and applies the same fold indices to every parallel array — features and targets alike — which keeps the rows aligned across all of them. It also keeps the validation rows genuinely unseen. When a scaler is fit on the training indices alone and only then applied to the validation indices, no information leaks backward from the data the model is about to be scored on. Ready-sliced arrays would invite the shortcut of scaling the whole dataset once before the loop, which quietly folds validation statistics into the fit and inflates every score that follows.
+`kFoldIndices` hands back index lists rather than ready-made train and validation arrays, and the choice is deliberate. The caller drives the fitting loop and applies the same fold indices to every parallel array — features and targets alike — which keeps the rows aligned across all of them. The same discipline also keeps the validation rows genuinely unseen. When a scaler is fit on the training indices alone and only then applied to the validation indices, no information leaks backward from the data the model is about to be scored on. Ready-sliced arrays would invite the shortcut of scaling the whole dataset once before the loop, which quietly folds validation statistics into the fit and inflates every score that follows.
 
 ### Stratified splitting
 
@@ -135,7 +135,7 @@ Unlike `trainTestSplit`, which takes one array at a time, `stratifiedSplit` take
 
 ### Works with any element type
 
-Because splitting is pure index shuffling and slicing, `trainTestSplit` has no type constraint on the array's elements. It works on `[Double]`, `[String]`, `[[Double]]`, custom structs, or any other Swift type:
+Because splitting is pure index shuffling and slicing, `trainTestSplit` has no type constraint on the array's elements. The function works on `[Double]`, `[String]`, `[[Double]]`, custom structs, or any other Swift type:
 
 ```swift
 import Quiver

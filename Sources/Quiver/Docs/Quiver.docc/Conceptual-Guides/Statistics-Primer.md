@@ -10,7 +10,7 @@ Statistics is the practice of describing a collection of numbers so we can make 
 
 ### Describing the middle
 
-Every distribution has a middle, but there is more than one way to find it. The **mean** is the arithmetic average, computed by adding every value and dividing by the count. It describes the typical value and it is what most people mean by "the average." The **median** is the middle value when the data is sorted. It describes the value that splits the dataset in half, with equal numbers of observations above and below it.
+Every distribution has a middle, but there is more than one way to find it. The **mean** is the arithmetic average, computed by adding every value and dividing by the count. The mean describes the typical value, and it is what most people mean by "the average." The **median** is the middle value when the data is sorted. The median describes the value that splits the dataset in half, with equal numbers of observations above and below it.
 
 For symmetric data, the mean and median agree. For skewed data — data with a long tail — they disagree, and the disagreement is informative. Consider a small team's salaries: `[50, 55, 58, 60, 62, 180]`. The mean is 77.5, pulled upward by the executive at 180. The median is 59. The median describes the typical salary on this team better than the mean does, because it ignores the extreme value. The mean is still correct as the true average, but it is a less honest summary when the distribution is lopsided.
 
@@ -43,11 +43,11 @@ Mean is the right summary for numeric data without extreme values. Median is the
 
 ### Describing the spread
 
-The middle tells us where the dataset is centered. It says nothing about how tightly the values cluster around that center. Two datasets can share the same mean but feel completely different: one tightly grouped, the other scattered. The concept that captures this is **spread**.
+The middle tells us where the dataset is centered. That center says nothing about how tightly the values cluster around it. Two datasets can share the same mean but feel completely different: one tightly grouped, the other scattered. The concept that captures this is **spread**.
 
 **Variance** measures spread by taking the distance of each value from the mean, squaring it, and averaging the squared distances. Squaring is what makes variance sensitive to extreme values: a single value far from the mean contributes disproportionately. The drawback is that variance is measured in squared units. If the original values are in dollars, the variance is in dollars-squared, which does not map to anything intuitive.
 
-**Standard deviation** solves that problem. It is the square root of variance, which brings the answer back to the original units. A standard deviation of 5 on a list of test scores means "a typical score sits about 5 points away from the mean." Standard deviation is the most practical measure of spread because it is expressed in the same units as the data.
+**Standard deviation** solves that problem. The measure is the square root of variance, which brings the answer back to the original units. A standard deviation of 5 on a list of test scores means "a typical score sits about 5 points away from the mean." Standard deviation is the most practical measure of spread because it is expressed in the same units as the data.
 
 ```swift
 let scores = [68.0, 72.0, 75.0, 77.0, 80.0, 82.0, 85.0, 88.0]

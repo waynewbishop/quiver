@@ -45,7 +45,7 @@ The same near-identical columns expose a deeper point: how a model is fit decide
 
 Ordinary least squares, above, hands back the lopsided pair. Push the collinearity all the way — two columns that are exact multiples of each other — and the matrix it inverts becomes singular, and ``LinearRegression`` throws ``MatrixError/singular`` rather than return a number it cannot justify. The refusal is honest: with no unique answer to give, it gives none.
 
-Gradient descent meets the same data and does something quieter. It never inverts a matrix; it only walks downhill on the error. So on the near-collinear floor-area features it converges without complaint:
+Gradient descent meets the same data and does something quieter. The method never inverts a matrix; it only walks downhill on the error. So on the near-collinear floor-area features it converges without complaint:
 
 ```swift
 import Quiver

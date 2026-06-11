@@ -16,7 +16,7 @@ Vector projection works the same way. Given a vector and a reference direction, 
 
 ### What the orthogonal component measures
 
-If the projection is the shadow, the orthogonal component is everything the shadow misses. It captures the part of the vector that points away from the reference direction. "Orthogonal" means perpendicular. The orthogonal component measures how far the vector strays from the direction we care about.
+If the projection is the shadow, the orthogonal component is everything the shadow misses. The orthogonal component captures the part of the vector that points away from the reference direction. "Orthogonal" means perpendicular. The orthogonal component measures how far the vector strays from the direction we care about.
 
 The two parts, parallel and perpendicular, always add back to the original vector. Nothing is lost, nothing is created. Projection is a lossless decomposition.
 
@@ -117,7 +117,7 @@ let driftRate = drift.magnitude  // 51.8 knots sideways
 
 ### Connection to linear regression
 
-The normal equation used in linear regression — θ = (X'X)⁻¹X'y — is a projection. It projects the target vector onto the column space of the feature matrix. The result is the closest point in that space to the target, which is the least-squares best fit.
+The normal equation used in linear regression — θ = (X'X)⁻¹X'y — is a projection. The equation projects the target vector onto the column space of the feature matrix. The result is the closest point in that space to the target, which is the least-squares best fit.
 
 The intuition built here carries directly into that context. The prediction is the parallel component — the part of the target that the features can explain. The residual error is the orthogonal component — the part the features cannot reach. The best-fit model is the one where the error is perpendicular to every feature, meaning no feature can reduce it further.
 

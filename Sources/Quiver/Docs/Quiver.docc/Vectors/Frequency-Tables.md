@@ -65,7 +65,7 @@ Returning an array rather than a single value is deliberate. A bimodal distribut
 
 Counts answer the question "how many?" Probabilities answer "what fraction?" The conversion is one division — divide each count by the total number of observations. The result is a number between `0` and `1` that represents the empirical probability of drawing that value if we sampled uniformly at random from the array.
 
-The `frequencyDistribution()` method performs the conversion in one call. It returns a dictionary mapping each unique value to its relative frequency, and the resulting frequencies sum to `1.0` within floating-point tolerance — a valid empirical probability distribution by construction. When we only need a single value's frequency rather than the whole table, `probability(of:)` does the same arithmetic for one value at a time.
+The `frequencyDistribution()` method performs the conversion in one call. The method returns a dictionary mapping each unique value to its relative frequency, and the resulting frequencies sum to `1.0` within floating-point tolerance — a valid empirical probability distribution by construction. When we only need a single value's frequency rather than the whole table, `probability(of:)` does the same arithmetic for one value at a time.
 
 ```swift
 import Quiver
@@ -108,7 +108,7 @@ The dictionary above is the complete prior table for this training set. When we 
 
 ### Are the counts what we expected
 
-A frequency table tells us what the data *did*. A natural follow-up question asks whether what the data did is consistent with what we expected — whether a six-sided die is fair, whether website visitors are uniformly distributed across four landing pages, whether a survey's response rates match the population they sampled. The **chi-squared goodness-of-fit test** answers this. It compares observed category counts to expected counts under a null hypothesis, summarizes the disagreement with a single number, and reads a p-value off the chi-squared distribution.
+A frequency table tells us what the data *did*. A natural follow-up question asks whether what the data did is consistent with what we expected — whether a six-sided die is fair, whether website visitors are uniformly distributed across four landing pages, whether a survey's response rates match the population they sampled. The **chi-squared goodness-of-fit test** answers this. The test compares observed category counts to expected counts under a null hypothesis, summarizes the disagreement with a single number, and reads a p-value off the chi-squared distribution.
 
 The test statistic is the sum of `(observed − expected)² / expected` across every category. Larger values mean larger disagreement. Under the null hypothesis that the observed counts came from the expected distribution, the statistic follows the chi-squared distribution with `k − 1` degrees of freedom, where `k` is the number of categories. Quiver provides the reference distribution as `Distributions.chiSquared.cdf`:
 

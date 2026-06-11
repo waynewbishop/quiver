@@ -4,7 +4,7 @@ Train an ordinary least squares regression model.
 
 ## Overview
 
-Linear regression finds the best-fit line — or hyperplane in higher dimensions — through training data by minimizing the sum of squared residuals. It predicts continuous values like prices, temperatures, scores, or any numerical quantity, and is the workhorse model when the relationship between features and a target is roughly linear.
+Linear regression finds the best-fit line — or hyperplane in higher dimensions — through training data by minimizing the sum of squared residuals. The model predicts continuous values like prices, temperatures, scores, or any numerical quantity, and is the workhorse choice when the relationship between features and a target is roughly linear.
 
 > Important: Linear regression is **supervised** — every training row is paired with a known target value, and the model learns the relationship between the features and that target. Unlike clustering models like ``KMeans`` that discover structure on their own, linear regression needs labelled data to find anything at all.
 

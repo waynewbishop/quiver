@@ -84,9 +84,9 @@ let raw = "Hello, world!".tokenize(removingPunctuation: false)
 
 ## Looking up embeddings
 
-The `embed(using:)` method converts an array of tokens into an array of vectors. It looks up each token in a dictionary keyed by string and returns only the vectors for tokens it finds — unknown tokens are filtered out automatically:
+The `embed(using:)` method converts an array of tokens into an array of vectors. The method looks up each token in a dictionary keyed by string and returns only the vectors for tokens it finds — unknown tokens are filtered out automatically:
 
-> Tip: **The Quiver Notebook** ships 5,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector. See <doc:Notebook-Datasets>.
+> Tip: **The Quiver Notebook** ships 25,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector. See <doc:Notebook-Datasets>.
 
 ```swift
 import Quiver
@@ -143,7 +143,7 @@ let results = embeddings.nearest(to: target, k: 2)
 
 Each result carries a 1-based rank, the matching word, and the cosine similarity score. Entries whose vector dimension does not match the query are skipped silently, which makes the method forgiving when the dictionary mixes embeddings from different sources.
 
-> Tip: For ranked search across an array of document vectors rather than a string-keyed dictionary, use `cosineSimilarities(to:)` followed by `topIndices(k:labels:)`. The dictionary form is a convenience for the embedding-table case where the keys are already the labels.
+> Tip: For ranked search across an array of document vectors rather than a string-keyed dictionary, use `cosineSimilarities(to:)` followed by `topIndices(k:labels:)`. The dictionary form is a convenience for the embedding-table case where the keys are already the labels. When the vectors come from an ``Embedder`` rather than a literal table, rank the `(text, vector)` pairs it produces with `mostSimilar(to:k:)` instead — see <doc:Embedding-Sources>.
 
 ## Building document vectors
 

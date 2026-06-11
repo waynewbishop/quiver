@@ -87,7 +87,7 @@ The same rule applies when an input contains `NaN` already. The value propagates
 
 ### The limits of a linear measure
 
-A correlation near `+1` or `-1` says that two columns move together in a straight line. It does not say that one causes the other, and it does not capture relationships that bend. A perfect parabola `y = x²` over a symmetric range produces a Pearson correlation of zero even though the two columns are deterministically related — the linear component cancels out. For monotonic but nonlinear associations, a rank-based statistic such as Spearman is the appropriate tool. Spearman is out of scope for `1.2.0`.
+A correlation near `+1` or `-1` says that two columns move together in a straight line. The statistic does not say that one causes the other, and it does not capture relationships that bend. A perfect parabola `y = x²` over a symmetric range produces a Pearson correlation of zero even though the two columns are deterministically related — the linear component cancels out. For monotonic but nonlinear associations, a rank-based statistic such as Spearman is the appropriate tool. Spearman is out of scope for `1.2.0`.
 
 Correlation is also not the cosine similarity used in <doc:Similarity-Operations>. Both produce a number between `-1` and `+1`, and the formulas look similar, but cosine compares vectors as directions from the origin while correlation compares columns after centering them on their means. The two measures answer different engineering questions and they are not interchangeable.
 

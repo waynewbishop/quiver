@@ -48,7 +48,7 @@ Every entry shares `13` as the denominator because the determinant is `13`. The 
 
 ### Equality and serialization
 
-`Fraction` conforms to `Equatable`, which makes it directly comparable in tests and unit checks — two fractions are equal when their reduced numerator and denominator agree. It conforms to `CustomStringConvertible` so that `print` and string interpolation render the familiar `"a/b"` form, falling back to `"a"` for whole numbers. It conforms to `Sendable` so that values produced on one task can be passed safely across concurrency boundaries without further annotation.
+`Fraction` conforms to `Equatable`, which makes it directly comparable in tests and unit checks — two fractions are equal when their reduced numerator and denominator agree. The type conforms to `CustomStringConvertible` so that `print` and string interpolation render the familiar `"a/b"` form, falling back to `"a"` for whole numbers. The type also conforms to `Sendable` so that values produced on one task can be passed safely across concurrency boundaries without further annotation.
 
 > Note: `Fraction` is presentation-only. Every Quiver operation still computes on `Double` and `[[Double]]`. Reach for it when the goal is to display a result, not to extend computation into rational arithmetic.
 

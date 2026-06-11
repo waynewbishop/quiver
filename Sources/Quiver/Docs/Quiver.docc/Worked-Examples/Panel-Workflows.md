@@ -123,7 +123,7 @@ print(snapshot.csvRows())
 
 Both deliverables surface count, mean, std, min, and max. The full nine-field view — including the quartiles — lives on the inner `ColumnSummary`, reachable through `snapshot.columns[name]`.
 
-A `Panel` cannot be constructed with zero columns — the initializer requires at least one. It can end up with zero rows, however, after a filter removes every match. Calling `summary()` on a zero-row panel returns a `PanelSummary` whose `columnNames` is intact and whose `columns` dictionary still has an entry for every column. Each entry reports `count: 0` with zeros across the remaining fields. This is a deliberate departure from `[Double].summary()`, which returns `nil` for an empty array. A zero-row panel still has structure — the columns exist and have names — so the snapshot preserves it. To distinguish "no rows" from "rows with a mean of zero," check `snapshot.columns[name]?.count == 0` rather than reading the mean.
+A `Panel` cannot be constructed with zero columns — the initializer requires at least one. A panel can end up with zero rows, however, after a filter removes every match. Calling `summary()` on a zero-row panel returns a `PanelSummary` whose `columnNames` is intact and whose `columns` dictionary still has an entry for every column. Each entry reports `count: 0` with zeros across the remaining fields. This is a deliberate departure from `[Double].summary()`, which returns `nil` for an empty array. A zero-row panel still has structure — the columns exist and have names — so the snapshot preserves it. To distinguish "no rows" from "rows with a mean of zero," check `snapshot.columns[name]?.count == 0` rather than reading the mean.
 
 ### Exploring data
 

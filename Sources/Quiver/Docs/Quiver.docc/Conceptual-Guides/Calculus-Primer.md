@@ -85,11 +85,11 @@ Same idea, different inputs. This is the same teaching move <doc:Linear-Algebra-
 
 ### Finding the lowest point
 
-So far the derivative has told us how fast something is changing. It can also tell us something more powerful, and this is the reason calculus shows up in machine learning: where the lowest point of a formula is.
+So far the derivative has told us how fast something is changing. The derivative can also tell us something more powerful, and this is the reason calculus shows up in machine learning: where the lowest point of a formula is.
 
 Think of an error formula — a formula that says how wrong a model's predictions are on a given dataset. The model has knobs we can turn (the coefficients of a regression line, for example). Turning the knobs changes the error. Somewhere, there is a setting of those knobs that makes the error as small as it can be. That setting is the **minimum** of the error formula, and it is the answer the model wants.
 
-It is worth being exact about what **error** means, because the word carries the whole idea. The error is a single number measuring how far the model's predictions fall from the actual values — the gap between guess and truth, squared so that overshooting and undershooting both count as wrong and large misses count for more, then averaged across the dataset. This averaged squared error is the quantity that code and machine-learning writing usually call the **loss** — the two words name the same number, and the <doc:Gradient-Descent> model carries it step by step as its `lossHistory`. A large error means the predictions are far off; an error of zero means they match the data exactly. Squaring is also why the error formula is bowl-shaped: a squared quantity traces a parabola, a bowl with a single lowest point.
+Being exact about what **error** means matters here, because the word carries the whole idea. The error is a single number measuring how far the model's predictions fall from the actual values — the gap between guess and truth, squared so that overshooting and undershooting both count as wrong and large misses count for more, then averaged across the dataset. This averaged squared error is the quantity that code and machine-learning writing usually call the **loss** — the two words name the same number, and the <doc:Gradient-Descent> model carries it step by step as its `lossHistory`. A large error means the predictions are far off; an error of zero means they match the data exactly. Squaring is also why the error formula is bowl-shaped: a squared quantity traces a parabola, a bowl with a single lowest point.
 
 ### Where the derivative is zero
 
@@ -103,7 +103,7 @@ For one particular error formula — the squared error used by ordinary linear r
 
 θ = (X'X)⁻¹X'y
 
-This is the **normal equation**, and it is what falls out when we take the derivative of squared error, set it equal to zero, and solve for the coefficients θ. The derivation does not need to be followed line by line; the point is that `LinearRegression.fit` is not magic. It is the answer calculus gives to "where is the line with the least total error":
+This is the **normal equation**, and it is what falls out when we take the derivative of squared error, set it equal to zero, and solve for the coefficients θ. The derivation does not need to be followed line by line; the point is that `LinearRegression.fit` is not magic. The fit is the answer calculus gives to "where is the line with the least total error":
 
 ```swift
 import Quiver
@@ -121,11 +121,11 @@ Every regression fit is a calculus problem solved in one step.
 
 Not every error formula has a clean answer. For some, taking the derivative and setting it equal to zero produces an equation that cannot be solved by algebra — there is no expression that says "here is the answer."
 
-For those, the derivative still does something useful. It tells us which direction the minimum lies in. Not the exact spot, but the way to walk from where we are. So instead of solving the equation, we walk: start anywhere, look at the derivative to see which way is downhill, take a small step in that direction, and look again. Repeat until the derivative is essentially zero — meaning the ground is flat and we have arrived at the lowest point.
+For those, the derivative still does something useful. The slope tells us which direction the minimum lies in. Not the exact spot, but the way to walk from where we are. So instead of solving the equation, we walk: start anywhere, look at the derivative to see which way is downhill, take a small step in that direction, and look again. Repeat until the derivative is essentially zero — meaning the ground is flat and we have arrived at the lowest point.
 
 A model has more than one coefficient to adjust, so there is more than one direction to consider. The derivative with respect to a single coefficient, holding the others fixed, is its **partial derivative** — the slope along that one coefficient's axis. Collecting the partial derivative for every coefficient into a list gives the **gradient**, the combined downhill direction the walk follows. Each step moves every coefficient a small amount along its own partial derivative at once.
 
-That iterative walk has a name. It is called **gradient descent**, and it is the algorithm Quiver's ``GradientDescent`` implements:
+That iterative walk has a name. The walk is called **gradient descent**, and it is the algorithm Quiver's ``GradientDescent`` implements:
 
 ```swift
 import Quiver

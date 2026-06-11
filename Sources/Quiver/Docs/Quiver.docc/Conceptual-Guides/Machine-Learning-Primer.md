@@ -44,7 +44,7 @@ let (train, test) = features.trainTestSplit(testRatio: 0.2, seed: 42)
 // test:  2 rows for evaluation
 ```
 
-The `seed` parameter ensures the same split every time, making experiments reproducible. When using a <doc:Panel>, the split is atomic, so all columns are partitioned by the same rows, so features and labels stay aligned automatically.
+The `seed` parameter ensures the same split every time, so experiments are reproducible. When using a <doc:Panel>, the split is atomic. All columns are partitioned by the same rows, so features and labels stay aligned automatically.
 
 ### Stratified splitting
 
@@ -82,6 +82,21 @@ This pattern — fit once on training data, apply everywhere — prevents leakag
 
 Raw data rarely arrives in a form that works well for models. **Feature engineering** is the process of transforming raw inputs into features that better represent the underlying patterns. This might involve combining columns (ratio of balance to income), extracting components (day of week from a timestamp), or encoding categories as numbers.
 
+One feature-engineering move deserves a closer look, because it addresses a specific limitation. A linear model is **additive**: it combines features only by adding their weighted contributions, so it can fit `cost = a·length + b·width` but never a relationship that depends on the two *multiplied together*. When the target genuinely follows a product — tiling cost depends on a room's area, length × width, not on either dimension alone — no straight line through the original columns can capture it. The fix is to compute that product ourselves and hand it to the model as a new feature, an **interaction term**, whose relationship to the target is linear again:
+
+```swift
+import Quiver
+
+// Tiling cost depends on area = length × width, not on either alone.
+let lengths = [3.0, 5.0, 6.0]
+let widths  = [4.0, 2.0, 6.0]
+
+// Multiplying the two columns builds the interaction term.
+let area = lengths.multiply(widths)   // [12.0, 10.0, 36.0]
+```
+
+The element-wise product is the whole operation — `multiply` does in the open what "building an interaction term" names in the abstract. Feeding `area` to ``LinearRegression`` alongside the originals lets the model keep each dimension's standalone effect *and* gain the interaction between them. This is the concrete form of "combining existing columns into interaction terms" that the overfitting discussion below returns to.
+
 **Feature scaling** addresses a specific problem: when features have very different magnitudes, larger values can dominate the model's calculations. A credit score ranging from 300–850 and an account balance ranging from 0–250,000 are nearly six orders of magnitude apart. Scaling brings all features to a comparable range so each one contributes proportionally:
 
 ```swift
@@ -98,9 +113,9 @@ Quiver's ``StandardScaler`` standardizes each column independently, subtracting 
 
 A model can fail in two opposite ways:
 
-**Overfitting** means the model has memorized the training data, including its noise and quirks, rather than learning the underlying pattern. It performs well on training data but poorly on new examples. Signs of overfitting include near-perfect training accuracy paired with significantly lower test accuracy.
+**Overfitting** means the model has memorized the training data, including its noise and quirks, rather than learning the underlying pattern. The model performs well on training data but poorly on new examples. Signs of overfitting include near-perfect training accuracy paired with significantly lower test accuracy.
 
-**Underfitting** means the model is too simple to capture the pattern in the data. It performs poorly on both training and test data. This can happen when the model lacks the capacity to represent the relationship, or when important features are missing.
+**Underfitting** means the model is too simple to capture the pattern in the data. The model performs poorly on both training and test data. This can happen when the model lacks the capacity to represent the relationship, or when important features are missing.
 
 These two failures are the two ends of the **bias-variance tradeoff** — underfitting is high bias (the model is too rigid to fit the pattern), and overfitting is high variance (the model swings too far to fit the noise). The goal is a model that generalizes, one that learns the true pattern well enough to make accurate predictions on data it has never seen. Splitting data into training and test sets (and checking both scores) is the primary tool for detecting these problems. The <doc:Ridge-Regression> page shows both failures as worked examples with training and test scores, and the <doc:Regularization-Primer> covers one direct cure for overfitting — penalizing a model for leaning too hard on any one feature.
 
@@ -199,7 +214,7 @@ For a full treatment of these metrics and the ``ConfusionMatrix`` type, see <doc
 
 **K-Nearest Neighbors** makes no assumptions about data distribution and classifies new points by finding the most similar training examples. The tradeoff is performance: every prediction scans the entire training set, and feature scaling is critical because `distance(to:)` is sensitive to magnitude differences. See <doc:Nearest-Neighbors-Classification>.
 
-**Linear Regression** predicts continuous values rather than categories. Its coefficients are directly interpretable ("each additional bedroom adds $X to the price"), but that reading holds only when the features are well separated — see <doc:Model-Interpretation-Primer> for how to read coefficients honestly and when collinearity makes them arbitrary. It also assumes a linear relationship between features and target. See <doc:Linear-Regression>.
+**Linear Regression** predicts continuous values rather than categories. Its coefficients are directly interpretable ("each additional bedroom adds $X to the price"), but that reading holds only when the features are well separated — see <doc:Model-Interpretation-Primer> for how to read coefficients honestly and when collinearity makes them arbitrary. Linear regression also assumes a linear relationship between features and target. See <doc:Linear-Regression>.
 
 **Polynomial regression** has two doors in Quiver. `LinearRegression.fit` returns a fitted model with the inferential machinery — standard errors, p-values, confidence intervals — available through `summary`. `polyfit` returns a ``Polynomial``, a callable mathematical object we can evaluate, differentiate, scale, or compose. The choice rests on which return type the next call site needs: multi-feature work or inference reaches for `LinearRegression.fit`; single-variable curve work where the output benefits from being a `Polynomial` reaches for `polyfit`. The error contracts differ too — `polyfit` returns `nil` on bad input; `LinearRegression.fit` throws ``MatrixError/singular``. See <doc:Polynomials>.
 

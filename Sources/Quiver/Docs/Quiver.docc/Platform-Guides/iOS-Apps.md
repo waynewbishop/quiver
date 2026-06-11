@@ -178,7 +178,7 @@ print(model.predict([upcoming])[0]) // 20.0 — the model recovered the underlyi
 
 ### Classifying the next decision
 
-Prediction answers "how much"; classification answers "which one." The most common consumer-app version is a binary decision — will the user accept this prompt, keep this item, renew this subscription — and <doc:Logistic-Regression> fits that from the user's own history. It learns a boundary between the two outcomes and reports which side a new event falls on, along with a probability for how confident that call is.
+Prediction answers "how much"; classification answers "which one." The most common consumer-app version is a binary decision — will the user accept this prompt, keep this item, renew this subscription — and <doc:Logistic-Regression> fits that from the user's own history. The model learns a boundary between the two outcomes and reports which side a new event falls on, along with a probability for how confident that call is.
 
 ```swift
 import Quiver
@@ -203,7 +203,7 @@ A fitted classifier is only honest if it is judged on events it never trained on
 
 ### Persisting the fitted value
 
-The fitted model is a value, not a service. It encodes to JSON, persists to Documents, and decodes unchanged on the next launch. The same `Codable` shape covers <doc:KMeans-Clustering> for unsupervised grouping, <doc:Linear-Regression> for prediction, <doc:Logistic-Regression> for binary decisions, and <doc:Nearest-Neighbors-Classification> for similarity-based labeling. See <doc:Model-Persistence> for the encode-once, decode-on-launch pattern every model on iOS shares.
+The fitted model is a value, not a service. That value encodes to JSON, persists to Documents, and decodes unchanged on the next launch. The same `Codable` shape covers <doc:KMeans-Clustering> for unsupervised grouping, <doc:Linear-Regression> for prediction, <doc:Logistic-Regression> for binary decisions, and <doc:Nearest-Neighbors-Classification> for similarity-based labeling. See <doc:Model-Persistence> for the encode-once, decode-on-launch pattern every model on iOS shares.
 
 ### Composing scaling and fitting end-to-end
 

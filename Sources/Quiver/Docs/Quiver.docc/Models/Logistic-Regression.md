@@ -4,7 +4,7 @@ Train a binary classifier that predicts class probabilities.
 
 ## Overview
 
-Logistic regression answers a yes-or-no question with a probability. Where <doc:Linear-Regression> predicts a continuous value and <doc:Gradient-Descent> reaches that value iteratively, logistic regression predicts the probability that a sample belongs to class 1 — then thresholds that probability at 0.5 to decide the class. It is the workhorse binary classifier: spam or not, churn or retain, pass or fail.
+Logistic regression answers a yes-or-no question with a probability. Where <doc:Linear-Regression> predicts a continuous value and <doc:Gradient-Descent> reaches that value iteratively, logistic regression predicts the probability that a sample belongs to class 1 — then thresholds that probability at 0.5 to decide the class. Logistic regression is the workhorse binary classifier: spam or not, churn or retain, pass or fail.
 
 The name is a known source of confusion. Despite the word regression, logistic regression is a **classification** model — it predicts a discrete label, not a continuous quantity. The "regression" refers to what happens underneath: the model fits a straight line in log-odds space, then squashes that line through the sigmoid function to turn it into a probability between 0 and 1.
 
@@ -171,7 +171,7 @@ The coefficients follow the intercept-first layout: when the model fits a bias t
 
 ### When to use logistic regression
 
-Logistic regression is the right reach when the target is a binary yes-or-no label and a single boundary separates the classes reasonably well. It predicts a calibrated probability rather than a bare label, so it suits ranking, threshold tuning, and cost-sensitive decisions where the confidence of a prediction matters as much as its class. Because the decision boundary is linear in the features, the model excels when the classes are close to linearly separable and underperforms when the true boundary curves — a case better served by a non-parametric classifier such as <doc:Nearest-Neighbors-Classification>.
+Logistic regression is the right reach when the target is a binary yes-or-no label and a single boundary separates the classes reasonably well. The model predicts a calibrated probability rather than a bare label, so it suits ranking, threshold tuning, and cost-sensitive decisions where the confidence of a prediction matters as much as its class. Because the decision boundary is linear in the features, the model excels when the classes are close to linearly separable and underperforms when the true boundary curves — a case better served by a non-parametric classifier such as <doc:Nearest-Neighbors-Classification>.
 
 Two constraints define its scope. The labels must be binary; more than two classes calls for a multinomial model, which is out of scope here. And because the fit is iterative, the features must be standardized first, or the default learning rate fails to descend. Within those constraints it is the workhorse binary classifier, and the probability it returns is its defining advantage over a model that emits only a label.
 

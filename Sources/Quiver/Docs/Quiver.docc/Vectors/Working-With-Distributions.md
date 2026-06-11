@@ -27,7 +27,7 @@ Distributions.normal.quantile(p: 0.975, mean: 0, standardDeviation: 1) // ≈ 1.
 
 The normal distribution is the bell-shaped curve that shows up everywhere in nature and engineering. Test scores, sensor noise, measurement error, and adult heights all cluster around an average with a symmetric falloff on either side. The Central Limit Theorem guarantees that the sample mean of almost any underlying population is approximately normal once the sample is large enough, which is why the normal sits at the center of inferential statistics. Quiver exposes the normal at `Distributions.normal` with all four functions: `pdf` for the density, `logPDF` for the log-density, `cdf` for cumulative probability, and `quantile` for the inverse CDF.
 
-The probability density function (PDF) gives the relative likelihood of observing a specific value. It is positive everywhere on the real line, peaks at the mean, and integrates to `1.0` across its full support. For a standard normal with mean `0` and standard deviation `1`, the density at the mean is approximately `0.3989`, which equals `1 / √(2π)`.
+The probability density function (PDF) gives the relative likelihood of observing a specific value. The density is positive everywhere on the real line, peaks at the mean, and integrates to `1.0` across its full support. For a standard normal with mean `0` and standard deviation `1`, the density at the mean is approximately `0.3989`, which equals `1 / √(2π)`.
 
 ```swift
 import Quiver
@@ -48,7 +48,7 @@ import Quiver
 let lp = Distributions.normal.logPDF(x: 4, mean: 0, standardDeviation: 1)  // ≈ -8.919
 ```
 
-The cumulative distribution function (CDF) gives the probability that a normally distributed value falls at or below `x`. It rises monotonically from `0` at negative infinity to `1` at positive infinity, equals `0.5` at the mean, and at `x = 1.96` returns the canonical value used to construct 95% confidence intervals.
+The cumulative distribution function (CDF) gives the probability that a normally distributed value falls at or below `x`. The curve rises monotonically from `0` at negative infinity to `1` at positive infinity, equals `0.5` at the mean, and at `x = 1.96` returns the canonical value used to construct 95% confidence intervals.
 
 ```swift
 import Quiver
@@ -71,7 +71,7 @@ let belowNinety = Distributions.normal.cdf(x: 90, mean: 75, standardDeviation: 1
 
 About 93% of the class scored below `90`. The CDF turns "where does this value sit in the distribution" into a concrete probability.
 
-The quantile function is the inverse of the CDF. It answers the question "what value of `x` puts probability `p` below it?" For a standard normal, the quantile at `p = 0.975` is approximately `1.96`. This is the cutoff that puts 2.5% of the distribution in each tail and bounds a 95% confidence interval.
+The quantile function is the inverse of the CDF. The quantile answers the question "what value of `x` puts probability `p` below it?" For a standard normal, the quantile at `p = 0.975` is approximately `1.96`. This is the cutoff that puts 2.5% of the distribution in each tail and bounds a 95% confidence interval.
 
 ```swift
 import Quiver
@@ -100,7 +100,7 @@ Roughly 90% of the class scored below `87.8`. The quantile turns "what percentil
 
 The t-distribution is the small-sample sibling of the normal. The normal describes how a sample mean behaves when the sample is large enough for the Central Limit Theorem to apply, with the usual rule of thumb being `n` of `30` or more. Below that threshold the sample mean has a wider distribution than the normal predicts, because we are estimating the standard deviation from the same small sample we are using to estimate the mean. That extra uncertainty needs a wider reference curve to honor it. The t-distribution is that wider curve.
 
-It looks like a standard normal that has been stretched in the tails. It is centered at zero and symmetric, but the spread depends on a parameter called the degrees of freedom. Small `df` values produce visibly heavier tails. As `df` grows, the curve narrows toward the standard normal. At `df` near `1000` the two are visually indistinguishable. The classic rule for a sample of size `n` is `df = n - 1` for a one-sample inference. The `-1` accounts for the one quantity (the sample mean) we already estimated from the data before estimating the standard deviation.
+The curve looks like a standard normal that has been stretched in the tails: centered at zero and symmetric, but with a spread that depends on a parameter called the degrees of freedom. Small `df` values produce visibly heavier tails. As `df` grows, the curve narrows toward the standard normal. At `df` near `1000` the two are visually indistinguishable. The classic rule for a sample of size `n` is `df = n - 1` for a one-sample inference. The `-1` accounts for the one quantity (the sample mean) we already estimated from the data before estimating the standard deviation.
 
 Quiver exposes the t-distribution at `Distributions.t` with `cdf(x:df:)` and `quantile(p:df:)`. There is no PDF — practical inference uses the CDF and the quantile, and `LinearRegression.summary` calls both internally to compute p-values and confidence intervals for fitted coefficients.
 

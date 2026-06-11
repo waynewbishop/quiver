@@ -33,7 +33,7 @@ let probs = scores.softMax()
 
 ### Sigmoid
 
-The sigmoid function squashes each value into the range (0, 1) independently. It is the standard output-layer activation for binary classification, where a single output represents the probability that a sample belongs to the positive class. Sigmoid is also the hypothesis at the heart of logistic regression: the model computes a linear score and passes it through sigmoid to produce that probability, which makes this function the model itself rather than a math utility applied afterward:
+The sigmoid function squashes each value into the range (0, 1) independently. Sigmoid is the standard output-layer activation for binary classification, where a single output represents the probability that a sample belongs to the positive class. Sigmoid is also the hypothesis at the heart of logistic regression: the model computes a linear score and passes it through sigmoid to produce that probability, which makes this function the model itself rather than a math utility applied afterward:
 
 ```swift
 import Quiver

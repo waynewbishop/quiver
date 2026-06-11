@@ -92,7 +92,7 @@ let drawB = commuteMinutes.sample(5, replace: true, using: &generator)
 
 ### Works with any element type
 
-Because drawing a sample is pure index selection, `sample` has no constraint on the array's elements. It works on `[Double]`, `[String]`, `[[Double]]`, or any other Swift type:
+Because drawing a sample is pure index selection, `sample` has no constraint on the array's elements. The method works on `[Double]`, `[String]`, `[[Double]]`, or any other Swift type:
 
 ```swift
 import Quiver

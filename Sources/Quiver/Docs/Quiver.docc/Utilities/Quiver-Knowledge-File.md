@@ -8,7 +8,7 @@ The Quiver knowledge file is a special Markdown document that captures Quiver's 
 
 ### What Claude is
 
-Claude is an AI assistant from [Anthropic](https://www.anthropic.com). It answers questions in plain language. When given a reference document — like the Quiver knowledge file — it grounds its answers in that document, which keeps responses accurate to the framework as it actually exists rather than to a general impression of how Swift numerical libraries usually work.
+Claude is an AI assistant from [Anthropic](https://www.anthropic.com). The assistant answers questions in plain language. When given a reference document — like the Quiver knowledge file — it grounds its answers in that document, which keeps responses accurate to the framework as it actually exists rather than to a general impression of how Swift numerical libraries usually work.
 
 ### How knowledge files work
 

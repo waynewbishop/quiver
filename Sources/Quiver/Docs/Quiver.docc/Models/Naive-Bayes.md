@@ -4,13 +4,13 @@ Train a Gaussian Naive Bayes classifier.
 
 ## Overview
 
-Naive Bayes is one of the simplest and most effective classification algorithms. It applies Bayes' theorem with the **naive** assumption that features are conditionally independent given the class label. Despite this strong assumption, Naive Bayes performs surprisingly well in practice and serves as a reliable baseline for classification tasks.
+Naive Bayes is one of the simplest and most effective classification algorithms. The classifier applies Bayes' theorem with the **naive** assumption that features are conditionally independent given the class label. Despite this strong assumption, Naive Bayes performs surprisingly well in practice and serves as a reliable baseline for classification tasks.
 
 ### How Gaussian classification works
 
 The **Gaussian** in Gaussian Naive Bayes refers to the probability density function (PDF) — the mathematical formula that defines the bell curve of a normal distribution. Given a feature value, a class mean, and a class variance, the PDF answers the question: How likely is this feature value if the sample belongs to this class? See <doc:Working-With-Distributions> for the public `Distributions.normal` API the model uses internally.
 
-During prediction, the model evaluates the Gaussian PDF for every feature against every class. It then combines these likelihoods with the class prior probabilities (how common each class is in the training data) to determine which class best explains the observed features. The class with the highest combined score wins. Class priors are themselves a frequency table over the labels — see <doc:Frequency-Tables>.
+During prediction, the model evaluates the Gaussian PDF for every feature against every class. The model then combines these likelihoods with the class prior probabilities (how common each class is in the training data) to determine which class best explains the observed features. The class with the highest combined score wins. Class priors are themselves a frequency table over the labels — see <doc:Frequency-Tables>.
 
 ![Naive Bayes Process](diagram-naive-bayes)
 

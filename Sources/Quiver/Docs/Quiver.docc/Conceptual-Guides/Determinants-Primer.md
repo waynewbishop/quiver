@@ -64,7 +64,7 @@ matrix3x3.determinant  // 1.0
 
 #### When the determinant is zero
 
-A determinant of zero signals that the matrix is **singular**. It collapses space into a lower dimension. In 2D, the transformation flattens everything onto a line. In 3D, it compresses a volume into a plane or a line.
+A determinant of zero signals that the matrix is **singular**. A singular matrix collapses space into a lower dimension. In 2D, the transformation flattens everything onto a line. In 3D, it compresses a volume into a plane or a line.
 
 Consider a matrix where both columns point in the same direction:
 
@@ -169,7 +169,7 @@ let solution = A.solve(b)
 // Optional([1.7692307692307692, 4.6923076923076925])
 ```
 
-Under the hood, this is equivalent to inverting the matrix and applying the inverse to `b` — `x = A⁻¹b`. Working through the math by hand makes the geometry visible:
+This is equivalent to inverting the matrix and applying the inverse to `b` — `x = A⁻¹b`. Working through the math by hand makes the geometry visible:
 
 ```swift
 // Equivalent expansion: invert, then multiply

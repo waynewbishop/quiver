@@ -59,7 +59,7 @@ The value of `k` controls the tradeoff between sensitivity and smoothness. A sma
 
 Quiver supports two distance metrics via the `DistanceMetric` enum:
 
-**Euclidean distance** (default) measures straight-line distance between points. It works well when features have similar scales, but can be dominated by high-magnitude features when scales differ. The `StandardScaler` type is the recommended choice for distance-based classifiers because it centers each feature at zero with unit variance, preventing any single feature from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred:
+**Euclidean distance** (default) measures straight-line distance between points. Euclidean distance works well when features have similar scales, but can be dominated by high-magnitude features when scales differ. The `StandardScaler` type is the recommended choice for distance-based classifiers because it centers each feature at zero with unit variance, preventing any single feature from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred:
 
 ```swift
 import Quiver
@@ -79,7 +79,7 @@ let model = KNearestNeighbors.fit(
 let predictions = model.predict(scaler.transform(testX))
 ```
 
-**Cosine distance** measures the angle between vectors, ignoring their magnitude. It is preferred for text embeddings and other cases where direction matters more than scale:
+**Cosine distance** measures the angle between vectors, ignoring their magnitude. Cosine distance is preferred for text embeddings and other cases where direction matters more than scale:
 
 ```swift
 import Quiver

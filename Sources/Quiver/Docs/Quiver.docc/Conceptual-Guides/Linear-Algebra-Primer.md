@@ -55,7 +55,7 @@ This is also how semantic search works. Words can be represented as high-dimensi
 
 ### The dot product
 
-The **dot product** is the fundamental building block for measuring similarity. It takes two vectors and produces a single number, the sum of their element-wise products, that reflects how much the vectors agree. When two vectors point in the same direction, the dot product is large and positive. When they are perpendicular, it equals zero. When they point in opposite directions, it is negative.
+The **dot product** is the fundamental building block for measuring similarity. The dot product takes two vectors and produces a single number, the sum of their element-wise products, that reflects how much the vectors agree. When two vectors point in the same direction, the dot product is large and positive. When they are perpendicular, it equals zero. When they point in opposite directions, it is negative.
 
 ```swift
 let v1 = [1.0, 0.0]  // Points right
@@ -68,7 +68,7 @@ v1.dot(v2)  // 0.0
 v1.dot(v1)  // 1.0
 ```
 
-The dot product appears throughout Quiver — in similarity measurements, matrix transformations, and directly inside the ML models. It is one of the most frequently used operations in numerical computing.
+The dot product appears throughout Quiver — in similarity measurements, matrix transformations, and directly inside the ML models. The operation is one of the most frequently used in numerical computing.
 
 ### Cosine similarity
 

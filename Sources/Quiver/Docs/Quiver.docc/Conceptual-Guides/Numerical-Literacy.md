@@ -51,7 +51,7 @@ Floating-point numbers have a finite range as well as finite precision. Multiply
 
 A `nil` value is Swift's way of saying the operation could not be performed. Calling `mean()` on an empty array returns `nil` because there is no data to average. The return type is `Double?` and we unwrap with `if let` or `guard let`, the same as any other optional in Swift.
 
-A `NaN` is a value of type `Double` defined by the IEEE-754 floating-point standard, available in Swift as `Double.nan`. It is what mathematical operations return when the result is mathematically undefined — `0.0 / 0.0`, the square root of a negative number, or an entry in a correlation matrix where one of the columns has zero variance. The data was present; the math had no valid answer.
+A `NaN` is a value of type `Double` defined by the IEEE-754 floating-point standard, available in Swift as `Double.nan`. A `NaN` is what mathematical operations return when the result is mathematically undefined — `0.0 / 0.0`, the square root of a negative number, or an entry in a correlation matrix where one of the columns has zero variance. The data was present; the math had no valid answer.
 
 ```swift
 let mean = [Double]().mean()        // nil — no data to average

@@ -34,7 +34,7 @@ let celsiusAlt = temperatures.broadcast(subtracting: 32.0)
 
 **When to use broadcasting vs map:**
 
-Broadcasting is ideal for applying scalar mathematical operations to arrays. It makes the code read like mathematical notation and clearly separates each transformation step. Use `map` for custom logic, complex transformations, or non-mathematical operations where broadcasting doesn't apply.
+Broadcasting is ideal for applying scalar mathematical operations to arrays. The approach makes the code read like mathematical notation and clearly separates each transformation step. Use `map` for custom logic, complex transformations, or non-mathematical operations where broadcasting doesn't apply.
 
 ```swift
 let temperatures = [72.0, 68.0, 73.0, 70.0, 75.0]
@@ -202,13 +202,7 @@ let customRowOperation = matrix.broadcast(withRowVector: rowVector) { matrixElem
 
 ### Use cases
 
-Broadcasting operations are particularly useful for:
-
-- **Data standardization**: Subtract means or divide by standard deviations (z-score)
-- **Feature scaling**: Apply weights to feature vectors
-- **Signal processing**: Apply filters or transformations to signals
-- **Image processing**: Adjust color channels or apply transformations
-- **Financial calculations**: Apply interest rates or time factors
+Broadcasting shows up wherever one operand applies uniformly across many. Standardizing data subtracts a mean or divides by a standard deviation across every element; feature scaling applies per-column weights to a set of vectors; signal processing applies a filter across a series. The same shape covers adjusting color channels across an image and applying a single interest rate across a column of values.
 
 ### Implementation details
 
