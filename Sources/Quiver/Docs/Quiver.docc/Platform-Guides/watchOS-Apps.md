@@ -1,6 +1,6 @@
 # watchOS Guide
 
-Build a personal baseline, measure today's session against it, and fit a model from the user's own telemetry on Apple Watch.
+Analyzing sessions, measuring them geometrically, and fitting models from Apple Watch telemetry.
 
 ## Overview
 

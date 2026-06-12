@@ -49,7 +49,7 @@ This is the idea behind all of Quiver's operations. Vector space is what makes i
 
 ### Distance and direction as meaning
 
-Two product feature vectors that are close together in vector space represent similar products. A cluster of data points near each other form a natural group. The math doesn't care what the numbers represent — it only cares about position, distance, and direction.
+Two product feature vectors that are close together in vector space represent similar products. A cluster of data points near each other form a natural group. The math doesn't care what the numbers represent, only about position, distance, and direction.
 
 This is also how semantic search works. Words can be represented as high-dimensional vectors called **embeddings** — arrays of hundreds of numbers that capture meaning. The word "running" and the word "jogging" end up near each other in vector space because they appear in similar contexts. Searching for related content becomes a matter of finding the nearest vectors using `cosineOfAngle(with:)`. Quiver's <doc:Semantic-Search> page walks through building this from scratch.
 
@@ -107,7 +107,7 @@ let point = [3.0, 1.0]
 point.transformedBy(rotation)  // [-1.0, 3.0]
 ```
 
-The point `[3.0, 1.0]` moves to `[-1.0, 3.0]`. The matrix describes the rule; `transformedBy` applies it. This particular matrix doesn't represent data about an object — it represents an *operation* that rotates any vector to a new position. Matrices can also scale (stretch or compress), reflect (mirror across an axis), shear (tilt), and compose multiple transformations together.
+The point `[3.0, 1.0]` moves to `[-1.0, 3.0]`. The matrix describes the rule; `transformedBy` applies it. This particular matrix doesn't represent data about an object but an *operation* that rotates any vector to a new position. Matrices can also scale (stretch or compress), reflect (mirror across an axis), shear (tilt), and compose multiple transformations together.
 
 Beyond transformations, matrices organize collections of data. In a dataset, each row might represent a different sample and each column a different measurement. A matrix of athlete performance data with rows for athletes and columns for speed, endurance, and strength is three vectors stacked together — and matrix operations let us process all of them simultaneously.
 

@@ -4,7 +4,7 @@ Reading, auditing, and troubleshooting the coefficients and geometry that Quiver
 
 ## Overview
 
-A trained model does not return arbitrary numbers — it returns geometric adjustments. Parametric models (``LinearRegression``, ``GradientDescent``, ``Ridge``, ``LogisticRegression``) expose those adjustments as **coefficients**, one weight per feature. Quiver's non-parametric models (``KMeans``, ``KNearestNeighbors``) hold no weights at all; they store positions in space and are judged by **distance and cohesion** instead.
+A trained model does not return arbitrary numbers but geometric adjustments. Parametric models (``LinearRegression``, ``GradientDescent``, ``Ridge``, ``LogisticRegression``) expose those adjustments as **coefficients**, one weight per feature. Quiver's non-parametric models (``KMeans``, ``KNearestNeighbors``) hold no weights at all; they store positions in space and are judged by **distance and cohesion** instead.
 
 This primer covers three reading skills: interpreting parametric coefficients, diagnosing the collinearity failure mode, and verifying non-parametric structure geometrically.
 
@@ -14,7 +14,7 @@ A linear model predicts by multiplying each feature by its fitted weight and sum
 
 `ŷ = θ₀ + θ₁x₁ + θ₂x₂ + … + θₙxₙ`
 
-Each coefficient `θᵢ` is the slope of the target along one feature axis — how much the prediction moves when that one feature increases by a unit and the others hold still. That last phrase carries an assumption: the others can hold still, which is only true when the features are close to independent. Reading a coefficient is reading a sensitivity: a large weight means the prediction reacts sharply to that input, a near-zero weight means the prediction barely moves with this feature as the model has parameterized it.
+Each coefficient `θᵢ` is the slope of the target along one feature axis — how much the prediction moves when that one feature increases by a unit and the others hold still. That last phrase carries an assumption: the others can hold still, which is only true when the features are close to independent. Reading a coefficient is reading a sensitivity: a large weight means the prediction reacts sharply to that input, a near-zero weight means the prediction barely moves with this feature as the model has parameterized the relationship.
 
 ```swift
 import Quiver
@@ -80,7 +80,7 @@ let ols = try LinearRegression.fit(features: scaled, targets: prices)
 ols.coefficients   // a lopsided pair — roughly 608719 against -512315
 ```
 
-Those two numbers are not findings about floor area. They are the solver chasing quirks across two columns that should have been one, and a different sample would swing them just as violently the other way. The signs here follow from the two columns rising together; the general signature is not "one positive, one negative" but "two large weights that nearly cancel, and that a different sample would throw just as hard."
+Those two numbers are not findings about floor area. They are the solver chasing quirks across two columns that should have been one, and a different sample would swing them just as violently the other way. The signs here follow from the two columns rising together. The general signature is not "one positive, one negative" but "two large weights that nearly cancel, and that a different sample would throw just as hard."
 
 By contrast, ``GradientDescent`` meets the same near-collinear data and converges quietly — it never inverts a matrix, so it reports `.converged` with sound predictions. Collinearity creates a flat valley of near-equal solutions, and the walk settles somewhere along it. The predictions are reliable because every point in that valley predicts about equally well, but the individual weights are not, because the valley has no single bottom. Quiet success is not the same as a trustworthy coefficient. See <doc:Optimization-Primer>.
 

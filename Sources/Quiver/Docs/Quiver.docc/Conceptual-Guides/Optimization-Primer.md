@@ -94,7 +94,7 @@ Because every model the algorithm fits runs the same loop, what a reader learns 
 
 The diagnostics read the same everywhere. Every model the algorithm fits carries its full `lossHistory` and a typed `Outcome`, so reading a convergence trajectory is one skill, learned once on a plain regression and applied without change to a penalized one. The error trajectory of a ridge fit has the same shape, the same flattening toward the minimum, the same `.converged` or `.maxIterationsReached` verdict — because it is the same loop producing it. A divergence looks the same, a crawl looks the same, a healthy descent looks the same, whichever model is being fit.
 
-That transfer is the payoff. A reader who learns to tell a smooth descent from a stalled one, to recognize when the learning rate is too large, to read the loss falling step by step, has learned it for the whole family at once. The next model does not bring a new optimizer to study — it brings a new loss to the optimizer already understood.
+That transfer is the payoff. A reader who learns to tell a smooth descent from a stalled one, to recognize when the learning rate is too large, to read the loss falling step by step, has learned it for the whole family at once. The next model does not bring a new optimizer to study but a new loss to the optimizer already understood.
 
 ### Where one answer becomes many
 
