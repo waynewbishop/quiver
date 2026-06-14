@@ -1,18 +1,19 @@
-# Naive Bayes Classification
+# Naive Bayes
 
-Train a Gaussian Naive Bayes classifier.
+Using Naive Bayes to build fast classifiers.
 
 ## Overview
 
-Naive Bayes is one of the simplest and most effective classification algorithms. The classifier applies Bayes' theorem with the **naive** assumption that features are conditionally independent given the class label. Despite this strong assumption, Naive Bayes performs surprisingly well in practice and serves as a reliable baseline for classification tasks.
+Naive Bayes provides a reliable baseline for classification tasks by applying probability to our features. It works surprisingly well even when we assume features are independent of one another. We get a robust classifier that is simple to train and easy to explain.
+
+This classifier applies **Bayes theorem** under the assumption that features do not depend on one another. Despite this strong assumption the model performs well in practice. It remains one of the simplest and most effective tools in our machine learning catalog.
 
 ### How Gaussian classification works
 
-The **Gaussian** in Gaussian Naive Bayes refers to the probability density function (PDF) — the mathematical formula that defines the bell curve of a normal distribution. Given a feature value, a class mean, and a class variance, the PDF answers the question: How likely is this feature value if the sample belongs to this class? See <doc:Working-With-Distributions> for the public `Distributions.normal` API the model uses internally.
+The "Gaussian" in Gaussian Naive Bayes refers to the probability density function known as the PDF. This is the mathematical formula that defines the bell curve of a normal distribution. Given a feature value and a class mean and variance the PDF answers how likely this feature value is if the sample belongs to that class. See <doc:Working-With-Distributions> for the public Distributions.normal API the model uses internally.
 
-During prediction, the model evaluates the Gaussian PDF for every feature against every class. The model then combines these likelihoods with the class prior probabilities (how common each class is in the training data) to determine which class best explains the observed features. The class with the highest combined score wins. Class priors are themselves a frequency table over the labels — see <doc:Frequency-Tables>.
+During prediction the model evaluates the Gaussian PDF for every feature against every class. We then combine these likelihoods with the class prior probabilities to determine which class best explains the observed features. The prior probabilities tell us how common each class is in the training data. The class with the highest combined score wins. Class priors are simply a frequency table over the labels. See <doc:Frequency-Tables> for details.
 
-![Naive Bayes Process](diagram-naive-bayes)
 
 ### Fitting a model
 

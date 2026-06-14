@@ -4,9 +4,12 @@ Working from raw data to a named distribution family using histograms, summary s
 
 ## Overview
 
-A dataset arrives. Maybe it is the number of support tickets opened per hour, the heights of users in a fitness app, or the count of correct answers on a quiz. Before we can model the data, we want to answer a question: what kind of distribution is this? Knowing the answer unlocks the right downstream tools. A normal distribution lets us reason about averages with the central limit theorem, a Poisson distribution gives us a single parameter to estimate, and a binomial distribution turns counts into proportions with a known variance.
+We collect data from sources like support tickets or user heights or quiz scores. **Identifying** the shape of that data helps us choose the right statistical tools for our analysis. This step simplifies the entire process by guiding us toward the best models for our specific needs.
 
-Identifying a distribution is a workflow, not a single function call. We start with a histogram to see the shape, summarize that shape with quartiles and a measure of asymmetry, then compare what we see to the candidate families we know. Quiver provides the tools for each step; this primer walks the workflow end-to-end. The three families it covers are the ones every practitioner reaches for first: the **normal** for continuous values that cluster around a center, the **Poisson** for counts of independent events in a fixed window, and the **binomial** for counts of successes in a fixed number of yes-or-no trials. Together they cover most of the data a Quiver caller will encounter, and the workflow that distinguishes among them scales to the broader catalog.
+ A dataset might represent hourly support tickets or user heights or quiz scores. Before we build a model we need to know what kind of distribution we are working with. Knowing the answer unlocks the correct set of tools. A normal distribution allows us to reason about averages. A Poisson distribution gives us a single
+ parameter to estimate for counts. A binomial distribution turns trial outcomes into proportions. 
+
+Identifying a distribution is a workflow rather than a single function call. We start by building a histogram to see the shape of the data. Then we summarize that shape with quartiles and measures of asymmetry. Finally we compare what we see to the families we know. Quiver provides the tools for every step of this workflow. We focus on three families that every practitioner reaches for first. We look at the **normal** distribution for continuous values that cluster around a center. We use the **Poisson** distribution for independent events in a fixed window. We apply the **binomial** distribution for success counts in a fixed number of trials. These three cover most of the data we will ever encounter.
 
 ### Looking at the shape
 

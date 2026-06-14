@@ -4,17 +4,15 @@ Shrinking regression coefficients with a penalty that curbs overfitting.
 
 ## Overview
 
-Ridge is a regularized alternative to ``LinearRegression`` — it uses the same linear model, then adds a penalty on the size of the coefficients to curb [overfitting](<doc:Machine-Learning-Primer>). The penalty is the squared [magnitude](<doc:Vector-Operations>) of the coefficients, and its strength is set by a single parameter, `lambda`. As `lambda` grows, the penalty bites harder, shrinking the coefficients toward zero and making the model less sensitive to the noise and collinearity in the training data.
+Ridge regression helps us curb overfitting in our linear models. It adds a penalty to the size of coefficients so the model stays stable when data is messy. This approach keeps our predictions steady even when the training data contains noise.
 
-The two models are interchangeable in code, because both conform to the `Regressor` protocol — the same `fit` and `predict` — so Ridge drops into any pipeline written for `LinearRegression` without structural changes. They sit on a spectrum in concept too: at a `lambda` of zero the penalty vanishes and ridge reproduces ordinary least squares exactly, while raising `lambda` trades a little accuracy on the training data for steadier predictions on data the model has never seen.
+Ridge acts as a regularized alternative to standard <doc:Linear-Regression>. It uses the same linear model but adds a penalty based on the squared magnitude of the coefficients. A single parameter called **lambda** sets the strength of this penalty. As lambda grows the penalty shrinks the coefficients toward zero and makes the model less sensitive to noise or overlapping features.
 
-> Note: This page documents the `Ridge` model. For the concept behind it — why a penalty curbs overfitting, what shrinkage does to the coefficients, and how to choose `lambda` — see the <doc:Regularization-Primer>.
+### Balancing accuracy and model stability
 
-> Important: Ridge assumes the features share a scale. The penalty compares coefficient magnitudes across features, so a feature measured in thousands and a feature measured in fractions cannot be penalized fairly until both are standardized. Standardize with ``StandardScaler`` before fitting. The intercept is never penalized — only the slopes are asked to shrink.
+These models are interchangeable in our code because they follow the same rules for fitting and prediction. We can drop ridge into any pipeline written for linear regression without making structural changes. The two models sit on a spectrum of complexity. A lambda of zero makes the penalty vanish so that ridge reproduces the standard linear fit exactly. Increasing the lambda trades a small amount of accuracy on the training set for steadier predictions on new data.
 
-### How it works
-
-Ordinary least squares minimizes the squared error alone. Ridge minimizes the squared error plus a penalty proportional to the squared size of the weights:
+Ordinary least squares minimizes the squared error alone. Ridge minimizes the squared error plus a penalty proportional to the squared size of the weights.
 
 ```
 minimize   (1/n)‖Xθ − y‖²  +  λ‖θ‖²
@@ -173,7 +171,7 @@ for lambda in [1.0, 10.0] {
 // lambda = 10 → [344320,  8034,  8033]   smaller still, the slopes nearly equal
 ```
 
-The intercept stays near the same value throughout because it is never penalized; only the slopes give ground. The wild `608719 / -512315` pair becomes a steady one a new sample will not overturn. This is what ridge buys on collinear data: not a better fit to the training rows, but coefficients that mean something. Recognizing the lopsided-pair signature in the first place — and reading the condition number that predicts it before any fit — is covered in <doc:Model-Interpretation-Primer>.
+The intercept stays near the same value throughout because it is never penalized; only the slopes give ground. The wild `608719 / -512315` pair becomes a steady one a new sample will not overturn. This is what ridge buys on collinear data: not a better fit to the training rows, but coefficients that mean something. Recognizing the lopsided-pair signature in the first place — and reading the condition number that predicts it before any fit — is covered in <doc:Model-Interpretation-Primer>. The same stability is why ridge is the baseline to prefer when wrapping a fit in a <doc:Residual-Model>: residuals are only as steady as the predictions behind them.
 
 ### When to use ridge
 

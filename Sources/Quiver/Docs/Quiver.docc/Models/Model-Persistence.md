@@ -31,7 +31,7 @@ print(model == restored)  // true
 print(restored.predict([[6.0]]))
 ```
 
-The same pattern works for every model type — ``LinearRegression``, ``GradientDescent``, ``Ridge``, ``LogisticRegression``, ``GaussianNaiveBayes``, ``KNearestNeighbors``, ``KMeans``, and ``FeatureScaler``.
+The same pattern works for every model type — ``LinearRegression``, ``GradientDescent``, ``Ridge``, ``LogisticRegression``, ``GaussianNaiveBayes``, ``KNearestNeighbors``, ``KMeans``, and ``FeatureScaler``. A ``ResidualModel`` persists too, encoding and decoding whenever the regressor it wraps does.
 
 ### Saving and loading from disk
 

@@ -4,13 +4,15 @@ Measure classifier performance with accuracy, precision, recall, and F1 score.
 
 ## Overview
 
-A [classification](<doc:Machine-Learning-Primer>) model is only as useful as its evaluation. Accuracy — the fraction of correct predictions — is the most intuitive metric, but it can be deeply misleading on imbalanced datasets. If 95% of samples belong to one class, a model that always predicts that class achieves 95% accuracy while providing no useful discrimination. Precision, recall, and F1 score give a more complete picture by examining how the model handles the positive class specifically.
+A classification model is only as useful as its evaluation. We rely on accuracy to understand performance, but a single number often hides the true behavior of our model on imbalanced data. These metrics provide a complete picture of how well the model discriminates between classes.
 
-Quiver provides these metrics as extensions on `[Int]`, where the calling array represents predicted labels and the `actual:` parameter provides the ground truth.
+**Accuracy** measures the fraction of correct predictions. This metric can be misleading when one class is much more common than the others. We might reach ninety-five percent accuracy by always predicting the majority class, but such a model provides no useful information. **Precision**, **recall** and **F1** score help us see how the model handles specific classes to give us a honest assessment of performance.
+
+Quiver provides these metrics as extensions on arrays of integers. The calling array represents the predicted labels while the actual parameter provides the ground truth.
 
 ### How it works
 
-Every binary classification outcome falls into one of four categories. A **true positive** is a correct positive prediction — the model said "yes" and the answer was yes. A **false positive** is an incorrect positive prediction — the model said "yes" but the answer was no. A **true negative** is a correct negative prediction, and a **false negative** is a missed positive. All evaluation metrics are ratios of these four counts: accuracy uses all four, precision focuses on positive predictions, recall focuses on actual positives, and the F1 score balances precision and recall into a single number.
+We categorize every binary classification outcome into one of four buckets. A true positive is a correct prediction of yes. A false positive is an incorrect prediction of yes. A true negative is a correct prediction of no. A false negative is a missed positive. Every evaluation metric is a ratio of these four counts. Accuracy uses all four, while precision focuses on positive predictions and recall focuses on actual positives. The F1 score balances precision and recall into a single number that reflects the overall performance of the model.
 
 ### The confusion matrix
 

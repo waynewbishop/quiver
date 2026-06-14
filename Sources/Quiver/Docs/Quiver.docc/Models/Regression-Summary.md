@@ -4,7 +4,10 @@ Reading the standard errors, p-values, and confidence intervals returned by a fi
 
 ## Overview
 
-After we have fitted a ``LinearRegression`` model on training data, `summary(features:targets:level:)` returns a `RegressionSummary` value carrying the inference table. The fit answers a prediction question — given features, the model returns the expected target. The summary answers an estimation question — given a fitted coefficient, the table tells us how confident to be that the underlying relationship is real. The vocabulary it uses — standard error, t-statistic, p-value, confidence interval — is the foundation of sample-to-population reasoning covered in <doc:Inferential-Statistics-Primer>. Each field of the printed summary names a column, how the numbers relate, and which assumptions underlie every claim. For the fit-and-predict workflow itself, see <doc:Linear-Regression>.
+A regression model predicts values but it cannot tell us how confident we should be in its results. The regression summary provides the **inferential data** we need to trust our predictions. We use these metrics to distinguish real relationships from patterns that happened by chance.
+
+We fit a `LinearRegression` model on training data to learn relationships. The summary method returns a `RegressionSummary` value that carries an inference table. While the model answers prediction questions, the summary answers estimation questions. It tells us how confident we should be that the relationship we found is real. Standard error and **t-statistics**, **p-values** and **confidence intervals** form the foundation for our reasoning. These metrics help us apply sample-to-population logic. Each field in the printed summary explains how the numbers relate and the assumptions behind them. This helps us decide which claims to trust. For the fit-and-predict workflow itself see the linear regression guide.
+
 
 ### What the summary carries
 

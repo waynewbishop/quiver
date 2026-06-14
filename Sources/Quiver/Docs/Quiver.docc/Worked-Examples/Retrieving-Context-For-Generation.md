@@ -4,7 +4,18 @@ Assembling retrieved context blocks from chunked documents to ground a language 
 
 ## Overview
 
-Retrieval is a ranking problem. Split a document into passages, turn each one and the question into a vector, and the passages that answer the question are the ones whose vectors point most nearly the same way — measured by the cosine similarity of <doc:Semantic-Search>. Collecting the highest-scoring few into one block is the whole operation, and what reads that block is a separate choice: a language model answering from it is the **retrieval-augmented generation** (RAG) pattern, but a search result list, a report, or a citation set are the same ranking with a different reader. This article assembles that pipeline — split, embed, rank, collect — and keeps each passage tied to where it came from along the way.
+Retrieval is often discussed only as a way to help language models. However the math behind it serves many practical purposes beyond generating text. Finding a specific product in a large catalog or a citation in a long report uses the exact same ranking logic. We call this broader pattern **retrieval-augmented context**.
+
+The core operation is a choice of discovery. We use numeric vectors to identify the most relevant fragments from a larger dataset. This mathematical search uncovers
+relationships that keyword matching would miss entirely. For example a search for a "fast shoe" can surface a "racing flat" because the two concepts occupy a similar position in vector space. The math understands the relationship even if the words do not match.
+
+
+## Many applications
+
+The "generation" part is simply one possible outcome for the data we find. A language model can turn those fragments into a natural sentence but a search engine can
+ present them as a ranked list of products. We can even use this same logic to build automated summaries or to group related documents together. 
+
+ Quiver provides the mathematical foundation for this work. It handles the heavy lifting of the search so we can focus on how to present the results. This makes advanced discovery tools approachable for any app that needs to find meaning in its data.
 
 > Note: This article builds on <doc:Semantic-Search>, which teaches the embedding-and-ranking pipeline, and <doc:Embedding-Sources>, which defines the swappable source of vectors. The examples here are self-contained, but the vocabulary of vectors and similarity carries over. The embedding values shown are illustrative, chosen so the ranking is easy to follow.
 

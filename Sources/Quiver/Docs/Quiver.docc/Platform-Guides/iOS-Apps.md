@@ -4,25 +4,17 @@ Summarize history, rank similar items, and learn from a user's own behavior on i
 
 ## Overview
 
-A consumer iOS app generates a stream of small events as the user moves through it: a trip taken, a session completed, a photo saved, a purchase recorded. These surfaces are rarely the raw events. Often they are derived numbers we compute from user actions or transactions.
+A typical iOS app produces a constant stream of small events that track every trip taken and every workout completed and every purchase recorded. These raw events are rarely what we show the user because we prefer to show derived numbers that provide a clearer picture of their habits and goals.
 
-**Statistics** turns a list of past events into a summary the iPhone can render. Linear algebra ranks items by relation in feature space. Machine learning fits a model of the user's own behavior so we can score a new event against the user's own pattern. With Quiver, every one of those actions runs on-device, against the user's own generated data.
+**Statistics** turns a long list of events into a clean summary that an iPhone can render while linear algebra helps us rank items by how much they resemble each other. Machine learning then fits a model to the behavior of a user so that the app can predict what they will care about next. Every one of these actions runs directly on the device with Quiver so that the data stays private and the app remains fast.
+
+> Note: This guide builds on the concepts found in <doc:Statistics-Primer>. Understanding how we summarize data with averages and distributions provides the foundation for the patterns we will explore on iPhone.
 
 ### Setup and lifecycle
 
-An iOS app that computes on user history needs two storage surfaces. **Bundle storage** holds artifacts the developer ships with the binary: a fitted model trained offline, a precomputed table, or a reference vector, encoded as JSON and read on first launch. **Documents storage** holds artifacts derived from the running user, including their accumulated history, their personal baseline, and a model fit from their own data, encoded at session end and decoded at the next launch.
+Computing on user history requires two different kinds of storage for an iOS app. Bundle storage holds the files that ship with the app binary including things like a pre-trained model or a reference table of values. Documents storage holds the data created by the user as they use the app such as their personal history and any models fit from their own data.
 
-The convention is worth holding from the first line of code. Anything that came from the developer lives in the bundle. Anything that came from the user lives in Documents. Mixing the two is the source of bugs that survive uninstall and lose user history on update. The pillar sections below build up the values that flow into each surface: descriptive statistics, similarity rankings, and fitted models. See <doc:Model-Persistence> for the encoding-and-decoding mechanics once the values exist.
-
-## Statistics on iOS
-
-An iOS app accumulates user events as it runs: trips taken, workouts logged, purchases recorded, sessions completed. A list of eighty-four trip delays is not a screen. The job of descriptive statistics is to turn that list into the four or five numbers a screen renders: a typical value, a spread, a cut-off the user is asking about. Quiver computes these from the raw `[Double]` the app already holds, returns a typed snapshot ready for SwiftUI, and runs entirely on-device.
-
-### From raw history to typed summary
-
-The **median** is the middle value when the data is sorted; it answers "what is typical" without letting one extreme value pull the answer around. **Quartiles** are the three cut points that divide the sorted data into four equal-sized groups, and the **third quartile** is the value below which three-quarters of the history sits. Together, those two ideas turn raw history into the building blocks of a year-in-review screen, a personal-best banner, or a "three out of four trips arrive within" line. See <doc:Statistics-Primer> for the full vocabulary of central tendency and spread.
-
-The lead example is an on-time-performance screen. Each entry is a trip delay in minutes — negative means the trip arrived early, positive means late. We report the share of on-time arrivals alongside the median delay and a typical-ceiling line drawn from the third quartile.
+Maintaining a clear distinction between these two areas from the first line of code is essential. Anything from the developer lives in the bundle and anything from the user lives in Documents. Mixing these surfaces often leads to bugs when a user updates their app or restores from a backup. The sections below explore how to build the values that flow into these storage areas by looking at descriptive statistics and similarity rankings and fitted models.
 
 ```swift
 import Quiver

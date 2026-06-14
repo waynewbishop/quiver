@@ -4,7 +4,10 @@ The math behind derivatives and the iterative path to a minimum.
 
 ## Overview
 
-A car on the highway covers 60 miles in one hour. Its speed is 60 miles per hour — and "miles per hour" is a **rate**, the same kind of measurement that shows up everywhere from a watch tracking pace on a run to a thermostat reporting how fast a room is cooling down. Every rate is the same shape: one quantity changes, another quantity tracks how fast it is changing. The math of those measurements is **calculus**, and the part of calculus this primer covers is the part Quiver actually uses.
+Calculus helps us measure how fast things change so we can better understand our models. We use this math to find the exact configuration that minimizes error. This
+  approach provides the foundation for fitting models in Quiver.
+
+  Calculus serves two roles in our work. In closed-form models like <doc:Linear-Regression> we use the derivative to solve for the best possible coefficients in a single step. For iterative models like <doc:Logistic-Regression> we use the derivative to walk down a slope until we reach the lowest point of error. This mathematical framework allows us to fit models on the device. It ensures we can measure the sensitivity of our predictions and verify the stability of our results regardless of how we find the solution.
 
 > Note: This primer assumes no prior calculus background. A reader who has finished the <doc:Linear-Algebra-Primer> has everything they need to start here.
 

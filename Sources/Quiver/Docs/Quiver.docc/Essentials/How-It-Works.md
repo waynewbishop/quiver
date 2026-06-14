@@ -66,7 +66,7 @@ Models are also immutable. Once created, their coefficients, centroids, and lear
 
 ### Shared behavior through protocols
 
-Quiver's models share their prediction interface through two protocols. The ``Regressor`` protocol guarantees that a model predicts continuous values, and the ``Classifier`` protocol guarantees that a model predicts class labels, so any code written against a protocol works for every model that adopts it. The guarantee lives in the type system, which means a model that fails to provide `predict` does not compile.
+Quiver's models share their prediction interface through two protocols. The ``Regressor`` protocol guarantees that a model predicts continuous values, and the ``Classifier`` protocol guarantees that a model predicts class labels, so any code written against a protocol works for every model that adopts it. The guarantee lives in the type system, which means a model that fails to provide `predict` does not compile. The same contract lets a wrapper compose any regressor: ``ResidualModel`` holds a fitted ``Regressor`` and reports the gap between its predictions and the observed values, the residual a fit leaves behind. See <doc:Residual-Model>.
 
 Conforming models gain the protocol's prediction surface, including a scalar convenience for single-feature models that the protocol supplies once for the whole family:
 

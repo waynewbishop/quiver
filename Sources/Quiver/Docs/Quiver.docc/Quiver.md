@@ -102,6 +102,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Regression-Summary>
 - <doc:Gradient-Descent>
 - <doc:Ridge-Regression>
+- <doc:Residual-Model>
 - <doc:Polynomials>
 - <doc:Naive-Bayes>
 - <doc:Logistic-Regression>
@@ -131,6 +132,7 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - ``LogDeterminant``
 - ``Classification``
 - ``Classifier``
+- ``Coefficients``
 - ``AggregationMethod``
 - ``MatrixError``
 - ``Distributions``

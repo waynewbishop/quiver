@@ -103,7 +103,7 @@ The method returns `k` named tuples of `(train: [Int], validation: [Int])` — s
 
 The fold models are scaffolding, not the deliverable. Once the averaged scores name the best configuration, we discard the `k` fold models and retrain that single choice on the entire dataset, and that one model is what we deploy.
 
-Cross-validation and the two-way split solve different halves of the same problem. Cross-validation chooses the model and its tuning parameters; a separate test set, held out from the start with `trainTestSplit` and touched exactly once, reports the final honest score. Selecting a configuration on the same data we report it on biases the estimate optimistically, which is why the deciding and the reporting must draw on different data.
+Cross-validation and the two-way split solve different halves of the same problem. Cross-validation chooses the model and its tuning parameters; a separate test set, held out from the start with `trainTestSplit` and touched exactly once, reports the final honest score. Selecting a configuration on the same data we report it on biases the estimate optimistically, which is why the deciding and the reporting must draw on different data. The same split governs residual analysis: a <doc:Residual-Model> read on the held-out partition measures what a fit misses on fresh data, while residuals read on the training rows run optimistically small.
 
 ### Why folds return indices
 

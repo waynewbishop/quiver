@@ -4,9 +4,11 @@ Reading a numeric result in the form mathematics uses, including fractions, colu
 
 ## Overview
 
-A textbook writes the inverse of a 2×2 matrix as a grid of fractions. Swift writes the same result as a grid of decimals. The math is identical; the form is not. Decimals are how a computer stores numbers; fractions, columns, brackets, and descending polynomials are how readers reason about them. **Rendering** is the bridge between the two — taking a `Double`, a `[Double]`, a `[[Double]]`, or a ``Polynomial`` and showing it in the form a reader can read.
+ Computers store numbers as long decimals that are hard for humans to read. Quiver translates those numbers into clear formats like fractions and bracketed matrices. This helps us verify our work and understand the logic behind our models.
 
-Quiver builds the bridge with two complementary methods. `asFraction` returns rational structure as a real ``Fraction`` value, carrying a numerator, a denominator, and equality so the structure can be held and compared, not only printed. `asExpression` returns a Unicode-formatted string ready to display in the Notebook output pane, the Xcode console, or a SwiftUI `Text` view styled with a monospaced font. The two compose. Chaining `asFractions().asExpression()` on a matrix shows the rational form of every cell, stacked in textbook brackets. This primer walks the family one concept at a time and closes on what the rendering shows when the underlying floating-point arithmetic has left a trace.
+ Textbooks often use fractions to show an inverse matrix while Swift uses decimals for the same data. The underlying math is identical but the way it appears on screen is very different. We need a way to move between computer storage and human reasoning. Rendering is the bridge that converts raw values into a format that reads like a textbook. 
+
+ Quiver provides two methods to build this bridge. We can use `asFraction` to keep the rational structure in a format we can compare and hold. These methods also include `asExpression` to format those values as Unicode strings for our logs or our UI. These two methods work together so that we can chain them for complex results like stacked matrix cells. We'll explore these tools in this primer to see how Quiver handles everything from floating point noise to the cleanest notation for our models.
 
 > Note: This primer pairs with <doc:Numerical-Literacy>. The rendering rules described here are deliberate about presenting `NaN`, `±∞`, and machine-noise coefficients so the reader sees them. The numerical-literacy primer explains what those signals mean.
 

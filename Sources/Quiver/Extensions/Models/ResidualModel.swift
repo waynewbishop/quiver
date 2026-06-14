@@ -23,7 +23,7 @@ import Foundation
 /// residual answers "how far did the real value drift from that prediction?" —
 /// the information a single prediction throws away.
 ///
-/// This is the standard move behind residual analysis and de-confounding: model
+/// This is the standard move behind residual analysis: model
 /// out the part of an outcome that a set of inputs explains, then study what is
 /// left. A heart rate inflated by heat reads the same as one inflated by effort
 /// until a baseline predicts the heart rate the workload alone should produce;

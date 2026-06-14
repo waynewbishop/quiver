@@ -4,9 +4,9 @@ Reading, auditing, and troubleshooting the coefficients and geometry that Quiver
 
 ## Overview
 
-A trained model does not return arbitrary numbers but geometric adjustments. Parametric models (``LinearRegression``, ``GradientDescent``, ``Ridge``, ``LogisticRegression``) expose those adjustments as **coefficients**, one weight per feature. Quiver's non-parametric models (``KMeans``, ``KNearestNeighbors``) hold no weights at all; they store positions in space and are judged by **distance and cohesion** instead.
+A trained model gives us much more than a simple prediction. It reveals the internal logic it used to reach a result. We can learn to read these signals to ensure our models make sound decisions.
 
-This primer covers three reading skills: interpreting parametric coefficients, diagnosing the collinearity failure mode, and verifying non-parametric structure geometrically.
+ Trained models use different ways to explain their logic. Parametric models like <doc:Linear-Regression> and <doc:Ridge-Regression> expose adjustments through coefficients that show the weight of each feature. Other tools like <doc:KMeans-Clustering> or <doc:Nearest-Neighbors-Classification> use no weights at all. These non-parametric models store positions in space and rely on distance and cohesion to form their logic.
 
 ### Coefficients as sensitivity sliders
 
@@ -164,6 +164,6 @@ A scaled feature set that produces clean, well-separated classes shows high accu
 
 ### From reading a model to trusting it
 
-Reading coefficients and geometry is the first move; trusting what we read is the second, and the two sections that follow most directly are about exactly that gap. The <doc:Regularization-Primer> takes the collinearity signature diagnosed here and supplies the cure — the penalty that turns a flat valley of equally-good answers into a single defensible one. The <doc:Optimization-Primer> explains why ``GradientDescent`` converges quietly onto an arbitrary point in that valley, and what its loss history reveals about the walk. For the broader arc — how fitting, evaluating, and generalizing fit together — the <doc:Machine-Learning-Primer> is the map, <doc:Linear-Regression> is where the coefficients and intercept come from, and <doc:Feature-Scaling> is the transform that makes most of these readings honest in the first place.
+Reading coefficients and geometry is the first move; trusting what we read is the second, and the two sections that follow most directly are about exactly that gap. The <doc:Regularization-Primer> takes the collinearity signature diagnosed here and supplies the cure — the penalty that turns a flat valley of equally-good answers into a single defensible one. The <doc:Optimization-Primer> explains why ``GradientDescent`` converges quietly onto an arbitrary point in that valley, and what its loss history reveals about the walk. For the broader arc — how fitting, evaluating, and generalizing fit together — the <doc:Machine-Learning-Primer> is the map, <doc:Linear-Regression> is where the coefficients and intercept come from, and <doc:Feature-Scaling> is the transform that makes most of these readings honest in the first place. Reading the coefficients is one half of inspecting a fit; reading what the fit leaves behind is the other, and <doc:Residual-Model> wraps a fitted regressor to surface that gap, the observed value minus the predicted one.
 
 > Experiment: **The Quiver Notebook** is the right place to watch a coefficient lose its meaning. Take the two near-identical floor-area columns, standardize them, and fit ``LinearRegression`` — then print `conditionNumber` and the coefficients side by side. Now swap in ``Ridge`` and sweep `lambda` upward until the opposing weights collapse into a small, balanced pair. Seeing the same data go from pathological to stable is the fastest way to feel why a coefficient is only as trustworthy as the matrix behind it. See <doc:Quiver-Notebook>.

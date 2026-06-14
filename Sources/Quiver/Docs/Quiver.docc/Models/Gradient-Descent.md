@@ -4,17 +4,11 @@ Fit a regression model by adjusting its coefficients one small step at a time.
 
 ## Overview
 
-Think of a ball placed in a bowl — gravity rolls it to the bottom. `GradientDescent` does the same with math instead of gravity. The optimizer finds the best coefficients for a linear model by repeating a simple process: check how wrong the current predictions are, figure out which way to adjust each coefficient to make them less wrong, then move each one a small amount in that direction. After enough repetitions, the error stops falling and the model has settled on its answer — the bottom of the bowl.
+We often find that the error formulas for our models are too complex for a direct algebraic solution. We use **gradient descent** as an iterative tool to walk toward the lowest possible error. This optimizer acts as a shared engine that powers every iterative model in Quiver.
 
-This is the same answer ``LinearRegression`` produces in a single matrix expression, only reached step by step instead of computed directly. Both routes converge to the same coefficients on a squared-error problem. The iterative route exists for the models with no closed-form answer — ``Ridge`` adds a penalty to the loss, and <doc:Logistic-Regression> swaps in a cross-entropy loss — where stepping toward the minimum is the only way to find it. The fitted model carries every step of the descent as a stored property, so we can see the error fall across iterations, confirm the run converged, and diagnose a run that crawled or diverged.
+ We start with a guess for our coefficients. We then check how wrong those predictions are and figure out which way to adjust each coefficient to make the model less wrong. We repeat this check and adjustment many times until the error stops falling. The final state represents the best predictions the model can make. 
 
-`GradientDescent` is both a standalone regression model and the public face of the descent algorithm that the other iterative models reuse. Three models run on this one shared loop:
-
-- `GradientDescent` — squared-error loss, the plain linear fit.
-- ``Ridge`` — squared-error loss plus an L2 penalty on coefficient size.
-- ``LogisticRegression`` — cross-entropy loss with a sigmoid hypothesis, predicting class probabilities.
-
-It is the one case where naming the model apart from the algorithm buys nothing: a straight-line fit under squared error leaves no separate object to wrap around the optimizer, so the type carries the algorithm's name and stands in for the model too. The richer models keep the same step rule, convergence test, and divergence guard, and change only the gradient and loss handed to the loop. The <doc:Optimization-Primer> covers that shared-algorithm family view.
+ This engine is what links our different models together. Whether we are fitting a squared error model or a cross-entropy model we use the same descent loop. This consistency ensures that our convergence tests and divergence guards behave identically across the entire library. This shared design allows us to diagnose why a model might fail and ensures that every model we build benefits from the same numerical safety rules.
 
 ### How it works
 
