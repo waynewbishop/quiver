@@ -61,6 +61,13 @@ jobs:
             "s|</head>|<link href=\"/${BASE_PATH}/css/custom.css\" rel=\"stylesheet\"></head>|g" \
             {} \;
 
+          # Copy the sitemap into the published site root for Google Search Console.
+          # DocC does not emit non-asset files, so it must be copied in after the build.
+          cp Sources/Quiver/Docs/Quiver.docc/sitemap.xml ./docs/sitemap.xml
+
+          # Copy robots.txt alongside it; its Sitemap: line uses an absolute URL.
+          cp Sources/Quiver/Docs/Quiver.docc/robots.txt ./docs/robots.txt
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:

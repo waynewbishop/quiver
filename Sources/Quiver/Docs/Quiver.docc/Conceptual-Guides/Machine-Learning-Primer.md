@@ -4,11 +4,11 @@ Core vocabulary and concepts for understanding machine learning workflows in Qui
 
 ## Overview
 
-Machine learning is the practice of training a program to recognize patterns in data so it can make predictions on new, unseen examples. This primer defines the vocabulary that appears throughout Quiver's classification documentation.
+Machine learning trains programs to recognize patterns in data, allowing them to make predictions on unseen examples. This primer defines the vocabulary we use throughout Quiver's classification documentation.
 
 ### Features and labels
 
-Every supervised learning problem starts with a dataset where each row is one example and each column is one measurement. The columns the model uses to make predictions are called **features**. The column the model is trying to predict is called the **label** (also known as the target). Consider a dataset for predicting loan approval:
+Every supervised learning problem starts with a dataset where each row is an example and each column is a measurement. Columns the model uses to make predictions are **features**; the column we try to predict is the **label** (or target). Consider a dataset for predicting loan approval:
 
 ```swift
 import Quiver
@@ -20,16 +20,14 @@ let data = Panel([
 ])
 ```
 
-Here, `creditScore` and `balance` are features, the information the model receives as input. The `approved` column is the label, the outcome we want the model to learn to predict. The model never sees the label at prediction time; it must infer the answer from the features alone.
-
-> Note: A good mental model is features = question, label = answer. We train the model on many question-answer pairs, then ask it new questions and check whether it gives the right answers.
+`creditScore` and `balance` are features—input information—and `approved` is the label—the target outcome. The model infers the answer from the features alone; the label is hidden at prediction time.
 
 ### Training and test data
 
-If we evaluate a model on the same data it learned from, we get a misleadingly optimistic score, like grading a student on questions they already saw. To get an honest measure of how well the model generalizes, we split the data into two partitions:
+Evaluating a model on the data it learned from produces unreliable results, much like grading students on questions they have already seen. To measure generalization, we split data into two partitions:
 
-- **Training set** — the examples the model learns from (typically 80% of the data)
-- **Test set** — the examples held back for evaluation (typically 20%)
+- **Training set**: Examples the model learns from (typically 80%).
+- **Test set**: Examples held back for evaluation (typically 20%).
 
 ```swift
 import Quiver
@@ -40,11 +38,9 @@ let features = [[720.0, 15000.0], [650.0, 78000.0], [580.0, 42000.0],
                 [640.0, 84000.0]]
 
 let (train, test) = features.trainTestSplit(testRatio: 0.2, seed: 42)
-// train: 8 rows for learning
-// test:  2 rows for evaluation
 ```
 
-The `seed` parameter ensures the same split every time, so experiments are reproducible. When using a <doc:Panel>, the split is atomic. All columns are partitioned by the same rows, so features and labels stay aligned automatically.
+The `seed` ensures reproducible splits. When using a Panel, splitting is atomic: all columns are partitioned by the same rows, keeping features and labels aligned automatically.
 
 ### Stratified splitting
 
@@ -63,9 +59,9 @@ let (trainX, testX, trainY, testY) = features.stratifiedSplit(
 
 ### Data leakage
 
-**Data leakage** occurs when information from the test set influences the training process. The most common form is fitting a preprocessor (like a scaler) on the entire dataset before splitting. If the scaler learns the minimum and maximum from all rows, including the test rows, then the training process has indirectly "seen" the test data, and evaluation results will be overly optimistic.
+**Data leakage** occurs when test set information influences the training process. The most common form is fitting a preprocessor—like a scaler—on the entire dataset before splitting. If the scaler learns the minimum and maximum from all rows, including the test rows, the training process indirectly "sees" the test data, making evaluation results overly optimistic.
 
-The fix is simple: fit on training data only, then transform both sets using the same learned statistics:
+Fit on training data only, then transform both sets using the same statistics:
 
 ```swift
 import Quiver
@@ -73,31 +69,18 @@ import Quiver
 // Correct: fit on training data, transform both
 let scaler = StandardScaler.fit(features: trainFeatures)
 let scaledTrain = scaler.transform(trainFeatures)
-let scaledTest = scaler.transform(testFeatures)
+let scaledTest = scaler.transform(scaledTestFeatures)
 ```
 
-This pattern — fit once on training data, apply everywhere — prevents leakage and gives us an honest evaluation. The ``Pipeline`` type enforces this automatically by bundling the scaler and model together, so the caller passes raw features and Pipeline handles scaling internally. See <doc:Pipeline> for details.
+This pattern—fit once on training data, apply everywhere—prevents leakage and ensures honest evaluation. The Pipeline type enforces this automatically by bundling the scaler and model, so raw inputs are scaled internally and the forgotten-scaling mistake becomes impossible.
 
 ### Feature engineering and scaling
 
-Raw data rarely arrives in a form that works well for models. **Feature engineering** is the process of transforming raw inputs into features that better represent the underlying patterns. This might involve combining columns (ratio of balance to income), extracting components (day of week from a timestamp), or encoding categories as numbers.
+Raw data rarely arrives ready for models. **Feature engineering** transforms raw inputs into features that better represent underlying patterns: combining columns (e.g., balance-to-income ratio), extracting components (e.g., day of week from a timestamp), or encoding categories as numbers.
 
-One feature-engineering move deserves a closer look, because it addresses a specific limitation. A linear model is **additive**: it combines features only by adding their weighted contributions, so it can fit `cost = a·length + b·width` but never a relationship that depends on the two *multiplied together*. When the target genuinely follows a product — tiling cost depends on a room's area, length × width, not on either dimension alone — no straight line through the original columns can capture it. The fix is to compute that product ourselves and hand it to the model as a new feature, an **interaction term**, whose relationship to the target is linear again:
+Interaction terms are one crucial move. A linear model is **additive**: it combines features by adding weighted contributions (`cost = a·length + b·width`). If the target depends on a product (e.g., tiling cost depends on area = length × width), no straight line through the original columns can capture it. Computing the product `area = lengths.multiply(widths)` and handing it to the model as a new feature captures this interaction linearly.
 
-```swift
-import Quiver
-
-// Tiling cost depends on area = length × width, not on either alone.
-let lengths = [3.0, 5.0, 6.0]
-let widths  = [4.0, 2.0, 6.0]
-
-// Multiplying the two columns builds the interaction term.
-let area = lengths.multiply(widths)   // [12.0, 10.0, 36.0]
-```
-
-The element-wise product is the whole operation — `multiply` does in the open what "building an interaction term" names in the abstract. Feeding `area` to ``LinearRegression`` alongside the originals lets the model keep each dimension's standalone effect *and* gain the interaction between them. This is the concrete form of "combining existing columns into interaction terms" that the overfitting discussion below returns to.
-
-**Feature scaling** addresses a specific problem: when features have very different magnitudes, larger values can dominate the model's calculations. A credit score ranging from 300–850 and an account balance ranging from 0–250,000 are nearly six orders of magnitude apart. Scaling brings all features to a comparable range so each one contributes proportionally:
+**Feature scaling** makes inputs comparable. A credit score (300–850) and an account balance (0–250,000) are six orders of magnitude apart; scaling ensures one does not dominate the calculation.
 
 ```swift
 import Quiver
@@ -107,118 +90,93 @@ let scaler = StandardScaler.fit(features: trainFeatures)
 let scaled = scaler.transform(trainFeatures)
 ```
 
-Quiver's ``StandardScaler`` standardizes each column independently, subtracting the column's mean and dividing by its standard deviation so every feature ends up centered at zero with unit variance. This z-score approach is the default choice because it handles outliers gracefully and assumes no fixed bounds. When features do have a known bounded range, min-max normalization (``FeatureScaler``) is the natural alternative, mapping each column into a 0–1 interval instead. For details on both scalers and constant-column handling, see <doc:Feature-Scaling>.
+`StandardScaler` centers each column at zero with unit variance, a robust default. When features require a bounded range, `FeatureScaler` maps each column to a 0–1 interval instead.
 
 ### Overfitting and underfitting
 
-A model can fail in two opposite ways:
+A model fails in two ways:
 
-**Overfitting** means the model has memorized the training data, including its noise and quirks, rather than learning the underlying pattern. The model performs well on training data but poorly on new examples. Signs of overfitting include near-perfect training accuracy paired with significantly lower test accuracy.
+- **Overfitting**: The model memorizes training noise and quirks instead of the underlying pattern. It performs well on training data but poorly on unseen data.
+- **Underfitting**: The model is too simple to capture the pattern. It performs poorly on both training and test data, often due to missing features or a lack of representational capacity.
 
-**Underfitting** means the model is too simple to capture the pattern in the data. The model performs poorly on both training and test data. This can happen when the model lacks the capacity to represent the relationship, or when important features are missing.
-
-These two failures are the two ends of the **bias-variance tradeoff** — underfitting is high bias (the model is too rigid to fit the pattern), and overfitting is high variance (the model swings too far to fit the noise). The goal is a model that generalizes, one that learns the true pattern well enough to make accurate predictions on data it has never seen. Splitting data into training and test sets (and checking both scores) is the primary tool for detecting these problems. The <doc:Ridge-Regression> page shows both failures as worked examples with training and test scores, and the <doc:Regularization-Primer> covers one direct cure for overfitting — penalizing a model for leaning too hard on any one feature.
+These represent the **bias-variance tradeoff**—underfitting is high bias (model is too rigid), and overfitting is high variance (model follows noise). The goal is generalization. Splitting data and comparing training and test scores is the primary tool for detecting these failures.
 
 ### Fitting remedies
 
-The two scores also tell us which failure we have, and the cures run in opposite directions. When the training score is high and the test score is much lower, the gap is the signature of overfitting, and the remedy is to simplify — add a regularization penalty, or reduce the model's reach. When both scores are low and close together, the model is underfitting, and the remedy is the opposite: give it more to work with. That means adding features that carry real signal, combining existing columns into interaction terms or higher-order ones (see the feature-engineering note above), or, if regularization is already in play, easing the penalty so the model is free to fit more closely. A model cannot learn a pattern it has no way to represent, so the underfitting cure is almost always about capacity rather than restraint.
+The gap between training and test scores dictates the remedy:
+
+- **Overfitting**: Simplify the model, add regularization, or reduce feature reach.
+- **Underfitting**: Increase capacity by adding features, creating interaction terms, or reducing regularization.
 
 ### Classification and regression
 
-Supervised learning problems fall into two categories:
+Supervised learning problems split into two categories:
 
-**Classification** predicts a discrete category: spam or not spam, approved or denied, which digit (0–9) an image contains. The label is a class identifier, and the model's output is a predicted class:
+**Classification** predicts discrete categories (spam vs. not, approved vs. denied). The output is a predicted class label:
 
 ```swift
 import Quiver
-
-let features: [[Double]] = [[720, 15000], [650, 78000], [580, 42000], [710, 8000]]
-let labels = [1, 0, 0, 1]
 
 // Train on labeled examples
 let model = GaussianNaiveBayes.fit(features: features, labels: labels)
 
 // Predict a class label for a new sample
 let predictions = model.predict([[690, 30000]])
-print(predictions)  // [1]
 ```
 
-**Regression** predicts a continuous value: tomorrow's temperature, a house's sale price, how long a user session will last. The label is a number, and the model's output is a number:
+**Regression** predicts continuous values (temperature, price, session length). The output is a number:
 
 ```swift
 import Quiver
-
-let sqft   = [1200.0, 1500.0, 1800.0, 2100.0]
-let prices = [250000.0, 320000.0, 380000.0, 440000.0]
 
 // Train on historical sales data
 let model = try LinearRegression.fit(features: sqft, targets: prices)
 
-// Predict a continuous value for a new listing
+// Predict a continuous value
 let prediction = model.predict(2000.0)
-print(prediction)  // ~421000.0
 ```
-
-The distinction matters because evaluation metrics differ. Classification uses accuracy, precision, and recall. Regression uses measures like mean squared error and R².
 
 ### Fit and predict
 
-Every Quiver model follows the same two-step pattern: **fit**, then **predict**. Fitting is the learning phase where the model examines the training data and builds whatever internal representation it needs. For ``LinearRegression``, fitting computes the optimal coefficients. For ``GaussianNaiveBayes``, it calculates the mean and variance of each feature per class. For ``KNearestNeighbors``, fitting simply stores the training data (all the real work happens later). The result of `fit` is always a ready-to-use model.
+Quiver models follow a two-step pattern: **fit**, then **predict**. Fitting is the learning phase where the model builds its internal representation. For `LinearRegression`, fitting computes optimal coefficients; for `KNearestNeighbors`, it stores the training data. The result is always a ready-to-use model.
 
-Predicting is the application phase. We hand the fitted model new samples it has never seen, and it returns answers. Classification models return class labels; regression models return continuous values:
+Predicting is the application phase. The fitted model takes unseen samples and returns answers:
 
 ```swift
 import Quiver
-
-let features: [[Double]] = [[1, 2], [1.5, 1.8], [5, 8], [6, 9]]
-let labels = [0, 0, 1, 1]
 
 // Fit learns from training data
 let model = KNearestNeighbors.fit(features: features, labels: labels, k: 3)
-print(model)
-// KNearestNeighbors: k=3, euclidean, 4 training points, 2 features
 
 // Predict applies to new, unseen samples
 let predictions = model.predict([[2, 2.5], [5.5, 7]])
-print(predictions)  // [0, 1]
 ```
 
-The model uses what it learned during fitting but never modifies itself. Calling `predict` twice on the same input always gives the same result.
-
-Some classifiers can also return **calibrated probabilities** — a probability distribution across classes that sums to `1.0` for each sample, useful for cost-sensitive decisions and threshold tuning. The `GaussianNaiveBayes.predictProbabilities(_:)` method exposes this for the Naive Bayes classifier; see <doc:Naive-Bayes>.
+Predict is a stateless application; identical inputs always produce identical results.
 
 ### Evaluating models
 
-Accuracy, the fraction of correct predictions, is the most intuitive metric, but it can be misleading. If 95% of loan applications are approved, a model that always predicts "approved" achieves 95% accuracy while providing zero useful information.
+Accuracy is intuitive but can be misleading—a model that always predicts the majority class may achieve high accuracy while providing zero useful information.
 
-Better metrics examine the types of errors a model makes. **Precision** measures how many of the model's positive predictions were actually correct, so high precision means few false alarms. **Recall** measures how many of the actually positive examples the model caught, so high recall means few missed cases. The **F1 score** is the harmonic mean of precision and recall, balancing both concerns into a single number.
+Better metrics examine the types of errors: **Precision** measures the correctness of positive predictions; **Recall** measures how many actual positive examples the model captured. The **F1 score** balances both into a single number.
 
-Which metric matters most depends on the cost of each error type. Missing a fraudulent transaction (low recall) is worse than flagging a legitimate one (low precision):
+Which metric matters depends on the error cost. Missing fraud (low recall) is often worse than a false alarm (low precision):
 
 ```swift
 import Quiver
 
-let predictions = [1, 0, 1, 1, 0, 0, 1, 0]
-let actual      = [1, 0, 0, 1, 0, 1, 1, 0]
-
 // Per-class precision, recall, F1, and support in one call
 let report = predictions.classificationReport(actual: actual)
-print(report)
 ```
-
-For a full treatment of these metrics and the ``ConfusionMatrix`` type, see <doc:Evaluation-Metrics>.
 
 ### Choosing an algorithm
 
-**Gaussian Naive Bayes** trains quickly and works well with small datasets, but assumes features are independent of each other. When that assumption roughly holds, it is hard to beat as a starting point. See <doc:Naive-Bayes>.
+Start simple:
 
-**K-Nearest Neighbors** makes no assumptions about data distribution and classifies new points by finding the most similar training examples. The tradeoff is performance: every prediction scans the entire training set, and feature scaling is critical because `distance(to:)` is sensitive to magnitude differences. See <doc:Nearest-Neighbors-Classification>.
+- **Naive Bayes** for classification, especially when features are roughly independent.
+- **Linear Regression** for continuous targets.
+- **Nearest Neighbors** when decision boundaries are non-linear (remember to scale features, as `distance(to:)` is sensitive to magnitude).
+- **KMeans** to discover natural groupings in unlabeled data.
 
-**Linear Regression** predicts continuous values rather than categories. Its coefficients are directly interpretable ("each additional bedroom adds $X to the price"), but that reading holds only when the features are well separated — see <doc:Model-Interpretation-Primer> for how to read coefficients honestly and when collinearity makes them arbitrary. Linear regression also assumes a linear relationship between features and target. See <doc:Linear-Regression>.
-
-**Polynomial regression** has two doors in Quiver. `LinearRegression.fit` returns a fitted model with the inferential machinery — standard errors, p-values, confidence intervals — available through `summary`. `polyfit` returns a ``Polynomial``, a callable mathematical object we can evaluate, differentiate, scale, or compose. The choice rests on which return type the next call site needs: multi-feature work or inference reaches for `LinearRegression.fit`; single-variable curve work where the output benefits from being a `Polynomial` reaches for `polyfit`. The error contracts differ too — `polyfit` returns `nil` on bad input; `LinearRegression.fit` throws ``MatrixError/singular``. See <doc:Polynomials>.
-
-**K-Means** is unsupervised and discovers natural groupings in data that has no labels. Useful for segmentation and anomaly detection, but we must choose the number of clusters in advance. See <doc:KMeans-Clustering>.
-
-> Tip: Start simple: Naive Bayes for classification, Linear Regression for continuous targets, Nearest Neighbors when the decision boundary is nonlinear, K-Means for unlabeled data. The evaluation techniques in the previous section tell us whether our choice is working.
+The evaluation techniques above determine if the choice is effective.
 

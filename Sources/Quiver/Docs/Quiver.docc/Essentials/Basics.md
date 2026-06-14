@@ -4,13 +4,13 @@
   @TitleHeading("Essentials")
 }
 
-A starting point for Swift developers new to numerical computing.
+A starting point for developers new to numerical computing.
 
 ## Overview
 
-If we can write Swift, we already have most of what we need to work with data. The challenge with numerical computing is rarely the code but the vocabulary that surrounds it. Variance, regression, eigenvalue, normalization, gradient. These words sound like a different field of study, but every one of them describes something we can compute, see, and verify in a few lines of Swift.
+If we have any experience writing code we already have most of what we need to work with data. The challenge with numerical computing is rarely the code but the vocabulary that surrounds it. Variance, regression, eigenvalue, normalization, gradient. These words sound like a different field of study, but every one of them describes something we can compute, see, and verify in a few lines of Swift.
 
-This page is a starting point organized around three pillars that show up in any data work: **statistics** (describing what is in the data), **linear algebra** (treating numbers as positions in space), and **machine learning** (using the first two to make predictions).
+This page is a starting point organized around three areas that show up in any data work: **statistics** (describing what is in the data), **linear algebra** (treating numbers as positions in space), and **machine learning** (using the first two to make predictions).
 
 ### Describing what we have with statistics
 
@@ -65,7 +65,7 @@ userA.cosineOfAngle(with: userB)  // 0.97, directional alignment, 1.0 = identica
 
 The dot product combines two vectors into a single number. Cosine similarity normalizes that number to a value between -1 and 1 that measures *direction*, not size. This single operation is the engine behind recommendation systems, semantic search, and similarity ranking. Two products with similar ratings have a cosine close to 1; two products with opposite ratings have a cosine close to -1.
 
-For the full picture (vectors, matrices, transformations, distance, projection), see <doc:Linear-Algebra-Primer>. For the operations themselves, see <doc:Vector-Operations>.
+For the full picture (vectors, matrices, transformations, distance, projection), see <doc:Linear-Algebra-Primer>. For the operations themselves, see <doc:Vector-Operations>. To see cosine similarity carried all the way to a working search, see <doc:Semantic-Search>.
 
 ### Predicting from examples with machine learning
 
@@ -82,9 +82,9 @@ let model = try LinearRegression.fit(features: heights, targets: weights)
 model.predict(172.0)   // 70.56, predicted weight for a 172cm person
 ```
 
-Every Quiver model follows the same shape: `fit` takes the training data, `predict` takes new inputs and returns answers. The `LinearRegression` model predicts a number, `KNearestNeighbors` predicts a category, and `KMeans` finds groupings. The choice between them depends on what we are trying to answer, not on a library to learn. They all read from the same `[Double]` arrays the rest of Quiver uses.
+Every Quiver model follows the same shape: `fit` takes the training data, `predict` takes new inputs and returns answers. The `LinearRegression` model predicts a number, `KNearestNeighbors` predicts a category, and `KMeans` finds groupings. The same three patterns extend to more capable models that keep the identical `fit`/`predict` shape — `LogisticRegression` for classification, `Ridge` for regression — with the primers carrying the math behind when to reach for each. The choice between them depends on what we are trying to answer, not on a library to learn. They all read from the same `[Double]` arrays the rest of Quiver uses.
 
-For the full conceptual frame (features, labels, training, evaluation, overfitting), see <doc:Machine-Learning-Primer>. For the individual models, see <doc:Linear-Regression>, <doc:Nearest-Neighbors-Classification>, and <doc:KMeans-Clustering>.
+For the full conceptual frame (features, labels, training, evaluation, overfitting), see <doc:Machine-Learning-Primer>. For the individual models, see <doc:Linear-Regression>, <doc:Logistic-Regression>, <doc:Ridge-Regression>, <doc:Nearest-Neighbors-Classification>, and <doc:KMeans-Clustering>.
 
 ### Coding with Quiver
 
@@ -94,4 +94,4 @@ For shipping code into an iOS, watchOS, visionOS, or Vapor app, add Quiver as a 
 
 ### Where to go from here
 
-The three pillars above each have a deeper layer of math underneath them, and that math is the next step for iOS developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and inference. <doc:Linear-Algebra-Primer> extends vectors and dot products into matrices, transformations, and projection. <doc:Machine-Learning-Primer> ties both together: features, labels, training, evaluation, and the trade-offs that decide which model to reach for. Once we have numbers worth showing, <doc:Data-Visualization> covers the aggregation primitives that feed Swift Charts directly.
+The three areas above each have a deeper layer of math underneath them, and that math is the next step for iOS developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and inference. <doc:Linear-Algebra-Primer> extends vectors and dot products into matrices, transformations, and projection. <doc:Machine-Learning-Primer> ties both together: features, labels, training, evaluation, and the trade-offs that decide which model to reach for. Once we have numbers worth showing, <doc:Data-Visualization> covers the aggregation primitives that feed Swift Charts directly.

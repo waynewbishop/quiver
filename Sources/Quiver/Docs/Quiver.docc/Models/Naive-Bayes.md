@@ -4,9 +4,9 @@ Using Naive Bayes to build fast classifiers.
 
 ## Overview
 
-Naive Bayes provides a reliable baseline for classification tasks by applying probability to our features. It works surprisingly well even when we assume features are independent of one another. We get a robust classifier that is simple to train and easy to explain.
+Naive Bayes provides a reliable baseline for classification by applying probability to our features. It works effectively even under the assumption that features are independent, resulting in a robust classifier that is simple to train and easy to explain.
 
-This classifier applies **Bayes theorem** under the assumption that features do not depend on one another. Despite this strong assumption the model performs well in practice. It remains one of the simplest and most effective tools in our machine learning catalog.
+We apply **Bayes theorem** assuming features are independent of one another. Despite this assumption, the model performs well in practice, making it one of our most effective classification tools.
 
 ### How Gaussian classification works
 

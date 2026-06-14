@@ -4,25 +4,23 @@ Train a binary classifier that predicts class probabilities.
 
 ## Overview
 
-Logistic regression answers a yes-or-no question with a probability. Where <doc:Linear-Regression> predicts a continuous value and <doc:Gradient-Descent> reaches that value iteratively, logistic regression predicts the probability that a sample belongs to class 1 — then thresholds that probability at 0.5 to decide the class. Logistic regression is the workhorse binary classifier: spam or not, churn or retain, pass or fail.
+Logistic regression answers a yes-or-no question with a probability. While <doc:Linear-Regression> predicts continuous values and <doc:Gradient-Descent> fits iteratively, logistic regression predicts the probability a sample belongs to class 1, then thresholds that probability at 0.5 to decide the class. It is our go-to binary classifier for spam, churn, or pass/fail scenarios.
 
-The name is a known source of confusion. Despite the word regression, logistic regression is a **classification** model — it predicts a discrete label, not a continuous quantity. The "regression" refers to what happens underneath: the model fits a straight line in log-odds space, then squashes that line through the sigmoid function to turn it into a probability between 0 and 1.
+Despite the name, logistic regression is a **classification** model. The "regression" refers to fitting a straight line in log-odds space, which we then squash through the sigmoid function to produce a probability between 0 and 1.
 
 ### How it works
 
-The model computes the same linear score `Xθ` that a linear model would — a weighted sum of the features — and passes it through the **sigmoid** function σ, which maps any real number into the open interval (0, 1). A large positive score becomes a probability near 1, a large negative score becomes a probability near 0, and a score of exactly 0 becomes 0.5, the decision boundary. The `sigmoid` function is covered on its own in <doc:Activation-Functions>.
+We compute the linear score `Xθ`—a weighted sum of features—and pass it through the **sigmoid** function σ, which maps any real number into the open interval (0, 1). A large positive score yields a probability near 1, a large negative score near 0, and a score of exactly 0 yields 0.5, our decision boundary. The `sigmoid` function is covered on its own in <doc:Activation-Functions>.
 
-Fitting follows the same path as <doc:Gradient-Descent> — start from θ = 0 and step opposite the gradient of the loss at each iteration — but the loss is **cross-entropy** (log loss) rather than squared error. The two gradients share a shape: design-matrix transpose times the residual, ∇L = (1/n)Xᵀ(σ(Xθ) − y). Only the prediction the residual is built from differs — σ(Xθ) here, the raw Xθ for least squares — which is why cross-entropy is the natural loss for a sigmoid hypothesis.
-
-Reusing the squared error that <doc:Linear-Regression> minimizes would wrap the sigmoid inside a square, producing a loss surface with many local dips that gradient descent can settle into short of the best fit. Cross-entropy avoids that: paired with the sigmoid it is convex, a single bowl with one lowest point, so descent that keeps reducing the loss is descending toward the global minimum rather than a local one. The <doc:Optimization-Primer> covers why one descent algorithm serves several models at once.
+Fitting follows the same gradient descent loop as our other models: start from θ = 0 and step opposite the gradient of our objective. Here, our objective is **cross-entropy** (log loss). The gradient $\nabla L = (1/n)X^T(\sigma(X\theta) - y)$ shares the same shape as least squares, but uses the sigmoid-transformed residual. Cross-entropy is naturally convex for this model, ensuring our descent leads us to a single global minimum. The <doc:Optimization-Primer> covers why one descent algorithm serves several models at once.
 
 ### Fitting a model
 
-The `fit(features:labels:)` static method learns the coefficient vector from training data and returns a ready-to-use model. There is no separate unfitted state — the returned struct is immediately usable.
+The `fit(features:labels:)` method learns the coefficient vector from training data and returns a ready-to-use model. The returned struct is immutable and immediately usable.
 
-> Note: Classification models predict discrete categories, so labels are `[Int]`, and logistic regression accepts only the binary values `0` and `1`. For more than two classes, a multinomial model is needed; that is a separate model and out of scope here. See <doc:Machine-Learning-Primer> for the classification-versus-regression distinction.
+> Note: We predict discrete categories, so labels are `[Int]`, and we only support binary values `0` and `1`. Multinomial classification is out of scope here. See <doc:Machine-Learning-Primer> for the distinction between classification and regression.
 
-Logistic regression is trained iteratively, so it is sensitive to feature scale. The default `learningRate` of `0.01` assumes features with unit variance — standardize first with `StandardScaler`, or the default rate fails to descend cleanly. The default rate is also deliberately conservative; on a small, well-scaled dataset a faster rate reaches the minimum in fewer iterations.
+Because we train iteratively, we are sensitive to feature scale. The default `learningRate` of `0.01` assumes features with unit variance—standardize first with `StandardScaler`, or the default rate may struggle. On smaller, well-scaled datasets, a faster rate often reaches the minimum in fewer iterations.
 
 ```swift
 import Quiver
@@ -48,7 +46,7 @@ The printed summary reports whether the run converged or hit the iteration cap, 
 
 ### Making predictions
 
-The `predict(_:)` method classifies new samples by computing each probability and thresholding at 0.5. Query points must pass through the same fitted scaler used in training, so they live on the scale the model learned:
+The `predict(_:)` method classifies new samples by computing each probability and thresholding at 0.5. Query points must pass through the same fitted scaler used in training, ensuring they live on the scale the model learned:
 
 ```swift
 import Quiver
@@ -58,7 +56,7 @@ let predictions = model.predict(query)
 // [1, 0]
 ```
 
-When the caller needs the probability rather than the bare label — for threshold tuning, ranking, or cost-sensitive decisions — `predictProbabilities(_:)` returns the probability of class 1 for each sample, one value per row:
+When we need probabilities for threshold tuning, ranking, or cost-sensitive decisions, `predictProbabilities(_:)` returns the probability of class 1 for each sample:
 
 ```swift
 import Quiver
@@ -67,7 +65,7 @@ let probs = model.predictProbabilities(query)
 // [0.693, 0.314]
 ```
 
-> Note: Unlike the per-class distribution returned by `GaussianNaiveBayes.predictProbabilities(_:)`, a binary logistic model has a single degree of freedom. The returned value is P(class = 1), and P(class = 0) is its complement — one probability per sample, not a row that sums to 1.0 across classes.
+> Note: Unlike `GaussianNaiveBayes.predictProbabilities(_:)`, which returns a per-class distribution, a binary logistic model has a single degree of freedom. We return P(class = 1); P(class = 0) is its complement.
 
 Having the probability is what makes a custom threshold possible. The default `predict` accepts any sample at or above 0.5; a stricter cutoff flags only high-confidence positives, trading recall for precision. Applying a 0.8 cutoff to the same query rejects the first sample, whose probability of 0.693 cleared the default boundary but not the stricter one:
 
@@ -81,7 +79,7 @@ for probability in probs {
 // flagged is [0, 0]
 ```
 
-For inspecting the model in log-odds space — plotting the decision boundary, comparing per-sample margins, or thresholding somewhere other than 0.5 — `decisionFunction(_:)` returns the raw score `Xθ` before the sigmoid. Zero is the boundary, positive favors class 1, negative favors class 0:
+To inspect the model in log-odds space—for plotting boundaries, margin analysis, or custom thresholding—`decisionFunction(_:)` returns the raw score `Xθ` before the sigmoid. Zero is the boundary, positive favors class 1, and negative favors class 0:
 
 ```swift
 import Quiver
@@ -90,13 +88,13 @@ let scores = model.decisionFunction(query)
 // [0.813, -0.781] — above 0 predicts class 1, below 0 predicts class 0
 ```
 
-The label, the probability, and the log-odds are three views of one quantity: `predict` is the sign of `decisionFunction`, and `predictProbabilities` is its sigmoid. The scores `0.813` and `−0.781` pass through the sigmoid to the probabilities `0.693` and `0.314` seen above, and their signs give the labels `1` and `0`. On a single-feature model, `predict` and `decisionFunction` also accept a bare value; `predictProbabilities` takes the array form, so wrap a lone query in a row to read its probability.
+The label, probability, and log-odds are three views of the same quantity: `predict` is the sign of `decisionFunction`, and `predictProbabilities` is its sigmoid. On a single-feature model, `predict` and `decisionFunction` also accept a bare value; `predictProbabilities` takes the array form, so wrap a lone query in a row to read its probability.
 
 > Experiment: **The Quiver Notebook** is the right place to watch the sigmoid turn a line into a probability. Fit a one-feature model, sweep the input across its range, and print `decisionFunction` next to `predictProbabilities` — watching the unbounded log-odds compress into (0, 1) makes the squashing concrete. See <doc:Quiver-Notebook>.
 
 ### Standardize features
 
-Because the fit is iterative, the query must pass through the same scaler the model trained on, or a raw value reads as the wrong number of standard deviations and the prediction is silently wrong. `Pipeline` removes the hazard by bundling the scaler and the model into one value whose `predict(_:)` scales raw inputs internally, so the forgotten-scaling mistake becomes impossible:
+Because the fit is iterative, query points must pass through the same scaler the model trained on, or raw values read as the wrong number of standard deviations and predictions become silently wrong. `Pipeline` removes this hazard by bundling the scaler and model into one value; its `predict(_:)` scales raw inputs internally, making the forgotten-scaling mistake impossible:
 
 ```swift
 import Quiver
@@ -161,23 +159,23 @@ Each `Classification` result conforms to `Sequence`, so iterating a group yields
 
 ### Watching the descent
 
-Like <doc:Gradient-Descent>, a fitted model carries the full loss trajectory and an outcome flag, so convergence is observable rather than assumed. The `lossHistory` array begins with the cross-entropy at θ = 0 — which is exactly log 2, since every sample starts at probability 0.5 — and ends at `finalLoss`. The `outcome` distinguishes a converged run from one that exhausted the iteration cap.
+Like <doc:Gradient-Descent>, a fitted model carries the full loss trajectory and an outcome flag, making convergence observable rather than assumed. The `lossHistory` array begins with the cross-entropy at θ = 0—exactly log 2, as every sample starts at probability 0.5—and ends at `finalLoss`. The `outcome` flag distinguishes a converged run from one that hit the iteration cap.
 
-The shape of that trajectory is the diagnostic. A healthy run falls steeply at first and then flattens as it nears the minimum; a trajectory that rises instead of falls signals a learning rate too large for the data, and one that barely moves across all its iterations signals a rate too small. Reading the curve says more than the final number alone, which is why <doc:Gradient-Descent> plots it.
+The trajectory shape is our diagnostic. A healthy run falls steeply at first and then flattens near the minimum; a trajectory that rises signals a learning rate too large for the data, while one that barely moves signals a rate too small. Reading the curve tells us more than the final number alone.
 
-The coefficients follow the intercept-first layout: when the model fits a bias term, `coefficients[0]` is the intercept and the remaining elements are the feature weights in input order. Reading a weight back out means indexing past the intercept.
+The coefficients follow the intercept-first layout: when we fit a bias term, `coefficients[0]` is the intercept and the remaining elements are feature weights in input order.
 
-> Important: A `.maxIterationsReached` outcome is not automatically a failure. On linearly separable data the fit has no finite minimum, so the loss keeps shrinking and the run reaches the cap by design — the predictions stay correct, but the coefficient magnitudes are arbitrary. Compare `lossHistory.first` to `lossHistory.last` to confirm meaningful descent.
+> Important: A `.maxIterationsReached` outcome is not automatically a failure. On linearly separable data the fit has no finite minimum, so the loss keeps shrinking and the run hits the cap by design—predictions remain correct, but coefficient magnitudes are arbitrary. Compare `lossHistory.first` to `lossHistory.last` to confirm meaningful descent.
 
 ### When to use logistic regression
 
-Logistic regression is the right reach when the target is a binary yes-or-no label and a single boundary separates the classes reasonably well. The model predicts a calibrated probability rather than a bare label, so it suits ranking, threshold tuning, and cost-sensitive decisions where the confidence of a prediction matters as much as its class. Because the decision boundary is linear in the features, the model excels when the classes are close to linearly separable and underperforms when the true boundary curves — a case better served by a non-parametric classifier such as <doc:Nearest-Neighbors-Classification>.
+Logistic regression is our tool of choice when we have a binary target and a boundary that separates classes reasonably well. It predicts a calibrated probability rather than a bare label, making it perfect for ranking, threshold tuning, and cost-sensitive decisions where confidence matters. Because the decision boundary is linear, the model excels when classes are nearly linearly separable; when the true boundary curves, a non-parametric classifier like <doc:Nearest-Neighbors-Classification> is a better choice.
 
-Two constraints define its scope. The labels must be binary; more than two classes calls for a multinomial model, which is out of scope here. And because the fit is iterative, the features must be standardized first, or the default learning rate fails to descend. Within those constraints it is the workhorse binary classifier, and the probability it returns is its defining advantage over a model that emits only a label.
+Two constraints define its scope. Labels must be binary; more than two classes require a multinomial model, which is out of scope here. Because fitting is iterative, we must standardize features first, or the default learning rate fails to descend. Within these constraints, it remains our workhorse binary classifier, with its calibrated probability being its defining advantage.
 
 ### Safe by design
 
-`LogisticRegression` is an immutable struct created only through `fit`, so an untrained model cannot exist to misuse and a fitted one cannot drift between predictions. When an over-large learning rate makes the loss climb, `fit` throws rather than handing back meaningless coefficients, so the caller acknowledges the failure instead of trusting a silent one. The model and its `Classification` results conform to `Equatable`, so confirming that two runs agree is a single comparison.
+`LogisticRegression` is an immutable struct created only through `fit`. An untrained model cannot be misused, and a fitted one cannot drift. When an over-large learning rate makes the loss climb, `fit` throws rather than returning meaningless coefficients, ensuring we acknowledge the failure. The model and its `Classification` results conform to `Equatable`, making it trivial to confirm that two runs produce identical results.
 
 ## Topics
 

@@ -4,8 +4,7 @@ Using one training method to fit many different models.
 
 ## Overview
 
-Some models compute their answer in a single step. <doc:Linear-Regression> solves a matrix equation based on a defined closed-form formula. Other models are iterative: their coefficients cannot be written as one formula, so the answer has to be searched for rather than solved. We start at some initial point, measure how wrong the guess is, adjust, and repeat until the error stops falling. That iterative sequence is **gradient descent**. 
-
+Some models solve for coefficients in a single step, such as <doc:Linear-Regression>, which uses a closed-form matrix equation. Others are iterative: their coefficients cannot be written as a formula, so we must search for the answer. We start at an initial point, measure the error, adjust, and repeat until the error stops falling. This iterative process is **gradient descent**.
 The useful part is that the search itself changes only slightly from one model to the next. The loop that fits a plain regression is the same loop that fits a penalized one — what differs is the error formula each is handed. This primer is about that shared algorithm: why one optimizer serves several models, what stays fixed and what varies, and where the reuse stops.
 
 > Note: This primer builds on the iterative-minimization mechanics from the <doc:Calculus-Primer> and the optimizer's own model page, <doc:Gradient-Descent>. It assumes the overfitting vocabulary of the <doc:Machine-Learning-Primer>.
