@@ -4,11 +4,11 @@ Connect Quiver's search surface to other embedding sources through a single cont
 
 ## Overview
 
-Quiver provides a protocol that bridges text embeddings and ranked search. Just as <doc:Data-Visualization> prepares data that maps directly to Swift Charts marks without rendering them, the **Embedder** protocol consumes vectors that an embedding source produces without computing them. Quiver owns the ranking and reporting and the source owns the vectors.
+The `Embedder` protocol bridges text and ranked search. Just as <doc:Data-Visualization> prepares data for charting, `Embedder` separates vector creation from vector ranking. We own the ranking and reporting logic; you own the vector source.
 
-To create a semantic search solution one needs a way to turn text into vectors. Quiver assembles that conversion by hand — tokenize, look up each word, average the results — but the source of the vectors is left open. A small word-vector table works for learning. A production app reaches for an on-device sentence model. A research prototype calls a custom Core AI model running on Apple silicon. These sources differ enormously in quality, yet the code that ranks and reports results should not have to change when we move between them.
+We need a way to convert text into vectors. Quiver assembles this conversion manually (tokenize, look up, average), but the source is left open. A small word-vector table works for learning; a production app reaches for an on-device sentence model. The `Embedder` protocol defines a single operation—text in, vector out—allowing ranking methods to work against any source without modification.
 
-The `Embedder` protocol names a single operation — text in, vector out — and lets every downstream method work against that operation rather than against any particular source. Conform once, and the ranking surface treats a hand-built dictionary and a Core AI model exactly alike.
+The `Embedder` protocol names a single operation, text in and vector out, and lets every downstream method work against that operation rather than against any particular source. Conform once, and the ranking surface treats a hand-built dictionary and a Core AI model exactly alike.
 
 > Note: This article builds on <doc:Semantic-Search>, which introduces tokenization, embedding lookup, and cosine similarity. The examples here are self-contained, but the vocabulary of vectors and similarity carries over.
 
@@ -24,9 +24,9 @@ protocol Embedder: Sendable {
 }
 ```
 
-The method returns `nil` when the text carries nothing to embed — an empty string, or one with no recognized tokens. That optional return matches the one `meanVector` already produces, so the two compose without special handling. The `Sendable` requirement lets an embedder cross task and actor boundaries, which matters the moment a model runs its inference off the main thread.
+The method returns `nil` when the text carries nothing to embed: an empty string, or one with no recognized tokens. That optional return matches the one `meanVector` already produces, so the two compose without special handling. The `Sendable` requirement lets an embedder cross task and actor boundaries, which matters the moment a model runs its inference off the main thread.
 
-> Note: Quiver defines the contract but ships no embedder of its own. Where the vectors come from — a word-vector table, an on-device sentence model, or a custom model on Apple silicon — is ours to decide, and everything downstream stays the same.
+> Note: Quiver defines the contract but ships no embedder of its own. Where the vectors come from (a word-vector table, an on-device sentence model, or a custom model on Apple silicon) is ours to decide, and everything downstream stays the same.
 
 ## Conforming to an embedding source
 
@@ -49,7 +49,7 @@ struct TableEmbedder: Embedder {
 }
 ```
 
-Averaging token vectors is deliberately coarse. Because it sums and divides, it ignores word order entirely — "a long slow rise" and "a slow long rise" collapse to the same vector. Averaging is the right starting point for learning the pipeline and a serviceable baseline; a richer source that encodes order and context conforms through the very same method when we need it.
+Averaging token vectors is deliberately coarse. Because it sums and divides, it ignores word order entirely: "a long slow rise" and "a slow long rise" collapse to the same vector. Averaging is the right starting point for learning the pipeline and a serviceable baseline; a richer source that encodes order and context conforms through the very same method when we need it.
 
 ## Embedding a collection
 
@@ -76,7 +76,7 @@ let embedded = docs.embedded(using: embedder)
 // 3 pairs: each document with its averaged vector
 ```
 
-Each pair holds the original text and the vector built from it. Documents the embedder cannot process drop out, and the rest keep their text attached. Keeping the text beside its vector is a deliberate choice, not a convenience: the vector is the searchable form, but it cannot be read back into the words that produced it. Pairing the two means what ranks is also what we read — there is no separate, readable copy to recover once a vector wins.
+Each pair holds the original text and the vector built from it. Documents the embedder cannot process drop out, and the rest keep their text attached. Keeping the text beside its vector is a deliberate choice, not a convenience: the vector is the searchable form, but it cannot be read back into the words that produced it. Pairing the two means what ranks is also what we read. There is no separate, readable copy to recover once a vector wins.
 
 ## Ranking against a query
 
@@ -116,6 +116,6 @@ A single contract spans the full range of embedding sources, from a hand-typed t
 
 ## Where to go from here
 
-The embedder is the swappable front of the search pipeline; the rest of that pipeline lives in <doc:Semantic-Search>, which shows how tokenization, embedding lookup, and cosine similarity fit together. For the vector operations underneath — dot products, magnitudes, and cosine similarity itself — see <doc:Vector-Operations> and <doc:Similarity-Operations>. The averaging step that builds a single document vector is one application of the descriptive statistics in <doc:Statistics-Primer>.
+The embedder is the swappable front of the search pipeline; the rest of that pipeline lives in <doc:Semantic-Search>, which shows how tokenization, embedding lookup, and cosine similarity fit together. For the vector operations underneath (dot products, magnitudes, and cosine similarity itself), see <doc:Vector-Operations> and <doc:Similarity-Operations>. The averaging step that builds a single document vector is one application of the descriptive statistics in <doc:Statistics-Primer>.
 
-> Experiment: **The Quiver Notebook** is the right place to feel the swap that the contract enables. Load `Dataset.glove50d`, wrap it in a `TableEmbedder`, and rank a three-document corpus against a query with `embedded(using:)` then `mostSimilar(to:k:)`. Then change only the embedder — swap in a different table, or a richer source — and re-run the exact same ranking lines. The results shift while the pipeline stays still, and that gap between source and pipeline is the whole point of the contract. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to feel the swap that the contract enables. Load `Dataset.glove50d`, wrap it in a `TableEmbedder`, and rank a three-document corpus against a query with `embedded(using:)` then `mostSimilar(to:k:)`. Then change only the embedder (swap in a different table, or a richer source) and re-run the exact same ranking lines. The results shift while the pipeline stays still, and that gap between source and pipeline is the whole point of the contract. See <doc:Quiver-Notebook>.

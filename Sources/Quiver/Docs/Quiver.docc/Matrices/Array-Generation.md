@@ -4,7 +4,7 @@ Creating arrays and matrices with specific patterns, fills, and sequences.
 
 ## Overview
 
-Most numerical work begins with an array of a known shape and a known fill value — a buffer of zeros to accumulate into, a row of ones to use as a multiplicative identity, an evenly spaced sequence for plotting, or an identity matrix for transformations. Quiver provides a small set of static methods on `Array` for these cases, so the starting array always has the right size and the right values without a manual loop.
+Most numerical work begins with an array of a known shape and a known fill value: a buffer of zeros to accumulate into, a row of ones to use as a multiplicative identity, an evenly spaced sequence for plotting, or an identity matrix for transformations. Quiver provides a small set of static methods on `Array` for these cases, so the starting array always has the right size and the right values without a manual loop.
 
 ### Filling arrays with constants
 
@@ -19,7 +19,7 @@ let ones = [Int].ones(3)             // [1, 1, 1]
 let filled = [Double].full(4, value: 3.14)  // [3.14, 3.14, 3.14, 3.14]
 ```
 
-The element type is selected by the bracket notation on the left of the call. `[Double].zeros(5)` produces an array of `Double` values; `[Int].zeros(5)` produces an array of `Int` values. Quiver does not infer the type from context — the caller chooses it explicitly.
+The element type is selected by the bracket notation on the left of the call. `[Double].zeros(5)` produces an array of `Double` values; `[Int].zeros(5)` produces an array of `Int` values. Quiver does not infer the type from context; the caller chooses it explicitly.
 
 ### Generating sequences
 
@@ -55,7 +55,7 @@ Quiver follows the standard mathematical convention: the first dimension is rows
 
 ### Identity and diagonal matrices
 
-Identity matrices appear constantly in linear algebra — they are the multiplicative identity for matrix multiplication, and they are the starting point for building transformations incrementally. Diagonal matrices generalize the same idea, with arbitrary values along the main diagonal and zeros everywhere else.
+Identity matrices appear constantly in linear algebra: they are the multiplicative identity for matrix multiplication, and they are the starting point for building transformations incrementally. Diagonal matrices generalize the same idea, with arbitrary values along the main diagonal and zeros everywhere else.
 
 ```swift
 // Create an identity matrix
@@ -113,7 +113,7 @@ transform[0][3] = 10.0  // Add translation
 
 ### Memory cost
 
-These methods allocate the entire array in a single step. For very large dimensions — millions of elements or large dense matrices — that allocation is the dominant cost of the call, and the resulting array sits in memory until it is released. The cost is the same as any equivalent manual allocation, but it is worth being aware of when generating large structures inside a tight loop.
+These methods allocate the entire array in a single step. For very large dimensions (millions of elements or large dense matrices), that allocation is the dominant cost of the call, and the resulting array sits in memory until it is released. The cost is the same as any equivalent manual allocation, but it is worth being aware of when generating large structures inside a tight loop.
 
 ## Topics
 

@@ -4,11 +4,11 @@ Summarize history, rank similar items, and learn from a user's own behavior on i
 
 ## Overview
 
-A typical iOS app produces a constant stream of small events that track every trip taken and every workout completed and every purchase recorded. These raw events are rarely what we show the user because we prefer to show derived numbers that provide a clearer picture of their habits and goals.
+An iOS app creates a constant stream of events tracking trips, workouts, and purchases. We rarely show raw events; we prefer derived summaries that clarify user habits.
 
-**Statistics** turns a long list of events into a clean summary that an iPhone can render while linear algebra helps us rank items by how much they resemble each other. Machine learning then fits a model to the behavior of a user so that the app can predict what they will care about next. Every one of these actions runs directly on the device with Quiver so that the data stays private and the app remains fast.
+**Statistics** turns event lists into clean summaries for rendering; linear algebra ranks items by similarity. Machine learning fits a model to user behavior to predict future actions. Every action runs on-device with Quiver, ensuring data privacy and high performance.
 
-> Note: This guide builds on the concepts found in <doc:Statistics-Primer>. Understanding how we summarize data with averages and distributions provides the foundation for the patterns we will explore on iPhone.
+> Note: This guide builds on the concepts found in <doc:Statistics-Primer>.
 
 ### Setup and lifecycle
 
@@ -38,7 +38,7 @@ The `summary()` method returns a typed snapshot of the entire history: central t
 
 A second pattern shows up wherever the app needs to count occurrences rather than summarize a continuous quantity: most-played track, most-tagged photo location, most-frequent transaction merchant. A **frequency table** maps each distinct value to the number of times it appears, and a small typed value reports the mode and the count. See <doc:Frequency-Tables> for the operations Quiver exposes for categorical history.
 
-The same statistical surface generalizes across any screen whose product is a history of repeated events. A sleep app reads bedtime durations the same way the trip app reads delays. A workout app reads pace samples the same way. The concept is unchanged — turn a list of past events into a typed summary — even when the events themselves are not.
+The same statistical surface generalizes across any screen whose product is a history of repeated events. A sleep app reads bedtime durations the same way the trip app reads delays. A workout app reads pace samples the same way. The concept is unchanged, turning a list of past events into a typed summary, even when the events themselves are not.
 
 ### Computing the summary at the right moment
 
@@ -122,7 +122,7 @@ print(playerFacing.dot(toEnemy.normalized) > 0) // true — enemy is in front
 
 The dot product of `playerFacing` and the normalized direction to the enemy reads as a sign test: positive means in front, negative means behind, zero means directly to the side.
 
-A separate question — whether two motions are pointing the same way — calls for `cosineOfAngle` between two unit vectors. The result is a number between -1 and 1 that describes alignment regardless of speed.
+A separate question, whether two motions are pointing the same way, calls for `cosineOfAngle` between two unit vectors. The result is a number between -1 and 1 that describes alignment regardless of speed.
 
 ```swift
 import Quiver
@@ -145,7 +145,7 @@ On iOS, machine learning comes up when the app needs to model the user's own beh
 
 Two methods cover most of the surface: <doc:KMeans-Clustering> for unsupervised grouping, and <doc:Linear-Regression> for personal prediction. Each fits from a small history and returns a value the app can hold in observable state, persist to Documents, and read again on the next launch.
 
-The lead example is a personal-prediction regression. We fit `LinearRegression` to a history of feature vectors and the outcome that followed each one. A new feature vector is scored against the user's own pattern, and a large residual is itself the signal — it means the new event broke the user's own pattern.
+The lead example is a personal-prediction regression. We fit `LinearRegression` to a history of feature vectors and the outcome that followed each one. A new feature vector is scored against the user's own pattern, and a large residual is itself the signal: it means the new event broke the user's own pattern.
 
 ```swift
 import Quiver
@@ -170,7 +170,7 @@ print(model.predict([upcoming])[0]) // 20.0 — the model recovered the underlyi
 
 ### Classifying the next decision
 
-Prediction answers "how much"; classification answers "which one." The most common consumer-app version is a binary decision — will the user accept this prompt, keep this item, renew this subscription — and <doc:Logistic-Regression> fits that from the user's own history. The model learns a boundary between the two outcomes and reports which side a new event falls on, along with a probability for how confident that call is.
+Prediction answers "how much"; classification answers "which one." The most common consumer-app version is a binary decision (will the user accept this prompt, keep this item, renew this subscription), and <doc:Logistic-Regression> fits that from the user's own history. The model learns a boundary between the two outcomes and reports which side a new event falls on, along with a probability for how confident that call is.
 
 ```swift
 import Quiver
@@ -205,6 +205,6 @@ Most personal models need more than one step: a `StandardScaler` learns the colu
 
 ## Where to go from here
 
-The three sections above each have a deeper layer of math underneath them, and that math is the next step for iOS developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and inference. <doc:Linear-Algebra-Primer> extends vectors and dot products into matrices, transformations, and projection. <doc:Machine-Learning-Primer> ties both together — features, labels, training, evaluation, and the trade-offs that decide which model to reach for. Once an app has numbers worth showing, <doc:Data-Visualization> covers the aggregation primitives that feed Swift Charts directly. For the "items like this one" ranking taken end to end, <doc:Semantic-Search> assembles the full similarity pipeline from the same primitives this guide introduces. To build a retrieval layer that feeds an on-device language model, <doc:Retrieving-Context-For-Generation> takes that pipeline through chunking and context assembly.
+The three sections above each have a deeper layer of math underneath them, and that math is the next step for iOS developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and inference. <doc:Linear-Algebra-Primer> extends vectors and dot products into matrices, transformations, and projection. <doc:Machine-Learning-Primer> ties both together: features, labels, training, evaluation, and the trade-offs that decide which model to reach for. Once an app has numbers worth showing, <doc:Data-Visualization> covers the aggregation primitives that feed Swift Charts directly. For the "items like this one" ranking taken end to end, <doc:Semantic-Search> assembles the full similarity pipeline from the same primitives this guide introduces. To build a retrieval layer that feeds an on-device language model, <doc:Retrieving-Context-For-Generation> takes that pipeline through chunking and context assembly.
 
 > Experiment: **The Quiver Notebook** is the right place to see how these surfaces compose on an iOS-sized dataset. Fit `KMeans` on a few dozen session vectors, then `LinearRegression` on a personal history of outcomes, and watch the same `Codable` model drop from Notebook into an iOS bundle unchanged. See <doc:Quiver-Notebook>.

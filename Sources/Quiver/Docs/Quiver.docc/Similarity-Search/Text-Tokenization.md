@@ -6,11 +6,11 @@ Splitting strings into tokens and looking up word vectors before any downstream 
 
 Most numerical workflows assume the data has already been turned into numbers. Text is the exception. Before a classifier, a vector database, or a similarity comparison can act on a sentence, the sentence has to be broken into words and each word has to be mapped to a vector. Quiver provides two paired methods for that translation: `tokenize` on `String` for the splitting step, and `embed(using:)` on `[String]` for the lookup step.
 
-The two methods compose to produce a `[[Double]]` from raw text — one inner array per recognized word. From there, the rest of Quiver's vector operations apply. The <doc:Semantic-Search> article walks the full search pipeline from tokenization through ranked results; this article is the closer focus on tokenization and embedding as a standalone preprocessing pair, useful any time a developer needs to feed text into a numeric workflow.
+The two methods compose to produce a `[[Double]]` from raw text: one inner array per recognized word. From there, the rest of Quiver's vector operations apply. The <doc:Semantic-Search> article walks the full search pipeline from tokenization through ranked results; this article is the closer focus on tokenization and embedding as a standalone preprocessing pair, useful any time a developer needs to feed text into a numeric workflow.
 
 ### Tokenizing strings
 
-The `tokenize(removingPunctuation:)` method on `String` lowercases the input, splits on whitespace and newlines, removes empty tokens, and — by default — removes leading and trailing punctuation from each token. The defaults are tuned for embedding lookups, where punctuated forms like `"shoes!"` and `"shoes,"` would otherwise miss their dictionary key:
+The `tokenize(removingPunctuation:)` method on `String` lowercases the input, splits on whitespace and newlines, removes empty tokens, and, by default, removes leading and trailing punctuation from each token. The defaults are tuned for embedding lookups, where punctuated forms like `"shoes!"` and `"shoes,"` would otherwise miss their dictionary key:
 
 ```swift
 import Quiver
@@ -60,5 +60,5 @@ let documentVector = document
 // Optional<[Double]> — nil if no recognized tokens
 ```
 
-From this point, the result is an ordinary `[Double]` and the rest of Quiver applies — `cosineSimilarities(to:)` for ranking against a corpus, `distance(to:)` for nearest-neighbor work, or any other vector operation. The full search example, including building a corpus and ranking results, is in <doc:Semantic-Search>. For the descriptive-statistics vocabulary the same `[Double]` columns support, see <doc:Statistics-Primer>.
+From this point, the result is an ordinary `[Double]` and the rest of Quiver applies: `cosineSimilarities(to:)` for ranking against a corpus, `distance(to:)` for nearest-neighbor work, or any other vector operation. The full search example, including building a corpus and ranking results, is in <doc:Semantic-Search>. For the descriptive-statistics vocabulary the same `[Double]` columns support, see <doc:Statistics-Primer>.
 

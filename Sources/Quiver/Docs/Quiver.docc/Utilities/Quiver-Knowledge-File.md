@@ -4,18 +4,18 @@ Pairing the Quiver reference with Claude as a study companion for the math and c
 
 ## Overview
 
-The Quiver knowledge file is a special Markdown document that captures Quiver's API surface, design principles, and validation status in one place. Uploaded into a conversation with Claude, it becomes a study companion — a place to ask questions about the math behind a method, the meaning of a result, or the reasoning behind a Quiver design choice. The book, the cookbook, and the documentation are where Claude is taught.
+The Quiver knowledge file is a special Markdown document that captures Quiver's API surface, design principles, and validation status in one place. Uploaded into a conversation with Claude, it becomes a study companion: a place to ask questions about the math behind a method, the meaning of a result, or the reasoning behind a Quiver design choice. The book, the cookbook, and the documentation are where Claude is taught.
 
 ### What Claude is
 
-Claude is an AI assistant from [Anthropic](https://www.anthropic.com). The assistant answers questions in plain language. When given a reference document — like the Quiver knowledge file — it grounds its answers in that document, which keeps responses accurate to the framework as it actually exists rather than to a general impression of how Swift numerical libraries usually work.
+Claude is an AI assistant from [Anthropic](https://www.anthropic.com). The assistant answers questions in plain language. When given a reference document, like the Quiver knowledge file, it grounds its answers in that document, which keeps responses accurate to the framework as it actually exists rather than to a general impression of how Swift numerical libraries usually work.
 
 ### How knowledge files work
 
 Claude accepts uploaded files as context for a conversation. A markdown file dropped into a chat window is read, indexed, and used as the source of truth for any question that follows. Two patterns are common:
 
-- **One-off conversation** — drag the knowledge file into a fresh chat, ask a question, get an answer. The context lives for the duration of that conversation.
-- **Claude Project** — for longer study sessions or a full course, create a Project, attach the knowledge file once, and every conversation inside that Project reads the same reference automatically. This is the recommended pattern for anyone working through the cookbook or a primer over multiple sittings.
+- **One-off conversation**: drag the knowledge file into a fresh chat, ask a question, get an answer. The context lives for the duration of that conversation.
+- **Claude Project**: for longer study sessions or a full course, create a Project, attach the knowledge file once, and every conversation inside that Project reads the same reference automatically. This is the recommended pattern for anyone working through the cookbook or a primer over multiple sittings.
 
 In both cases, the assistant's answers cite the parts of the file it draws from, so a learner can cross-check against the framework's actual API rather than trusting a paraphrase.
 

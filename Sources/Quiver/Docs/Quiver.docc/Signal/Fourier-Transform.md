@@ -8,9 +8,9 @@ The **Cooley-Tukey** Fast Fourier Transform, published in 1965, is a pillar of c
 
 ### Signal processing in Quiver
 
-Until now, our work—linear regression, rolling means, and classification models—has operated in the time domain, measuring values at each point to relate them to their neighbors. The Fourier transform operates in the **frequency domain**, revealing the repeating patterns beneath the noise.
+Until now, our work (linear regression, rolling means, and classification models) has operated in the time domain, measuring values at each point to relate them to their neighbors. The Fourier transform operates in the **frequency domain**, revealing the repeating patterns beneath the noise.
 
-The underlying connection to Quiver is direct. The Discrete Fourier Transform is matrix multiplication: for a signal vector `x`, the output `X` is `F · x`, where `F` is a matrix of complex roots of unity. The FFT factors this matrix into sparse sub-matrices, reducing the computational cost from `O(n²)` to `O(n log n)`. The primitives we already use—transposition, element-wise arithmetic, and magnitude—are the building blocks of this algorithm.
+The underlying connection to Quiver is direct. The Discrete Fourier Transform is matrix multiplication: for a signal vector `x`, the output `X` is `F · x`, where `F` is a matrix of complex roots of unity. The FFT factors this matrix into sparse sub-matrices, reducing the computational cost from `O(n²)` to `O(n log n)`. The primitives we already use, transposition, element-wise arithmetic, and magnitude, are the building blocks of this algorithm.
 
 ### On-device frequency analysis
 
@@ -65,11 +65,11 @@ The <doc:Panel> `summary()` readout provides descriptive statistics for each col
 
 ### Positive-frequency half
 
-For real-valued signals, the upper half of the Fourier output mirrors the lower half and provides no additional information. `fourierMagnitudeHalf` and `fourierFrequenciesHalf(sampleRate:)` return only the positive-frequency half—the range from 0 Hz up to the Nyquist frequency. Use these methods for plotting spectra or extracting features.
+For real-valued signals, the upper half of the Fourier output mirrors the lower half and provides no additional information. `fourierMagnitudeHalf` and `fourierFrequenciesHalf(sampleRate:)` return only the positive-frequency half: the range from 0 Hz up to the Nyquist frequency. Use these methods for plotting spectra or extracting features.
 
 ### Dominant frequency
 
-`fourierDominantFrequency(sampleRate:)` returns the frequency with the highest amplitude. For most applications—pitch detection, cadence extraction, or cycle identification—this single value is sufficient:
+`fourierDominantFrequency(sampleRate:)` returns the frequency with the highest amplitude. For most applications (pitch detection, cadence extraction, or cycle identification) this single value is sufficient:
 
 ```swift
 import Quiver
@@ -117,7 +117,7 @@ let breathsPerMinute = (dominant ?? 0) * 60.0  // 15.0
 
 ### Phase and inverse transform
 
-`fourierPhase` returns the phase angle at each frequency bin—where in its cycle each component sits at time zero. `fourierInverse` performs an inverse transform, treating inputs as complex numbers with zero phase. Because phase information is not preserved in the current public API, a forward-then-inverse round trip will not reconstruct the original signal exactly. This limitation may be addressed in a future release.
+`fourierPhase` returns the phase angle at each frequency bin: where in its cycle each component sits at time zero. `fourierInverse` performs an inverse transform, treating inputs as complex numbers with zero phase. Because phase information is not preserved in the current public API, a forward-then-inverse round trip will not reconstruct the original signal exactly. This limitation may be addressed in a future release.
 
 ### Concurrency
 

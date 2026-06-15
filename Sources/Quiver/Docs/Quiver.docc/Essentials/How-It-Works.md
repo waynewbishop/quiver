@@ -4,7 +4,7 @@ Understanding Quiver's architecture as a layer over the Swift array type.
 
 ## Overview
 
-Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`, with a small number of value types reserved for objects that carry their own algebra — ``Polynomial`` is one such example. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
+Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`, with a small number of value types reserved for objects that carry their own algebra. ``Polynomial`` is one such example. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
 
 ```swift
 import Quiver
@@ -16,11 +16,11 @@ let position = [3.0, 4.0]
 position.magnitude  // 5.0
 ```
 
-[Magnitude](<doc:Linear-Algebra-Primer>) measures how far a point sits from the origin, the length of the vector. In this example, the `position` array could be passed to SwiftUI, Swift Charts, SwiftData, or any other Swift API.
+`Magnitude` measures how far a point sits from the origin, the length of the vector. In this example, the `position` array could be passed to `SwiftUI`, [`Swift Charts`](<doc:Data-Visualization>), `SwiftData`, or any other Swift API.
 
 ### What are extensions
 
-An **extension** in Swift adds new methods, computed properties, and initializers to a type that already exists, even one we did not write. The capability is added directly to the type, and every instance gains it automatically. Swift's standard library uses this same mechanism extensively — methods like `.sorted()`, `.reversed()`, and `.contains()` are all added to `Array` through extensions. Quiver follows the same pattern to add numerical operations.
+An **extension** in Swift adds new methods, computed properties, and initializers to a type that already exists, even one we did not write. The capability is added directly to the type, and every instance gains it automatically. Swift's standard library uses this same mechanism extensively: methods like `.sorted()`, `.reversed()`, and `.contains()` are all added to `Array` through extensions. Quiver follows the same pattern to add numerical operations.
 
 > Note: Extensions can add new functionality to a type, but they cannot override or modify existing behavior. Quiver's extensions are purely additive; they never change how `Array` already works. To learn more about Swift's type system, generics, and protocol-oriented architecture see [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/), the companion book to this framework.
 
@@ -45,7 +45,7 @@ integers.magnitude       // Int is not FloatingPoint
 
 Each failed call is caught before the code ever runs. The compiler tells us exactly which protocol the element type is missing. When we refactor an array from `[Double]` to `[Int]`, the build itself flags every Quiver call that no longer applies.
 
-Swift's type system also encodes dimensionality. The compiler distinguishes between `[Double]` (a vector) and `[[Double]]` (a matrix) at compile time, so there is no need for a runtime property to query how many dimensions an array has — the type signature already tells us. For a detailed look at `.shape`, `.size`, and working with matrix dimensions, see <doc:Shape-And-Size>.
+Swift's type system also encodes dimensionality. The compiler distinguishes between `[Double]` (a vector) and `[[Double]]` (a matrix) at compile time, so there is no need for a runtime property to query how many dimensions an array has: the type signature already tells us. For a detailed look at `.shape`, `.size`, and working with matrix dimensions, see <doc:Shape-And-Size>.
 
 ### Models are always ready
 
@@ -104,7 +104,7 @@ if let curve = [Double].polyfit(x: xs, y: ys, degree: 2) {
 }
 ```
 
-> Tip: When a `fit` call returns a plain value rather than throwing or returning an optional, the type is telling us the operation is total — there is no failure path to write, because none exists. ``GaussianNaiveBayes``, ``KNearestNeighbors``, and ``StandardScaler`` follow this pattern.
+> Tip: When a `fit` call returns a plain value rather than throwing or returning an optional, the type is telling us the operation is total: there is no failure path to write, because none exists. ``GaussianNaiveBayes``, ``KNearestNeighbors``, and ``StandardScaler`` follow this pattern.
 
 ### Clean output by default
 
@@ -120,7 +120,7 @@ print(f)        // 3/5
 
 ### Presentation-only types
 
-Quiver computes in `Double` and renders in the form a reader can read. Two methods anchor the pattern: `asFraction` returns rational structure as a real ``Fraction`` value, and `asExpression` returns a Unicode-formatted string ready to display. They compose — chain `asFractions().asExpression()` to see the rational form of a vector or matrix as a bracketed block — and the underlying numeric values are never touched.
+Quiver computes in `Double` and renders in the form a reader can read. Two methods anchor the pattern: `asFraction` returns rational structure as a real ``Fraction`` value, and `asExpression` returns a Unicode-formatted string ready to display. They compose (chain `asFractions().asExpression()` to see the rational form of a vector or matrix as a bracketed block), and the underlying numeric values are never touched.
 
 ```swift
 let v = [0.6, 0.75, 0.5]
@@ -150,15 +150,13 @@ if let price = summary.columns["price"] {
 
 Quiver is built to plug into the frameworks at the center of a developer's toolkit. The library shapes its output to match what is needed, so the numerical result drops straight into Swift Charts, a search ranker, or an on-device model and that framework takes it from there.
 
-Three parts of the framework show this in action. In <doc:Data-Visualization>, Quiver computes every field a chart needs — heatmap tuples, the five numbers of a box plot, stacked series — as plain values that map straight onto Swift Charts marks, ready to draw. In <doc:Embedding-Sources>, the ``Embedder`` protocol names a single operation, text to vector, so a hand-built table, an on-device sentence model, or a custom model can all feed the same ranking surface through one method.
+Three parts of the framework show this in action. In <doc:Data-Visualization>, Quiver computes every field a chart needs (heatmap tuples, the five numbers of a box plot, stacked series) as plain values that map straight onto Swift Charts marks, ready to draw. In <doc:Embedding-Sources>, the ``Embedder`` protocol names a single operation, text to vector, so a hand-built table, an on-device sentence model, or a custom model can all feed the same ranking surface through one method.
 
-The retrieval pipeline in <doc:Retrieving-Context-For-Generation> is the principle taken end to end. Quiver supplies the scaffolding that turns a document and a question into a ready-to-use answer source: chunk the text, index the fragments, rank them by meaning, and assemble the context block a language model reads from. An embedding source feeds the vectors in and a language model takes the context block out, and Quiver builds the structure that connects them — the indexing and ranking that make the whole pipeline work. Every seam is a plain value, a `String` or a `[Double]`, so the same retrieval code carries cleanly across an on-device model, a different one, or a server. Quiver is the connective scaffolding, and it travels wherever the code does.
+The retrieval pipeline in <doc:Retrieving-Context-For-Generation> is the principle taken end to end. Quiver supplies the scaffolding that turns a document and a question into a ready-to-use answer source: chunk the text, index the fragments, rank them by meaning, and assemble the context block a language model reads from. An embedding source feeds the vectors in and a language model takes the context block out, and Quiver builds the structure that connects them: the indexing and ranking that make the whole pipeline work. Every seam is a plain value, a `String` or a `[Double]`, so the same retrieval code carries cleanly across an on-device model, a different one, or a server. Quiver is the connective scaffolding, and it travels wherever the code does.
 
 ### A focused and intentional scope
 
 Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. Quiver provides analytic derivatives for polynomials, sample-based derivatives for sequences, and iterative optimization through ``GradientDescent``; what it does not provide is reverse-mode automatic differentiation over arbitrary computation graphs. GPU acceleration and distributed training are similarly outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
-
-> Note: This focus shows up in the package manifest as well — Quiver depends on nothing beyond the Swift standard library and Foundation. There is no third-party package to resolve, no version graph to keep in sync, and no supply chain to audit before a build can proceed, so a Quiver project built today resolves identically a year from now. See <doc:Numerical-Literacy> for the related guarantee that numeric results are reproducible across platforms.
 
 ### Performance characteristics
 

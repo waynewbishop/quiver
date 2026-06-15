@@ -102,7 +102,7 @@ The t-distribution is the small-sample sibling of the normal. The normal describ
 
 The curve looks like a standard normal that has been stretched in the tails: centered at zero and symmetric, but with a spread that depends on a parameter called the degrees of freedom. Small `df` values produce visibly heavier tails. As `df` grows, the curve narrows toward the standard normal. At `df` near `1000` the two are visually indistinguishable. The classic rule for a sample of size `n` is `df = n - 1` for a one-sample inference. The `-1` accounts for the one quantity (the sample mean) we already estimated from the data before estimating the standard deviation.
 
-Quiver exposes the t-distribution at `Distributions.t` with `cdf(x:df:)` and `quantile(p:df:)`. There is no PDF — practical inference uses the CDF and the quantile, and `LinearRegression.summary` calls both internally to compute p-values and confidence intervals for fitted coefficients.
+Quiver exposes the t-distribution at `Distributions.t` with `cdf(x:df:)` and `quantile(p:df:)`. There is no PDF: practical inference uses the CDF and the quantile, and `LinearRegression.summary` calls both internally to compute p-values and confidence intervals for fitted coefficients.
 
 ```swift
 import Quiver

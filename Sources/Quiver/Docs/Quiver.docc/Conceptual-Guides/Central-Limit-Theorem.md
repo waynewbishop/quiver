@@ -4,9 +4,7 @@ Building the sampling distribution of the mean.
 
 ## Overview
 
-The Central Limit Theorem is the bridge between describing a dataset and reasoning about the population behind it. The theorem explains why we can take a single sample, compute one mean, and still say something honest about a population we never fully observed.
-
-This guide leads with the object the theorem is about: the sampling distribution of the mean. Once that object is in view, the standard error stops being a formula to memorize and becomes a quantity we can derive, and the distinction between standard deviation and standard error becomes a distinction we can state precisely.
+The **Central Limit Theorem** explains why a single sample mean allows us to infer properties of an unobserved population. By analyzing the sampling distribution of the mean, we can derive the standard error rather than memorizing it, making the distinction between standard deviation and standard error clear.
 
 ### The sampling distribution of the mean
 

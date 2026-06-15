@@ -16,19 +16,15 @@ A Swift package for statistics, linear algebra, and machine learning.
 
 ## Overview
 
-[Quiver](https://github.com/waynewbishop/quiver) is a pure-Swift package for statistics, linear algebra, and machine learning. The package extends the standard `Array` type, so its operations read as ordinary Swift and compose with the language a developer already knows. The mathematical surface — vectors, matrices, statistics, and models — works the same on iOS, macOS, watchOS, and the server.
+[Quiver](https://github.com/waynewbishop/quiver) is a pure-Swift package for statistics, linear algebra, and machine learning. The package extends the standard `Array` type, so its operations read as ordinary Swift and compose with the language a developer already knows. The mathematical surface (vectors, matrices, statistics, and models) works the same on iOS, macOS, watchOS, and the server.
 
 ### Data science in Swift
 
-As Swift expands beyond app development into server-side computing, machine learning, and data analysis, it needs mathematical tools to match. Quiver is the numerical foundation for those workflows, covering the operations that fields like computer vision, game development, and scientific computing depend on.
+As Swift expands beyond app development into server-side computing, machine learning, and data analysis, it needs mathematical tools to match. Quiver is the numerical foundation for those workflows, covering the operations that fields like [machine learning](<doc:Machine-Learning-Primer>), [semantic search](<doc:Semantic-Search>), computer vision, [signal processing](<doc:Fourier-Transform>), and scientific computing depend on.
 
 ### Why Quiver
 
-Quiver provides developers the tools to work with data directly. This includes analyzing data with statistics, transforming it with linear algebra, preparing it for modeling, or training machine learning models. As a pure Swift library with zero external dependencies, Quiver runs on every Apple platform — iOS, macOS, watchOS, tvOS, and visionOS — as well as server-side Swift with frameworks like Vapor, Linux environments, and containerized deployments. As a lightweight framework, Quiver is ideal for [teaching environments](<doc:Quiver-Notebook-For-Classrooms>), on-device processing, and any context where minimal dependencies and platform portability matter.
-
-### Learn by example
-
-This framework is companion to [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/), a comprehensive guide that teaches algorithmic thinking through hands-on Swift examples.
+Quiver provides developers the tools to work with data directly. This includes analyzing data with [statistics](<doc:Statistics-Primer>), transforming it with [linear algebra](<doc:Linear-Algebra-Primer>), preparing it for modeling, training [machine learning](<doc:Machine-Learning-Primer>) models, or building [retrieval pipelines](<doc:Retrieving-Context-For-Generation>). As a pure Swift library with zero external dependencies, Quiver runs on every Apple platform (iOS, macOS, watchOS, tvOS, and visionOS) as well as server-side Swift with frameworks like Vapor, Linux environments, and containerized deployments. As a lightweight framework, Quiver is ideal for [teaching environments](<doc:Quiver-Notebook-For-Classrooms>), on-device processing, and any context where [minimal dependencies](<doc:watchOS-Apps>) and platform portability matter.
 
 ## Topics
 

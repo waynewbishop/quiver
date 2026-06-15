@@ -4,9 +4,9 @@ Splitting arrays into training, testing, and rotating cross-validation subsets w
 
 ## Overview
 
-Training a model on the same data used to evaluate it produces misleadingly optimistic results. The standard practice is to split data into two partitions — a [training set](<doc:Machine-Learning-Primer>) the model learns from and a test set held back for evaluation. Quiver provides `trainTestSplit(testRatio:seed:)` as an extension on `Array`, making this fundamental operation available on any array type.
+Training a model on the same data used to evaluate it produces misleadingly optimistic results. The standard practice is to split data into two partitions: a [training set](<doc:Machine-Learning-Primer>) the model learns from and a test set held back for evaluation. Quiver provides `trainTestSplit(testRatio:seed:)` as an extension on `Array`, making this fundamental operation available on any array type.
 
-> Note: For an introduction to matrices as structured datasets — where rows represent samples and columns represent features — see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
+> Note: For an introduction to matrices as structured datasets, where rows represent samples and columns represent features, see [Matrices](https://waynewbishop.github.io/swift-algorithms/21-matrices.html) in Swift Algorithms & Data Structures.
 
 ### Basic usage
 
@@ -22,11 +22,11 @@ let (train, test) = data.trainTestSplit(testRatio: 0.2, seed: 42)
 // test  — 2 elements for evaluation
 ```
 
-The method returns a named tuple of `(train: [Element], test: [Element])`. This follows the same named tuple pattern as `.shape`, which returns `(rows: Int, columns: Int)` — the labels are built into the return type, so they are available automatically at the call site.
+The method returns a named tuple of `(train: [Element], test: [Element])`. This follows the same named tuple pattern as `.shape`, which returns `(rows: Int, columns: Int)`. The labels are built into the return type, so they are available automatically at the call site.
 
 ### Reproducible splits with seeds
 
-The `seed` parameter ensures that the same array with the same seed always produces the same split. This is essential for reproducible experiments — running the same code twice should yield the same training and test sets:
+The `seed` parameter ensures that the same array with the same seed always produces the same split. This is essential for reproducible experiments: running the same code twice should yield the same training and test sets:
 
 ```swift
 import Quiver
@@ -45,7 +45,7 @@ Changing the seed produces a different shuffle order, which means different elem
 
 ### Splitting paired arrays
 
-In a typical machine learning workflow, we have two parallel arrays — features and labels — that must stay aligned after splitting. The seed parameter guarantees identical shuffling across both calls, so each feature row remains paired with its correct label:
+In a typical machine learning workflow, we have two parallel arrays, features and labels, that must stay aligned after splitting. The seed parameter guarantees identical shuffling across both calls, so each feature row remains paired with its correct label:
 
 ```swift
 import Quiver
@@ -77,7 +77,7 @@ Naming each partition at the point it is created keeps the destructure self-cont
 
 A `testRatio` of `0.2` (80% training, 20% testing) is the most common choice and a good default for most datasets. For smaller datasets where every training sample matters, `0.1` reserves more data for learning. For very large datasets, even `0.3` or higher can work since there are enough training samples either way.
 
-The ratio must be between 0 and 1, exclusive — a ratio of 0 or 1 would produce an empty partition, which is never useful.
+The ratio must be between 0 and 1, exclusive. A ratio of 0 or 1 would produce an empty partition, which is never useful.
 
 ### Rotating the holdout with cross-validation
 
@@ -99,7 +99,7 @@ for fold in folds {
 // [0, 4, 1, 3] [2, 5]   — and the last two
 ```
 
-The method returns `k` named tuples of `(train: [Int], validation: [Int])` — sample positions, not sliced data. Across the three folds every position from `0` to `5` lands in `validation` exactly once. The same indices subscript any parallel array, so a feature matrix and its target array stay aligned through the loop: fit a model on `fold.train`, score it on `fold.validation`, and average the scores.
+The method returns `k` named tuples of `(train: [Int], validation: [Int])`: sample positions, not sliced data. Across the three folds every position from `0` to `5` lands in `validation` exactly once. The same indices subscript any parallel array, so a feature matrix and its target array stay aligned through the loop: fit a model on `fold.train`, score it on `fold.validation`, and average the scores.
 
 The fold models are scaffolding, not the deliverable. Once the averaged scores name the best configuration, we discard the `k` fold models and retrain that single choice on the entire dataset, and that one model is what we deploy.
 
@@ -107,7 +107,7 @@ Cross-validation and the two-way split solve different halves of the same proble
 
 ### Why folds return indices
 
-`kFoldIndices` hands back index lists rather than ready-made train and validation arrays, and the choice is deliberate. The caller drives the fitting loop and applies the same fold indices to every parallel array — features and targets alike — which keeps the rows aligned across all of them. The same discipline also keeps the validation rows genuinely unseen. When a scaler is fit on the training indices alone and only then applied to the validation indices, no information leaks backward from the data the model is about to be scored on. Ready-sliced arrays would invite the shortcut of scaling the whole dataset once before the loop, which quietly folds validation statistics into the fit and inflates every score that follows.
+`kFoldIndices` hands back index lists rather than ready-made train and validation arrays, and the choice is deliberate. The caller drives the fitting loop and applies the same fold indices to every parallel array, features and targets alike, which keeps the rows aligned across all of them. The same discipline also keeps the validation rows genuinely unseen. When a scaler is fit on the training indices alone and only then applied to the validation indices, no information leaks backward from the data the model is about to be scored on. Ready-sliced arrays would invite the shortcut of scaling the whole dataset once before the loop, which quietly folds validation statistics into the fit and inflates every score that follows.
 
 ### Stratified splitting
 
@@ -146,7 +146,7 @@ let (trainLabels, testLabels) = labels.trainTestSplit(testRatio: 0.25, seed: 42)
 
 ### Detecting class imbalance
 
-Before training, `imbalanceRatio` measures how skewed the class distribution is. A ratio of 1.0 means all classes have the same number of samples. Higher values indicate greater imbalance — a ratio of 4.0 means the largest class has four times as many samples as the smallest:
+Before training, `imbalanceRatio` measures how skewed the class distribution is. A ratio of 1.0 means all classes have the same number of samples. Higher values indicate greater imbalance. A ratio of 4.0 means the largest class has four times as many samples as the smallest:
 
 ```swift
 import Quiver

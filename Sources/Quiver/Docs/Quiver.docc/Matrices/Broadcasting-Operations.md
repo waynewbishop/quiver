@@ -111,7 +111,7 @@ The operator syntax is recommended for new code as it improves readability. The 
 
 ### Array-to-array operations
 
-Operators (`+`, `-`, `*`, `/`) cover the scalar-on-array case. Element-wise operations between two arrays of the same shape use named methods instead — `add`, `subtract`, `multiply`, and `divide`:
+Operators (`+`, `-`, `*`, `/`) cover the scalar-on-array case. Element-wise operations between two arrays of the same shape use named methods instead: `add`, `subtract`, `multiply`, and `divide`.
 
 ```swift
 let a = [1.0, 2.0, 3.0]

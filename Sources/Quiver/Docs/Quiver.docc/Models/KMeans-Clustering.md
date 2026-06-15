@@ -6,7 +6,7 @@ Partition data into clusters by iteratively refining centroid positions.
 
 K-Means is the most widely used clustering algorithm. Given a set of data points, it groups them into `k` clusters where each point belongs to the cluster with the nearest centroid.
 
-> Important: K-Means is **unsupervised** — it works with data that has no labels. Unlike classifiers like `KNearestNeighbors` and `GaussianNaiveBayes` that learn from labeled examples, K-Means discovers structure on its own by measuring distances between points. This makes it useful for exploring data where the groupings are not known in advance.
+> Important: K-Means is **unsupervised**: it works with data that has no labels. Unlike classifiers like `KNearestNeighbors` and `GaussianNaiveBayes` that learn from labeled examples, K-Means discovers structure on its own by measuring distances between points. This makes it useful for exploring data where the groupings are not known in advance.
 
 ### How it works
 
@@ -14,15 +14,15 @@ The algorithm starts by placing `k` centroids at random positions, then repeats 
 
 ![Scatter plot of points grouped into colored clusters with each cluster's centroid marked](diagram-kmeans)
 
-Because initial centroid positions are random, different starting positions can produce different clusterings — the `seed` parameter ensures reproducible results. The `bestFit` method runs multiple initializations automatically and returns the model with the lowest inertia, avoiding poor outcomes caused by unlucky starting positions.
+Because initial centroid positions are random, different starting positions can produce different clusterings. The `seed` parameter ensures reproducible results. The `bestFit` method runs multiple initializations automatically and returns the model with the lowest inertia, avoiding poor outcomes caused by unlucky starting positions.
 
-> Note: A **centroid** is simply the average position of a group of points. If three customers have spending scores of [10, 20, 30] and incomes of [40, 50, 60], their centroid is [20, 50] — the mean of each column. K-Means uses centroids to represent the "center" of each cluster.
+> Note: A **centroid** is simply the average position of a group of points. If three customers have spending scores of [10, 20, 30] and incomes of [40, 50, 60], their centroid is [20, 50], the mean of each column. K-Means uses centroids to represent the "center" of each cluster.
 
 ### The distance connection
 
-At its core, K-Means relies on Euclidean distance — the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². Assignment compares squared distances, since the squares preserve the same ordering as the distances themselves and the lowest one wins. The same measure powers nearest-neighbor search in `KNearestNeighbors` and similarity operations in <doc:Similarity-Operations>.
+At its core, K-Means relies on Euclidean distance: the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². Assignment compares squared distances, since the squares preserve the same ordering as the distances themselves and the lowest one wins. The same measure powers nearest-neighbor search in `KNearestNeighbors` and similarity operations in <doc:Similarity-Operations>.
 
-> Note: Distance builds on vector subtraction — each (aᵢ − bᵢ) term is one element of the difference vector. For a deeper look at how vector arithmetic works geometrically, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
+> Note: Distance builds on vector subtraction, where each (aᵢ − bᵢ) term is one element of the difference vector. For a deeper look at how vector arithmetic works geometrically, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
 
 ### Fitting a model
 
@@ -43,9 +43,9 @@ print(model)           // KMeans: 2 clusters, 6 points, converged in N iteration
 print(model.labels)    // [0, 0, 0, 1, 1, 1] — individual properties still accessible
 ```
 
-> Experiment: **The Quiver Notebook** is the right surface for sweeping the cluster count. Re-fit the snippet with k from 2 to 6, then change the seed and re-run — when the cluster assignments shift between seeds, the data does not yet have k natural groups. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right surface for sweeping the cluster count. Re-fit the snippet with k from 2 to 6, then change the seed and re-run. When the cluster assignments shift between seeds, the data does not yet have k natural groups. See <doc:Quiver-Notebook>.
 
-Because centroids start at random positions, a single run can converge on a poor clustering — two groups split left-right instead of top-bottom, for example. The `bestFit` method solves this by running the algorithm multiple times, each with a different seed, and returning the model with the lowest inertia:
+Because centroids start at random positions, a single run can converge on a poor clustering, splitting two groups left-right instead of top-bottom, for example. The `bestFit` method solves this by running the algorithm multiple times, each with a different seed, and returning the model with the lowest inertia:
 
 ```swift
 import Quiver
@@ -107,9 +107,9 @@ let assignments = model.predict(newPoints)
 
 ### Choosing k
 
-The parameter `k` determines how many clusters the algorithm creates. Each cluster is defined by a centroid — a point in vector space that represents the center of the group. Every data point is assigned to the cluster whose centroid is closest. Choosing too few clusters forces dissimilar points together; choosing too many splits natural groups apart.
+The parameter `k` determines how many clusters the algorithm creates. Each cluster is defined by a centroid, a point in vector space that represents the center of the group. Every data point is assigned to the cluster whose centroid is closest. Choosing too few clusters forces dissimilar points together; choosing too many splits natural groups apart.
 
-The right number of clusters depends on the data. A common approach is the **elbow method** — fit models across a range of `k` and compare inertia. The `elbowMethod(data:kRange:maxIterations:seed:)` static method runs this sweep and returns a `(k, inertia)` tuple for each value, so there is no need to write the loop by hand. The "elbow" where inertia stops decreasing sharply suggests a good `k`:
+The right number of clusters depends on the data. A common approach is the **elbow method**: fit models across a range of `k` and compare inertia. The `elbowMethod(data:kRange:maxIterations:seed:)` static method runs this sweep and returns a `(k, inertia)` tuple for each value, so there is no need to write the loop by hand. The "elbow" where inertia stops decreasing sharply suggests a good `k`:
 
 ```swift
 import Quiver
@@ -132,7 +132,7 @@ for result in results {
 // k=5: inertia=0.25
 ```
 
-The three natural groups in this data produce a sharp drop from `k=2` to `k=3`, then only marginal gains after. Because centroid initialization is random, an unlucky `seed` can settle into a poor clustering at a given `k` and inflate its inertia — `bestFit(data:k:maxIterations:attempts:)` guards against that by running several initializations and keeping the tightest result. Inertia, the elbow, and `clusterCohesion()` are the geometric tools for verifying a clustering when there are no coefficients to read; see <doc:Model-Interpretation-Primer> for the full non-parametric audit.
+The three natural groups in this data produce a sharp drop from `k=2` to `k=3`, then only marginal gains after. Because centroid initialization is random, an unlucky `seed` can settle into a poor clustering at a given `k` and inflate its inertia. The `bestFit(data:k:maxIterations:attempts:)` method guards against that by running several initializations and keeping the tightest result. Inertia, the elbow, and `clusterCohesion()` are the geometric tools for verifying a clustering when there are no coefficients to read; see <doc:Model-Interpretation-Primer> for the full non-parametric audit.
 
 ### The full pipeline
 
@@ -186,7 +186,7 @@ The `Panel` type is entirely optional. The clustering algorithm accepts arrays d
 
 K-Means works best when clusters are roughly spherical and similarly sized, the number of clusters is known or can be estimated, and features are continuous and scaled to similar ranges. The `StandardScaler` type is the recommended choice for distance-based algorithms because it centers each feature at zero with unit variance, preventing high-magnitude features from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred. K-Means is a natural fit for customer segmentation, anomaly detection, and exploring structure in unlabeled data.
 
-K-Means struggles with non-spherical cluster shapes (elongated, curved, or nested), clusters of very different sizes or densities, and categorical data. The algorithm also cannot determine the "right" `k` automatically — the elbow method helps, but the final choice requires domain knowledge. Note that K-Means assigns every point to a cluster — there are no unassigned outliers, so unusual data points will be forced into the nearest group.
+K-Means struggles with non-spherical cluster shapes (elongated, curved, or nested), clusters of very different sizes or densities, and categorical data. The algorithm also cannot determine the "right" `k` automatically — the elbow method helps, but the final choice requires domain knowledge. Note that K-Means assigns every point to a cluster: there are no unassigned outliers, so unusual data points will be forced into the nearest group.
 
 ### Safe by design
 

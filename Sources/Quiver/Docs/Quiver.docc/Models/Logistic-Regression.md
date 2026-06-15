@@ -10,7 +10,7 @@ Despite the name, logistic regression is a **classification** model. The "regres
 
 ### How it works
 
-We compute the linear score `Xθ`—a weighted sum of features—and pass it through the **sigmoid** function σ, which maps any real number into the open interval (0, 1). A large positive score yields a probability near 1, a large negative score near 0, and a score of exactly 0 yields 0.5, our decision boundary. The `sigmoid` function is covered on its own in <doc:Activation-Functions>.
+We compute the linear score `Xθ`, a weighted sum of features, and pass it through the **sigmoid** function σ, which maps any real number into the open interval (0, 1). A large positive score yields a probability near 1, a large negative score near 0, and a score of exactly 0 yields 0.5, our decision boundary. The `sigmoid` function is covered on its own in <doc:Activation-Functions>.
 
 Fitting follows the same gradient descent loop as our other models: start from θ = 0 and step opposite the gradient of our objective. Here, our objective is **cross-entropy** (log loss). The gradient $\nabla L = (1/n)X^T(\sigma(X\theta) - y)$ shares the same shape as least squares, but uses the sigmoid-transformed residual. Cross-entropy is naturally convex for this model, ensuring our descent leads us to a single global minimum. The <doc:Optimization-Primer> covers why one descent algorithm serves several models at once.
 
@@ -20,7 +20,7 @@ The `fit(features:labels:)` method learns the coefficient vector from training d
 
 > Note: We predict discrete categories, so labels are `[Int]`, and we only support binary values `0` and `1`. Multinomial classification is out of scope here. See <doc:Machine-Learning-Primer> for the distinction between classification and regression.
 
-Because we train iteratively, we are sensitive to feature scale. The default `learningRate` of `0.01` assumes features with unit variance—standardize first with `StandardScaler`, or the default rate may struggle. On smaller, well-scaled datasets, a faster rate often reaches the minimum in fewer iterations.
+Because we train iteratively, we are sensitive to feature scale. The default `learningRate` of `0.01` assumes features with unit variance, so standardize first with `StandardScaler`, or the default rate may struggle. On smaller, well-scaled datasets, a faster rate often reaches the minimum in fewer iterations.
 
 ```swift
 import Quiver
@@ -42,7 +42,7 @@ print(model)
 // LogisticRegression: 1 feature, converged in 48 iterations (loss: 0.6284)
 ```
 
-The printed summary reports whether the run converged or hit the iteration cap, alongside the final loss — the same one-line observability that <doc:Gradient-Descent> provides.
+The printed summary reports whether the run converged or hit the iteration cap, alongside the final loss: the same one-line observability that <doc:Gradient-Descent> provides.
 
 ### Making predictions
 
@@ -79,7 +79,7 @@ for probability in probs {
 // flagged is [0, 0]
 ```
 
-To inspect the model in log-odds space—for plotting boundaries, margin analysis, or custom thresholding—`decisionFunction(_:)` returns the raw score `Xθ` before the sigmoid. Zero is the boundary, positive favors class 1, and negative favors class 0:
+To inspect the model in log-odds space (for plotting boundaries, margin analysis, or custom thresholding), `decisionFunction(_:)` returns the raw score `Xθ` before the sigmoid. Zero is the boundary, positive favors class 1, and negative favors class 0:
 
 ```swift
 import Quiver
@@ -90,7 +90,7 @@ let scores = model.decisionFunction(query)
 
 The label, probability, and log-odds are three views of the same quantity: `predict` is the sign of `decisionFunction`, and `predictProbabilities` is its sigmoid. On a single-feature model, `predict` and `decisionFunction` also accept a bare value; `predictProbabilities` takes the array form, so wrap a lone query in a row to read its probability.
 
-> Experiment: **The Quiver Notebook** is the right place to watch the sigmoid turn a line into a probability. Fit a one-feature model, sweep the input across its range, and print `decisionFunction` next to `predictProbabilities` — watching the unbounded log-odds compress into (0, 1) makes the squashing concrete. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to watch the sigmoid turn a line into a probability. Fit a one-feature model, sweep the input across its range, and print `decisionFunction` next to `predictProbabilities`: watching the unbounded log-odds compress into (0, 1) makes the squashing concrete. See <doc:Quiver-Notebook>.
 
 ### Standardize features
 
@@ -159,7 +159,7 @@ Each `Classification` result conforms to `Sequence`, so iterating a group yields
 
 ### Watching the descent
 
-Like <doc:Gradient-Descent>, a fitted model carries the full loss trajectory and an outcome flag, making convergence observable rather than assumed. The `lossHistory` array begins with the cross-entropy at θ = 0—exactly log 2, as every sample starts at probability 0.5—and ends at `finalLoss`. The `outcome` flag distinguishes a converged run from one that hit the iteration cap.
+Like <doc:Gradient-Descent>, a fitted model carries the full loss trajectory and an outcome flag, making convergence observable rather than assumed. The `lossHistory` array begins with the cross-entropy at θ = 0 (exactly log 2, as every sample starts at probability 0.5) and ends at `finalLoss`. The `outcome` flag distinguishes a converged run from one that hit the iteration cap.
 
 The trajectory shape is our diagnostic. A healthy run falls steeply at first and then flattens near the minimum; a trajectory that rises signals a learning rate too large for the data, while one that barely moves signals a rate too small. Reading the curve tells us more than the final number alone.
 

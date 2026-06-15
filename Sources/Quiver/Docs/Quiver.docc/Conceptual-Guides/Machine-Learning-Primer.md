@@ -20,7 +20,7 @@ let data = Panel([
 ])
 ```
 
-`creditScore` and `balance` are features—input information—and `approved` is the label—the target outcome. The model infers the answer from the features alone; the label is hidden at prediction time.
+`creditScore` and `balance` are features (input information), and `approved` is the label, the target outcome. The model infers the answer from the features alone; the label is hidden at prediction time.
 
 ### Training and test data
 
@@ -59,7 +59,7 @@ let (trainX, testX, trainY, testY) = features.stratifiedSplit(
 
 ### Data leakage
 
-**Data leakage** occurs when test set information influences the training process. The most common form is fitting a preprocessor—like a scaler—on the entire dataset before splitting. If the scaler learns the minimum and maximum from all rows, including the test rows, the training process indirectly "sees" the test data, making evaluation results overly optimistic.
+**Data leakage** occurs when test set information influences the training process. The most common form is fitting a preprocessor, such as a scaler, on the entire dataset before splitting. If the scaler learns the minimum and maximum from all rows, including the test rows, the training process indirectly "sees" the test data, making evaluation results overly optimistic.
 
 Fit on training data only, then transform both sets using the same statistics:
 
@@ -72,7 +72,7 @@ let scaledTrain = scaler.transform(trainFeatures)
 let scaledTest = scaler.transform(scaledTestFeatures)
 ```
 
-This pattern—fit once on training data, apply everywhere—prevents leakage and ensures honest evaluation. The Pipeline type enforces this automatically by bundling the scaler and model, so raw inputs are scaled internally and the forgotten-scaling mistake becomes impossible.
+This pattern (fit once on training data, apply everywhere) prevents leakage and ensures honest evaluation. The Pipeline type enforces this automatically by bundling the scaler and model, so raw inputs are scaled internally and the forgotten-scaling mistake becomes impossible.
 
 ### Feature engineering and scaling
 
@@ -90,7 +90,7 @@ let scaler = StandardScaler.fit(features: trainFeatures)
 let scaled = scaler.transform(trainFeatures)
 ```
 
-`StandardScaler` centers each column at zero with unit variance, a robust default. When features require a bounded range, `FeatureScaler` maps each column to a 0–1 interval instead.
+`StandardScaler` centers each column at zero with unit variance, a sensible default. When features require a bounded range, `FeatureScaler` maps each column to a 0–1 interval instead.
 
 ### Overfitting and underfitting
 
@@ -99,7 +99,7 @@ A model fails in two ways:
 - **Overfitting**: The model memorizes training noise and quirks instead of the underlying pattern. It performs well on training data but poorly on unseen data.
 - **Underfitting**: The model is too simple to capture the pattern. It performs poorly on both training and test data, often due to missing features or a lack of representational capacity.
 
-These represent the **bias-variance tradeoff**—underfitting is high bias (model is too rigid), and overfitting is high variance (model follows noise). The goal is generalization. Splitting data and comparing training and test scores is the primary tool for detecting these failures.
+These represent the **bias-variance tradeoff**: underfitting is high bias (model is too rigid), and overfitting is high variance (model follows noise). The goal is generalization. Splitting data and comparing training and test scores is the primary tool for detecting these failures.
 
 ### Fitting remedies
 

@@ -8,17 +8,17 @@ Measuring exercise effort is complex because our bodies produce multiple signals
 
 A **True Effort Score** (TES) keeps all six dimensions of a run in play. We look at heart rate, pace, cadence, grade, altitude, and vertical oscillation together to form a complete picture of what the body is doing in each moment. A heart rate might be high because of heat or a steep climb; by looking at all signals at once, we can tell these cases apart.
 
-> Note: The [quiver-demo-watchos](https://github.com/waynewbishop/quiver-demo-watchos) is the reference implementation of this article — the Ridge baseline, the `ResidualModel` wrapper, the k-nearest-neighbors classifier, and the session accumulator assembled into a working watchOS app.
+> Note: The [quiver-demo-watchos](https://github.com/waynewbishop/quiver-demo-watchos) is the reference implementation of this article: the Ridge baseline, the `ResidualModel` wrapper, the k-nearest-neighbors classifier, and the session accumulator assembled into a working watchOS app.
 
 ## Reading the full signal
 
-We treat heart rate as a reaction to work rather than a measure of it. We use other signals to predict what the heart rate should be in any given moment. The gap between our prediction and the real heart rate — a diagnostic tool we call a **residual** — measures how far the heart rate has drifted from what the workload explains.
+We treat heart rate as a reaction to work rather than a measure of it. We use other signals to predict what the heart rate should be in any given moment. The gap between our prediction and the real heart rate, a diagnostic tool we call a **residual**, measures how far the heart rate has drifted from what the workload explains.
 
 In exercise science, this drift is called **cardiac decoupling**. It happens when heart rate and workload stop moving together. For instance, heart rate might climb while pace holds steady. A single-signal score cannot see this divergence, but our model reads heart rate in context and decides when to trust the signal and when to look at the other data instead.
 
 ### The models that do the work
 
-Four Quiver types do the work, each with a distinct job. A ``StandardScaler`` puts the signals on a common scale so no single dimension dominates due to its raw units. A ``Ridge`` regression acts as our baseline: it predicts expected heart rate from workload signals — pace, cadence, grade, vertical oscillation, and altitude. A ``ResidualModel`` wraps that fitted baseline and reports the gap against the observed heart rate — the part a single-signal reading misses. A ``KNearestNeighbors`` classifier labels the moment based on its resemblance to past efforts, catching abrupt cases the residual cannot, such as a descent where heart rate stays high while work falls away. The label is what the score accumulates, while the residual provides the context to decide whether to trust the heart rate. The classifier rides inside a ``Pipeline`` with its own scaler, so the two are always applied together.
+Four Quiver types do the work, each with a distinct job. A ``StandardScaler`` puts the signals on a common scale so no single dimension dominates due to its raw units. A ``Ridge`` regression acts as our baseline: it predicts expected heart rate from workload signals: pace, cadence, grade, vertical oscillation, and altitude. A ``ResidualModel`` wraps that fitted baseline and reports the gap against the observed heart rate, the part a single-signal reading misses. A ``KNearestNeighbors`` classifier labels the moment based on its resemblance to past efforts, catching abrupt cases the residual cannot, such as a descent where heart rate stays high while work falls away. The label is what the score accumulates, while the residual provides the context to decide whether to trust the heart rate. The classifier rides inside a ``Pipeline`` with its own scaler, so the two are always applied together.
 
 Throughout, the signals stay together. Each moment remains a single vector, flowing through scaling, regression, and classification without being flattened to a single number first. This "full-signal principle" is what the whole approach rests on. We assemble the effort model from these Quiver types, just as we assemble a search pipeline from smaller parts using <doc:Semantic-Search>.
 
@@ -34,21 +34,21 @@ This problem does not require extreme terrain. At a steady, conversational pace 
 
 ### The same number, different efforts
 
-The thread through all these examples is that the same heart rate means different things depending on what the rest of the body is doing. A `160` plunging downhill, a `160` grinding uphill, and a `160` drifting upward on a hot flat road are three different efforts. The information that separates them does not live in the heart rate — it lives in the pace, the cadence, and the grade alongside it. Training-load scores that collapse a workout down to one signal cannot distinguish these moments. We keep the signals together and read heart rate in their context — asking not "how high is the heart rate" but "how high is it, given everything else the body is doing right now?"
+The thread through all these examples is that the same heart rate means different things depending on what the rest of the body is doing. A `160` plunging downhill, a `160` grinding uphill, and a `160` drifting upward on a hot flat road are three different efforts. The information that separates them does not live in the heart rate: it lives in the pace, the cadence, and the grade alongside it. Training-load scores that collapse a workout down to one signal cannot distinguish these moments. We keep the signals together and read heart rate in their context — asking not "how high is the heart rate" but "how high is it, given everything else the body is doing right now?"
 
 ## Keeping every dimension
 
-A wrist sensor produces far more than a heart rate. Each instant of a run is a six-signal snapshot — a point in six-dimensional space describing what the body is doing. Reducing that point to one number projects it onto a single axis and discards the other dimensions. Two efforts that coincide on the heart-rate axis can sit far apart in the full space; our model keeps all six dimensions to separate them.
+A wrist sensor produces far more than a heart rate. Each instant of a run is a six-signal snapshot: a point in six-dimensional space describing what the body is doing. Reducing that point to one number projects it onto a single axis and discards the other dimensions. Two efforts that coincide on the heart-rate axis can sit far apart in the full space; our model keeps all six dimensions to separate them.
 
-Quiver treats each moment as a complete vector — a plain `[Double]` of every signal at once — and the same array flows through scaling, regression, and classification. Working in the full space allows us to hold a fast descent and a threshold effort apart instead of scoring them alike. While the model may not use every signal in every component, the starting point is always the full vector.
+Quiver treats each moment as a complete vector (a plain `[Double]` of every signal at once), and the same array flows through scaling, regression, and classification. Working in the full space allows us to hold a fast descent and a threshold effort apart instead of scoring them alike. While the model may not use every signal in every component, the starting point is always the full vector.
 
 ## Sorting what misleads the reading
 
 We design the model based on a single organizing idea: categorize every misleading effect by which signal it distorts and in which direction, then hand each kind to the component best equipped to handle it.
 
-- **Inflating and smooth** — heat, cardiac drift, altitude. Heart rate reads higher than the workload warrants, gradually. The regression residual owns these.
-- **Masking and discontinuous** — a downhill, a sudden change of footing. Heart rate or pace under-reads the moment abruptly. The **classifier** owns these, because the moment resembles past moments of the same kind regardless of heart rate.
-- **Session-level** — intervals, total duration, abrupt transitions. These are properties of the whole sequence, not of any one sample. An **accumulator** owns these at the end of the session.
+- **Inflating and smooth:** heat, cardiac drift, altitude. Heart rate reads higher than the workload warrants, gradually. The regression residual owns these.
+- **Masking and discontinuous:** a downhill, a sudden change of footing. Heart rate or pace under-reads the moment abruptly. The **classifier** owns these, because the moment resembles past moments of the same kind regardless of heart rate.
+- **Session-level:** intervals, total duration, abrupt transitions. These are properties of the whole sequence, not of any one sample. An **accumulator** owns these at the end of the session.
 
 Each component catches a type of distortion the others are blind to. This is why an honest effort model needs both a regression and a classifier.
 
@@ -56,7 +56,7 @@ Each component catches a type of distortion the others are blind to. This is why
 
 The baseline is a **multiple linear regression**: it predicts expected heart rate as an intercept plus one weighted term per standardized signal. Each signal contributes linearly, using workload predictors: pace, cadence, grade, vertical oscillation, and altitude. We treat these as plain `[Double]` columns.
 
-We fit it with ``Ridge`` rather than ``LinearRegression`` because the signals overlap — pace and grade, in particular, carry some of the same information — making a plain least-squares fit numerically unstable. Ridge's L2 penalty steadies the fit by gently shrinking the coefficients toward zero, trading a little bias for a large drop in variance. See <doc:Regularization-Primer> for why the penalty works this way, and <doc:Ridge-Regression> for the model itself.
+We fit it with ``Ridge`` rather than ``LinearRegression`` because the signals overlap (pace and grade, in particular, carry some of the same information), making a plain least-squares fit numerically unstable. Ridge's L2 penalty steadies the fit by gently shrinking the coefficients toward zero, trading a little bias for a large drop in variance. See <doc:Regularization-Primer> for why the penalty works this way, and <doc:Ridge-Regression> for the model itself.
 
 ```swift
 import Quiver
@@ -77,7 +77,7 @@ let baseline = try Ridge.fit(
     features: scaler.transform(workload), targets: heartRates, lambda: 1.0)
 ```
 
-> Note: The intercept is never penalized — only the per-signal slopes shrink. The intercept carries the runner's resting baseline, which should not be pulled toward zero.
+> Note: The intercept is never penalized; only the per-signal slopes shrink. The intercept carries the runner's resting baseline, which should not be pulled toward zero.
 
 ### Choosing the penalty strength
 
@@ -87,7 +87,7 @@ The `lambda` of `1.0` above is a starting point. If the penalty is too small, ov
 
 We must transform the features with a ``StandardScaler`` before training. The signals live on wildly different scales: cadence near `170`, grade roughly between `−3` and `+4`, and altitude in the hundreds of meters. Ridge compares coefficient magnitudes, so standardizing puts every signal in the same z-score units to apply `lambda` fairly. See <doc:Feature-Scaling> for the transform itself.
 
-We fit the scaler once on the training data and store it. At prediction time, we transform each live sample with that same stored scaler — never re-fit it. Re-fitting on new data would compute new means and standard deviations, silently shifting features out from under the trained coefficients.
+We fit the scaler once on the training data and store it. At prediction time, we transform each live sample with that same stored scaler, and never re-fit it. Re-fitting on new data would compute new means and standard deviations, silently shifting features out from under the trained coefficients.
 
 ```swift
 import Quiver
@@ -112,13 +112,13 @@ let residual = residualModel.residual(features: scaled, observed: 162.0)
 // 9.1 — observed 162 against the 152.9 the workload predicts
 ```
 
-That `9.1` beats per minute is heart rate not explained by the external workload — a signature of an inflating effect such as heat or drift. The sign carries meaning: a residual of `−7` would mean the heart is running cooler than the workload predicts — a structural blind spot in regression, representing a high-speed, low-demand coasting phase.
+That `9.1` beats per minute is heart rate not explained by the external workload: a signature of an inflating effect such as heat or drift. The sign carries meaning: a residual of `−7` would mean the heart is running cooler than the workload predicts, a structural blind spot in regression representing a high-speed, low-demand coasting phase.
 
-The residual detects decoupling; it does not diagnose the cause. A large positive residual is consistent with heat, altitude, dehydration, or fatigue, but the model cannot separate them — it has heart rate and workload, not a thermometer.
+The residual detects decoupling; it does not diagnose the cause. A large positive residual is consistent with heat, altitude, dehydration, or fatigue, but the model cannot separate them: it has heart rate and workload, not a thermometer.
 
 ## Classifying the moment
 
-The residual is blind to masking effects, so we use a ``KNearestNeighbors`` classifier to label each moment as Easy, Steady, Tempo, or Hard based on its resemblance to past efforts. A downhill sample — high heart rate, fast pace, negative grade — lands near other downhill samples and is labeled Easy, regardless of the heart rate. The classifier doesn't need to reason about terrain; it just needs past examples.
+The residual is blind to masking effects, so we use a ``KNearestNeighbors`` classifier to label each moment as Easy, Steady, Tempo, or Hard based on its resemblance to past efforts. A downhill sample (high heart rate, fast pace, negative grade) lands near other downhill samples and is labeled Easy, regardless of the heart rate. The classifier doesn't need to reason about terrain; it just needs past examples.
 
 We bundle the classifier with its own scaler in a ``Pipeline`` to ensure they are always applied together. See <doc:Nearest-Neighbors-Classification> for the classifier and <doc:Pipeline> for why the bundle matters.
 
@@ -143,7 +143,7 @@ The downhill row earns the classifier its place: it sits at the same heart rate 
 
 A personal model is only as good as the history behind it. A new watch provides provisional numbers that earn trust as the watch learns from the runner's sessions. We view this in three phases:
 
-1.  **Cold start:** With no personal data, the classifier trains on ground-truth examples — steep downhills at high heart rate are Easy, fast flat stretches are Hard — providing a usable score immediately. The baseline starts from population-level expectations.
+1.  **Cold start:** With no personal data, the classifier trains on ground-truth examples (steep downhills at high heart rate are Easy, fast flat stretches are Hard), providing a usable score immediately. The baseline starts from population-level expectations.
 2.  **Personalizing:** As the runner logs sessions and corrects effort labels, the baseline refits on their specific data, and the classifier retrains. The model drifts toward the runner's resting baseline and pace-to-effort mapping.
 3.  **Established:** After enough history, residuals center near zero on unseen sessions, and labels match reported feelings. This trust is built gradually, just as a new watch requires a few weeks for long-term metrics to settle.
 
@@ -158,27 +158,27 @@ baseline.coefficients.asExpression(form: .inline)
 
 These weights are in standardized units: each is the change in expected heart rate per one standard deviation of its signal, so they are directly comparable. A weight near zero can mean the signal carries little information or that the signal barely varied in the training data (e.g., constant altitude). See <doc:Model-Interpretation-Primer> for reading fitted coefficients.
 
-Reading the comparison as a ranking matters here because signals often overlap. A weight is evidence about a signal's role rather than a final measure of its importance. While the penalty keeps the fit stable, it does not cleanly separate collinear signals — their individual weights should be read together. A high `conditionNumber` for the standardized feature matrix indicates how much caution to apply. See <doc:Model-Interpretation-Primer> for the full diagnosis.
+Reading the comparison as a ranking matters here because signals often overlap. A weight is evidence about a signal's role rather than a final measure of its importance. While the penalty keeps the fit stable, it does not cleanly separate collinear signals: their individual weights should be read together. A high `conditionNumber` for the standardized feature matrix indicates how much caution to apply. See <doc:Model-Interpretation-Primer> for the full diagnosis.
 
 ## From a moment to a session
 
 The per-sample models classify each instant. We fold in session-level effects at the end: a variance term for interval oscillation, a duration term for fatigue past forty-five minutes, and a transition term for neuromuscular costs of abrupt changes. The duration term is deliberately weak and capped, so a short, sharp session is not under-credited.
 
-Including absolute altitude as a baseline signal helps the model learn that, for an acclimatized runner, a given workload costs slightly more beats per minute up high — so the expected heart rate shifts up and the residual stays honest. This calibrates for a runner's habitual environment, not for sea-level runners arriving at altitude.
+Including absolute altitude as a baseline signal helps the model learn that, for an acclimatized runner, a given workload costs slightly more beats per minute up high, so the expected heart rate shifts up and the residual stays honest. This calibrates for a runner's habitual environment, not for sea-level runners arriving at altitude.
 
 ## The score and what it measures
 
-Everything contributes to one number: the **True Effort Score**, our measure of a session's cost. The accumulator turns labeled moments into this score, anchored so that **one hour held at threshold effort scores about 100**. Threshold — the steady-hard pace a runner could hold for roughly an hour — is a real, repeatable anchor rather than an abstract maximum.
+Everything contributes to one number: the **True Effort Score**, our measure of a session's cost. The accumulator turns labeled moments into this score, anchored so that **one hour held at threshold effort scores about 100**. Threshold, the steady-hard pace a runner could hold for roughly an hour, is a real, repeatable anchor rather than an abstract maximum.
 
 This anchor makes the number meaningful. An hour entirely at an easy jog lands near `33`, an hour at hard effort lands near `133`, and a mixed session falls between. The score climbs with both intensity and time; it has no ceiling, so it correctly differentiates between long and short efforts at the same intensity.
 
 ### How a moment becomes load
 
-The path from sensor sample to final score is a short pipeline. For each sample, the classifier returns an effort level — Easy, Steady, Tempo, or Hard — carrying a fixed weight (`0.25`, `0.50`, `0.75`, `1.00`). The moment's contribution to the load is that weight times the sample duration. We sum these contributions and express the total against the reference of one hour at threshold (Tempo, `0.75`).
+The path from sensor sample to final score is a short pipeline. For each sample, the classifier returns an effort level (Easy, Steady, Tempo, or Hard) carrying a fixed weight (`0.25`, `0.50`, `0.75`, `1.00`). The moment's contribution to the load is that weight times the sample duration. We sum these contributions and express the total against the reference of one hour at threshold (Tempo, `0.75`).
 
-Three session-level terms — **variance**, **duration**, and **transition** — are then folded onto that base. The base carries the session's intensity and time; these terms carry the structure those two numbers alone cannot see.
+Three session-level terms (**variance**, **duration**, and **transition**) are then folded onto that base. The base carries the session's intensity and time; these terms carry the structure those two numbers alone cannot see.
 
-Here `TrueEffortScore` is the type we are building in our own app, not a Quiver type. It wraps the Quiver models shown above — a Ridge baseline and a k-nearest-neighbors classifier — behind a single `score(for:)` call:
+Here `TrueEffortScore` is the type we are building in our own app, not a Quiver type. It wraps the Quiver models shown above (a Ridge baseline and a k-nearest-neighbors classifier) behind a single `score(for:)` call:
 
 ```swift
 // Fit from the runner's labeled history, then score a run against it.
@@ -212,6 +212,6 @@ Two readouts confirm trust: residuals on held-out runs should center near zero w
 
 ## Where to go from here
 
-This model combines simple, interpretable components rather than a single complex algorithm: regression carries the baseline, classification carries the context-specific patterns, and the full signal vector flows through the pipeline without being reduced to a scalar that loses its context. Personalization is calibration, not a separate model — the same baseline starts from population-level anchors and centers its residuals around zero as it learns one runner's responses to workload and environment. That path, from general baseline to personal calibration, is a design pattern that carries to any model operating on individual data.
+This model combines simple, interpretable components rather than a single complex algorithm: regression carries the baseline, classification carries the context-specific patterns, and the full signal vector flows through the pipeline without being reduced to a scalar that loses its context. Personalization is calibration, not a separate model: the same baseline starts from population-level anchors and centers its residuals around zero as it learns one runner's responses to workload and environment. That path, from general baseline to personal calibration, is a design pattern that carries to any model operating on individual data.
 
-> Experiment: **The Quiver Notebook** is the right place to watch the residual and the score move independently. Fit a ``Ridge`` baseline on a handful of workload samples, wrap it in a ``ResidualModel``, and read the residual as you push one observed heart rate up while holding the workload fixed — the residual climbs while the workload-driven prediction stays put. Then sweep `lambda` and watch the baseline's coefficients shrink without the residual's job changing. Seeing the gap respond to heart rate while the prediction tracks workload is the clearest way to feel why the two readouts measure different things. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to watch the residual and the score move independently. Fit a ``Ridge`` baseline on a handful of workload samples, wrap it in a ``ResidualModel``, and read the residual as we push one observed heart rate up while holding the workload fixed: the residual climbs while the workload-driven prediction stays put. Then sweep `lambda` and watch the baseline's coefficients shrink without the residual's job changing. Seeing the gap respond to heart rate while the prediction tracks workload is the clearest way to feel why the two readouts measure different things. See <doc:Quiver-Notebook>.

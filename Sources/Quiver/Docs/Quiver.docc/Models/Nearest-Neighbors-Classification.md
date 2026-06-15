@@ -4,7 +4,7 @@ Classify samples by finding the closest training examples.
 
 ## Overview
 
-K-Nearest Neighbors is one of the most intuitive classification algorithms. Given a new sample, it finds the `k` closest points in the training data and predicts the most common label among them. Unlike models that compute parameters during fitting, KNN defers all computation to prediction time — making fit instantaneous but prediction proportionally slower as the training set grows. This makes Nearest Neighbors a "lazy learner," in contrast to `GaussianNaiveBayes` and `LinearRegression` that do their heavy work up front.
+K-Nearest Neighbors is one of the most intuitive classification algorithms. Given a new sample, it finds the `k` closest points in the training data and predicts the most common label among them. Unlike models that compute parameters during fitting, KNN defers all computation to prediction time. This makes fit instantaneous but prediction proportionally slower as the training set grows. This makes Nearest Neighbors a "lazy learner," in contrast to `GaussianNaiveBayes` and `LinearRegression` that do their heavy work up front.
 
 ### How it works
 
@@ -14,7 +14,7 @@ For each new sample, the algorithm measures the **distance** from that sample to
 
 ### The distance connection
 
-Nearest Neighbors relies on Euclidean distance — the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². The prediction loop inlines this formula directly rather than building intermediate vectors, keeping each query fast. The same concept powers centroid assignment in `KMeans` and similarity operations in <doc:Similarity-Operations>. Understanding this single linear algebra concept, that vectors are points in space and distance measures how far apart they are, unlocks classification, clustering, and similarity search simultaneously.
+Nearest Neighbors relies on Euclidean distance, the straight-line distance between two points in n-dimensional space, computed as √Σ(aᵢ − bᵢ)². The prediction loop inlines this formula directly rather than building intermediate vectors, keeping each query fast. The same concept powers centroid assignment in `KMeans` and similarity operations in <doc:Similarity-Operations>. Understanding this single linear algebra concept, that vectors are points in space and distance measures how far apart they are, unlocks classification, clustering, and similarity search simultaneously.
 
 > Note: Distance builds on vector subtraction. Each (aᵢ − bᵢ) term is one element of the difference vector. For a deeper look at how vector arithmetic works geometrically, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
 
@@ -53,7 +53,7 @@ let predictions = model.predict(newSamples)
 
 The parameter `k` determines how many training vectors the algorithm consults when classifying a new point. After measuring the distance from the new sample to every training vector, the algorithm selects the `k` closest ones and uses their labels to vote on the prediction. A higher `k` means more vectors influence the decision, while a lower `k` means fewer, potentially just one, determine the outcome.
 
-The value of `k` controls the tradeoff between sensitivity and smoothness. A small `k` (e.g., 1 or 3) is sensitive to local patterns, capturing fine-grained boundaries but may [overfit](<doc:Machine-Learning-Primer>) to noisy data points. A large `k` (e.g., 15 or 21) produces smoother decision boundaries that are more robust to noise but may miss local structure. Choosing an odd value avoids ties in binary classification: with two classes and `k=4`, a 2-2 split requires a tiebreaker, while `k=3` guarantees one class always wins. A common starting point is `k = √n` where `n` is the number of training samples, rounded to the nearest odd number. That heuristic gives a reasonable first guess, but the principled way to choose `k` is cross-validation: try a range of values, measure accuracy on held-out data for each, and keep the `k` that performs best.
+The value of `k` controls the tradeoff between sensitivity and smoothness. A small `k` (e.g., 1 or 3) is sensitive to local patterns, capturing fine-grained boundaries but may [overfit](<doc:Machine-Learning-Primer>) to noisy data points. A large `k` (e.g., 15 or 21) produces smoother decision boundaries that are more resistant to noise but may miss local structure. Choosing an odd value avoids ties in binary classification: with two classes and `k=4`, a 2-2 split requires a tiebreaker, while `k=3` guarantees one class always wins. A common starting point is `k = √n` where `n` is the number of training samples, rounded to the nearest odd number. That heuristic gives a reasonable first guess, but the principled way to choose `k` is cross-validation: try a range of values, measure accuracy on held-out data for each, and keep the `k` that performs best.
 
 ### Distance metrics
 
@@ -187,7 +187,7 @@ The `Panel` type is entirely optional. The classifier accepts arrays directly, a
 
 ### Structured results with classify
 
-The `predict(_:)` method returns raw class labels as `[Int]` — ideal for evaluation metrics like `accuracy` and `classificationReport`. When exploring results interactively, `classify(_:)` groups the inputs by their predicted label, returning `Classification` objects that pair each label with its assigned points:
+The `predict(_:)` method returns raw class labels as `[Int]`, ideal for evaluation metrics like `accuracy` and `classificationReport`. When exploring results interactively, `classify(_:)` groups the inputs by their predicted label, returning `Classification` objects that pair each label with its assigned points:
 
 ```swift
 import Quiver
@@ -201,7 +201,7 @@ for group in results {
 }
 ```
 
-Each `Classification` result conforms to `Sequence` — the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives us its data points directly, just like iterating an `Array`.
+Each `Classification` result conforms to `Sequence`, the same Swift protocol that powers `for-in` loops across the language. Iterating a classification group gives us its data points directly, just like iterating an `Array`.
 
 > Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy`, `classificationReport`, or `confusionMatrix`.
 

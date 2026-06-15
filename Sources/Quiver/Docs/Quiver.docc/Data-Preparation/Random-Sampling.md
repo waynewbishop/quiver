@@ -6,7 +6,7 @@ Drawing reproducible random samples from any array, with or without replacement.
 
 We want to know the average commute in a city, but we cannot stop every commuter and ask. We reach the handful who answer a survey, and from those few responses we estimate a number that describes everyone. This is the core move of applied statistics: a **sample** stands in for a population we cannot measure in full. Quiver provides `sample(_:replace:seed:)` as an extension on `Array`, drawing a random subset of any array so the subset can be inspected, summarized, and reasoned about directly.
 
-A sample drawn **without replacement** takes each element at most once, the way a survey reaches each person a single time. A sample drawn **with replacement** returns each draw before the next, so the same element can be selected more than once — the basis for the resampling techniques that follow later.
+A sample drawn **without replacement** takes each element at most once, the way a survey reaches each person a single time. A sample drawn **with replacement** returns each draw before the next, so the same element can be selected more than once: the basis for the resampling techniques that follow later.
 
 ### Basic usage
 
@@ -23,13 +23,13 @@ let sampled = commuteMinutes.sample(5, replace: false, seed: 7)
 let estimate = sampled.mean()   // 29.0 — one estimate from five responses
 ```
 
-The method returns a plain `[Element]` — `[22.0, 23.0, 32.0, 27.0, 41.0]` for the call above — so every Quiver operation applies to the result without conversion. A `count` of `0` returns an empty array, and an empty source array returns an empty sample.
+The method returns a plain `[Element]` (`[22.0, 23.0, 32.0, 27.0, 41.0]` for the call above), so every Quiver operation applies to the result without conversion. A `count` of `0` returns an empty array, and an empty source array returns an empty sample.
 
 ### Why sample when we have the data
 
-The full array of thirty values is sitting right there, so a fair question arises: why not call `mean()` on all thirty and skip the sampling entirely? In this article the population exists for one reason — it is the answer key. We can only judge whether an estimate from five responses is any good because we happen to know the true average is about `32.17`, and the estimate of `29.0` falls a few minutes short of it.
+The full array of thirty values is sitting right there, so a fair question arises: why not call `mean()` on all thirty and skip the sampling entirely? In this article the population exists for one reason: it is the answer key. We can only judge whether an estimate from five responses is any good because we happen to know the true average is about `32.17`, and the estimate of `29.0` falls a few minutes short of it.
 
-In real work that answer key never exists. A survey reaches the people who reply and no others. Destructive testing consumes every unit it measures. Polling, forecasting, and controlled experiments all produce a sample and nothing more. The sample is the only data we will ever hold, and the rest of this article is about how to reason carefully from it — how far one estimate might land from the truth, and how to make it land closer.
+In real work that answer key never exists. A survey reaches the people who reply and no others. Destructive testing consumes every unit it measures. Polling, forecasting, and controlled experiments all produce a sample and nothing more. The sample is the only data we will ever hold, and the rest of this article is about how to reason carefully from it: how far one estimate might land from the truth, and how to make it land closer.
 
 ### Sampling with replacement
 
@@ -50,7 +50,7 @@ let withReplacement = commuteMinutes.sample(8, replace: true, seed: 7)
 
 ### Reproducible samples with seeds
 
-The `seed` parameter fixes the draw. The same array with the same seed always produces the same sample, which is what makes an experiment re-runnable — running the analysis twice yields identical results rather than a new random subset each time:
+The `seed` parameter fixes the draw. The same array with the same seed always produces the same sample, which is what makes an experiment re-runnable: running the analysis twice yields identical results rather than a new random subset each time:
 
 ```swift
 import Quiver
@@ -120,7 +120,7 @@ n5.mean()   // ≈ 32.31 — close to the true mean of 32.17
 n15.mean()  // ≈ 32.23 — also close, at a larger sample size
 ```
 
-What changes with sample size is not the center but the spread. The standard deviation of the sample means — the standard error — nearly halves as the sample grows from five to fifteen, and it tracks the theoretical `stdev / √n` closely:
+What changes with sample size is not the center but the spread. The standard deviation of the sample means, the standard error, nearly halves as the sample grows from five to fifteen, and it tracks the theoretical `stdev / √n` closely:
 
 ```swift
 n5.standardDeviation()   // ≈ 3.96 — close to 8.83 / √5  ≈ 3.95

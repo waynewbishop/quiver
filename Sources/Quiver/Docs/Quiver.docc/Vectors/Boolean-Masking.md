@@ -4,7 +4,7 @@ Filter and select array elements using comparison operators, logical conditions,
 
 ## Overview
 
-Boolean masking is how Quiver filters data before it reaches a model. Raw datasets contain outliers, missing values, and irrelevant samples that degrade predictions. Quiver's comparison operators produce boolean arrays that act as masks — selecting the elements that meet a condition and discarding the rest. This is the same pattern used by `Panel.filtered(where:)` to clean feature columns before training.
+Boolean masking is how Quiver filters data before it reaches a model. Raw datasets contain outliers, missing values, and irrelevant samples that degrade predictions. Quiver's comparison operators produce boolean arrays that act as masks, selecting the elements that meet a condition and discarding the rest. This is the same pattern used by `Panel.filtered(where:)` to clean feature columns before training.
 
 ### Comparisons
 
@@ -43,7 +43,7 @@ let matches = predicted.isEqual(to: actual)
 
 ### Combining conditions
 
-Boolean arrays support `.and()`, `.or()`, and `.not` for building compound filters. In data preparation, this is how we apply multiple constraints simultaneously — for example, keeping only the samples where features fall within a valid range:
+Boolean arrays support `.and()`, `.or()`, and `.not` for building compound filters. In data preparation, this is how we apply multiple constraints simultaneously, keeping only the samples where features fall within a valid range:
 
 ```swift
 import Quiver
@@ -103,7 +103,7 @@ let flagged = features.maskedWithIndices(by: valid.not)
 
 > Experiment: **The Quiver Notebook** is the right place to see boolean masking as filtering. Change the comparison threshold and re-run — the mask's true count shifts, and the array passed through `masked(by:)` shrinks or grows to match. See <doc:Quiver-Notebook>.
 
-The `maskedWithIndices(by:)` method is useful when we need to know *which* elements matched — for example, annotating outlier points on a chart with their day number or labeling flagged values in a report.
+The `maskedWithIndices(by:)` method is useful when we need to know *which* elements matched: annotating outlier points on a chart with their day number, or labeling flagged values in a report.
 
 This integrates directly with <doc:Panel>. When filtering a panel, the same mask applies to every column simultaneously, keeping rows aligned across all features:
 

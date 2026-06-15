@@ -4,9 +4,9 @@ Representing rational numbers as exact fractions for clear display of matrix and
 
 ## Overview
 
-Floating-point numbers are practical for computation but unkind to readers. The decimal `0.384615384615...` says nothing about where the value came from, while the same value written as `5/13` reveals an entire structure — a denominator that ties straight back to the determinant of the matrix it came from. `Fraction` is Quiver's presentation-only type for that translation.
+Floating-point numbers are practical for computation but unkind to readers. The decimal `0.384615384615...` says nothing about where the value came from, while the same value written as `5/13` reveals an entire structure: a denominator that ties straight back to the determinant of the matrix it came from. `Fraction` is Quiver's presentation-only type for that translation.
 
-A `Fraction` carries an integer `numerator` and a positive integer `denominator`. The two together describe a rational number in lowest terms. This type is not used in calculation — every operation in Quiver continues to return `Double` and `[[Double]]` — but is reached for whenever the rational structure of a result is itself the lesson. The <doc:Determinants-Primer> uses `asFractions` to show how every entry of an inverted matrix shares the determinant as a denominator. The <doc:Vector-Operations> page uses `asFractions` on the unit vector `[0.6, 0.8]` to recover `[3/5, 4/5]` and connect normalization back to a 3-4-5 triangle.
+A `Fraction` carries an integer `numerator` and a positive integer `denominator`. The two together describe a rational number in lowest terms. This type is not used in calculation (every operation in Quiver continues to return `Double` and `[[Double]]`) but is reached for whenever the rational structure of a result is itself the lesson. The <doc:Determinants-Primer> uses `asFractions` to show how every entry of an inverted matrix shares the determinant as a denominator. The <doc:Vector-Operations> page uses `asFractions` on the unit vector `[0.6, 0.8]` to recover `[3/5, 4/5]` and connect normalization back to a 3-4-5 triangle.
 
 ### Constructing a Fraction
 
@@ -48,7 +48,7 @@ Every entry shares `13` as the denominator because the determinant is `13`. The 
 
 ### Equality and serialization
 
-`Fraction` conforms to `Equatable`, which makes it directly comparable in tests and unit checks — two fractions are equal when their reduced numerator and denominator agree. The type conforms to `CustomStringConvertible` so that `print` and string interpolation render the familiar `"a/b"` form, falling back to `"a"` for whole numbers. The type also conforms to `Sendable` so that values produced on one task can be passed safely across concurrency boundaries without further annotation.
+`Fraction` conforms to `Equatable`, which makes it directly comparable in tests and unit checks: two fractions are equal when their reduced numerator and denominator agree. The type conforms to `CustomStringConvertible` so that `print` and string interpolation render the familiar `"a/b"` form, falling back to `"a"` for whole numbers. The type also conforms to `Sendable` so that values produced on one task can be passed safely across concurrency boundaries without further annotation.
 
 > Note: `Fraction` is presentation-only. Every Quiver operation still computes on `Double` and `[[Double]]`. Reach for it when the goal is to display a result, not to extend computation into rational arithmetic.
 

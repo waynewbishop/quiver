@@ -51,7 +51,7 @@ These angle functions work with vectors of any dimension. The `cosineOfAngle(wit
 
 ### Distance
 
-Both `magnitude` and `distance(to:)` use the Pythagorean theorem, but they measure different things. `magnitude` measures a single vector's length from the origin — how far a point is from `[0, 0, ...]`. `distance(to:)` measures the gap between any two points by computing the `magnitude` of their difference vector:
+Both `magnitude` and `distance(to:)` use the Pythagorean theorem, but they measure different things. `magnitude` measures a single vector's length from the origin: how far a point is from `[0, 0, ...]`. `distance(to:)` measures the gap between any two points by computing the `magnitude` of their difference vector:
 
 ```swift
 let a = [1.0, 2.0]
@@ -86,7 +86,7 @@ let product = a.multiply(b)     // [4.0, 10.0, 18.0]
 let quotient = a.divide(b)      // [0.25, 0.4, 0.5]
 ```
 
-These methods appear throughout Quiver's ML pipeline. `distance(to:)` is implemented as `self.subtract(other).magnitude` — it subtracts two vectors element-wise, then computes the `magnitude` of the difference. Every time `KNearestNeighbors` finds the closest training example or `KMeans` assigns a point to a cluster, it relies on this subtraction:
+These methods appear throughout Quiver's ML pipeline. `distance(to:)` is implemented as `self.subtract(other).magnitude`: it subtracts two vectors element-wise, then computes the `magnitude` of the difference. Every time `KNearestNeighbors` finds the closest training example or `KMeans` assigns a point to a cluster, it relies on this subtraction:
 
 ```swift
 let sample = [5.2, 3.1]
@@ -98,7 +98,7 @@ diff.magnitude                          // √(0.16 + 0.16) ≈ 0.566
 sample.distance(to: trainingPoint)      // 0.566 (same result)
 ```
 
-Addition and division power `averaged`, which combines multiple word embedding vectors into a single document vector for semantic search. Individual word vectors each capture one word's meaning — averaging them produces a vector that represents the entire document's meaning in the same vector space:
+Addition and division power `averaged`, which combines multiple word embedding vectors into a single document vector for semantic search. Individual word vectors each capture one word's meaning. Averaging them produces a vector that represents the entire document's meaning in the same vector space:
 
 ```swift
 // Word embedding vectors (simplified to 3 dimensions)
@@ -117,7 +117,7 @@ if let documentVector = wordVectors.averaged() {
 
 > Note: For a complete walkthrough of the embedding-to-search pipeline, see <doc:Semantic-Search>.
 
-Subtraction also gives displacement — the vector from one point to another. A player at `[100, 200]` and an enemy at `[130, 170]` have displacement `[100, 200].subtract([130, 170])` = `[-30, 30]`. The `magnitude` of that displacement is the distance between them. Addition combines forces or velocities — a boat moving at `[3, 0]` in a current of `[0, 2]` has actual velocity `[3, 0].add([0, 2])` = `[3, 2]`.
+Subtraction also gives displacement: the vector from one point to another. A player at `[100, 200]` and an enemy at `[130, 170]` have displacement `[100, 200].subtract([130, 170])` = `[-30, 30]`. The `magnitude` of that displacement is the distance between them. Addition combines forces or velocities. A boat moving at `[3, 0]` in a current of `[0, 2]` has actual velocity `[3, 0].add([0, 2])` = `[3, 2]`.
 
 > Important: The `multiply(_:)` method performs element-wise multiplication (Hadamard product), not matrix multiplication. For matrix multiplication, use `multiplyMatrix`.
 

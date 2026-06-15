@@ -43,11 +43,11 @@ let probs = logits.sigmoid()
 // [0.119, 0.5, 0.881, 0.993]
 ```
 
-To turn a probability into a prediction, we compare it against a threshold. An output above 0.5 predicts the positive class, and an output below 0.5 predicts the negative class — 0.5 is the decision boundary. In the example above, the score of 0.0 lands exactly on the boundary at 0.5, scores of 2.0 and 5.0 fall on the positive side, and the score of −2.0 falls on the negative side.
+To turn a probability into a prediction, we compare it against a threshold. An output above 0.5 predicts the positive class, and an output below 0.5 predicts the negative class: 0.5 is the decision boundary. In the example above, the score of 0.0 lands exactly on the boundary at 0.5, scores of 2.0 and 5.0 fall on the positive side, and the score of −2.0 falls on the negative side.
 
 ### Choosing between softmax and sigmoid
 
-Sigmoid and softMax serve different purposes. Sigmoid operates element-wise — each output depends only on its own input — making it the right choice for binary classification and multi-label problems (where multiple labels can be true simultaneously). SoftMax produces a distribution where outputs sum to 1.0, making it the right choice for multi-class problems (where exactly one label is correct):
+Sigmoid and softMax serve different purposes. Sigmoid operates element-wise (each output depends only on its own input), making it the right choice for binary classification and multi-label problems (where multiple labels can be true simultaneously). SoftMax produces a distribution where outputs sum to 1.0, making it the right choice for multi-class problems (where exactly one label is correct):
 
 ```swift
 import Quiver
@@ -61,7 +61,7 @@ let categoryScores = [2.0, 1.0, 0.1].softMax()  // [0.659, 0.242, 0.099]
 
 A useful mathematical property: σ(x) + σ(−x) = 1.0. This symmetry means the sigmoid of a positive score and the sigmoid of its negation always sum to 1, which is why a single sigmoid output captures both P(positive) and P(negative) without needing two outputs. This is also the bridge to softMax: softMax generalizes sigmoid from two classes to many. With exactly two classes the two functions coincide — a softMax over the positive and negative scores reduces to a single sigmoid output, just as the symmetry above implies.
 
-> Note: Because sigmoid is the logistic-regression hypothesis, it is the link function at the heart of ``LogisticRegression``. The loss that pairs with it — cross-entropy — has no closed form, so the iterative optimizer in <doc:Gradient-Descent> is what fits it. See <doc:Logistic-Regression> for the model.
+> Note: Because sigmoid is the logistic-regression hypothesis, it is the link function at the heart of ``LogisticRegression``. The loss that pairs with it (cross-entropy) has no closed form, so the iterative optimizer in <doc:Gradient-Descent> is what fits it. See <doc:Logistic-Regression> for the model.
 
 ### Where activation functions fit
 

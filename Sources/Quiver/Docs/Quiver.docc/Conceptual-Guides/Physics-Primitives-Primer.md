@@ -39,7 +39,7 @@ let work = force.dot(displacement)                // 1200 J
 
 A runner pushing 120 N forward through a 10 m stride does 1,200 J of work. The 2 m vertical component contributes nothing, as the horizontal force lacks a vertical component.
 
-**Power** — the rate at which work is done — follows the same principle. If `force` is the propulsive force vector and `velocity` is the velocity vector, then `P = F · v`:
+**Power**, the rate at which work is done, follows the same principle. If `force` is the propulsive force vector and `velocity` is the velocity vector, then `P = F · v`:
 
 ```swift
 let velocity: [Double] = [3.5, 0.0, 0.0]          // 3.5 m/s forward
@@ -48,7 +48,7 @@ let power = force.dot(velocity)                   // 420 W
 
 ### Integration converts rates to totals
 
-A watch records instantaneous rates — heart rate, watts, or speed. To calculate **totals** — total energy spent, distance covered — we use **integration**.
+A watch records instantaneous rates: heart rate, watts, or speed. To calculate **totals** (total energy spent, distance covered) we use **integration**.
 
 Plot the rate on the vertical axis and time on the horizontal axis; the area under the curve is the total. If a cyclist holds 250 watts for 60 seconds, the area (a 250 × 60 rectangle) is 15,000 joules. Because real signals wobble, we treat adjacent pairs of samples as the sides of a trapezoid, average their heights, and multiply by the time interval.
 
@@ -96,7 +96,7 @@ let velocitySquared = velocity.square()
 let kineticEnergy = velocitySquared.broadcast(multiplyingBy: 0.5 * mass)   // joules per sample
 ```
 
-`velocity.square()` returns a new array where each element is the original value squared. `broadcast(multiplyingBy:)` uniformly multiplies every element by a scalar — a useful pattern whenever one number applies to an entire series.
+`velocity.square()` returns a new array where each element is the original value squared. `broadcast(multiplyingBy:)` uniformly multiplies every element by a scalar: a useful pattern whenever one number applies to an entire series.
 
 Potential energy is even simpler: multiply each altitude sample by mass and gravity:
 
@@ -112,7 +112,7 @@ The key takeaway is that squaring velocity changes the physical meaning from spe
 
 A signal repeating 2.8 times per second has a frequency of 2.8 Hz. For a runner, this is cadence: 2.8 steps per second is 168 steps per minute. The discrete Fourier transform identifies these rhythms, and the `dominantFrequency` property of the `PowerSpectrum` returned by `powerSpectralDensity(sampleRate:windowed:)` reports the strongest one.
 
-To find the energy within a specific range — such as the cadence band between 2 Hz and 3.5 Hz — we use the **power spectral density**. This method returns a `PowerSpectrum` value pairing each frequency with its energy density (energy per hertz). The energy inside any band is simply the area under the spectrum across that range.
+To find the energy within a specific range, such as the cadence band between 2 Hz and 3.5 Hz, we use the **power spectral density**. This method returns a `PowerSpectrum` value pairing each frequency with its energy density (energy per hertz). The energy inside any band is simply the area under the spectrum across that range.
 
 ```swift
 import Quiver
@@ -150,4 +150,4 @@ These primitives are building blocks for higher-level analyses: total work serve
 
 ## Building physical intuition
 
-This primer connects to the <doc:Fourier-Transform> for deeper insights on frequency and windowing, and the <doc:Quiver-Notebook> to explore these primitives against synthetic signals before wiring them into an app. From there, the natural step is feature engineering for our classifiers — using band energies and integrated work as inputs for <doc:Nearest-Neighbors-Classification>, <doc:Naive-Bayes>, <doc:Linear-Regression>, or <doc:KMeans-Clustering>. Physics, in this library, is simply a vocabulary for what the math is already doing: the functions are the same; the physical units are the point.
+This primer connects to the <doc:Fourier-Transform> for deeper insights on frequency and windowing, and the <doc:Quiver-Notebook> to explore these primitives against synthetic signals before wiring them into an app. From there, the natural step is feature engineering for our classifiers, using band energies and integrated work as inputs for <doc:Nearest-Neighbors-Classification>, <doc:Naive-Bayes>, <doc:Linear-Regression>, or <doc:KMeans-Clustering>. Physics, in this library, is simply a vocabulary for what the math is already doing: the functions are the same; the physical units are the point.

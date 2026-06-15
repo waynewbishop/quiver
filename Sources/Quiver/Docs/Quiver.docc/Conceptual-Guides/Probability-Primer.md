@@ -4,7 +4,7 @@ Reason about uncertainty by computing probabilities, updating beliefs, and weigh
 
 ## Overview
 
-Probability is the practice of putting a number on uncertainty. Every event sits somewhere on a scale from impossible to certain, and probability gives that scale a unit: a value in `[0, 1]`, where `0` means the event cannot happen and `1` means it must. The interesting questions in probability are rarely about a single number, though. They are about how that number changes when new evidence arrives. A test result, a sensor reading, a flagged email — each is a piece of evidence that should move what is believed about the underlying truth. Bayes' theorem is the rule that turns belief plus evidence into updated belief, and it is what most of this primer builds toward.
+Probability is the practice of putting a number on uncertainty. Every event sits somewhere on a scale from impossible to certain, and probability gives that scale a unit: a value in `[0, 1]`, where `0` means the event cannot happen and `1` means it must. The interesting questions in probability are rarely about a single number. They are about how that number changes when new evidence arrives. A test result, a sensor reading, a flagged email: each is a piece of evidence that should move what is believed about the underlying truth. Bayes' theorem is the rule that turns belief plus evidence into updated belief, and it is what most of this primer builds toward.
 
 ### From counts to probability
 
@@ -26,19 +26,19 @@ let distribution = labels.frequencyDistribution()
 // [1.0: 0.20, 0.0: 0.80]
 ```
 
-The result is a **probability distribution** — an assignment of probabilities to every distinct outcome, summing to `1.0`. This is the empirical foundation on which everything else in this primer rests. See <doc:Statistics-Primer> for the descriptive vocabulary — central tendency, spread, and the frequency surface — that this empirical distribution sits inside.
+The result is a **probability distribution**: an assignment of probabilities to every distinct outcome, summing to `1.0`. This is the empirical foundation on which everything else in this primer rests. See <doc:Statistics-Primer> for the descriptive vocabulary (central tendency, spread, and the frequency surface) that this empirical distribution sits inside.
 
 > Tip: For categorical counts and the underlying frequency surface, see <doc:Frequency-Tables>. Empirical probabilities are the building block for **priors** later in this primer.
 
 ### Joint and conditional probability
 
-Two events at once produce a **joint probability**, written `P(A ∩ B)` — the probability that both events occur. If 20% of messages are spam and 60% of spam contains the phrase "verify your account," then the joint probability of "spam *and* contains the phrase" is `0.20 × 0.60 = 0.12`.
+Two events at once produce a **joint probability**, written `P(A ∩ B)`: the probability that both events occur. If 20% of messages are spam and 60% of spam contains the phrase "verify your account," then the joint probability of "spam *and* contains the phrase" is `0.20 × 0.60 = 0.12`.
 
-A **conditional probability**, written `P(A | B)`, asks how likely `A` is once `B` is known. Restricting the universe to messages containing "verify your account," the fraction that are spam — `P(spam | "verify your account")` — is rarely equal to `P(spam)` alone. Evidence narrows the universe, and the probability inside that narrowed universe is the answer the developer wants. Bayes' theorem inverts the question.
+A **conditional probability**, written `P(A | B)`, asks how likely `A` is once `B` is known. Restricting the universe to messages containing "verify your account," the fraction that are spam, `P(spam | "verify your account")`, is rarely equal to `P(spam)` alone. Evidence narrows the universe, and the probability inside that narrowed universe is the answer the developer wants. Bayes' theorem inverts the question.
 
 ### Independence
 
-Two events are **independent** when conditioning on one tells nothing about the other: `P(A | B) = P(A)`. Knowing the day of the week tells nothing about whether a coin will land heads, so the two are independent. Knowing a message contains "verify your account" tells a lot about whether it is spam, so those two are not. Independence is the special case where conditional probability collapses back to the unconditional value, and it is what makes the Naive Bayes classifier "naive" — the model assumes features are conditionally independent given the class, even when they are not, because the assumption simplifies the math and works surprisingly well in practice.
+Two events are **independent** when conditioning on one tells nothing about the other: `P(A | B) = P(A)`. Knowing the day of the week tells nothing about whether a coin will land heads, so the two are independent. Knowing a message contains "verify your account" tells a lot about whether it is spam, so those two are not. Independence is the special case where conditional probability collapses back to the unconditional value, and it is what makes the Naive Bayes classifier "naive": the model assumes features are conditionally independent given the class, even when they are not, because the assumption simplifies the math and works surprisingly well in practice.
 
 ### Bayes' theorem
 
@@ -84,13 +84,13 @@ Bayes.posterior(
 )  // ≈ 0.3226
 ```
 
-Thirty-two percent. The phrase is a strong signal — seventy percent of phishing uses it — but the base rate of phishing is so low that even after the evidence arrives, the message is still more likely legitimate than phishing. This is the famous counterintuitive payoff of Bayesian reasoning: rare conditions stay rare unless the evidence is overwhelming, and "rare" beats "specific" more often than intuition expects. The same math is what makes a positive medical test for a 1-in-100 disease leave the patient with only a 32% probability of actually having the disease, even when the test is 95% accurate.
+Thirty-two percent. The phrase is a strong signal (seventy percent of phishing uses it) but the base rate of phishing is so low that even after the evidence arrives, the message is still more likely legitimate than phishing. This is the famous counterintuitive payoff of Bayesian reasoning: rare conditions stay rare unless the evidence is overwhelming, and "rare" beats "specific" more often than intuition expects. The same math is what makes a positive medical test for a 1-in-100 disease leave the patient with only a 32% probability of actually having the disease, even when the test is 95% accurate.
 
-> Note: When `P(E) = 0` the calculation has no answer — division by zero. `Bayes.posterior` returns `nil` in that case, and a `nil` result should be read as "the evidence is impossible under the model," not as an error to catch. The same `nil` appears when any input falls outside `[0, 1]` or the implied marginal collapses to zero.
+> Note: When `P(E) = 0` the calculation has no answer: division by zero. `Bayes.posterior` returns `nil` in that case, and a `nil` result should be read as "the evidence is impossible under the model," not as an error to catch. The same `nil` appears when any input falls outside `[0, 1]` or the implied marginal collapses to zero.
 
 ### Comparing competing hypotheses
 
-Real applications rarely have one hypothesis. A clinical decision compares flu, cold, and COVID; a fraud check compares fraud, account-takeover, and legitimate purchase; a spam filter weighs spam against phishing against legitimate. Multi-hypothesis Bayes generalizes the same rule to `n` mutually exclusive hypotheses, each with its own prior and its own likelihood under the observed evidence. See <doc:Inferential-Statistics-Primer> for the companion framing — confidence intervals, test statistics, and the language of weighing competing claims against evidence.
+Real applications rarely have one hypothesis. A clinical decision compares flu, cold, and COVID; a fraud check compares fraud, account-takeover, and legitimate purchase; a spam filter weighs spam against phishing against legitimate. Multi-hypothesis Bayes generalizes the same rule to `n` mutually exclusive hypotheses, each with its own prior and its own likelihood under the observed evidence. See <doc:Inferential-Statistics-Primer> for the companion framing: confidence intervals, test statistics, and the language of weighing competing claims against evidence.
 
 The typed inputs prevent the most common error: a prior whose probabilities do not sum to `1.0`. `BayesPrior` is a failable initializer that rejects any input whose probabilities sum outside `1.0 ± 1e-9`, so the data error is caught at construction rather than producing silently wrong posteriors:
 
@@ -119,7 +119,7 @@ print(posterior)
 
 The shift is the lesson. The prior favored flu at 60% and gave COVID only 10%. The likelihood of loss-of-smell was seven times higher under COVID than under flu. The posterior flipped: COVID now sits at 48%, flu at 41%, and cold remains the least likely. Evidence overrode the base rate, but not by as much as the likelihood ratio alone would suggest — the prior continued to pull on the answer. Both ingredients shaped the posterior, which is exactly what Bayesian reasoning delivers.
 
-> Note: The posterior probabilities sum to `1.0` by construction, which means they can be ranked, compared, and rendered as a probability bar chart directly. Quiver computes the normalization in log-space internally — `log(prior) + log(likelihood)` followed by softmax — so the calculation stays numerically stable across hypotheses with very small or very large likelihoods.
+> Note: The posterior probabilities sum to `1.0` by construction, which means they can be ranked, compared, and rendered as a probability bar chart directly. Quiver computes the normalization in log-space internally (`log(prior) + log(likelihood)` followed by softmax) so the calculation stays numerically stable across hypotheses with very small or very large likelihoods.
 
 ### From a single update to a model
 

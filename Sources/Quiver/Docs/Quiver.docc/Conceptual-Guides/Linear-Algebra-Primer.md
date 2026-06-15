@@ -6,9 +6,7 @@ Understand the math behind Quiver's vector operations and machine learning model
 
 Quiver treats Swift `Array` types as mathematical objects, computing `magnitude`, measuring angles between them, and transforming coordinates with matrices. These operations come from **linear algebra**, the branch of mathematics that deals with vectors and the transformations that act on them.
 
-Linear algebra is also the mathematical foundation of machine learning. Quiver's ML models are built from concepts introduced in this primer.
-
-> Note: Advanced mathematical knowledge is not required. Working with Swift arrays is enough to start applying these concepts in code.
+> Tip: Linear algebra is also the mathematical foundation of machine learning. Quiver’s ML models are built from concepts introduced in this primer but advanced mathematical knowledge is not required. Working with Swift arrays is enough to start applying these concepts in code.
 
 ### Arrays are vectors
 
@@ -35,23 +33,23 @@ v.normalized  // [0.6, 0.8]
 v.normalized.asFractions()  // [3/5, 4/5]
 ```
 
-The `asFractions` method belongs to a broader rendering family — `asFraction` on a single `Double`, `asExpression` on vectors, matrices, and polynomials — that the <doc:Rendering-Math-Primer> article catalogs.
+The `asFractions` method belongs to a broader rendering family (`asFraction` on a single `Double`, `asExpression` on vectors, matrices, and polynomials) that the <doc:Rendering-Math-Primer> article catalogs.
 
 The `magnitude` property is calculated using the Pythagorean theorem extended to any dimension. For a 2D vector `[x, y]`, magnitude equals √(x² + y²). For vector `[3, 4]`, that gives √(9 + 16) = √25 = 5. The same formula works whether the vector has 2 dimensions or 200.
 
-**Normalization** separates "how much" from "which way" by dividing each element by the `magnitude`. The result is a **unit vector** — an `Array` with length 1 that preserves only the direction of the original. This matters when comparing arrays where scale varies but direction is what we care about. Two customer profiles with the same preference ratios but different spending levels point in the same direction. Normalization reveals that similarity by removing the magnitude.
+**Normalization** separates "how much" from "which way" by dividing each element by the `magnitude`. The result is a **unit vector**: an `Array` with length 1 that preserves only the direction of the original. This matters when comparing arrays where scale varies but direction is what we care about. Two customer profiles with the same preference ratios but different spending levels point in the same direction. Normalization reveals that similarity by removing the magnitude.
 
 ### Vectors live in space
 
-Every vector has a position in **vector space** — a coordinate system where each element in the `Array` represents a dimension. A 2D vector is a point on a flat plane. A 3D vector is a point in a cube. An `Array` with hundreds of elements is a point in a space we can't visualize, but the math works exactly the same way.
+Every vector has a position in **vector space**, a coordinate system where each element in the `Array` represents a dimension. A 2D vector is a point on a flat plane. A 3D vector is a point in a cube. An `Array` with hundreds of elements is a point in a space we can't visualize, but the math works exactly the same way.
 
-This is the idea behind all of Quiver's operations. Vector space is what makes it possible to treat completely different things — flowers, documents, products, sensor readings — with the same mathematics. As long as we can describe something as an `Array` of numbers, it has a position in vector space. And once something has a position, we can measure how far it is from anything else — which is exactly what machine learning algorithms do.
+This is the idea behind all of Quiver's operations. Vector space is what makes it possible to treat completely different things (flowers, documents, products, sensor readings) with the same mathematics. As long as we can describe something as an `Array` of numbers, it has a position in vector space. And once something has a position, we can measure how far it is from anything else — which is exactly what machine learning algorithms do.
 
 ### Distance and direction as meaning
 
 Two product feature vectors that are close together in vector space represent similar products. A cluster of data points near each other form a natural group. The math doesn't care what the numbers represent, only about position, distance, and direction.
 
-This is also how semantic search works. Words can be represented as high-dimensional vectors called **embeddings** — arrays of hundreds of numbers that capture meaning. The word "running" and the word "jogging" end up near each other in vector space because they appear in similar contexts. Searching for related content becomes a matter of finding the nearest vectors using `cosineOfAngle(with:)`. Quiver's <doc:Semantic-Search> page walks through building this from scratch.
+This is also how semantic search works. Words can be represented as high-dimensional vectors called **embeddings**: arrays of hundreds of numbers that capture meaning. The word "running" and the word "jogging" end up near each other in vector space because they appear in similar contexts. Searching for related content becomes a matter of finding the nearest vectors using `cosineOfAngle(with:)`. Quiver's <doc:Semantic-Search> page walks through building this from scratch.
 
 ### The dot product
 
@@ -68,7 +66,7 @@ v1.dot(v2)  // 0.0
 v1.dot(v1)  // 1.0
 ```
 
-The dot product appears throughout Quiver — in similarity measurements, matrix transformations, and directly inside the ML models. The operation is one of the most frequently used in numerical computing.
+The dot product appears throughout Quiver: in similarity measurements, matrix transformations, and directly inside the ML models. The operation is one of the most frequently used in numerical computing.
 
 ### Cosine similarity
 
@@ -109,7 +107,7 @@ point.transformedBy(rotation)  // [-1.0, 3.0]
 
 The point `[3.0, 1.0]` moves to `[-1.0, 3.0]`. The matrix describes the rule; `transformedBy` applies it. This particular matrix doesn't represent data about an object but an *operation* that rotates any vector to a new position. Matrices can also scale (stretch or compress), reflect (mirror across an axis), shear (tilt), and compose multiple transformations together.
 
-Beyond transformations, matrices organize collections of data. In a dataset, each row might represent a different sample and each column a different measurement. A matrix of athlete performance data with rows for athletes and columns for speed, endurance, and strength is three vectors stacked together — and matrix operations let us process all of them simultaneously.
+Beyond transformations, matrices organize collections of data. In a dataset, each row might represent a different sample and each column a different measurement. A matrix of athlete performance data with rows for athletes and columns for speed, endurance, and strength is three vectors stacked together, and matrix operations let us process all of them simultaneously.
 
 > Important: For a matrix to transform a vector, the number of columns must match the vector's length.
 
@@ -124,13 +122,13 @@ let b = [5.0, 10.0]
 A.solve(b)   // [1.0, 3.0]
 ```
 
-The method returns `nil` when the matrix is singular — the same condition that makes inversion fail. For the geometric meaning of singularity and condition number, see <doc:Determinants-Primer>.
+The method returns `nil` when the matrix is singular, the same condition that makes inversion fail. For the geometric meaning of singularity and condition number, see <doc:Determinants-Primer>.
 
 ### From arrays to algorithms
 
-Linear algebra isn't just math exercises — these concepts are the building blocks for ML models in Quiver. The thread connecting them is **distance** — the measurement of how far apart two points sit in vector space.
+Linear algebra isn't just math exercises. These concepts are the building blocks for ML models in Quiver. The thread connecting them is **distance**: the measurement of how far apart two points sit in vector space.
 
-Both `magnitude` and `distance(to:)` use the Pythagorean theorem, but they measure different things. Think of `magnitude` as the answer to "how far is this point from the origin" — it measures a single vector's length. `distance(to:)` answers a broader version of the same question — how far apart are any two points — by subtracting one vector from the other and computing the length of the difference.
+Both `magnitude` and `distance(to:)` use the Pythagorean theorem, but they measure different things. Think of `magnitude` as the answer to "how far is this point from the origin": it measures a single vector's length. `distance(to:)` answers a broader version of the same question, how far apart are any two points, by subtracting one vector from the other and computing the length of the difference.
 
 ```swift
 let a = [1.0, 2.0]

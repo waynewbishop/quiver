@@ -4,20 +4,18 @@ Summarize traffic, search by meaning, and serve fitted models from a Swift serve
 
 ## Overview
 
-A Swift server doing numerical work needs two things at once: answering each request quickly, and sharing one fitted model or precomputed index across every concurrent handler. Quiver builds the model once when the server starts and shares it across every handler as plain Swift, with no copies and no per-request load cost.
+A Swift server needs to handle requests quickly while sharing expensive resources—like fitted models or embedding catalogs—across concurrent handlers. Quiver loads these resources at boot time and shares them as immutable Swift values, avoiding the cost of reconstruction per request.
 
-The common backend shapes split across three surfaces. Statistics handles self-observability, including request rates, latency percentiles, and A/B-test significance, without a separate analytics service. Linear algebra handles semantic search and recommendation over a precomputed embedding catalog. Machine learning handles fit-at-boot scoring endpoints, where a model trained offline deserializes at startup and runs per request. All of it runs on Linux.
+### Lifecycle and resource sharing
 
-### Setup and lifecycle
-
-The shape we recommend for a Vapor server is straightforward. Reference data — a fitted model, a dictionary of word embeddings, a catalog of document vectors — builds when the application starts, captures in a value the route closures can read, and never reconstructs inside a request handler. Quiver's value types make this natural: fitted models and precomputed indices are `Sendable` and immutable after construction, and Swift's `Sendable` system lets the compiler verify that sharing them across concurrent tasks is safe.
+To maximize performance, reference data (the model, [embedding dictionary](<doc:Embedding-Sources>), or vector catalog) should be built once at startup. Because Quiver’s model types are `Sendable` and immutable, we can safely share them across request handlers as plain Swift values with no locking or per-request overhead.
 
 ```swift
 import Vapor
 import Quiver
 
 func configure(_ app: Application) throws {
-    // Built once when the server starts — never rebuilt inside a request.
+    // Build expensive resources at boot—never inside a request.
     let store = ProductStore()
     seededStore(store)
 
@@ -25,9 +23,9 @@ func configure(_ app: Application) throws {
 }
 ```
 
-The seeded `ProductStore` holds the catalog, the embeddings dictionary, and the precomputed vector for every product. Building it is the expensive operation. Reading from it is fast. Doing the build inside a request handler would put that cost on every request and degrade the server under load.
+Building the `ProductStore` at boot is a one-time cost; reading from it is fast. If we built these resources inside a request handler, we would impose that cost on every user, degrading server throughput under load.
 
-> Tip: The search pipeline this guide surveys is assembled end to end in two worked examples — <doc:Semantic-Search> for the tokenize-embed-rank flow, and <doc:Embedding-Sources> for swapping the vector source behind one contract.
+> Tip: The search pipeline surveyed in this guide is assembled end-to-end in two worked examples: <doc:Semantic-Search> for the tokenize-embed-rank flow, and <doc:Embedding-Sources> for swapping the vector source behind one contract.
 
 ## Statistics on Vapor
 
@@ -76,7 +74,7 @@ The `summary()` method returns a typed snapshot of the buffer rather than a tupl
 
 ### Experiment significance from the same primitives
 
-A second pattern covers experiment significance. When a server runs an experiment, each variant accumulates a stream of conversion outcomes, and the product decision rides on whether the difference between variants is real or a coincidence of the sample. A **confidence interval** is the range within which the true rate is expected to sit at a chosen confidence level. "Variant B converts 12% better, 95% CI [4%, 20%]" says the observed lift is unlikely to be zero. The handler computes the point estimate from `mean()`, the spread of that estimate from `standardError()`, and the critical multiplier from `Distributions.t.quantile`. No external service participates. See <doc:Inferential-Statistics-Primer> for the framing of standard error, t-distribution quantiles, and p-values — the foundation the experiment-significance route requires.
+A second pattern covers experiment significance. When a server runs an experiment, each variant accumulates a stream of conversion outcomes, and the product decision rides on whether the difference between variants is real or a coincidence of the sample. A **confidence interval** is the range within which the true rate is expected to sit at a chosen confidence level. "Variant B converts 12% better, 95% CI [4%, 20%]" says the observed lift is unlikely to be zero. The handler computes the point estimate from `mean()`, the spread of that estimate from `standardError()`, and the critical multiplier from `Distributions.t.quantile`. No external service participates. See <doc:Inferential-Statistics-Primer> for the framing of standard error, t-distribution quantiles, and p-values: the foundation the experiment-significance route requires.
 
 > Note: A handler that recomputes `summary()` on every request walks the entire rolling buffer every time. Hold the latest snapshot in the shared store and refresh it on a timer or at the end of every recording window, not in the request path.
 
@@ -88,13 +86,13 @@ Keyword search looks for the words a user typed. Meaning search looks for what t
 
 **Tokenization** is splitting a query string into a sequence of words, or *tokens*, that can each be looked up in an embedding dictionary. "running shoes for trail" becomes `["running", "shoes", "for", "trail"]`, and from that point on the search system works on tokens, not characters. The next step turns each token into a vector.
 
-An **embedding** is a learned mapping from discrete tokens — words, items, users — to dense vectors in a space where related meanings end up geometrically close. "running" and "jogging" land near each other; "running" and "stapler" do not. The vectors are *dense*: every coordinate carries information, and the dimensions are tens or hundreds, not the millions of a one-hot encoding. A **one-hot encoding** is the alternative: a vector of length equal to the vocabulary, all zeros except for a single `1` at the word's index. One-hot is sparse, has no notion of similarity between words, and grows with the vocabulary. An embedding is the dense, semantic upgrade. See <doc:Linear-Algebra-Primer> for the geometric foundation and <doc:Vector-Operations> for the operations Quiver exposes on `[Double]`.
+An **embedding** is a learned mapping from discrete tokens (words, items, users) to dense vectors in a space where related meanings end up geometrically close. "running" and "jogging" land near each other; "running" and "stapler" do not. The vectors are *dense*: every coordinate carries information, and the dimensions are tens or hundreds, not the millions of a one-hot encoding. A **one-hot encoding** is the alternative: a vector of length equal to the vocabulary, all zeros except for a single `1` at the word's index. One-hot is sparse, has no notion of similarity between words, and grows with the vocabulary. An embedding is the dense, semantic upgrade. See <doc:Linear-Algebra-Primer> for the geometric foundation and <doc:Vector-Operations> for the operations Quiver exposes on `[Double]`.
 
 ### The embedding dictionary
 
 The lookup itself runs against an **embedding dictionary**, a precomputed `[String: [Double]]` the server loads once at boot. Every token the system can recognize has a row in this table; tokens the dictionary does not contain are dropped or routed to an `<unknown>` vector. In production the dictionary's contents typically come from a downloaded model file such as GloVe, word2vec, or the per-token outputs of a sentence-transformer. The server treats those files as data, not code.
 
-Two practical numbers shape how the dictionary lives in memory. The first is **dimensionality** — the length of each vector. Common choices are 50, 100, 200, or 300 dimensions for word-level embeddings, and 384, 768, or 1,024 for sentence-transformer outputs. A 300-dimensional vector of `Double` is 2,400 bytes; a 100,000-word dictionary at that dimensionality is roughly 230 megabytes in memory. The second number is **vocabulary coverage** — how much of the language the server has to recognize. A consumer search box needs a broad vocabulary; a domain-specific catalog (medical, legal, technical) often does better with a smaller, specialized dictionary trained on the relevant corpus. The right dictionary is the smallest one that covers the queries the server will actually see.
+Two practical numbers shape how the dictionary lives in memory. The first is **dimensionality**, the length of each vector. Common choices are 50, 100, 200, or 300 dimensions for word-level embeddings, and 384, 768, or 1,024 for sentence-transformer outputs. A 300-dimensional vector of `Double` is 2,400 bytes; a 100,000-word dictionary at that dimensionality is roughly 230 megabytes in memory. The second number is **vocabulary coverage**: how much of the language the server has to recognize. A consumer search box needs a broad vocabulary; a domain-specific catalog (medical, legal, technical) often does better with a smaller, specialized dictionary trained on the relevant corpus. The right dictionary is the smallest one that covers the queries the server will actually see.
 
 The dictionary shown here is the simplest source of vectors, and Quiver names that source as a contract: the `Embedder` protocol is text in, `[Double]` out. A server that outgrows a word-vector table swaps in an on-device sentence model behind the same contract, and every line that tokenizes, ranks, and reports stays as written. See <doc:Embedding-Sources> for the swappable-source pattern and the levels from a hand-built table to a custom model.
 
@@ -128,7 +126,7 @@ The catalog stores one vector per document, so the query has to collapse to one 
     }
 ```
 
-The reason mean-pooling works is geometric. Each token vector points toward the meaning of that word in the embedding space, and the average of those vectors lands near the centroid of the meaning — the point that minimizes the total distance to the contributing tokens. For short queries of three to ten words, the centroid is close enough to the query's overall meaning that the cosine comparison downstream gives sensible rankings. The technique is cheap, has no learned parameters, and is the right default for query-to-document retrieval at this scale.
+The reason mean-pooling works is geometric. Each token vector points toward the meaning of that word in the embedding space, and the average of those vectors lands near the centroid of the meaning: the point that minimizes the total distance to the contributing tokens. For short queries of three to ten words, the centroid is close enough to the query's overall meaning that the cosine comparison downstream gives sensible rankings. The technique is cheap, has no learned parameters, and is the right default for query-to-document retrieval at this scale.
 
 Two limitations are worth naming so the model on the server side stays calibrated. Mean-pooling treats every token with equal weight, which means a query like "running shoes" gives "running" and "shoes" the same pull on the centroid even though one carries most of the semantic load. Stop-word filtering before pooling reduces the dilution. The second limitation is order: averaging discards the sequence the words arrived in, so "dog bites man" and "man bites dog" pool to the same vector. For retrieval over short noun-phrase queries, neither limitation hurts the results enough to justify a more expensive pooler. Longer or more structured inputs benefit from learned poolers, but those belong to the model that produced the embedding, not to the retrieval step on the server.
 
@@ -168,11 +166,11 @@ The pattern above is **in-memory similarity search**: store precomputed embeddin
 
 The most common application of this shape today is **retrieval-augmented generation**, or RAG: the retrieval half of the pipeline finds the top-k most relevant documents for a user's question, and a language model receives those documents as context for its answer. Quiver's role in a RAG system is the retrieval half. Quiver does not ship a language model, does not call out to one, and does not pretend to. The Vapor route shown above is the retrieval surface; the generation step belongs to whatever model the application chooses to call afterward.
 
-Two practical observations follow from that framing. First, the retrieval layer does not have to be a separate service. For catalogs the Vapor process can hold in memory — thousands to low millions of vectors — the catalog is the in-process value the routes already read from. Second, the catalog does not have to be permanent. Catalogs that fit in memory are fast to read but do not survive a restart. When the catalog needs to outlast process lifetime or grow beyond memory, the embedding and ranking math stays in the Vapor process and the storage moves to the application's existing data layer.
+Two practical observations follow from that framing. First, the retrieval layer does not have to be a separate service. For catalogs the Vapor process can hold in memory (thousands to low millions of vectors), the catalog is the in-process value the routes already read from. Second, the catalog does not have to be permanent. Catalogs that fit in memory are fast to read but do not survive a restart. When the catalog needs to outlast process lifetime or grow beyond memory, the embedding and ranking math stays in the Vapor process and the storage moves to the application's existing data layer.
 
 ### Exact versus approximate nearest neighbors
 
-The `cosineSimilarities` call is **exact**: it computes the similarity between the query vector and every catalog vector, then returns the top-k. The cost is linear in the catalog size, and the result is the true top-k by definition. For catalogs a single Vapor process holds in memory — thousands to low millions of vectors — exact search is the right default. The compute budget is small, the answer is correct, and the implementation is one line.
+The `cosineSimilarities` call is **exact**: it computes the similarity between the query vector and every catalog vector, then returns the top-k. The cost is linear in the catalog size, and the result is the true top-k by definition. For catalogs a single Vapor process holds in memory, thousands to low millions of vectors, exact search is the right default. The compute budget is small, the answer is correct, and the implementation is one line.
 
 **Approximate nearest-neighbor** methods trade exactness for speed at larger scale. Algorithms such as HNSW and IVF build an index ahead of time that lets a query skip most of the catalog and still return results that are *almost* the true top-k. The trade is real: the index takes memory, takes time to build, and returns answers that are correct most of the time but not always. Approximate methods become relevant when the catalog outgrows memory or when the exact pass would miss the latency budget. Below that threshold, exact search is faster to ship and easier to reason about. See <doc:Semantic-Search> for the broader retrieval framing and the conditions under which an approximate index becomes the right call.
 
@@ -186,7 +184,7 @@ Training and inference are two different jobs. **Training** is the slow, one-sho
 
 ### The shape of a fitted value
 
-A fitted model is what the server reads at boot, so the shape of that fitted value is worth seeing first. On the developer machine, <doc:Linear-Regression> takes a feature matrix and a target vector and returns a `LinearRegression` value with a `predict` method. When the feature columns carry overlapping information — the multi-signal case where a plain least-squares fit turns unstable — <doc:Ridge-Regression> swaps in behind the identical request-handling shape, fit offline and decoded at boot the same way.
+A fitted model is what the server reads at boot, so the shape of that fitted value is worth seeing first. On the developer machine, <doc:Linear-Regression> takes a feature matrix and a target vector and returns a `LinearRegression` value with a `predict` method. When the feature columns carry overlapping information (the multi-signal case where a plain least-squares fit turns unstable), <doc:Ridge-Regression> swaps in behind the identical request-handling shape, fit offline and decoded at boot the same way.
 
 ```swift
 import Quiver
@@ -246,7 +244,7 @@ The same shape covers any scoring service the server needs to provide. A classif
 
 > Note: Quiver's fitted models are `Sendable` and immutable after `fit`. Many concurrent requests can read the same model in parallel with no locks, no copies, and no race conditions. The boot-time-load-immutable-share pattern is the entire story.
 
-> Tip: A server has the compute to run every fitted model Quiver ships — `LinearRegression` and `Ridge` for prediction, `LogisticRegression` for binary scoring, `KNearestNeighbors` and `GaussianNaiveBayes` for classification, `KMeans` for grouping, and `GradientDescent` for the iterative fits underneath them. Each fits offline, encodes once, decodes at boot, and serves many concurrent readers through the same store.
+> Tip: A server has the compute to run every fitted model Quiver ships: `LinearRegression` and `Ridge` for prediction, `LogisticRegression` for binary scoring, `KNearestNeighbors` and `GaussianNaiveBayes` for classification, `KMeans` for grouping, and `GradientDescent` for the iterative fits underneath them. Each fits offline, encodes once, decodes at boot, and serves many concurrent readers through the same store.
 
 ## Where to go from here
 

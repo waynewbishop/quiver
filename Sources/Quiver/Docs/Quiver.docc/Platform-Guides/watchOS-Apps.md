@@ -8,7 +8,7 @@ Building a personal baseline is the primary goal for statistics and machine lear
 
 This same pattern works across every athletic discipline from running and cycling to swimming and strength training. We turn data from the wrist into a model of the wearer and compute it directly on the watch. This ensures that the data stays on the device and remains owned by the wearer at all times.
 
-> Tip: To see these pieces assembled into one working model — a personal baseline, a residual read against it, and an effort classifier, all built from the primitives this guide surveys — see <doc:Building-An-Effort-Model>, the worked example this guide accompanies.
+> Tip: To see these pieces assembled into one working model (a personal baseline, a residual read against it, and an effort classifier, all built from the primitives this guide surveys), see <doc:Building-An-Effort-Model>, the worked example this guide accompanies.
 
 ### Setup and lifecycle
 

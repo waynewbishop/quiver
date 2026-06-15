@@ -92,7 +92,7 @@ let predictions = restored.predict(newFeatures)
 
 Use Pipeline when the model requires scaled features, specifically `KNearestNeighbors` and `KMeans`, which measure Euclidean distance and are sensitive to feature magnitudes. The scaler and model must stay paired for correct predictions.
 
-For models that do not require scaling — `LinearRegression` and `GaussianNaiveBayes` — Pipeline is optional. Regression coefficients compensate for different magnitudes mathematically, and Naive Bayes evaluates each feature independently. These models can be persisted and used on their own.
+For models that do not require scaling, such as `LinearRegression` and `GaussianNaiveBayes`, Pipeline is optional. Regression coefficients compensate for different magnitudes mathematically, and Naive Bayes evaluates each feature independently. These models can be persisted and used on their own.
 
 > Tip: Even when scaling is not required, Pipeline can still be useful for consistency. A team that always uses Pipeline never has to remember which models need scalers and which do not.
 
