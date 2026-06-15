@@ -6,7 +6,7 @@ Splitting strings into tokens and looking up word vectors before any downstream 
 
 Most numerical workflows assume the data has already been turned into numbers. Text is the exception. Before a classifier, a vector database, or a similarity comparison can act on a sentence, the sentence has to be broken into words and each word has to be mapped to a vector. Quiver provides two paired methods for that translation: `tokenize` on `String` for the splitting step, and `embed(using:)` on `[String]` for the lookup step.
 
-The two methods compose to produce a `[[Double]]` from raw text: one inner array per recognized word. From there, the rest of Quiver's vector operations apply. The <doc:Semantic-Search> article walks the full search pipeline from tokenization through ranked results; this article is the closer focus on tokenization and embedding as a standalone preprocessing pair, useful any time a developer needs to feed text into a numeric workflow.
+The two methods compose to produce a `[[Double]]` from raw text: one inner array per recognized word. From there, the rest of Quiver's vector operations apply. The <doc:Semantic-Search> article walks the full search pipeline from tokenization through ranked results; this article is the closer focus on tokenization and embedding as a standalone preprocessing pair, useful any time a developer needs to feed text into a numeric workflow. To wrap this conversion behind a single reusable contract, so a hand-built table and an on-device model feed the same ranking surface, see <doc:Embedding-Sources>.
 
 ### Tokenizing strings
 
