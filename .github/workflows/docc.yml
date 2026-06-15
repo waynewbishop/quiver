@@ -68,6 +68,9 @@ jobs:
           # Copy robots.txt alongside it; its Sitemap: line uses an absolute URL.
           cp Sources/Quiver/Docs/Quiver.docc/robots.txt ./docs/robots.txt
 
+          # Copy the Google Search Console verification file to the site root.
+          cp Sources/Quiver/Docs/Quiver.docc/google7c15381d4d151a8c.html ./docs/google7c15381d4d151a8c.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
