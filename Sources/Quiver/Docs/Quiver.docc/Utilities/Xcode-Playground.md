@@ -4,7 +4,7 @@ Using the playground macro to inspect Quiver values inside an existing project.
 
 ## Overview
 
-The `#Playground` macro, introduced in [Xcode 26](https://developer.apple.com/xcode/), turns any Swift file inside a project into an interactive surface — write an expression, see the result inline in the Canvas, no build-and-run cycle. For a project that already depends on Quiver, this is the most direct way to inspect a value, verify a calculation, or sanity-check a method without leaving the codebase.
+The `#Playground` macro, introduced in [Xcode 26](https://developer.apple.com/xcode/), turns any Swift file inside a project into an interactive surface: write an expression, see the result inline in the Canvas, no build-and-run cycle. For a project that already depends on Quiver, this is the most direct way to inspect a value, verify a calculation, or sanity-check a method without leaving the codebase.
 
 > Important: The `#Playground` macro is not the same as a `.playground` file. Traditional `.playground` files run in an isolated sandbox and cannot import Swift packages. The `#Playground` macro compiles as part of the project, so it has full access to SPM dependencies, including Quiver, with no extra configuration. The distinction trips up nearly every first-time user.
 
@@ -52,9 +52,9 @@ Named blocks are useful for comparing related operations side by side, or for wo
 
 ### When to reach for the Notebook
 
-The `#Playground` macro is the right tool when Quiver is already a dependency of a project under active development. For exploration outside an existing project — running a snippet during a lecture, working through the cookbook, or letting students share a uniform environment — the <doc:Quiver-Notebook> is the better surface. The Notebook ships with Quiver pre-imported, requires no project setup, and runs from a clone-and-run repository. The two surfaces are complementary: `#Playground` for in-project inspection, Notebook for everything else.
+The `#Playground` macro is the right tool when Quiver is already a dependency of a project under active development. For exploration outside an existing project (running a snippet during a lecture, working through the cookbook, or letting students share a uniform environment), the <doc:Quiver-Notebook> is the better surface. The Notebook ships with Quiver pre-imported, requires no project setup, and runs from a clone-and-run repository. The two surfaces are complementary: `#Playground` for in-project inspection, Notebook for everything else.
 
-> Experiment: [quiver-cookbook](https://github.com/waynewbishop/quiver-cookbook) is built entirely on the `#Playground` macro. Cloning the repo and opening any single recipe — wind-tunnel lift prediction, semantic search, sensor-driven driving decisions — drops a working Quiver example into the Canvas with no setup. Watching a recipe evaluate inline is the fastest way to see what the macro feels like at full scale.
+> Experiment: [quiver-cookbook](https://github.com/waynewbishop/quiver-cookbook) is built entirely on the `#Playground` macro. Cloning the repo and opening any single recipe (wind-tunnel lift prediction, semantic search, sensor-driven driving decisions) drops a working Quiver example into the Canvas with no setup. Watching a recipe evaluate inline is the fastest way to see what the macro feels like at full scale.
 
 ### Related
 - <doc:Quiver-Cookbook>

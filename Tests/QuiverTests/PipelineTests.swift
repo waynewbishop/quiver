@@ -188,4 +188,71 @@ final class PipelineTests: XCTestCase {
         XCTAssertEqual(predictions[0], 6.0, accuracy: 0.5)
         XCTAssertEqual(predictions[1], 8.0, accuracy: 0.5)
     }
+
+    // MARK: - GradientDescent Pipeline
+
+    // The bundled pipeline scales query points internally, so raw inputs predict
+    // correctly — this is the whole point on a scale-sensitive iterative model.
+    func testFitGradientDescent() throws {
+        let features: [[Double]] = [[1], [2], [3], [4], [5]]
+        let targets = [2.0, 4.0, 6.0, 8.0, 10.0]
+
+        // Type annotation disambiguates from the LinearRegression (features:targets:)
+        // overload, which Swift otherwise prefers (fewer parameters).
+        let pipeline: Pipeline<GradientDescent> =
+            try Pipeline.fit(features: features, targets: targets)
+
+        // Raw query points — scaled inside predict.
+        let predictions = pipeline.predict([[6], [7]])
+        XCTAssertEqual(predictions[0], 12.0, accuracy: 0.5)
+        XCTAssertEqual(predictions[1], 14.0, accuracy: 0.5)
+    }
+
+    // The pipeline result must equal the hand-rolled scaler + model + scaled-query
+    // path exactly — proving the bundling is a faithful shortcut, not an approximation.
+    func testFitGradientDescentMatchesManual() throws {
+        let features: [[Double]] = [[1], [2], [3], [4], [5]]
+        let targets = [2.1, 3.9, 6.1, 8.0, 9.8]
+
+        let pipeline: Pipeline<GradientDescent> =
+            try Pipeline.fit(features: features, targets: targets)
+
+        let scaler = StandardScaler.fit(features: features)
+        let model = try GradientDescent.fit(
+            features: scaler.transform(features), targets: targets
+        )
+
+        let testData: [[Double]] = [[6], [7]]
+        XCTAssertEqual(pipeline.predict(testData), model.predict(scaler.transform(testData)))
+    }
+
+    // MARK: - LogisticRegression Pipeline
+
+    // `labels:` makes this overload unambiguous (no regressor overload takes it),
+    // and the pipeline scales raw query points internally before classifying.
+    func testFitLogisticRegression() throws {
+        let features: [[Double]] = [[2.0], [3.0], [4.0], [5.0], [6.0], [7.0], [3.5], [5.5]]
+        let labels = [0, 0, 1, 0, 1, 1, 1, 0]
+
+        let pipeline = try Pipeline.fit(features: features, labels: labels, learningRate: 0.5)
+        XCTAssertTrue(type(of: pipeline) == Pipeline<LogisticRegression>.self)
+
+        // Raw query points — scaled inside predict.
+        XCTAssertEqual(pipeline.predict([[6.5], [2.5]]), [1, 0])
+    }
+
+    func testFitLogisticRegressionMatchesManual() throws {
+        let features: [[Double]] = [[2.0], [3.0], [4.0], [5.0], [6.0], [7.0], [3.5], [5.5]]
+        let labels = [0, 0, 1, 0, 1, 1, 1, 0]
+
+        let pipeline = try Pipeline.fit(features: features, labels: labels, learningRate: 0.5)
+
+        let scaler = StandardScaler.fit(features: features)
+        let model = try LogisticRegression.fit(
+            features: scaler.transform(features), labels: labels, learningRate: 0.5
+        )
+
+        let testData: [[Double]] = [[6.5], [2.5], [4.0]]
+        XCTAssertEqual(pipeline.predict(testData), model.predict(scaler.transform(testData)))
+    }
 }

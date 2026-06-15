@@ -257,4 +257,20 @@ final class NaiveBayesTests: XCTestCase {
         let probs = model.predictProbabilities([[0.05, 0.05]])
         XCTAssertGreaterThan(probs[0][0], 0.95, "should strongly predict class 0")
     }
+
+    // MARK: - Scalar predict
+
+    // Scalar convenience predict returns a single Int label for a single-feature sample
+    func testScalarPredict() {
+        // One feature, two well-separated groups.
+        let features: [[Double]] = [[1.0], [1.2], [0.9], [8.0], [8.3], [7.8]]
+        let labels = [0, 0, 0, 1, 1, 1]
+
+        let model = GaussianNaiveBayes.fit(features: features, labels: labels)
+
+        // Scalar overload must agree with the batch path's first element.
+        XCTAssertEqual(model.predict(1.0), model.predict([[1.0]])[0])
+        XCTAssertEqual(model.predict(1.0), 0)
+        XCTAssertEqual(model.predict(8.0), 1)
+    }
 }

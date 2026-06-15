@@ -6,13 +6,13 @@ Combining transformations with matrix multiplication for graphics pipelines and 
 
 Individual transformations like rotation and scaling are useful, but real applications often require combining them. Matrix multiplication folds several transformations into a single matrix that applies in one pass over the vector.
 
-That folding shows up in graphics pipelines, animation systems, and any application that chains coordinate system changes. For the individual matrix forms — rotation, scaling, reflection, and shear — see <doc:Matrix-Transformations>. This article focuses on how those matrices combine.
+That folding shows up in graphics pipelines, animation systems, and any application that chains coordinate system changes. For the individual matrix forms (rotation, scaling, reflection, and shear), see <doc:Matrix-Transformations>. This article focuses on how those matrices combine.
 
 > Note: For geometric intuition about how transformations compose, including visual examples of rotation, scaling, and chained operations, see [Matrix Transformations](https://waynewbishop.github.io/swift-algorithms/22-matrix-transformations.html) in Swift Algorithms & Data Structures.
 
 ## Matrix multiplication
 
-Matrix multiplication composes transformations: the result represents applying one transformation after another. Unlike scalar multiplication, the order is significant — `A × B` is generally different from `B × A`.
+Matrix multiplication composes transformations: the result represents applying one transformation after another. Unlike scalar multiplication, the order is significant: `A × B` is generally different from `B × A`.
 
 ```swift
 import Quiver
@@ -77,7 +77,7 @@ When composing with matrix multiplication, the rightmost matrix is applied first
 let combined = A.multiplyMatrix(B)
 ```
 
-This means: first apply B, then apply A. The convention follows directly from how matrix-vector multiplication associates — `(A × B) × v` evaluates as `A × (B × v)`, with B acting on the vector before A.
+This means: first apply B, then apply A. The convention follows directly from how matrix-vector multiplication associates: `(A × B) × v` evaluates as `A × (B × v)`, with B acting on the vector before A.
 
 ## Common composition patterns
 
@@ -128,7 +128,7 @@ let transformed = vectors.map { $0.transformedBy(complex) }
 
 ## Transformation pipelines
 
-Graphics applications commonly use transformation pipelines that move a vertex through several coordinate spaces — object to world, world to camera, camera to screen. Each space is reached by composing a matrix onto the previous one.
+Graphics applications commonly use transformation pipelines that move a vertex through several coordinate spaces: object to world, world to camera, camera to screen. Each space is reached by composing a matrix onto the previous one.
 
 ```swift
 // Object → World → Camera → Screen
@@ -142,7 +142,7 @@ let screenVertices = objectVertices.map { $0.transformedBy(objectToScreen) }
 
 ### Incremental updates
 
-When only one stage of the pipeline changes — usually because an object moves while the camera and projection remain fixed — caching the partial composition saves redundant work.
+When only one stage of the pipeline changes (usually because an object moves while the camera and projection remain fixed), caching the partial composition saves redundant work.
 
 ```swift
 // Cache partial compositions

@@ -39,7 +39,7 @@ Imagine drawing the same-sized sample from the population over and over again. E
 
 The sampling distribution has its own spread. That spread has a name, the **standard error** of the mean, and it is the quantity that tells us how precisely the sample mean estimates the population mean. A small standard error means the sample mean changes very little from one hypothetical sample to the next; a large standard error means the sample mean is unstable and a single value should not be trusted on its own.
 
-The standard error equals the sample standard deviation divided by the square root of the sample size. Larger samples produce smaller standard errors, which is the mathematical statement of "more data, more confidence." The square root reflects diminishing returns: doubling the sample size does not cut the standard error in half — it only divides it by `√2 ≈ 1.41`. To halve the standard error we need four times as much data. Precision improves with sample size, but the cost of each additional unit of precision rises sharply. Quiver ships this as `standardError()` on any `[Double]`:
+The standard error equals the sample standard deviation divided by the square root of the sample size. Larger samples produce smaller standard errors, which is the mathematical statement of "more data, more confidence." The square root reflects diminishing returns: doubling the sample size does not cut the standard error in half; it only divides it by `√2 ≈ 1.41`. To halve the standard error we need four times as much data. Precision improves with sample size, but the cost of each additional unit of precision rises sharply. Quiver ships this as `standardError()` on any `[Double]`:
 
 ```swift
 import Quiver
@@ -56,7 +56,7 @@ if let se = sessionSeconds.standardError() {
 
 ### Small samples and the t-distribution
 
-With a small sample, we are being asked to estimate two things — the average and the spread — from the same few data points. The t-distribution is the math's way of admitting we are less certain than the normal distribution would suggest, and widening the interval accordingly.
+With a small sample, we are being asked to estimate two things, the average and the spread, from the same few data points. The t-distribution is the math's way of admitting we are less certain than the normal distribution would suggest, and widening the interval accordingly.
 
 The Central Limit Theorem promises normality for the sample mean when `n ≥ 30`. Below that threshold the sampling distribution of the mean has heavier tails than the bell curve, because we are estimating both the population mean and the population standard deviation from the same small sample. The **t-distribution** corrects for that uncertainty by widening the reference distribution as the sample shrinks. Quiver gives us the building blocks to use it directly through `Distributions.t.quantile` and `Distributions.t.cdf`:
 
@@ -70,7 +70,7 @@ let tCritical = Distributions.t.quantile(p: 0.975, df: 9)  // ≈ 2.262
 let zCritical = Distributions.normal.quantile(p: 0.975, mean: 0, standardDeviation: 1)  // ≈ 1.96
 ```
 
-The t-critical of about `2.262` is noticeably wider than the normal z-critical of `1.96`. That gap is the penalty for not knowing the population standard deviation in advance. As `df` grows, the t-distribution converges to the normal — at `df = 30` the t-critical is already `2.04`, and by `df = 100` the two are barely distinguishable. A confidence interval built with the t-critical is wider than the same interval built with the normal critical, and the extra width is the honest accounting of small-sample uncertainty.
+The t-critical of about `2.262` is noticeably wider than the normal z-critical of `1.96`. That gap is the penalty for not knowing the population standard deviation in advance. As `df` grows, the t-distribution converges to the normal: at `df = 30` the t-critical is already `2.04`, and by `df = 100` the two are barely distinguishable. A confidence interval built with the t-critical is wider than the same interval built with the normal critical, and the extra width is the honest accounting of small-sample uncertainty.
 
 > Note: For the full t-distribution and chi-squared surface, see <doc:Working-With-Distributions>.
 
@@ -82,7 +82,7 @@ A **hypothesis test** is a structured way to decide whether the data we observed
 
 For an A/B test on session times, the null hypothesis is "the variant's population mean equals the control baseline of 240 seconds." The alternative is "the variant's population mean differs from 240 seconds." Our sample mean is `250.0`. The question is whether a gap of 10 seconds is large enough, given the standard error, to be evidence that the populations actually differ, or whether a gap that size could plausibly arise by chance from random sampling alone.
 
-With only ten observations, the small-sample t-distribution is the appropriate reference — the normal approximation rests on `n ≥ 30`. The t-statistic itself is computed the same way as a z-statistic — the difference is which distribution we compare it against:
+With only ten observations, the small-sample t-distribution is the appropriate reference, since the normal approximation rests on `n ≥ 30`. The t-statistic itself is computed the same way as a z-statistic: the difference is which distribution we compare it against:
 
 ```swift
 import Quiver
@@ -118,13 +118,13 @@ The t-statistic of about `4.575` means the sample mean of 250 sits more than fou
 
 Hypothesis tests can produce two kinds of mistakes. A **Type I error** is rejecting the null when it is true: a false alarm. A **Type II error** is failing to reject the null when the alternative is true: a missed detection. Setting alpha to `0.05` caps the Type I error rate at five percent. The Type II error rate depends on sample size, true effect size, and how strict alpha is.
 
-The output of a hypothesis test is a number called the **p-value**. It is the probability of observing data at least as extreme as our sample if the null hypothesis were true. A small p-value means the data would be surprising under the null, which is taken as evidence against the null. By convention, when the p-value falls below alpha, we reject the null.
+The output of a hypothesis test is a number called the **p-value**. The p-value is the probability of observing data at least as extreme as our sample if the null hypothesis were true. A small p-value means the data would be surprising under the null, which is taken as evidence against the null. By convention, when the p-value falls below alpha, we reject the null.
 
 The p-value is also the most misinterpreted number in applied statistics. The misinterpretations show up constantly in product reviews, dashboards, and engineering postmortems, so the precise statement of what the p-value is matters.
 
 > Important: A p-value of `0.03` does not mean "there is a 3% probability the null hypothesis is true." It does not mean "there is a 97% probability the alternative is true." It means: "if the null were true, we would see data this extreme or more extreme only 3% of the time." The probability statement is about the data given the hypothesis, not the hypothesis given the data. These are different conditional probabilities, and conflating them is the most common mistake in applied hypothesis testing.
 
-The mistake is easy to make because the misinterpretation feels intuitive. It is wrong for the same reason that "the probability a person with a positive medical test has the disease" is not the same as "the probability of a positive test given the disease." Translating between the two requires knowing the prior probability of the disease in the population, and the p-value has no access to a prior. The p-value alone cannot tell us how likely the null is to be true. It can only tell us how surprising the data would be under the null.
+The mistake is easy to make because the misinterpretation feels intuitive. The misreading is wrong for the same reason that "the probability a person with a positive medical test has the disease" is not the same as "the probability of a positive test given the disease." Translating between the two requires knowing the prior probability of the disease in the population, and the p-value has no access to a prior. The p-value alone cannot tell us how likely the null is to be true. It can only tell us how surprising the data would be under the null.
 
 A second common mistake is treating `p < 0.05` as an on-off switch: true or false, ship it or kill it. A p-value just below `0.05` and a p-value just above are barely distinguishable as evidence. The threshold is a convention for taking action, not a sharp break in the underlying truth. Effect size and practical significance, covered later in this primer, exist precisely to keep us from treating a borderline p-value as a yes-or-no verdict.
 
@@ -172,13 +172,13 @@ if let ci = resampledMeans.percentileCI(level: 0.95) {
 
 The interval `[~246, ~254]` answers the same question a parametric confidence interval would: given this sample of ten session times, the population mean is plausibly somewhere in that range. The control baseline of `240` sits clearly outside the interval, which is the resampling counterpart of rejecting the null. The width of the interval communicates how precise the estimate is. A narrower interval means the sample is informative; a wider interval means the data leaves the population mean less constrained.
 
-> Important: A 95% confidence interval is not "a 95% probability the population mean lies in this interval." The population mean is fixed; the 95% describes the *procedure* — repeated many times, about 95% of the intervals it produces would contain the true mean. In practice, say "we estimate the mean is around 250, plausibly between 246 and 254," not "there is a 95% chance the true mean is between 246 and 254."
+> Important: A 95% confidence interval is not "a 95% probability the population mean lies in this interval." The population mean is fixed; the 95% describes the *procedure*: repeated many times, about 95% of the intervals it produces would contain the true mean. In practice, say "we estimate the mean is around 250, plausibly between 246 and 254," not "there is a 95% chance the true mean is between 246 and 254."
 
-The percentile interval is the simplest of the resampling-based interval methods. It is appropriate when the resampled distribution looks roughly symmetric around the original sample statistic, which is the common case for sample means and medians on data without extreme skew. More elaborate constructions, like bias-corrected and accelerated intervals, exist for skewed distributions, but the plain percentile interval is the right starting point and it is what Quiver ships today.
+The percentile interval is the simplest of the resampling-based interval methods. The interval is appropriate when the resampled distribution looks roughly symmetric around the original sample statistic, which is the common case for sample means and medians on data without extreme skew. More elaborate constructions, like bias-corrected and accelerated intervals, exist for skewed distributions, but the plain percentile interval is the right starting point and it is what Quiver ships today.
 
 ### The parametric t-interval
 
-The resampling interval makes no assumption about the population's shape — it reads coverage directly off the resampled distribution. The **parametric t-interval** is the classical alternative: assume the population is roughly normal and the sample mean follows the t-distribution, then build the interval as `mean ± t_critical × standardError`. The critical value comes from `Distributions.t.quantile` at the chosen confidence level, with degrees of freedom `n − 1`:
+The resampling interval makes no assumption about the population's shape; it reads coverage directly off the resampled distribution. The **parametric t-interval** is the classical alternative: assume the population is roughly normal and the sample mean follows the t-distribution, then build the interval as `mean ± t_critical × standardError`. The critical value comes from `Distributions.t.quantile` at the chosen confidence level, with degrees of freedom `n − 1`:
 
 ```swift
 import Quiver
@@ -199,11 +199,11 @@ if let mean = sample.mean(),
 }
 ```
 
-The parametric interval `[~245, ~255]` lands within rounding of the resampled interval `[~246, ~254]` — the two methods agree on data that does not violate the normality assumption. The parametric form is faster to compute (one critical value lookup instead of a thousand resamples) and is the default in most introductory statistics texts. The resampling form is the right tool when the data is skewed or when the statistic is not the sample mean — neither assumption is built into `percentileCI`. Both belong in a working analyst's toolkit; the choice depends on the assumptions the data can support.
+The parametric interval `[~245, ~255]` lands within rounding of the resampled interval `[~246, ~254]`: the two methods agree on data that does not violate the normality assumption. The parametric form is faster to compute (one critical value lookup instead of a thousand resamples) and is the default in most introductory statistics texts. The resampling form is the right tool when the data is skewed or when the statistic is not the sample mean. Neither assumption is built into `percentileCI`. Both belong in a working analyst's toolkit; the choice depends on the assumptions the data can support.
 
 ### The normal approximation
 
-When the sample is large enough, the Central Limit Theorem makes the sampling distribution of the mean approximately normal, and we can build confidence intervals and p-values directly from the normal distribution without resampling. Quiver exposes the normal CDF and quantile through `Distributions.normal`:
+When the sample is large enough, the Central Limit Theorem makes the sampling distribution of the mean approximately normal, and we can build confidence intervals and p-values directly from the normal distribution without resampling. Quiver exposes the normal CDF and quantile through ``Distributions/normal``:
 
 ```swift
 import Foundation
@@ -246,6 +246,6 @@ Significance and effect size are independent dimensions. A small p-value with a 
 
 ### From summaries to models
 
-Three pieces of this primer reappear directly in Quiver's machine learning stack. The z-score, the subtract-the-mean-and-divide-by-the-spread operation we used to put values on a universal ruler, is what `StandardScaler` applies column-by-column before a model touches the data — the same formula at a larger scale, with one small twist that the scaler uses the population standard deviation while the primer's `standardDeviation()` defaults to the sample form. Resampling carries forward as the engine behind `percentileCI` on any statistic, not only the mean we used here.
+Three pieces of this primer reappear directly in Quiver's machine learning stack. The z-score, the subtract-the-mean-and-divide-by-the-spread operation we used to put values on a universal ruler, is what ``StandardScaler`` applies column-by-column before a model touches the data: the same formula at a larger scale, with one small twist that the scaler uses the population standard deviation while the primer's `standardDeviation()` defaults to the sample form. Resampling carries forward as the engine behind `percentileCI` on any statistic, not only the mean we used here.
 
-The confidence-interval idea has its richest payoff in `LinearRegression.summary(features:targets:level:)`, which returns standard errors, t-statistics, p-values, and CIs for every fitted coefficient — the same machinery from this primer, applied to a regression slope instead of a sample mean.
+The confidence-interval idea has its richest payoff in `LinearRegression.summary(features:targets:level:)`, which returns standard errors, t-statistics, p-values, and CIs for every fitted coefficient: the same machinery from this primer, applied to a regression slope instead of a sample mean.

@@ -4,13 +4,13 @@ Save trained models to disk without retraining.
 
 ## Overview
 
-Quiver's ML models conform to Swift's `Codable` protocol. This means a model trained once can be encoded to JSON, saved to disk, transmitted over a network, or stored in a database — then decoded back into an identical, ready-to-use model. No retraining, no reconfiguration, no data required.
+Quiver's ML models conform to Swift's `Codable` protocol. This means a model trained once can be encoded to JSON, saved to disk, transmitted over a network, or stored in a database, then decoded back into an identical, ready-to-use model. No retraining, no reconfiguration, no data required.
 
-This works because Quiver models are immutable value types whose stored properties are all basic Swift types — arrays of numbers, integers, and booleans. The Swift compiler auto-synthesizes the encoding and decoding logic, so there is no custom serialization code to maintain or debug.
+This works because Quiver models are immutable value types whose stored properties are all basic Swift types: arrays of numbers, integers, and booleans. The Swift compiler auto-synthesizes the encoding and decoding logic, so there is no custom serialization code to maintain or debug.
 
 ### The pattern
 
-Every model follows the same three-step pattern: `fit`, `encode`, `decode`. The decoded model is identical to the original — same properties, same predictions, same `Equatable` comparison:
+Every model follows the same three-step pattern: `fit`, `encode`, `decode`. The decoded model is identical to the original: same properties, same predictions, same `Equatable` comparison:
 
 ```swift
 import Quiver
@@ -31,7 +31,7 @@ print(model == restored)  // true
 print(restored.predict([[6.0]]))
 ```
 
-The same pattern works for every model type — `LinearRegression`, `GradientDescent`, `Ridge`, `GaussianNaiveBayes`, `KNearestNeighbors`, `KMeans`, and `FeatureScaler`.
+The same pattern works for every model type: ``LinearRegression``, ``GradientDescent``, ``Ridge``, ``LogisticRegression``, ``GaussianNaiveBayes``, ``KNearestNeighbors``, ``KMeans``, and ``FeatureScaler``. A ``ResidualModel`` persists too, encoding and decoding whenever the regressor it wraps does.
 
 ### Saving and loading from disk
 
@@ -58,11 +58,11 @@ let labels = restored.predict(newReadings)
 
 ### When to persist the scaler
 
-Distance-based models like `KNearestNeighbors` and `KMeans` measure how far apart data points are. When features have different scales — a credit score ranging 300-850 and an account balance ranging 0-250,000 — the larger feature dominates every distance calculation. Feature scaling normalizes all columns to the same range so each one contributes equally.
+Distance-based models like `KNearestNeighbors` and `KMeans` measure how far apart data points are. When features have different scales (a credit score ranging 300-850 and an account balance ranging 0-250,000), the larger feature dominates every distance calculation. Feature scaling normalizes all columns to the same range so each one contributes equally.
 
 When scaling is used, the scaler and model become a matched pair. The model's learned distances and boundaries exist in the scaled coordinate space, so every future input must be scaled using the same min and max values from training. Losing the scaler means new inputs land in a different coordinate space, producing incorrect predictions with no error or warning.
 
-> Note: `LinearRegression` and `GaussianNaiveBayes` do not require scaling — regression coefficients compensate for different magnitudes mathematically, and Naive Bayes evaluates each feature independently. For these models, the scaler is optional and the model can be persisted on its own.
+> Note: ``LinearRegression`` and ``GaussianNaiveBayes`` do not require scaling: regression coefficients compensate for different magnitudes mathematically, and Naive Bayes evaluates each feature independently. For these models, the scaler is optional and the model can be persisted on its own.
 
 ### Persisting a full pipeline
 
@@ -107,7 +107,7 @@ assert(model == decoded)
 
 ### Loading models in async contexts
 
-The same value semantics that make Quiver models `Codable` also make them `Sendable`. A model decoded inside an `async` function can be returned to the caller, passed across task boundaries, or handed to a SwiftUI view without any additional ceremony — the decoded value crosses freely because there's nothing shared or mutable inside it.
+The same value semantics that make Quiver models `Codable` also make them `Sendable`. A model decoded inside an `async` function can be returned to the caller, passed across task boundaries, or handed to a SwiftUI view without any additional ceremony. The decoded value crosses freely because there's nothing shared or mutable inside it.
 
 ```swift
 import Quiver
@@ -122,13 +122,13 @@ func loadClassifier(from url: URL) async throws -> KNearestNeighbors {
 let classifier = try await loadClassifier(from: modelURL)
 ```
 
-This is the natural pattern for apps that load a pre-trained model at startup: decode it off the main thread, hand the result to the view layer, and start predicting. The fitted model behaves the same whether it was just trained or just decoded — immutable, thread-safe, and ready to use.
+This is the natural pattern for apps that load a pre-trained model at startup: decode it off the main thread, hand the result to the view layer, and start predicting. The fitted model behaves the same whether it was just trained or just decoded: immutable, thread-safe, and ready to use.
 
-> Note: For the full set of concurrency patterns — training inside a task, long-running fits, and SwiftUI integration — see <doc:Concurrency-Primer>.
+> Note: For the full set of concurrency patterns (training inside a task, long-running fits, and SwiftUI integration), see <doc:Concurrency-Primer>.
 
 ### Where to store the encoded bytes
 
-Once a model is encoded, the resulting `Data` value can go anywhere Swift can write bytes. On iOS and macOS, write to the app's Application Support directory with `FileManager`, store in `UserDefaults` for small models, or persist as a `Data` property in SwiftData. On watchOS, save to the local documents directory for on-device models, or use `WatchConnectivity` to transfer encoded bytes from a paired iPhone. On server-side Swift with Vapor, write to a file path at deployment time and decode once at startup — the model stays in memory to serve concurrent requests.
+Once a model is encoded, the resulting `Data` value can go anywhere Swift can write bytes. On iOS and macOS, write to the app's Application Support directory with `FileManager`, store in `UserDefaults` for small models, or persist as a `Data` property in SwiftData. On watchOS, save to the local documents directory for on-device models, or use `WatchConnectivity` to transfer encoded bytes from a paired iPhone. On server-side Swift with Vapor, write to a file path at deployment time and decode once at startup; the model stays in memory to serve concurrent requests.
 
 ### Related
 - <doc:Pipeline>

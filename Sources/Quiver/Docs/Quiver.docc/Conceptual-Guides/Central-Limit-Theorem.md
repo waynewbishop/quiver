@@ -4,9 +4,7 @@ Building the sampling distribution of the mean.
 
 ## Overview
 
-The Central Limit Theorem is the bridge between describing a dataset and reasoning about the population behind it. It explains why we can take a single sample, compute one mean, and still say something honest about a population we never fully observed. Almost every inferential method rests on this one fact, which is why it deserves its own guide rather than a paragraph inside a larger one.
-
-This guide leads with the object the theorem is about: the sampling distribution of the mean. Once that object is in view, the standard error stops being a formula to memorize and becomes a quantity we can derive, and the distinction between standard deviation and standard error becomes a distinction we can state precisely.
+The **Central Limit Theorem** explains why a single sample mean allows us to infer properties of an unobserved population. By analyzing the sampling distribution of the mean, we can derive the standard error rather than memorizing it, making the distinction between standard deviation and standard error clear.
 
 ### The sampling distribution of the mean
 
@@ -57,7 +55,7 @@ if let check = sampleMeans.empiricalRule() {
 }
 ```
 
-The mean of the sample means lands very close to the population mean of `2.0`, recovering it from a thousand draws without ever measuring the whole population. The `empiricalRule()` check is the bell test in code. It reports the fraction of sample means falling within one, two, and three standard deviations of their own mean, and those fractions sitting within a few thousandths of the Gaussian targets of `0.683`, `0.955`, and `0.997` is exactly what "approximately normal" means in practice.
+The mean of the sample means lands very close to the population mean of `2.0`, recovering it from a thousand draws without ever measuring the whole population. The `empiricalRule()` check is the bell test in code. The check reports the fraction of sample means falling within one, two, and three standard deviations of their own mean. Those fractions sitting within a few thousandths of the Gaussian targets of `0.683`, `0.955`, and `0.997` is exactly what "approximately normal" means in practice.
 
 <!-- DIAGRAM (fast-follow): skewed exponential population collapsing into a bell-shaped sampling distribution of the mean. Filename TBD by the visual team per the visual design guide. -->
 

@@ -4,25 +4,17 @@ Summarize history, rank similar items, and learn from a user's own behavior on i
 
 ## Overview
 
-A consumer iOS app generates a stream of small events as the user moves through it: a trip taken, a session completed, a photo saved, a purchase recorded. These surfaces are rarely the raw events. Often they are derived numbers we compute from user actions or transactions.
+An iOS app creates a constant stream of events tracking trips, workouts, and purchases. We rarely show raw events; we prefer derived summaries that clarify user habits.
 
-**Statistics** turns a list of past events into a summary the iPhone can render. Linear algebra ranks items by relation in feature space. Machine learning fits a model of the user's own behavior so we can score a new event against the user's own pattern. With Quiver, every one of those actions runs on-device, against the user's own generated data.
+**Statistics** turns event lists into clean summaries for rendering; linear algebra ranks items by similarity. Machine learning fits a model to user behavior to predict future actions. Every action runs on-device with Quiver, ensuring data privacy and high performance.
+
+> Note: This guide builds on the concepts found in <doc:Statistics-Primer>.
 
 ### Setup and lifecycle
 
-An iOS app that computes on user history needs two storage surfaces. **Bundle storage** holds artifacts the developer ships with the binary: a fitted model trained offline, a precomputed table, or a reference vector, encoded as JSON and read on first launch. **Documents storage** holds artifacts derived from the running user, including their accumulated history, their personal baseline, and a model fit from their own data, encoded at session end and decoded at the next launch.
+Computing on user history requires two different kinds of storage for an iOS app. Bundle storage holds the files that ship with the app binary including things like a pre-trained model or a reference table of values. Documents storage holds the data created by the user as they use the app such as their personal history and any models fit from their own data.
 
-The convention is worth holding from the first line of code. Anything that came from the developer lives in the bundle. Anything that came from the user lives in Documents. Mixing the two is the source of bugs that survive uninstall and lose user history on update. The pillar sections below build up the values that flow into each surface: descriptive statistics, similarity rankings, and fitted models. See <doc:Model-Persistence> for the encoding-and-decoding mechanics once the values exist.
-
-## Statistics on iOS
-
-An iOS app accumulates user events as it runs: trips taken, workouts logged, purchases recorded, sessions completed. A list of eighty-four trip delays is not a screen. The job of descriptive statistics is to turn that list into the four or five numbers a screen renders: a typical value, a spread, a cut-off the user is asking about. Quiver computes these from the raw `[Double]` the app already holds, returns a typed snapshot ready for SwiftUI, and runs entirely on-device.
-
-### From raw history to typed summary
-
-The **median** is the middle value when the data is sorted; it answers "what is typical" without letting one extreme value pull the answer around. **Quartiles** are the three cut points that divide the sorted data into four equal-sized groups, and the **third quartile** is the value below which three-quarters of the history sits. Together, those two ideas turn raw history into the building blocks of a year-in-review screen, a personal-best banner, or a "three out of four trips arrive within" line. See <doc:Statistics-Primer> for the full vocabulary of central tendency and spread.
-
-The lead example is an on-time-performance screen. Each entry is a trip delay in minutes — negative means the trip arrived early, positive means late. We report the share of on-time arrivals alongside the median delay and a typical-ceiling line drawn from the third quartile.
+Maintaining a clear distinction between these two areas from the first line of code is essential. Anything from the developer lives in the bundle and anything from the user lives in Documents. Mixing these surfaces often leads to bugs when a user updates their app or restores from a backup. The sections below explore how to build the values that flow into these storage areas by looking at descriptive statistics and similarity rankings and fitted models.
 
 ```swift
 import Quiver
@@ -46,7 +38,7 @@ The `summary()` method returns a typed snapshot of the entire history: central t
 
 A second pattern shows up wherever the app needs to count occurrences rather than summarize a continuous quantity: most-played track, most-tagged photo location, most-frequent transaction merchant. A **frequency table** maps each distinct value to the number of times it appears, and a small typed value reports the mode and the count. See <doc:Frequency-Tables> for the operations Quiver exposes for categorical history.
 
-The same statistical surface generalizes across any screen whose product is a history of repeated events. A sleep app reads bedtime durations the same way the trip app reads delays. A workout app reads pace samples the same way. The concept is unchanged — turn a list of past events into a typed summary — even when the events themselves are not.
+The same statistical surface generalizes across any screen whose product is a history of repeated events. A sleep app reads bedtime durations the same way the trip app reads delays. A workout app reads pace samples the same way. The concept is unchanged, turning a list of past events into a typed summary, even when the events themselves are not.
 
 ### Computing the summary at the right moment
 
@@ -89,7 +81,7 @@ The `cosineSimilarities` call returns one score per catalog item: a value close 
 
 ### Fair comparison across scales
 
-The cosine works cleanly only when every feature lives on the same scale. A length measured in kilometers and a grade measured in percent live on different scales, and the larger numbers dominate the cosine. `FeatureScaler` is the bridge between raw features and a fair comparison: `fit` learns the column means and standard deviations from the catalog, and `transform` applies them to any vector before the ranking step.
+The cosine works cleanly only when every feature lives on the same scale. A length measured in kilometers and a grade measured in percent live on different scales, and the larger numbers dominate the cosine. `FeatureScaler` is the bridge between raw features and a fair comparison: `fit` learns each column's minimum and maximum from the catalog, and `transform` maps any vector into a common range before the ranking step.
 
 ```swift
 import Quiver
@@ -130,7 +122,7 @@ print(playerFacing.dot(toEnemy.normalized) > 0) // true — enemy is in front
 
 The dot product of `playerFacing` and the normalized direction to the enemy reads as a sign test: positive means in front, negative means behind, zero means directly to the side.
 
-A separate question — whether two motions are pointing the same way — calls for `cosineOfAngle` between two unit vectors. The result is a number between -1 and 1 that describes alignment regardless of speed.
+A separate question, whether two motions are pointing the same way, calls for `cosineOfAngle` between two unit vectors. The result is a number between -1 and 1 that describes alignment regardless of speed.
 
 ```swift
 import Quiver
@@ -153,7 +145,7 @@ On iOS, machine learning comes up when the app needs to model the user's own beh
 
 Two methods cover most of the surface: <doc:KMeans-Clustering> for unsupervised grouping, and <doc:Linear-Regression> for personal prediction. Each fits from a small history and returns a value the app can hold in observable state, persist to Documents, and read again on the next launch.
 
-The lead example is a personal-prediction regression. We fit `LinearRegression` to a history of feature vectors and the outcome that followed each one. A new feature vector is scored against the user's own pattern, and a large residual is itself the signal — it means the new event broke the user's own pattern.
+The lead example is a personal-prediction regression. We fit `LinearRegression` to a history of feature vectors and the outcome that followed each one. A new feature vector is scored against the user's own pattern, and a large residual is itself the signal: it means the new event broke the user's own pattern.
 
 ```swift
 import Quiver
@@ -176,18 +168,43 @@ let upcoming: [Double] = [3.0, 4.0, 2.0]
 print(model.predict([upcoming])[0]) // 20.0 — the model recovered the underlying weights exactly
 ```
 
+### Classifying the next decision
+
+Prediction answers "how much"; classification answers "which one." The most common consumer-app version is a binary decision (will the user accept this prompt, keep this item, renew this subscription), and <doc:Logistic-Regression> fits that from the user's own history. The model learns a boundary between the two outcomes and reports which side a new event falls on, along with a probability for how confident that call is.
+
+```swift
+import Quiver
+
+// Past in-app prompts: each row is [session_minutes, days_since_last_open];
+// the label is whether the user accepted the prompt (1) or dismissed it (0).
+let history: [[Double]] = [
+    [2.0, 7.0], [3.0, 5.0], [12.0, 1.0], [15.0, 0.0],
+    [4.0, 6.0], [18.0, 1.0], [1.0, 9.0], [20.0, 0.0]
+]
+let accepted: [Int] = [0, 0, 1, 1, 0, 1, 0, 1]
+
+let model = try LogisticRegression.fit(features: history, labels: accepted)
+
+// Score the current session before deciding whether to show the prompt.
+let current: [[Double]] = [[14.0, 1.0]]
+print(model.predict(current))               // [1] — a long session, opened today: likely to accept
+print(model.predictProbabilities(current))  // probability the user accepts
+```
+
+A fitted classifier is only honest if it is judged on events it never trained on. Before trusting it, hold part of the history back with <doc:Train-Test-Split> and score the reserved events.
+
 ### Persisting the fitted value
 
-The fitted model is a value, not a service. It encodes to JSON, persists to Documents, and decodes unchanged on the next launch. The same `Codable` shape covers <doc:KMeans-Clustering> for unsupervised grouping, <doc:Linear-Regression> for prediction, and <doc:Nearest-Neighbors-Classification> for similarity-based labeling. See <doc:Model-Persistence> for the encode-once, decode-on-launch pattern every model on iOS shares.
+The fitted model is a value, not a service. That value encodes to JSON, persists to Documents, and decodes unchanged on the next launch. The same `Codable` shape covers <doc:KMeans-Clustering> for unsupervised grouping, <doc:Linear-Regression> for prediction, <doc:Logistic-Regression> for binary decisions, and <doc:Nearest-Neighbors-Classification> for similarity-based labeling. See <doc:Model-Persistence> for the encode-once, decode-on-launch pattern every model on iOS shares.
 
 ### Composing scaling and fitting end-to-end
 
-Most personal models need more than one step: a `FeatureScaler` learns the column statistics, then the fitted estimator runs on the scaled features. <doc:Pipeline> ties the two together into one fit-and-predict workflow that round-trips through `Codable` as a single value, which keeps the scaling rule and the model coefficients from ever drifting out of sync across app launches.
+Most personal models need more than one step: a `StandardScaler` learns the column statistics, then the fitted estimator runs on the scaled features. <doc:Pipeline> ties the two together into one fit-and-predict workflow that round-trips through `Codable` as a single value, which keeps the scaling rule and the model coefficients from ever drifting out of sync across app launches.
 
-> Tip: Quiver ships four fitted models on iOS: `LinearRegression` for personal prediction, `KNearestNeighbors` for similarity-based classification, `KMeans` for unsupervised grouping, and `GaussianNaiveBayes` for probabilistic classification. Each composes with `FeatureScaler` for consistent feature scaling and `Pipeline` for end-to-end fit-and-predict workflows.
+> Tip: Quiver ships five fitted models suited to on-device iOS work: `LinearRegression` for personal prediction, `LogisticRegression` for binary decisions, `KNearestNeighbors` for similarity-based classification, `KMeans` for unsupervised grouping, and `GaussianNaiveBayes` for probabilistic classification. Each composes with `StandardScaler` for consistent feature scaling and `Pipeline` for end-to-end fit-and-predict workflows.
 
 ## Where to go from here
 
-The three sections above each have a deeper layer of math underneath them, and that math is the next step for iOS developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and inference. <doc:Linear-Algebra-Primer> extends vectors and dot products into matrices, transformations, and projection. <doc:Machine-Learning-Primer> ties both together — features, labels, training, evaluation, and the trade-offs that decide which model to reach for. Once an app has numbers worth showing, <doc:Data-Visualization> covers the aggregation primitives that feed Swift Charts directly.
+The three sections above each have a deeper layer of math underneath them, and that math is the next step for iOS developers moving into numerical work. <doc:Statistics-Primer> builds the vocabulary of variance, distributions, and inference. <doc:Linear-Algebra-Primer> extends vectors and dot products into matrices, transformations, and projection. <doc:Machine-Learning-Primer> ties both together: features, labels, training, evaluation, and the trade-offs that decide which model to reach for. Once an app has numbers worth showing, <doc:Data-Visualization> covers the aggregation primitives that feed Swift Charts directly. For the "items like this one" ranking taken end to end, <doc:Semantic-Search> assembles the full similarity pipeline from the same primitives this guide introduces. To build a retrieval layer that feeds an on-device language model, <doc:Retrieving-Context-For-Generation> takes that pipeline through chunking and context assembly.
 
 > Experiment: **The Quiver Notebook** is the right place to see how these surfaces compose on an iOS-sized dataset. Fit `KMeans` on a few dozen session vectors, then `LinearRegression` on a personal history of outcomes, and watch the same `Codable` model drop from Notebook into an iOS bundle unchanged. See <doc:Quiver-Notebook>.

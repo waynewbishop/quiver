@@ -4,17 +4,22 @@ Train an ordinary least squares regression model.
 
 ## Overview
 
-Linear regression finds the best-fit line — or hyperplane in higher dimensions — through training data by minimizing the sum of squared residuals. It predicts continuous values like prices, temperatures, scores, or any numerical quantity, and is the workhorse model when the relationship between features and a target is roughly linear.
+Linear regression finds the best-fit line (or hyperplane in higher dimensions) through training data by minimizing the sum of squared residuals. We call this **ordinary least squares** (OLS) because the model's objective is to minimize the sum of the squared differences (the "least squares") between the observed target values and the values predicted by the linear model. The "ordinary" distinguishes this from more complex variations that apply weight penalties or handle non-normal error distributions. The objective function we minimize is:
+```
+min ‖Xθ − y‖²
+```
 
-> Important: Linear regression is **supervised** — every training row is paired with a known target value, and the model learns the relationship between the features and that target. Unlike clustering models like `KMeans` that discover structure on their own, linear regression needs labelled data to find anything at all.
+Linear regression is the workhorse choice when the relationship between features and a target is roughly linear, predicting continuous values like prices, temperatures, or scores.
+
+> Important: Linear regression is **supervised**: every training row is paired with a known target value, and the model learns the relationship between the features and that target. Unlike clustering models like ``KMeans`` that discover structure on their own, linear regression needs labelled data to find anything at all.
 
 ![Scatter plot of training points with the fitted regression line passing through them](diagram-linear-regression)
 
 ### How it works
 
-Linear regression models the relationship between features and a target as a linear equation: `ŷ = θ₀ + θ₁x₁ + θ₂x₂ + ... + θₙxₙ`. The goal is to find the coefficients θ that minimize the total squared error between predicted and actual values. Quiver solves this using the **normal equation** `θ = (XᵀX)⁻¹Xᵀy`, which gives an exact closed-form solution in a single pass — no iteration, no learning rate, no convergence check. The route uses the matrix operations already shipped in Quiver: transposition, multiplication, and inversion.
+We model the relationship between features and a target as a linear equation: `ŷ = θ₀ + θ₁x₁ + θ₂x₂ + ... + θₙxₙ`. To find the coefficients θ that minimize our squared error, we use the **normal equation** `θ = (XᵀX)⁻¹Xᵀy`. This provides an exact closed-form solution in one pass: we need no iteration, no learning rate, and no convergence check. This approach relies entirely on the matrix operations shipped in Quiver: transposition, multiplication, and inversion.
 
-The two-point case shows the closed form on numbers we can check by hand. The line `y = 1 + 2x` passes exactly through `(1, 3)` and `(2, 5)`; the normal equation recovers the intercept and slope directly:
+The two-point case demonstrates this closed form on numbers we can verify by hand. The line `y = 1 + 2x` passes exactly through `(1, 3)` and `(2, 5)`; the normal equation recovers the intercept and slope directly:
 
 ```swift
 let x = [1.0, 2.0]
@@ -25,11 +30,11 @@ model.intercept     // 1.0
 model.coefficients  // [2.0]
 ```
 
-Adding more points overdetermines the system. The normal equation then returns the line that minimizes the sum of squared vertical distances rather than passing through every point.
+When we add more points and overdetermine the system, the normal equation returns the line that minimizes the sum of squared vertical distances rather than passing through every point.
 
 ### Fitting a model
 
-The `fit(features:targets:intercept:)` static method computes the optimal coefficients and returns a ready-to-use model. There is no separate unfitted state — the returned struct is immediately usable. Single-feature regression takes a flat `[Double]`:
+The `fit(features:targets:intercept:)` static method computes the optimal coefficients and returns a ready-to-use model. There is no separate unfitted state; the returned struct is immediately usable. Single-feature regression takes a flat `[Double]`:
 
 ```swift
 import Quiver
@@ -71,11 +76,11 @@ let prices = model.predict(newHomes)
 // prices in the trained model's units (dollars)
 ```
 
-For single-feature models, a convenience overload accepts a flat `[Double]` directly — useful with `Array.linspace` to generate a smooth trend line across the feature range for charting.
+For single-feature models, a convenience overload accepts a flat `[Double]` directly, useful with `Array.linspace` to generate a smooth trend line across the feature range for charting.
 
 ### Evaluating the fit
 
-Regression metrics tell us how close the model's predictions land to the actual values. R² (coefficient of determination) measures the fraction of variance explained, where 1.0 is perfect and 0.0 means the model is no better than predicting the mean. Mean squared error and its square root express the average prediction error — RMSE in the same units as the target:
+Regression metrics tell us how well the model predicts. R² (coefficient of determination) explains the fraction of target variance; 1.0 is perfect, while 0.0 means the model performs no better than predicting the mean. Mean squared error and RMSE express prediction error, with RMSE appearing in the same units as the target:
 
 ```swift
 import Quiver
@@ -85,19 +90,17 @@ let r2 = predictions.rSquared(actual: price)
 let rmse = predictions.rootMeanSquaredError(actual: price)
 ```
 
-R² answers how well the line fits the points we trained on. A separate question is whether the slope itself is large enough — given how noisy the data is — to be confident the underlying relationship is real, rather than a pattern that happened to land in this sample. The fitted coefficients are estimates from a sample, and the same sample-versus-population thinking from the <doc:Inferential-Statistics-Primer> governs how much we should trust them.
-
-That is what `summary` answers. The `summary(features:targets:level:)` method returns a `RegressionSummary` value carrying standard errors, p-values, confidence intervals, and adjusted R² for every coefficient. See <doc:Regression-Summary> for the full inferential vocabulary and how to read each field.
+R² shows how well our line fits the training data. For deeper insight into whether our coefficients are statistically sound given our sample's noise, we use `summary(features:targets:level:)`. This method returns a ``RegressionSummary`` value carrying standard errors, p-values, confidence intervals, and adjusted R² for every coefficient. See Regression Summary for the full inferential vocabulary.
 
 ### Polynomial regression
 
-**Polynomial regression** extends the straight-line form `y = θ₀ + θ₁x` to a curve: `y = θ₀ + θ₁x + θ₂x² + ... + θₙxⁿ`. The fit is still ordinary least squares — the columns of the design matrix are `[x, x², ..., xⁿ]` instead of independent features — so `LinearRegression.fit` solves it directly when we hand-build that matrix. The convenience path is `[Double].polyfit(x:y:degree:)`, which builds the design matrix for us and returns a `Polynomial` we can evaluate, differentiate, and compose.
+**Polynomial regression** extends the straight-line form `y = θ₀ + θ₁x` to a curve: `y = θ₀ + θ₁x + θ₂x² + ... + θₙxⁿ`. The fit is still ordinary least squares (the columns of the design matrix are `[x, x², ..., xⁿ]` instead of independent features), so `LinearRegression.fit` solves it directly when we hand-build that matrix. The convenience path is `[Double].polyfit(x:y:degree:)`, which builds the design matrix for us and returns a ``Polynomial`` we can evaluate, differentiate, and compose.
 
 Reach for `LinearRegression.fit` when standard errors and confidence intervals matter or when several features share the model; reach for `polyfit` when the input is a single variable and the curve itself is the return value. See <doc:Polynomials> for the polynomial path, the equivalence in code, and the conditioning limits that put a practical ceiling on degree.
 
 ### When the normal equation fails
 
-The normal equation requires inverting `XᵀX`. If the features are linearly dependent — for example, including both temperature in Celsius and Fahrenheit — the matrix is [singular](<doc:Determinants-Primer>) and cannot be inverted. In this case `fit` throws `MatrixError.singular`, and the fix is to remove the redundant features before fitting. The determinant tells us in advance whether the fit will succeed:
+The normal equation requires inverting `XᵀX`. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), the matrix is [singular](<doc:Determinants-Primer>) and cannot be inverted. In this case `fit` throws `MatrixError.singular`, and we must remove redundant features before fitting. The determinant tells us in advance whether the fit will succeed:
 
 ```swift
 import Quiver
@@ -109,7 +112,7 @@ let redundant: [[Double]] = [[1, 2], [1, 2]]
 redundant.determinant   //  0.0 — duplicate rows, fit will throw
 ```
 
-The same throw also stops `summary` from returning a corrupted variance-covariance matrix; the caller learns immediately that inference is not available rather than reading a struct of meaningless standard errors.
+This prevents `summary` from returning a corrupted variance-covariance matrix, ensuring we acknowledge that inference is not available rather than reading meaningless errors.
 
 ### The full pipeline
 
@@ -132,7 +135,7 @@ let model = try LinearRegression.fit(features: trainX, targets: trainY)
 let heldOutR2 = model.predict(testX).rSquared(actual: testY)
 ```
 
-The seeded split makes the partition reproducible — two runs with the same seed produce the same train and test rows.
+The seeded split makes the partition reproducible: two runs with the same seed produce the same train and test rows.
 
 ### Organizing data with Panel
 
@@ -159,15 +162,18 @@ The `Panel` type is entirely optional. The regression model accepts arrays direc
 
 ### When to use linear regression
 
-Linear regression works best when the relationship between features and target is roughly linear, the features are not heavily collinear (no temperature-in-Celsius-and-Fahrenheit), and the residuals are roughly normal and constant in spread across the range of fitted values. The closed-form normal equation is exact and one pass — no learning rate to tune, no convergence to watch.
+Linear regression is our tool of choice when relationships are roughly linear, features are not heavily collinear, and errors are roughly normal and constant across the target range. The normal equation is exact and one-pass: no learning rate tuning or convergence checks required.
 
-Linear regression struggles with strongly non-linear relationships (try polynomial regression or a transformation of the inputs first), with very high feature counts where matrix inversion becomes expensive, and with the kind of categorical or sparse data that violates the linearity assumption outright. The cost of the closed form is O(*n*·*f*² + *f*³), where *n* is the number of samples and *f* is the feature count. The *f*³ term is the inversion: the normal equation inverts the *f*×*f* matrix XᵀX, and Gaussian elimination over an *f*×*f* matrix touches each of its *f*² entries across *f* elimination passes, giving *f*³. That term is fixed by the feature count alone — adding samples never reduces it. `GradientDescent` avoids inversion entirely: each iteration is a single matrix-vector product, so its cost is O(*k*·*n*·*f*) for *k* iterations, linear in the feature count rather than cubic. As *f* grows, the cubic *f*³ term eventually dominates the closed form while the iterative cost stays linear in *f*, so reach for `GradientDescent` once the feature count is high enough that inversion outweighs the per-iteration overhead. When inference matters — standard errors, p-values, confidence intervals — pair `LinearRegression.fit` with `summary` and read <doc:Regression-Summary> for the interpretive vocabulary.
+We should reach for other models when:
+*   Relationships are strongly non-linear (try polynomial regression or input transformations first).
+*   Feature counts are very high, making matrix inversion expensive.
+*   Data is categorical or sparse, violating the linearity assumption.
+
+For these cases, `GradientDescent` scales better, as it avoids matrix inversion and uses a per-iteration cost linear in the number of features. For inferential questions (standard errors, p-values, confidence intervals), we pair `LinearRegression.fit` with `summary`. For reading coefficients, understanding slope units, and recognizing when collinearity makes weights untrustworthy, see the Model Interpretation Primer.
 
 ### Safe by design
 
-The `LinearRegression` model follows the same immutable-struct pattern as `GaussianNaiveBayes`, `KMeans`, and `KNearestNeighbors`. The model is always ready to use after `fit`, the training data stays separate from the result, and seeded splits ensure reproducible runs.
-
-`LinearRegression` conforms to Swift's `Equatable` protocol. When two runs use the same data, the closed-form solver returns identical coefficients:
+`LinearRegression` is an immutable struct created only through `fit`. An untrained model cannot be misused, and a fitted one cannot drift. Seeded splits ensure reproducible runs, and the model conforms to `Equatable`, making it trivial to verify that two runs produce identical results:
 
 ```swift
 import Quiver
@@ -179,7 +185,7 @@ run1 == run2  // true
 
 This is useful for unit tests, debugging, and verifying that a pipeline produces stable output.
 
-> Experiment: **The Quiver Notebook** is the right place to see outlier leverage. Take the workflow above, push one entry of `price` far above the rest, refit, and compare R² and the coefficients — the line bends to chase the outlier and the metric drops. The bent line and the lower R² are the signal that one point is doing disproportionate work, leverage made visible. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to see outlier leverage. Take the workflow above, push one entry of `price` far above the rest, refit, and compare R² and the coefficients—the line bends to chase the outlier and the metric drops. The bent line and the lower R² are the signal that one point is doing disproportionate work, leverage made visible. See Quiver Notebook.
 
 ## Topics
 

@@ -6,7 +6,7 @@ Training models off the main thread and passing fitted results back to the inter
 
 Swift Concurrency is the language's built-in way to run work without blocking the main thread. Tasks describe units of work, `async` functions suspend and resume, and the compiler verifies that values crossing between tasks are safe to share. Quiver fits into this model naturally because its models are value types, each defined as an immutable Swift `struct`. A fitted model can be trained inside a task, returned from it, and handed to a view without locks, wrappers, or `@unchecked` annotations.
 
-This primer covers the core patterns — training a model inside a task, keeping long-running fits off the main thread, and updating a SwiftUI view when training completes.
+This primer covers the core patterns: training a model inside a task, keeping long-running fits off the main thread, and updating a SwiftUI view when training completes.
 
 > Note: For core vocabulary like `features`, `labels`, `fit`, and `predict`, start with <doc:Machine-Learning-Primer> before working through the concurrency patterns below.
 
@@ -22,20 +22,20 @@ let model = try LinearRegression.fit(features: sqft, targets: prices)
 
 Task {
     // The model crosses into the task as a value — the compiler verifies it's safe
-    let prediction = model.predict([2000.0])
+    let prediction = model.predict(2000.0)
     print(prediction)
 }
 ```
 
-The reason this works comes back to how Quiver builds its models. Every property is a plain value — `[Double]` coefficients, `Int` dimensions, stored statistics — and every model is immutable once `fit` returns. There's nothing to mutate, nothing to share, and nothing that could change on one thread while another thread is reading it.
+The reason this works comes back to how Quiver builds its models. Every property is a plain value (`[Double]` coefficients, `Int` dimensions, stored statistics), and every model is immutable once `fit` returns. There's nothing to mutate, nothing to share, and nothing that could change on one thread while another thread is reading it.
 
-The same property applies to `predict`. A fitted model can be called from any number of concurrent tasks without serialization, because prediction is a pure read against immutable properties — the model computes an answer from its stored parameters and returns, without touching any shared state along the way.
+The same property applies to `predict`. A fitted model can be called from any number of concurrent tasks without serialization, because prediction is a pure read against immutable properties: the model computes an answer from its stored parameters and returns, without touching any shared state along the way.
 
 > Note: Because models are also `Codable` and `Equatable`, the same value semantics that make them safe to share also make them easy to save, load, and compare. See <doc:Machine-Learning-Primer> for the full picture of how Quiver's models are designed.
 
 ### Training inside a task
 
-The most common pattern is training a model inside an `async` function. The function describes the steps — fit a scaler, transform the features, fit the model — and Swift Concurrency handles running them. When the function returns, the caller receives a fitted model as its result.
+The most common pattern is training a model inside an `async` function. The function describes the steps (fit a scaler, transform the features, fit the model), and Swift Concurrency handles running them. When the function returns, the caller receives a fitted model as its result.
 
 ```swift
 import Quiver
@@ -57,7 +57,7 @@ This is the default pattern for training in response to a user action, a file lo
 let model = await trainClassifier(features: data, labels: labels)
 ```
 
-Some Quiver models can throw when their inputs don't support a solution. `LinearRegression.fit()` throws `MatrixError.singular` when the normal equation has no unique answer — which happens when the feature columns are linearly dependent, meaning one feature is an exact combination of the others. Combining a throwing fit with an `async` function is straightforward: mark the wrapper `async throws` and use `try await` at the call site.
+Some Quiver models can throw when their inputs don't support a solution. `LinearRegression.fit()` throws ``MatrixError/singular`` when the normal equation has no unique answer, which happens when the feature columns are linearly dependent, meaning one feature is an exact combination of the others. Combining a throwing fit with an `async` function is straightforward: mark the wrapper `async throws` and use `try await` at the call site.
 
 ```swift
 import Quiver
@@ -74,7 +74,7 @@ let model = try await trainRegression(features: sqft, targets: prices)
 
 ### Long-running training
 
-Some training workloads are the work itself. A `KMeans` fit over a large dataset, or a clustering run with a high iteration count, can take long enough that we want the work to run independently of the calling context. `Task.detached` starts a new top-level task that runs on its own — the right choice when training should complete regardless of what the surrounding code is doing.
+Some training workloads are the work itself. A ``KMeans`` fit over a large dataset, or a clustering run with a high iteration count, can take long enough that we want the work to run independently of the calling context. `Task.detached` starts a new top-level task that runs on its own: the right choice when training should complete regardless of what the surrounding code is doing.
 
 ```swift
 import Quiver
@@ -119,7 +119,7 @@ func predict(_ batches: [[[Double]]], with model: LinearRegression) async -> [[D
 
 Each `predict` runs the same Quiver call we would make sequentially; the task group only decides which core runs which batch. The same shape applies to any independent work, such as a pairwise comparison like `clusterCohesion` or a batch handed to `KMeans.predict`.
 
-> Note: Running batches concurrently changes the order in which they finish, even though each is placed back in its original position. For most operations the recombined result is identical to the sequential one. Voting models such as `KNearestNeighbors` are the exception: when two classes tie within a neighborhood, the order in which votes are counted can settle the tie either way, so a concurrent split may differ from a single call on a few predictions. When exact reproducibility matters more than speed, predict in one call.
+> Note: Running batches concurrently changes the order in which they finish, even though each is placed back in its original position. For most operations the recombined result is identical to the sequential one. Voting models such as ``KNearestNeighbors`` are the exception: when two classes tie within a neighborhood, the order in which votes are counted can settle the tie either way, so a concurrent split may differ from a single call on a few predictions. When exact reproducibility matters more than speed, predict in one call.
 
 ### What stays sequential
 
@@ -164,5 +164,5 @@ final class WorkoutAnalysisViewModel {
 
 The patterns here all rest on one property: a fitted Quiver model is an immutable, `Sendable` value, so it crosses task and actor boundaries without a copy ceremony or a lock. Splitting a batch, fitting off the main thread, and handing the result back to a view are three uses of that single guarantee. The <doc:Machine-Learning-Primer> covers the models these patterns wrap, and <doc:Pipeline> shows how scaling and fitting compose into one `Sendable` unit that moves across threads as cleanly as a single model does.
 
-> Experiment: **The Quiver Notebook** is a quick place to watch these patterns run before wiring them into an app. Try launching two fits with `async let`, printing on entry and exit, and watching the output interleave from run to run — that ordering is the visible proof the work ran concurrently. The Notebook has no view to update, so the SwiftUI hand-off above belongs in an app — see <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is a quick place to watch these patterns run before wiring them into an app. Try launching two fits with `async let`, printing on entry and exit, and watching the output interleave from run to run. That ordering is the visible proof the work ran concurrently. The Notebook has no view to update, so the SwiftUI hand-off above belongs in an app. See <doc:Quiver-Notebook>.
 

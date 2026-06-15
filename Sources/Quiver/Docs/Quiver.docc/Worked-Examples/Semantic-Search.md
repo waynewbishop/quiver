@@ -4,13 +4,13 @@ Implementing semantic search through tokenization, embeddings, and cosine simila
 
 ## Overview
 
-Semantic search finds information by comparing **meaning** rather than matching keywords. A traditional keyword search for "running shoes" would miss a document titled "athletic footwear" because the words don't match — even though the concepts are nearly identical. Semantic search solves this by representing words and phrases as numeric [vectors](<doc:Linear-Algebra-Primer>), where similar meanings occupy nearby positions in multidimensional space. Comparing those vectors with cosine similarity reveals relationships that keyword matching cannot.
+Semantic search finds information by comparing **meaning** rather than matching keywords. A traditional keyword search for "running shoes" would miss a document titled "athletic footwear" because the words don't match, even though the concepts are nearly identical. Semantic search solves this by representing words and phrases as numeric [vectors](<doc:Linear-Algebra-Primer>), where similar meanings occupy nearby positions in multidimensional space. Comparing those vectors with cosine similarity reveals relationships that keyword matching cannot.
 
 > Note: This article builds on concepts from <doc:Similarity-Operations> and <doc:Vector-Operations>. Familiarity with cosine similarity and the dot product will help, but the examples are self-contained.
 
 ## Words as vectors
 
-Semantic search begins with the idea that words can be represented as arrays of numbers — vectors — where each dimension captures some aspect of the word's meaning. Words that share similar contexts in language end up with vectors that point in similar directions. The example below sketches a small vocabulary in which words related to athletics cluster together while unrelated words sit far apart:
+Semantic search begins with the idea that words can be represented as arrays of numbers (vectors) where each dimension captures some aspect of the word's meaning. Words that share similar contexts in language end up with vectors that point in similar directions. The example below sketches a small vocabulary in which words related to athletics cluster together while unrelated words sit far apart:
 
 > Important: The vector values throughout this article are hypothetical, chosen to illustrate the math. In practice, these values could come from a trained language model, a domain-specific dataset (e.g. home prices versus property features), or any source that maps items to numeric vectors.
 
@@ -27,9 +27,9 @@ running.cosineOfAngle(with: jogging)   // ~0.99 (near-synonyms)
 running.cosineOfAngle(with: computer)  // ~0.47 (unrelated concepts)
 ```
 
-The similarity score tells us "running" and "jogging" are nearly interchangeable, while "running" and "computer" share little in common. This is what makes semantic search possible — comparing vectors is effectively comparing meaning.
+The similarity score tells us "running" and "jogging" are nearly interchangeable, while "running" and "computer" share little in common. This is what makes semantic search possible: comparing vectors is effectively comparing meaning.
 
-> Note: Cosine similarity measures **direction**, not magnitude — a word vector scaled to any length still produces the same similarity score. For details on why this matters, see the normalization discussion in <doc:Similarity-Operations>.
+> Note: Cosine similarity measures **direction**, not magnitude: a word vector scaled to any length still produces the same similarity score. For details on why this matters, see the normalization discussion in <doc:Similarity-Operations>.
 
 ## Vector arithmetic captures relationships
 
@@ -59,7 +59,7 @@ The subtraction isolates the "royalty" component by removing the "male" directio
 
 ## Tokenizing text
 
-The first step in any text pipeline converts raw text into individual words. Quiver's `tokenize` method lowercases, splits on whitespace, and removes punctuation — producing clean tokens that match embedding dictionary keys:
+The first step in any text pipeline converts raw text into individual words. Quiver's `tokenize` method lowercases, splits on whitespace, and removes punctuation, producing clean tokens that match embedding dictionary keys:
 
 ```swift
 import Quiver
@@ -73,7 +73,7 @@ let reviewTokens = review.tokenize()
 // ["great", "shoes", "lightweight", "comfortable", "and", "fast"]
 ```
 
-Lowercasing ensures that "Running" and "running" map to the same vector. Punctuation removal ensures that "shoes!" and "shoes," both match the dictionary key "shoes" — without this, punctuated words would silently miss their embeddings. Contractions like "don't" preserve their interior apostrophe.
+Lowercasing ensures that "Running" and "running" map to the same vector. Punctuation removal ensures that "shoes!" and "shoes," both match the dictionary key "shoes." Without this, punctuated words would silently miss their embeddings. Contractions like "don't" preserve their interior apostrophe.
 
 To keep punctuation attached to tokens (for example, when token boundaries carry meaning), pass `removingPunctuation: false`:
 
@@ -84,9 +84,9 @@ let raw = "Hello, world!".tokenize(removingPunctuation: false)
 
 ## Looking up embeddings
 
-The `embed(using:)` method converts an array of tokens into an array of vectors. It looks up each token in a dictionary keyed by string and returns only the vectors for tokens it finds — unknown tokens are filtered out automatically:
+The `embed(using:)` method converts an array of tokens into an array of vectors. The method looks up each token in a dictionary keyed by string and returns only the vectors for tokens it finds. Unknown tokens are filtered out automatically:
 
-> Tip: **The Quiver Notebook** ships 5,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector. See <doc:Notebook-Datasets>.
+> Tip: **The Quiver Notebook** ships 25,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector. See <doc:Notebook-Datasets>.
 
 ```swift
 import Quiver
@@ -110,13 +110,13 @@ let queryVectors = queryTokens.embed(using: embeddings)
 //  [0.6, 0.9, 0.4, 0.1]]   shoes
 ```
 
-Words like "for" that don't appear in the dictionary are silently skipped. Common words like "the," "for," and "is" often carry little semantic weight, so filtering them out can improve results. Because `tokenize` removes punctuation by default, input like "Comfortable, Running Shoes!" produces clean tokens that match dictionary keys directly — no manual cleanup required.
+Words like "for" that don't appear in the dictionary are silently skipped. Common words like "the," "for," and "is" often carry little semantic weight, so filtering them out can improve results. Because `tokenize` removes punctuation by default, input like "Comfortable, Running Shoes!" produces clean tokens that match dictionary keys directly, with no manual cleanup required.
 
-> Note: The `embed(using:)` method accepts any `[String: [Double]]` dictionary. How that dictionary is built — whether from a pre-trained model, a custom training pipeline, or a server-side API — is entirely up to the developer.
+> Note: The `embed(using:)` method accepts any `[String: [Double]]` dictionary. How that dictionary is built (whether from a pre-trained model, a custom training pipeline, or a server-side API) is entirely up to the developer.
 
 ## Searching the embedding dictionary
 
-Once an embedding dictionary is in hand, `nearest(to:k:)` ranks every word against a query vector and returns the top matches. The method composes cosine similarity, sorting, and ranking into a single call — the same operation that would otherwise take three or four chained calls.
+Once an embedding dictionary is in hand, `nearest(to:k:)` ranks every word against a query vector and returns the top matches. The method composes cosine similarity, sorting, and ranking into a single call: the same operation that would otherwise take three or four chained calls.
 
 ```swift
 import Quiver
@@ -143,7 +143,7 @@ let results = embeddings.nearest(to: target, k: 2)
 
 Each result carries a 1-based rank, the matching word, and the cosine similarity score. Entries whose vector dimension does not match the query are skipped silently, which makes the method forgiving when the dictionary mixes embeddings from different sources.
 
-> Tip: For ranked search across an array of document vectors rather than a string-keyed dictionary, use `cosineSimilarities(to:)` followed by `topIndices(k:labels:)`. The dictionary form is a convenience for the embedding-table case where the keys are already the labels.
+> Tip: For ranked search across an array of document vectors rather than a string-keyed dictionary, use `cosineSimilarities(to:)` followed by `topIndices(k:labels:)`. The dictionary form is a convenience for the embedding-table case where the keys are already the labels. When the vectors come from an ``Embedder`` rather than a literal table, rank the `(text, vector)` pairs it produces with `mostSimilar(to:k:)` instead. See <doc:Embedding-Sources>.
 
 ## Building document vectors
 
@@ -161,7 +161,7 @@ guard let documentVector = queryVectors.meanVector() else {
 
 The averaged vector blends the athletic meaning of "running" with the product meaning of "shoes" and the quality meaning of "comfortable." Documents with similar averages will score highest.
 
-> Note: The `meanVector` method returns an optional — it returns `nil` if the array is empty or if vectors have inconsistent dimensions. See <doc:Statistics-Primer> for the broader vocabulary of descriptive statistics the same `[Double]` columns support.
+> Note: The `meanVector` method returns an optional: it returns `nil` if the array is empty or if vectors have inconsistent dimensions. See <doc:Statistics-Primer> for the broader vocabulary of descriptive statistics the same `[Double]` columns support.
 
 ## Ranking results
 
@@ -179,9 +179,9 @@ for result in results {
 }
 ```
 
-The full pipeline chains five Quiver methods in order: `tokenize`, `embed(using:)`, `meanVector`, `cosineSimilarities(to:)`, and `topIndices(k:labels:)`.
+The full pipeline chains five Quiver methods in order: `tokenize`, `embed(using:)`, `meanVector`, `cosineSimilarities(to:)`, and `topIndices(k:labels:)`. For a reusable, swappable source of those vectors, see <doc:Embedding-Sources>.
 
 > Tip: For large collections, pre-compute and store document vectors rather than recalculating them for each query. Only the query vector needs to be built at search time.
 
-> Experiment: **The Quiver Notebook** is the right place to watch search-by-meaning surface in real time. Load `Dataset.glove50d`, build a tiny three-document corpus, and rank the docs against a query phrase. Then edit one document — add a synonym, remove a word, replace a noun with a related one — and re-run. The ranking shifts in a way keyword matching would never produce, and that shift is the whole point of embedding-based search. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to watch search-by-meaning surface in real time. Load `Dataset.glove50d`, build a tiny three-document corpus, and rank the docs against a query phrase. Then edit one document (add a synonym, remove a word, replace a noun with a related one) and re-run. The ranking shifts in a way keyword matching would never produce, and that shift is the whole point of embedding-based search. See <doc:Quiver-Notebook>.
 

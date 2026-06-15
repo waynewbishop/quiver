@@ -4,17 +4,19 @@ Measure classifier performance with accuracy, precision, recall, and F1 score.
 
 ## Overview
 
-A [classification](<doc:Machine-Learning-Primer>) model is only as useful as its evaluation. Accuracy — the fraction of correct predictions — is the most intuitive metric, but it can be deeply misleading on imbalanced datasets. If 95% of samples belong to one class, a model that always predicts that class achieves 95% accuracy while providing no useful discrimination. Precision, recall, and F1 score give a more complete picture by examining how the model handles the positive class specifically.
+A classification model is only as useful as its evaluation. We rely on accuracy to understand performance, but a single number often hides the true behavior of our model on imbalanced data. These metrics provide a complete picture of how well the model discriminates between classes.
 
-Quiver provides these metrics as extensions on `[Int]`, where the calling array represents predicted labels and the `actual:` parameter provides the ground truth.
+**Accuracy** measures the fraction of correct predictions. This metric can be misleading when one class is much more common than the others. We might reach ninety-five percent accuracy by always predicting the majority class, but such a model provides no useful information. **Precision**, **recall** and **F1** score help us see how the model handles specific classes to give us a honest assessment of performance.
+
+Quiver provides these metrics as extensions on arrays of integers. The calling array represents the predicted labels while the actual parameter provides the ground truth.
 
 ### How it works
 
-Every binary classification outcome falls into one of four categories. A **true positive** is a correct positive prediction — the model said "yes" and the answer was yes. A **false positive** is an incorrect positive prediction — the model said "yes" but the answer was no. A **true negative** is a correct negative prediction, and a **false negative** is a missed positive. All evaluation metrics are ratios of these four counts: accuracy uses all four, precision focuses on positive predictions, recall focuses on actual positives, and the F1 score balances precision and recall into a single number.
+We categorize every binary classification outcome into one of four buckets. A true positive is a correct prediction of yes. A false positive is an incorrect prediction of yes. A true negative is a correct prediction of no. A false negative is a missed positive. Every evaluation metric is a ratio of these four counts. Accuracy uses all four, while precision focuses on positive predictions and recall focuses on actual positives. The F1 score balances precision and recall into a single number that reflects the overall performance of the model.
 
 ### The confusion matrix
 
-Every binary classification metric derives from four counts — true positives, false positives, true negatives, and false negatives. The `ConfusionMatrix` struct captures all four and computes the derived metrics as properties:
+Every binary classification metric derives from four counts: true positives, false positives, true negatives, and false negatives. The `ConfusionMatrix` struct captures all four and computes the derived metrics as properties:
 
 ```swift
 import Quiver
@@ -36,11 +38,11 @@ cm.recall          // Optional(0.75)
 cm.f1Score         // Optional(0.75)
 ```
 
-> Experiment: **The Quiver Notebook** is the right place to see why we report precision and recall rather than accuracy alone. Flip a few correct predictions to wrong ones and watch the metrics move in different directions — false positives hurt precision, false negatives hurt recall, and the F1 score lands between them. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to see why we report precision and recall rather than accuracy alone. Flip a few correct predictions to wrong ones and watch the metrics move in different directions: false positives hurt precision, false negatives hurt recall, and the F1 score lands between them. See <doc:Quiver-Notebook>.
 
 ### Type safety over silent failures
 
-In some ML libraries, computing precision when the model predicts no positives silently returns 0.0. This hides a critical problem — the model is not making any positive predictions at all. A precision of 0.0 could mean "every positive prediction was wrong" or "no positive predictions were made," and the only way to tell the difference is manual inspection.
+In some ML libraries, computing precision when the model predicts no positives silently returns 0.0. This hides a critical problem: the model is not making any positive predictions at all. A precision of 0.0 could mean "every positive prediction was wrong" or "no positive predictions were made," and the only way to tell the difference is manual inspection.
 
 Quiver returns `nil` instead, surfacing the problem at the type level:
 
@@ -63,7 +65,7 @@ if let precision = p {
 }
 ```
 
-This design eliminates an entire class of silent bugs. When precision is `nil`, the code cannot proceed as if everything is fine — the `Optional` type requires explicit handling.
+This design eliminates an entire class of silent bugs. When precision is `nil`, the code cannot proceed as if everything is fine. The `Optional` type requires explicit handling.
 
 ### Labeled parameters prevent argument-swap bugs
 
@@ -80,9 +82,9 @@ In positional APIs, swapping the two arguments silently produces wrong results w
 
 ### Choosing the right metric
 
-The right metric depends on the cost of errors in the specific domain. In recall-first scenarios — malware detection, medical screening, customer churn — missing a positive case is expensive, so we optimize for catching every true positive even at the cost of some false alarms. In precision-first scenarios — spam filtering, content moderation, fraud alerts — false positives are expensive because flagging a legitimate email or freezing a valid transaction has real consequences for the user. When neither error type clearly dominates, the F1 score provides a single balanced metric. It is the harmonic mean of precision and recall, which penalizes extreme imbalances more heavily than an arithmetic mean would. The difference is stark: a model with 100% precision but 1% recall scores only 0.02 under the harmonic mean, not the 0.505 an arithmetic mean would suggest. The F1 score refuses to reward a model that excels at one metric while collapsing on the other.
+The right metric depends on the cost of errors in the specific domain. In recall-first scenarios (malware detection, medical screening, customer churn), missing a positive case is expensive, so we optimize for catching every true positive even at the cost of some false alarms. In precision-first scenarios (spam filtering, content moderation, fraud alerts), false positives are expensive because flagging a legitimate email or freezing a valid transaction has real consequences for the user. When neither error type clearly dominates, the F1 score provides a single balanced metric. The F1 score is the harmonic mean of precision and recall, which penalizes extreme imbalances more heavily than an arithmetic mean would. The difference is stark: a model with 100% precision but 1% recall scores only 0.02 under the harmonic mean, not the 0.505 an arithmetic mean would suggest. The F1 score refuses to reward a model that excels at one metric while collapsing on the other.
 
-The precision-recall trade-off is not fixed — we control it by moving the decision threshold. A probabilistic classifier outputs a confidence for each class, and a prediction becomes positive only when that confidence crosses a threshold. Raising the threshold means we predict positive only when very confident, which lifts precision while lowering recall. Lowering it casts a wider net, raising recall at the expense of precision. In Quiver this choice happens upstream at prediction time, because the metrics here take hard `[Int]` labels rather than probabilities. `GaussianNaiveBayes.predictProbabilities` returns per-class confidences, and that is where we would apply a threshold to convert probabilities into the labels these metrics evaluate.
+The precision-recall trade-off is not fixed: we control it by moving the decision threshold. A probabilistic classifier outputs a confidence for each class, and a prediction becomes positive only when that confidence crosses a threshold. Raising the threshold means we predict positive only when very confident, which lifts precision while lowering recall. Lowering it casts a wider net, raising recall at the expense of precision. In Quiver this choice happens upstream at prediction time, because the metrics here take hard `[Int]` labels rather than probabilities. `GaussianNaiveBayes.predictProbabilities` returns per-class confidences, and that is where we would apply a threshold to convert probabilities into the labels these metrics evaluate.
 
 ### Classification report
 
@@ -105,7 +107,7 @@ print(predictions.classificationReport(actual: actual))
 // weighted avg       0.75      0.75      0.75         8
 ```
 
-Each class gets its own row with precision, recall, F1, and support (sample count). The macro average is the unweighted mean across classes — it treats every class equally regardless of size. The weighted average accounts for class imbalance by weighting each class by its support. Undefined metrics display as 0.00 in the report. The individual `precision`, `recall`, and `f1Score` methods still return `nil` for programmatic access.
+Each class gets its own row with precision, recall, F1, and support (sample count). The macro average is the unweighted mean across classes; it treats every class equally regardless of size. The weighted average accounts for class imbalance by weighting each class by its support. Undefined metrics display as 0.00 in the report. The individual `precision`, `recall`, and `f1Score` methods still return `nil` for programmatic access.
 
 ### The full pipeline
 
@@ -154,6 +156,7 @@ print(predictions.classificationReport(actual: testY))
 
 ### Related
 - <doc:Machine-Learning-Primer>
+- <doc:Model-Interpretation-Primer>
 - <doc:Naive-Bayes>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:Linear-Regression>

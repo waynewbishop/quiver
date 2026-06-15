@@ -13,18 +13,83 @@
 
 import Foundation
 
+// MARK: - Gradient Strategy
+
+/// The varying part of batch gradient descent: how the gradient and loss are
+/// computed for one objective. Everything invariant across objectives — the
+/// θ = 0 start, the parameter step, the signed-relative convergence test, the
+/// divergence guards, and the loss trajectory — lives in
+/// ``_GradientDescent/descend(features:targets:learningRate:maxIterations:tolerance:strategy:)``.
+///
+/// A strategy is a pure function of the current iterate. `gradient` and `loss`
+/// are kept as separate calls — rather than a fused pair — so the shared loop
+/// computes each exactly where the per-objective loops historically did, leaving
+/// the numerics of every existing model bit-for-bit unchanged. Squared error
+/// (``_MeanSquaredErrorStrategy``) and cross-entropy (``_CrossEntropyStrategy``)
+/// are the two objectives; both share the one loop.
+internal protocol _GradientStrategy: Sendable {
+
+    /// The gradient ∇L(θ) at the given parameters.
+    ///
+    /// The returned vector already carries the per-objective scaling — the
+    /// `(2/n)` of squared error, the `(1/n)` of cross-entropy, plus any penalty
+    /// term — so the shared loop applies only the learning rate.
+    ///
+    /// - Parameters:
+    ///   - features: Design matrix, intercept column prepended when fitting a bias.
+    ///   - targets: Target vector — continuous for regression, binary `0`/`1` for
+    ///     classification.
+    ///   - parameters: The current coefficient vector θ.
+    /// - Returns: The gradient at θ, one element per parameter.
+    func gradient(
+        features: [[Double]],
+        targets: [Double],
+        parameters: [Double]
+    ) -> [Double]
+
+    /// The scalar loss L(θ) at the given parameters.
+    ///
+    /// Must be the exact objective whose gradient ``gradient(features:targets:parameters:)``
+    /// returns, so the convergence test measures the surface being descended.
+    ///
+    /// - Parameters:
+    ///   - features: Design matrix, matching the gradient call.
+    ///   - targets: Target vector, matching the gradient call.
+    ///   - parameters: The current coefficient vector θ.
+    /// - Returns: The loss at θ.
+    func loss(
+        features: [[Double]],
+        targets: [Double],
+        parameters: [Double]
+    ) -> Double
+}
+
 // MARK: - Internal Gradient Descent Computation
 
-/// Internal namespace for batch gradient descent on mean squared error loss.
+/// Internal namespace for batch gradient descent, parameterized by objective.
 ///
-/// Minimizes L(θ) = (1/n)‖Xθ − y‖² by iteratively stepping the parameters
-/// opposite the gradient ∇L(θ) = (2/n)Xᵀ(Xθ − y). Separated from the public API
-/// so the descent loop stays testable without exposing implementation details.
+/// Runs one shared descent loop over a ``_GradientStrategy``: starts from θ = 0
+/// and steps opposite the gradient until the signed relative loss-delta falls
+/// within tolerance or the iteration cap is reached.
 ///
-/// The loss surface here is convex with a unique global minimum, so any correct
-/// descent must converge to the same θ that ``_Regression/fitNormalEquation(features:targets:intercept:)``
-/// produces in closed form. That correspondence is the validation oracle for the
-/// optimizer mechanics.
+/// Every iterative model in Quiver routes through this one loop — the dependents
+/// are:
+///
+/// - ``GradientDescent`` — via ``_MeanSquaredErrorStrategy`` with `lambda == 0`.
+/// - ``Ridge`` — via ``_MeanSquaredErrorStrategy`` with `lambda > 0`.
+/// - ``LogisticRegression`` — via ``_CrossEntropyStrategy``.
+///
+/// (``LinearRegression`` is the closed-form sibling — it solves the normal
+/// equation directly and does not use this loop.) Changing the loop's convergence
+/// or divergence behavior changes all three dependents at once, so the equivalence
+/// tests in `GradientStrategyTests` pin the squared-error path against its prior
+/// numerics.
+///
+/// For squared error the loss surface is convex with a unique global minimum, so
+/// any correct descent must converge to the same θ that
+/// ``_Regression/fitNormalEquation(features:targets:intercept:)`` produces in
+/// closed form. That correspondence is the validation oracle for the optimizer
+/// mechanics.
 internal enum _GradientDescent {
 
     /// The outcome of a descent run, separated so the caller can distinguish
@@ -103,24 +168,70 @@ internal enum _GradientDescent {
         lambda: Double = 0.0,
         penalizeFromIndex: Int = 0
     ) throws -> (parameters: [Double], lossHistory: [Double], iterations: Int, outcome: Outcome) {
+        // The squared-error path delegates to the shared strategy-driven loop.
+        // `_MeanSquaredErrorStrategy` reproduces the exact gradient `(2/n)Xᵀr`,
+        // the optional `2λθ` penalty term, and the penalized loss this method
+        // computed inline before unification — so `LinearRegression`, `Ridge`,
+        // and `GradientDescent` see identical numerics.
+        return try descend(
+            features: features,
+            targets: targets,
+            learningRate: learningRate,
+            maxIterations: maxIterations,
+            tolerance: tolerance,
+            strategy: _MeanSquaredErrorStrategy(
+                lambda: lambda, penalizeFromIndex: penalizeFromIndex
+            )
+        )
+    }
 
-        let n = features.count
+    /// Runs batch gradient descent for the objective defined by `strategy`.
+    ///
+    /// Starts from θ = 0 and steps opposite the gradient each iteration until the
+    /// signed relative loss-delta `(previousLoss − currentLoss) / max(previousLoss, ε)`
+    /// falls into `[0, tolerance)`, or the iteration cap is reached. The strategy
+    /// supplies the gradient and loss; this loop owns the step, the trajectory,
+    /// and the convergence and divergence tests — so every objective converges
+    /// and fails by identical rules.
+    ///
+    /// Numerical safety: after every iteration the loss is checked for `.isNaN`
+    /// and `.isInfinite`, throwing ``DivergenceCause/nonFinite(iteration:loss:)``
+    /// rather than returning corrupted numbers. A strict relative loss increase
+    /// beyond one tolerance unit throws ``DivergenceCause/increasing(iteration:previousLoss:currentLoss:)``.
+    /// Both are distinct from `.maxIterationsReached`, which carries a valid
+    /// best-so-far estimate.
+    ///
+    /// - Parameters:
+    ///   - features: Design matrix X, intercept column prepended by the caller
+    ///     when a bias term is fit.
+    ///   - targets: Target vector y, one element per row.
+    ///   - learningRate: Step size η. Must be positive.
+    ///   - maxIterations: Hard cap on iterations. Must be positive.
+    ///   - tolerance: Relative loss-delta threshold for convergence. Must be positive.
+    ///   - strategy: The objective — squared error or cross-entropy — supplying
+    ///     the per-iteration gradient and loss.
+    /// - Returns: The converged parameter vector θ, the loss trajectory (seeded
+    ///   with the loss at θ = 0), the stopping iteration count, and an ``Outcome``.
+    /// - Throws: ``DivergenceCause`` on non-finite or strictly increasing loss.
+    static func descend(
+        features: [[Double]],
+        targets: [Double],
+        learningRate: Double,
+        maxIterations: Int,
+        tolerance: Double,
+        strategy: _GradientStrategy
+    ) throws -> (parameters: [Double], lossHistory: [Double], iterations: Int, outcome: Outcome) {
+
         let p = features[0].count
 
-        // Initial parameters: θ⁰ = 0 — the canonical starting point and the
-        // value at which the loss landscape is purely the target variance.
+        // Initial parameters: θ⁰ = 0 — the canonical starting point.
         var theta = [Double](repeating: 0.0, count: p)
         var lossHistory: [Double] = []
         lossHistory.reserveCapacity(maxIterations + 1)
 
-        // Seed the trajectory with the initial loss so a reader watching
-        // `lossHistory` sees descent from the starting point. At θ⁰ = 0 the L2
-        // term is zero, but route through the penalized loss unconditionally so
-        // the seed and every later entry measure the same objective.
-        var previousLoss = penalizedLoss(
-            features: features, parameters: theta, targets: targets,
-            lambda: lambda, penalizeFromIndex: penalizeFromIndex
-        )
+        // Seed the trajectory with the loss at θ = 0 so a reader watching
+        // `lossHistory` sees descent from the starting point.
+        var previousLoss = strategy.loss(features: features, targets: targets, parameters: theta)
         lossHistory.append(previousLoss)
 
         // Safety against pathological inputs that produce non-finite loss
@@ -129,7 +240,6 @@ internal enum _GradientDescent {
             throw DivergenceCause.nonFinite(iteration: 0, loss: previousLoss)
         }
 
-        let twoOverN = 2.0 / Double(n)
         // Small epsilon for the relative-tolerance denominator. Stops the
         // convergence test from dividing by zero when the loss reaches an exact
         // minimum (rare, but possible on synthetic data).
@@ -137,50 +247,15 @@ internal enum _GradientDescent {
 
         for iteration in 1...maxIterations {
 
-            // Residual r = Xθ − y, one element per sample.
-            let predictions = predict(features: features, parameters: theta)
-            var residual = [Double](repeating: 0.0, count: n)
-            for i in 0..<n {
-                residual[i] = predictions[i] - targets[i]
-            }
-
-            // Gradient ∇ = (2/n) Xᵀ r — accumulate Xᵀ · r in one pass over the
-            // sample axis. Equivalent to lifting r to an n×1 column and using
-            // `multiplyMatrix`, but the explicit loop avoids the temporary
-            // matrix allocation each iteration without changing the math.
-            var gradient = [Double](repeating: 0.0, count: p)
-            for i in 0..<n {
-                let r_i = residual[i]
-                let row = features[i]
-                for j in 0..<p {
-                    gradient[j] += row[j] * r_i
-                }
-            }
-            for j in 0..<p {
-                gradient[j] *= twoOverN
-            }
-
-            // L2 penalty contribution: ∂/∂θⱼ (λ‖θ‖²) = 2λθⱼ, applied from
-            // `penalizeFromIndex` onward so a leading intercept stays unpenalized.
-            // When lambda == 0 this loop adds exactly 0.0 to every component,
-            // leaving the plain-MSE gradient untouched.
-            if lambda > 0 {
-                for j in penalizeFromIndex..<p {
-                    gradient[j] += 2.0 * lambda * theta[j]
-                }
-            }
-
-            // Step opposite the gradient.
+            // Step opposite the gradient at the current iterate.
+            let gradient = strategy.gradient(features: features, targets: targets, parameters: theta)
             for j in 0..<p {
                 theta[j] -= learningRate * gradient[j]
             }
 
             // Evaluate the new loss for the convergence and divergence tests —
-            // the penalized objective, matching the gradient just followed.
-            let currentLoss = penalizedLoss(
-                features: features, parameters: theta, targets: targets,
-                lambda: lambda, penalizeFromIndex: penalizeFromIndex
-            )
+            // the same objective whose gradient was just followed.
+            let currentLoss = strategy.loss(features: features, targets: targets, parameters: theta)
             lossHistory.append(currentLoss)
 
             // Divergence guard — the single most important guard. If the
@@ -192,19 +267,13 @@ internal enum _GradientDescent {
             }
 
             // Signed relative loss-delta. The same quantity drives both the
-            // divergence and convergence branches so they share units — a
-            // mistake in earlier drafts compared the divergence side against
-            // an absolute `tolerance` while the convergence side was relative,
-            // which would silently accept a 1e-6 increase on a loss of 1e10
-            // and silently flag a 1e-6 increase on a loss of 1e-3 differently.
-            // Both must be relative to be honest.
+            // divergence and convergence branches so they share units — both
+            // must be relative to be honest across loss scales.
             let delta = previousLoss - currentLoss
             let relativeDelta = delta / Swift.max(previousLoss, epsilon)
 
             // Divergence: loss increased by more than one tolerance unit
-            // *relative to its current scale*. Tolerance is the convergence
-            // band; anything outside that band on the negative side is the
-            // step having overshot the minimum.
+            // *relative to its current scale*.
             if relativeDelta < -tolerance {
                 throw DivergenceCause.increasing(
                     iteration: iteration,
@@ -223,8 +292,7 @@ internal enum _GradientDescent {
         }
 
         // The loop ran the full cap without satisfying the convergence test
-        // and without diverging. Return the best-so-far estimate observably —
-        // the caller can distinguish this from convergence via the outcome.
+        // and without diverging. Return the best-so-far estimate observably.
         return (theta, lossHistory, maxIterations, .maxIterationsReached)
     }
 
@@ -310,5 +378,71 @@ internal enum _GradientDescent {
         /// The loss strictly increased between two consecutive iterations by
         /// more than one tolerance unit. The step overshot the minimum.
         case increasing(iteration: Int, previousLoss: Double, currentLoss: Double)
+    }
+}
+
+// MARK: - Squared-Error Strategy
+
+/// The squared-error objective L(θ) = (1/n)‖Xθ − y‖², optionally with an L2
+/// ridge penalty λ‖θ‖² applied from `penalizeFromIndex` onward.
+///
+/// With `lambda == 0` this is ordinary least squares — the gradient `(2/n)Xᵀr`
+/// and the bare mean-squared loss, reproducing the unregularized descent path
+/// bit-for-bit. With `lambda > 0` and `penalizeFromIndex == 1` it is ridge
+/// regression with an unpenalized intercept. Powers ``LinearRegression``,
+/// ``Ridge``, and ``GradientDescent`` through ``_GradientDescent``.
+internal struct _MeanSquaredErrorStrategy: _GradientStrategy {
+
+    /// L2 penalty strength λ. `0.0` disables regularization (ordinary least squares).
+    let lambda: Double
+
+    /// First parameter index the penalty applies to. `1` leaves a leading
+    /// intercept unpenalized — the standard statistical convention. Ignored when
+    /// `lambda == 0`.
+    let penalizeFromIndex: Int
+
+    func gradient(
+        features: [[Double]],
+        targets: [Double],
+        parameters: [Double]
+    ) -> [Double] {
+        let n = features.count
+        let p = parameters.count
+        let twoOverN = 2.0 / Double(n)
+
+        // Residual r = Xθ − y, accumulated into the gradient Xᵀr in one pass.
+        let predictions = _GradientDescent.predict(features: features, parameters: parameters)
+        var gradient = [Double](repeating: 0.0, count: p)
+        for i in 0..<n {
+            let r_i = predictions[i] - targets[i]
+            let row = features[i]
+            for j in 0..<p {
+                gradient[j] += row[j] * r_i
+            }
+        }
+        for j in 0..<p {
+            gradient[j] *= twoOverN
+        }
+
+        // L2 penalty contribution: ∂/∂θⱼ (λ‖θ‖²) = 2λθⱼ. When lambda == 0 this
+        // block is skipped and the plain-MSE gradient is left untouched.
+        if lambda > 0 {
+            for j in penalizeFromIndex..<p {
+                gradient[j] += 2.0 * lambda * parameters[j]
+            }
+        }
+
+        return gradient
+    }
+
+    func loss(
+        features: [[Double]],
+        targets: [Double],
+        parameters: [Double]
+    ) -> Double {
+        _GradientDescent.penalizedLoss(
+            features: features, parameters: parameters, targets: targets,
+            lambda: lambda, penalizeFromIndex: penalizeFromIndex
+        )
     }
 }

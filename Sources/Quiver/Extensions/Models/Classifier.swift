@@ -80,6 +80,18 @@ public protocol Classifier {
 
 extension Classifier {
 
+    /// Predicts a single class label from one single-feature sample.
+    ///
+    /// A scalar convenience for single-feature models: pass one feature value
+    /// and get one class label back, with no array to wrap on the way in or
+    /// unwrap on the way out.
+    ///
+    /// - Parameter value: A single feature value for a model trained on one feature.
+    /// - Returns: The predicted class label.
+    public func predict(_ value: Double) -> Int {
+        return predict([[value]])[0]
+    }
+
     /// Groups input features by their predicted class label.
     ///
     /// This method calls ``predict(_:)`` internally, then organizes the inputs

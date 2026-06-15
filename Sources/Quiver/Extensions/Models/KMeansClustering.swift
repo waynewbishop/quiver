@@ -74,10 +74,14 @@ public struct Cluster: Codable, Sequence, CustomStringConvertible, Equatable, Se
 /// ]
 ///
 /// let model = KMeans.fit(data: data, k: 2, seed: 42)
-/// print(model.labels)       // [0, 0, 0, 1, 1, 1]
+/// print(model.labels)       // [1, 1, 1, 0, 0, 0] — first three share a cluster
 /// print(model.centroids)    // cluster centers
 /// print(model.inertia)      // sum of squared distances
 /// ```
+///
+/// The cluster *numbers* are arbitrary — K-means assigns them by centroid
+/// position, not input order, so the grouping is what matters, not whether the
+/// first three points land in cluster `0` or cluster `1`.
 public struct KMeans: Codable, CustomStringConvertible, Equatable, Sendable {
 
     public var description: String {

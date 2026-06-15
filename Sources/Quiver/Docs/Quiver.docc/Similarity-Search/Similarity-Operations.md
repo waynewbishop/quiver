@@ -8,7 +8,7 @@ Similarity operations measure how related two vectors are. These operations are 
 
 ### Dot product
 
-The dot product computes the sum of element-wise products between two vectors. It is the fundamental operation underlying cosine similarity and many machine learning algorithms. For the conceptual treatment of dot product and what it tells us about two vectors, see <doc:Vector-Operations> and <doc:Linear-Algebra-Primer>.
+The dot product computes the sum of element-wise products between two vectors. The dot product is the fundamental operation underlying cosine similarity and many machine learning algorithms. For the conceptual treatment of dot product and what it tells us about two vectors, see <doc:Vector-Operations> and <doc:Linear-Algebra-Primer>.
 
 ```swift
 let v1 = [2.0, 3.0, 4.0]
@@ -64,7 +64,7 @@ let unitVector = v1.normalized  // [0.6, 0.8]
 
 ## Cosine similarity
 
-Cosine similarity measures the angle between vectors, ranging from -1 (opposite) to 1 (identical). It focuses on direction rather than magnitude.
+Cosine similarity measures the angle between vectors, ranging from -1 (opposite) to 1 (identical). The measure focuses on direction rather than magnitude.
 
 ```swift
 let v1 = [0.8, 0.6, 0.0]
@@ -76,17 +76,17 @@ let similarity = v1.cosineOfAngle(with: v2)
 
 > Experiment: **The Quiver Notebook** is the right place to confirm that cosine ignores magnitude. Scale one vector by 10× and re-run — the cosine score stays identical while the Euclidean distance jumps. The invariance is why cosine is used for embeddings. See <doc:Quiver-Notebook>.
 
-Mathematically, cosine similarity is the dot product divided by the product of the magnitudes — `cos(θ) = (v · w) / (||v|| × ||w||)`.
+Mathematically, cosine similarity is the dot product divided by the product of the magnitudes: `cos(θ) = (v · w) / (||v|| × ||w||)`.
 
 > Important: `cosineOfAngle(with:)` returns `0.0` if either vector has zero magnitude. Check for zero vectors before interpreting results.
 
 ### When to use cosine similarity
 
-Cosine similarity is the right choice when direction matters more than magnitude. In text analysis, it ensures that a long document and a short document on the same topic score as similar. In recommendation systems, it compares user preference vectors regardless of how many items each user has rated. In classification, `KNearestNeighbors` supports cosine distance (`1 − cosine similarity`) as a metric for finding nearest neighbors in high-dimensional spaces like text embeddings — see <doc:Nearest-Neighbors-Classification>. In clustering, `KMeans` uses Euclidean distance by default, but cosine similarity can pre-filter or validate cluster coherence.
+Cosine similarity is the right choice when direction matters more than magnitude. In text analysis, it ensures that a long document and a short document on the same topic score as similar. In recommendation systems, it compares user preference vectors regardless of how many items each user has rated. In classification, `KNearestNeighbors` supports cosine distance (`1 − cosine similarity`) as a metric for finding nearest neighbors in high-dimensional spaces like text embeddings (see <doc:Nearest-Neighbors-Classification>). In clustering, `KMeans` uses Euclidean distance by default, but cosine similarity can pre-filter or validate cluster coherence.
 
 ### From similarity to angle
 
-Cosine similarity and angle measurement are the same algorithm at different stages. The `cosineOfAngle(with:)` method returns the raw cosine value — the number between -1 and 1 used for similarity comparisons. The `angle(with:)` method applies `acos` to that value to produce the actual angle in radians, and `angleInDegrees(with:)` converts to degrees:
+Cosine similarity and angle measurement are the same algorithm at different stages. The `cosineOfAngle(with:)` method returns the raw cosine value: the number between -1 and 1 used for similarity comparisons. The `angle(with:)` method applies `acos` to that value to produce the actual angle in radians, and `angleInDegrees(with:)` converts to degrees:
 
 ```swift
 let v1 = [3.0, 4.0]
@@ -97,11 +97,11 @@ v1.angle(with: v2)            // 0.249 radians
 v1.angleInDegrees(with: v2)   // 14.25 degrees
 ```
 
-In machine learning and information retrieval, the raw cosine value is typically all that's needed — "document A is 0.92 similar to document B." In physics and graphics, the actual angle matters — "rotate 45 degrees" or "the force acts at 30 degrees." See <doc:Vector-Operations> for more on angle calculations and <doc:Vector-Projections> for decomposing vectors into parallel and perpendicular components.
+In machine learning and information retrieval, the raw cosine value is typically all that's needed: "document A is 0.92 similar to document B." In physics and graphics, the actual angle matters: "rotate 45 degrees" or "the force acts at 30 degrees." See <doc:Vector-Operations> for more on angle calculations and <doc:Vector-Projections> for decomposing vectors into parallel and perpendicular components.
 
 ### Range interpretation
 
-Cosine similarity scores fall on a fixed scale, and a few reference points help calibrate intuition. A score of `1.0` means identical direction and indicates very similar vectors. Scores between `0.5` and `0.8` indicate related but not identical vectors. A score of `0.0` means the vectors are orthogonal — unrelated. A score of `-1.0` means the vectors point in opposite directions.
+Cosine similarity scores fall on a fixed scale, and a few reference points help calibrate intuition. A score of `1.0` means identical direction and indicates very similar vectors. Scores between `0.5` and `0.8` indicate related but not identical vectors. A score of `0.0` means the vectors are orthogonal, or unrelated. A score of `-1.0` means the vectors point in opposite directions.
 
 ## Batch operations
 
@@ -192,9 +192,9 @@ print("Sports cluster quality: \(Int(sportsCohesion * 100))%")
 
 ### Semantic search
 
-> Tip: **The Quiver Notebook** ships 5,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector. See <doc:Notebook-Datasets>.
+> Tip: **The Quiver Notebook** ships 25,000 of the most-frequent English words from Stanford's GloVe corpus, each as a 50-dimensional vector. See <doc:Notebook-Datasets>.
 
-Find relevant content by comparing the meaning of a query against a collection of documents. Unlike keyword search, semantic search surfaces results based on conceptual similarity — a query for "running shoes" can match documents about "athletic footwear" if their embeddings are close.
+Find relevant content by comparing the meaning of a query against a collection of documents. Unlike keyword search, semantic search surfaces results based on conceptual similarity: a query for "running shoes" can match documents about "athletic footwear" if their embeddings are close.
 
 ```swift
 import Quiver
@@ -218,7 +218,7 @@ let results = scores.topIndices(k: 2, labels: ["Athletic Footwear", "Cooking Rec
 
 The `topIndices(k:labels:)` method pairs each score with its original label and a 1-based rank, making it straightforward to map similarity results back to content.
 
-> Note: For a complete pipeline that starts from raw text — including tokenization, embedding lookup, and document vector averaging — see <doc:Semantic-Search>.
+> Note: For a complete pipeline that starts from raw text (including tokenization, embedding lookup, and document vector averaging), see <doc:Semantic-Search>.
 
 ## Topics
 

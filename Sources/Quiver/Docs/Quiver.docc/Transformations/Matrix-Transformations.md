@@ -63,7 +63,7 @@ let transformed2 = matrix.transform(vector)
 
 ## Basis vectors and coordinate systems
 
-Every 2D transformation matrix is defined by where it sends the two basis vectors — `i-hat` [1, 0] and `j-hat` [0, 1]. The first column of the matrix is where i-hat lands; the second column is where j-hat lands:
+Every 2D transformation matrix is defined by where it sends the two basis vectors, `i-hat` [1, 0] and `j-hat` [0, 1]. The first column of the matrix is where i-hat lands; the second column is where j-hat lands:
 
 ```swift
 // Identity: basis vectors stay in place
@@ -96,7 +96,7 @@ let result = [3.0, 2.0].transformedBy(scale)
 
 ### Identity matrix
 
-The identity matrix leaves vectors unchanged — it maps every vector to itself:
+The identity matrix leaves vectors unchanged, mapping every vector to itself:
 
 ```swift
 // Create a 2×2 identity matrix
@@ -180,11 +180,11 @@ let rotate90cw = [
 [1.0, 0.0].transformedBy(rotate90cw)  // [0.0, -1.0] — vector now points down
 ```
 
-Rotation matrices preserve vector magnitude — the length of the vector stays the same before and after rotation. This property makes rotation matrices **orthogonal**: their inverse equals their transpose.
+Rotation matrices preserve vector magnitude: the length of the vector stays the same before and after rotation. This property makes rotation matrices **orthogonal**: their inverse equals their transpose.
 
 ### Practical examples
 
-Rotation matrices appear throughout interactive graphics — turning a character's facing direction, animating an object along a circular path, orienting a sprite. The same matrix that rotates `[1, 0]` to `[0, 1]` rotates any vector by the same angle.
+Rotation matrices appear throughout interactive graphics: turning a character's facing direction, animating an object along a circular path, orienting a sprite. The same matrix that rotates `[1, 0]` to `[0, 1]` rotates any vector by the same angle.
 
 ```swift
 // Rotate a character's facing direction
@@ -198,7 +198,7 @@ let radius = 5.0
 let position = [radius, 0.0].transformedBy(rotate90)  // [0.0, 5.0]
 ```
 
-> Experiment: **The Quiver Notebook** is the right place to watch rotation as a continuous transformation. Sweep the angle from 0° through 360° and watch the transformed vector trace the unit circle — at 90° the components swap, at 180° they flip sign. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to watch rotation as a continuous transformation. Sweep the angle from 0° through 360° and watch the transformed vector trace the unit circle. At 90° the components swap, at 180° they flip sign. See <doc:Quiver-Notebook>.
 
 ## Scaling
 
@@ -252,7 +252,7 @@ Reflection mirrors vectors across an axis or line. The transformation flips coor
 
 ### Reflection matrices
 
-The three most common 2D reflections — across the x-axis, the y-axis, and the diagonal `y = x` — each negate exactly one coordinate or swap them.
+The three most common 2D reflections (across the x-axis, the y-axis, and the diagonal `y = x`) each negate exactly one coordinate or swap them.
 
 ```swift
 // Mirror a vector across the x-axis (y is negated)
@@ -280,7 +280,7 @@ let reflectDiagonal = [
 
 ### Practical examples
 
-Reflection appears whenever a scene requires a mirror image — a sprite facing the other direction, an object's image below a water line, or a UI element flipped for a right-to-left layout.
+Reflection appears whenever a scene requires a mirror image: a sprite facing the other direction, an object's image below a water line, or a UI element flipped for a right-to-left layout.
 
 ```swift
 // Flip a sprite to face the opposite direction
@@ -294,7 +294,7 @@ let waterReflection = objectPosition.transformedBy(reflectX)  // [5.0, -10.0]
 
 ## Shear
 
-Shear transformations slant the coordinate system, shifting one axis proportionally to the other. The result is a leaning or skewed effect — rectangles become parallelograms, squares become rhombi.
+Shear transformations slant the coordinate system, shifting one axis proportionally to the other. The result is a leaning or skewed effect: rectangles become parallelograms, squares become rhombi.
 
 ### Horizontal and vertical shear
 

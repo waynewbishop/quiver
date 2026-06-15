@@ -4,7 +4,7 @@ Generate arrays of random values for testing, simulation, and initialization.
 
 ## Overview
 
-Quiver provides methods to generate arrays filled with random values. These functions support uniform distributions (default or custom range), normal (Gaussian) distributions, and random integers — the three most common random generation patterns in numerical computing.
+Quiver provides methods to generate arrays filled with random values. These functions support the three most common random generation patterns in numerical computing: uniform distributions (default or custom range), normal (Gaussian) distributions, and random integers.
 
 ### Uniform random arrays
 

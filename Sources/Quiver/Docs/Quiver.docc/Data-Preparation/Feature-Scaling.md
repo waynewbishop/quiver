@@ -4,7 +4,7 @@ Normalizing feature columns before classification with StandardScaler or Feature
 
 ## Overview
 
-In real-world datasets, [features](<doc:Machine-Learning-Primer>) often exist on vastly different scales. A customer's account balance might range from 0 to 250,000, while a loyalty ratio ranges from 0.0 to 0.56 — almost six orders of magnitude apart. When features are on different scales, the larger values can dominate the model's calculations, causing it to ignore smaller but equally important features.
+In real-world datasets, [features](<doc:Machine-Learning-Primer>) often exist on vastly different scales. A customer's account balance might range from 0 to 250,000, while a loyalty ratio ranges from 0.0 to 0.56: almost six orders of magnitude apart. When features are on different scales, the larger values can dominate the model's calculations, causing it to ignore smaller but equally important features.
 
 Quiver provides two column-wise scalers that solve this problem in different ways. `StandardScaler` applies z-score standardization, centering each column at zero and scaling it to unit variance. `FeatureScaler` applies min-max scaling, mapping each column into a bounded range. Both follow the same fit-then-transform workflow, so the choice between them is a matter of which output shape the downstream model prefers.
 
@@ -18,7 +18,7 @@ Scaling all features to a common range gives each one equal influence in the mod
 
 ### Choosing between StandardScaler and FeatureScaler
 
-`StandardScaler` is the default choice for most machine learning workflows and is the scaler used by `Pipeline`. It works well when features have different units or ranges, and it is more robust to outliers than min-max scaling. A single extreme value will not compress the rest of the data into a narrow band, because the formula uses mean and standard deviation rather than minimum and maximum. For the concept behind z-scores, see <doc:Statistics-Primer>.
+`StandardScaler` is the default choice for most machine learning workflows and is the scaler used by `Pipeline`. The scaler works well when features have different units or ranges, and it is less sensitive to outliers than min-max scaling. A single extreme value will not compress the rest of the data into a narrow band, because the formula uses mean and standard deviation rather than minimum and maximum. For the concept behind z-scores, see <doc:Statistics-Primer>.
 
 `FeatureScaler` applies min-max scaling, which is the right choice when the target range matters. Image pipelines that expect pixel intensities in 0...1, visualizations bounded to a fixed axis, and neural network layers that assume bounded inputs all benefit from a scaler that produces values in a known interval. The trade-off is that an outlier in the training data will compress the rest of the values toward one end of the range.
 
@@ -26,7 +26,7 @@ A useful rule of thumb is to default to `StandardScaler` for distance-based and 
 
 ### The fit-then-transform workflow
 
-The key rule for scaling is simple: fit on training data, transform everything. The scaler learns its statistics from the training set, then uses those same statistics to scale both the training and test sets. The pattern is identical for both scalers — only the type name changes.
+The key rule for scaling is simple: fit on training data, transform everything. The scaler learns its statistics from the training set, then uses those same statistics to scale both the training and test sets. The pattern is identical for both scalers; only the type name changes.
 
 ```swift
 import Quiver
@@ -49,7 +49,7 @@ let scaledTrain = scaler.transform(split.trainFeatures)
 let scaledTest = scaler.transform(split.testFeatures)
 ```
 
-This separation matters because the test set is meant to simulate unseen data. If the scaler learned its statistics from both sets combined, it would leak information from the test set into the training process — a subtle bug that makes evaluation results look better than they actually are.
+This separation matters because the test set is meant to simulate unseen data. If the scaler learned its statistics from both sets combined, it would leak information from the test set into the training process: a subtle bug that makes evaluation results look better than they actually are.
 
 Both scalers cannot change once they are created. Once fitted, the statistics are locked in, which means the same scaler can safely transform training data, test data, and future incoming data with identical behavior. There is no combined fit-and-transform method, so accidentally re-fitting on test data is not possible.
 
@@ -70,11 +70,13 @@ let scaled = scaler.transform(features)
 
 ### Constant columns
 
-If a feature column has the same value for every training sample, scaling would otherwise require dividing by zero — by the standard deviation for `StandardScaler`, or by the column's range for `FeatureScaler`. Both scalers handle this case automatically without any special handling from the caller. `StandardScaler` maps constant columns to zero. `FeatureScaler` maps constant columns to the lower bound of the target range.
+If a feature column has the same value for every training sample, scaling would otherwise require dividing by zero: by the standard deviation for `StandardScaler`, or by the column's range for `FeatureScaler`. Both scalers handle this case automatically without any special handling from the caller. `StandardScaler` maps constant columns to zero. `FeatureScaler` maps constant columns to the lower bound of the target range.
 
 ### Pairing the scaler with its model
 
 When a model requires scaled features, the scaler and model must stay paired for correct predictions. `Pipeline` bundles a `StandardScaler` and a model into a single value type that scales inputs automatically at prediction time and encodes both as one JSON blob. See <doc:Pipeline> for details.
+
+Scaling also changes what a coefficient means: a weight fitted on standardized features reports the change in target per one standard deviation, which is what makes coefficients comparable across features. See <doc:Model-Interpretation-Primer> for reading scaled and unscaled coefficients.
 
 ## Topics
 

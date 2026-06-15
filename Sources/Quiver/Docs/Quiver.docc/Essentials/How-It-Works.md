@@ -4,7 +4,7 @@ Understanding Quiver's architecture as a layer over the Swift array type.
 
 ## Overview
 
-Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`, with a small number of value types reserved for objects that carry their own algebra — `Polynomial` is one such example. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
+Quiver adds numerical computing methods directly to Swift's standard `Array` type using a language feature called **extensions**. Rather than introducing custom container types, Quiver works with standard Swift `Array`, with a small number of value types reserved for objects that carry their own algebra. ``Polynomial`` is one such example. The result is that a plain `[Double]` gains mathematical operations without becoming a different type.
 
 ```swift
 import Quiver
@@ -16,11 +16,11 @@ let position = [3.0, 4.0]
 position.magnitude  // 5.0
 ```
 
-[Magnitude](<doc:Linear-Algebra-Primer>) measures how far a point sits from the origin, the length of the vector. In this example, the `position` array could be passed to SwiftUI, Swift Charts, SwiftData, or any other Swift API.
+`Magnitude` measures how far a point sits from the origin, the length of the vector. In this example, the `position` array could be passed to `SwiftUI`, [`Swift Charts`](<doc:Data-Visualization>), `SwiftData`, or any other Swift API.
 
 ### What are extensions
 
-An **extension** in Swift adds new methods, computed properties, and initializers to a type that already exists, even one we did not write. The capability is added directly to the type, and every instance gains it automatically. Swift's standard library uses this same mechanism extensively — methods like `.sorted()`, `.reversed()`, and `.contains()` are all added to `Array` through extensions. Quiver follows the same pattern to add numerical operations.
+An **extension** in Swift adds new methods, computed properties, and initializers to a type that already exists, even one we did not write. The capability is added directly to the type, and every instance gains it automatically. Swift's standard library uses this same mechanism extensively: methods like `.sorted()`, `.reversed()`, and `.contains()` are all added to `Array` through extensions. Quiver follows the same pattern to add numerical operations.
 
 > Note: Extensions can add new functionality to a type, but they cannot override or modify existing behavior. Quiver's extensions are purely additive; they never change how `Array` already works. To learn more about Swift's type system, generics, and protocol-oriented architecture see [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/), the companion book to this framework.
 
@@ -45,7 +45,7 @@ integers.magnitude       // Int is not FloatingPoint
 
 Each failed call is caught before the code ever runs. The compiler tells us exactly which protocol the element type is missing. When we refactor an array from `[Double]` to `[Int]`, the build itself flags every Quiver call that no longer applies.
 
-Swift's type system also encodes dimensionality. The compiler distinguishes between `[Double]` (a vector) and `[[Double]]` (a matrix) at compile time, so there is no need for a runtime property to query how many dimensions an array has — the type signature already tells us. For a detailed look at `.shape`, `.size`, and working with matrix dimensions, see <doc:Shape-And-Size>.
+Swift's type system also encodes dimensionality. The compiler distinguishes between `[Double]` (a vector) and `[[Double]]` (a matrix) at compile time, so there is no need for a runtime property to query how many dimensions an array has: the type signature already tells us. For a detailed look at `.shape`, `.size`, and working with matrix dimensions, see <doc:Shape-And-Size>.
 
 ### Models are always ready
 
@@ -58,11 +58,53 @@ let model = KNearestNeighbors.fit(features: trainingData, labels: labels, k: 3)
 let predictions = model.predict(newData)
 ```
 
-Because `fit` is the only way to create a model, the compiler makes it impossible to call `predict` on something that has not been trained. There is no runtime error for "model not fitted"; the situation cannot arise. Every model in Quiver follows this pattern including `LinearRegression`, `GaussianNaiveBayes`, `KNearestNeighbors`, and `KMeans`.
+Because `fit` is the only way to create a model, the compiler makes it impossible to call `predict` on something that has not been trained. There is no runtime error for "model not fitted"; the situation cannot arise. Every model in Quiver follows this pattern including ``LinearRegression``, ``GaussianNaiveBayes``, ``KNearestNeighbors``, and ``KMeans``.
 
 Models are also immutable. Once created, their coefficients, centroids, and learned parameters cannot change. This eliminates an entire category of bugs where a model is accidentally retrained or modified between predictions.
 
 > Note: Models also conform to `Codable`. Because every stored property is a basic Swift type (arrays of numbers, integers, and booleans), the compiler auto-synthesizes JSON encoding and decoding. A model trained once can be saved to disk and loaded on the next app launch without retraining. See <doc:Model-Persistence> for platform-specific guidance.
+
+### Shared behavior through protocols
+
+Quiver's models share their prediction interface through two protocols. The ``Regressor`` protocol guarantees that a model predicts continuous values, and the ``Classifier`` protocol guarantees that a model predicts class labels, so any code written against a protocol works for every model that adopts it. The guarantee lives in the type system, which means a model that fails to provide `predict` does not compile. The same contract lets a wrapper compose any regressor: ``ResidualModel`` holds a fitted ``Regressor`` and reports the gap between its predictions and the observed values, the residual a fit leaves behind. See <doc:Residual-Model>.
+
+Conforming models gain the protocol's prediction surface, including a scalar convenience for single-feature models that the protocol supplies once for the whole family:
+
+```swift
+import Quiver
+
+// LinearRegression is a Regressor, so it predicts continuous values
+let model = try LinearRegression.fit(features: sqft, targets: prices)
+model.predict([[3500.0]])  // an array of predictions
+
+// The Regressor protocol supplies a scalar overload for single-feature models
+model.predict(3500.0)      // one value in, one value out
+```
+
+> Note: Writing one function against ``Regressor`` lets it accept ``LinearRegression``, ``Ridge``, and ``GradientDescent`` interchangeably, and writing against ``Classifier`` accepts ``GaussianNaiveBayes``, ``KNearestNeighbors``, and ``LogisticRegression`` the same way. The protocol is the contract every model in its family keeps.
+
+### Failure is in the return type
+
+Every model's `fit` method states in its signature whether training can fail. A method that throws can fail and forces us to handle the failure, a method that returns a plain value cannot fail at all, and a method that returns an optional reports failure by handing back `nil`. The compiler reads that signature, so the obligation to handle a bad fit is checked before the program ever runs.
+
+The three shapes sit side by side, and each one tells us at the call site exactly how much care the result demands:
+
+```swift
+import Quiver
+
+// Throwing fit — training can fail, so the call must handle it
+let regression = try LinearRegression.fit(features: sqft, targets: prices)
+
+// Plain-value fit — training cannot fail, so there is nothing to handle
+let classifier = KNearestNeighbors.fit(features: points, labels: labels, k: 3)
+
+// Optional fit — failure is reported as nil
+if let curve = [Double].polyfit(x: xs, y: ys, degree: 2) {
+    curve.coefficients  // the fit succeeded
+}
+```
+
+> Tip: When a `fit` call returns a plain value rather than throwing or returning an optional, the type is telling us the operation is total: there is no failure path to write, because none exists. ``GaussianNaiveBayes``, ``KNearestNeighbors``, and ``StandardScaler`` follow this pattern.
 
 ### Clean output by default
 
@@ -78,7 +120,7 @@ print(f)        // 3/5
 
 ### Presentation-only types
 
-Quiver computes in `Double` and renders in the form a reader can read. Two methods anchor the pattern: `asFraction` returns rational structure as a real `Fraction` value, and `asExpression` returns a Unicode-formatted string ready to display. They compose — chain `asFractions().asExpression()` to see the rational form of a vector or matrix as a bracketed block — and the underlying numeric values are never touched.
+Quiver computes in `Double` and renders in the form a reader can read. Two methods anchor the pattern: `asFraction` returns rational structure as a real ``Fraction`` value, and `asExpression` returns a Unicode-formatted string ready to display. They compose (chain `asFractions().asExpression()` to see the rational form of a vector or matrix as a bracketed block), and the underlying numeric values are never touched.
 
 ```swift
 let v = [0.6, 0.75, 0.5]
@@ -92,7 +134,7 @@ See <doc:Rendering-Math-Primer> for the full catalog: the scalar, vector, and ma
 
 ### Typed summary returns
 
-When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The `Quartiles`, `ColumnSummary`, `PanelSummary`, `RegressionSummary`, `ClassificationReport`, `ConfidenceInterval`, `EmpiricalRule`, `ContingencyTable`, and the `BayesPrior` / `BayesLikelihood` / `BayesPosterior` trio are the patterns we will see repeatedly.
+When a Quiver method needs to return several related values at once, it returns a typed value rather than a dictionary or an anonymous tuple. The ``Quartiles``, ``ColumnSummary``, ``PanelSummary``, ``RegressionSummary``, ``ClassificationReport``, ``ConfidenceInterval``, ``EmpiricalRule``, ``ContingencyTable``, and the ``BayesPrior`` / ``BayesLikelihood`` / ``BayesPosterior`` trio are the patterns we will see repeatedly.
 
 ```swift
 let summary: PanelSummary = panel.summary()
@@ -104,9 +146,17 @@ if let price = summary.columns["price"] {
 }
 ```
 
+### Designed to feed other frameworks
+
+Quiver is built to plug into the frameworks at the center of a developer's toolkit. The library shapes its output to match what is needed, so the numerical result drops straight into Swift Charts, a search ranker, or an on-device model and that framework takes it from there.
+
+Three parts of the framework show this in action. In <doc:Data-Visualization>, Quiver computes every field a chart needs (heatmap tuples, the five numbers of a box plot, stacked series) as plain values that map straight onto Swift Charts marks, ready to draw. In <doc:Embedding-Sources>, the ``Embedder`` protocol names a single operation, text to vector, so a hand-built table, an on-device sentence model, or a custom model can all feed the same ranking surface through one method.
+
+The retrieval pipeline in <doc:Retrieving-Context-For-Generation> is the principle taken end to end. Quiver supplies the scaffolding that turns a document and a question into a ready-to-use answer source: chunk the text, index the fragments, rank them by meaning, and assemble the context block a language model reads from. An embedding source feeds the vectors in and a language model takes the context block out, and Quiver builds the structure that connects them: the indexing and ranking that make the whole pipeline work. Every seam is a plain value, a `String` or a `[Double]`, so the same retrieval code carries cleanly across an on-device model, a different one, or a server. Quiver is the connective scaffolding, and it travels wherever the code does.
+
 ### A focused and intentional scope
 
-Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. Quiver provides analytic derivatives for polynomials, sample-based derivatives for sequences, and iterative optimization through `GradientDescent`; what it does not provide is reverse-mode automatic differentiation over arbitrary computation graphs. GPU acceleration and distributed training are similarly outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
+Quiver is designed for educational use, on-device computing, and data science workflows where understanding the mathematics matters as much as the result. Quiver provides analytic derivatives for polynomials, sample-based derivatives for sequences, and iterative optimization through ``GradientDescent``; what it does not provide is reverse-mode automatic differentiation over arbitrary computation graphs. GPU acceleration and distributed training are similarly outside that scope. Each brings external dependencies, platform restrictions, and a steeper learning curve that works against the framework's goals of clarity, portability, and zero-dependency deployment.
 
 ### Performance characteristics
 

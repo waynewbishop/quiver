@@ -57,7 +57,7 @@ let run2 = KMeans.fit(data: points, k: 3, seed: 42)
 run1 == run2  // true
 ```
 
-Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`.
+Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`.
 
 ---
 
@@ -724,6 +724,7 @@ model.hasIntercept    // Bool
 
 let predictions = model.predict(testX)          // [[Double]] → [Double]
 let singleFeature = model.predict(xValues)      // [Double] → [Double] (featureCount == 1)
+let oneValue = model.predict(2000.0)            // Double → Double (single sample, featureCount == 1)
 ```
 
 ## Gradient Descent
@@ -751,9 +752,10 @@ print(gd)           // GradientDescent: 2 features, converged in 142 iterations 
 
 let predictions = gd.predict(testX)             // [[Double]] → [Double]
 let singleFeature = gd.predict(xValues)         // [Double] → [Double] (featureCount == 1)
+let oneValue = gd.predict(2000.0)               // Double → Double (single sample, featureCount == 1)
 ```
 
-Same `Regressor` protocol as `LinearRegression`. Same `coefficients` layout (intercept at index 0 when `hasIntercept` is true). The iterative route exists for the cases where no closed form is available, or where a penalty is added to the objective — `Ridge` (below) is the first model built on this optimizer, and the same descent loop will fit the iterative models that follow (logistic regression, SVM).
+Same `Regressor` protocol as `LinearRegression`. Same `coefficients` layout (intercept at index 0 when `hasIntercept` is true). The iterative route exists for the cases where no closed form is available, or where a penalty is added to the objective. This one descent loop is shared across all three iterative models: `GradientDescent` (squared-error loss), `Ridge` (squared-error plus an L2 penalty), and `LogisticRegression` (cross-entropy loss with a sigmoid hypothesis). The same step rule, convergence test, and divergence guard serve all three — only the gradient and loss handed to the loop change.
 
 `Outcome.maxIterationsReached` is necessary but not sufficient for trustworthiness — confirm meaningful descent by comparing `lossHistory.first` to `lossHistory.last` before relying on the coefficients.
 
@@ -775,9 +777,40 @@ ridge.lossHistory   // [Double] — same observable trajectory as GradientDescen
 ridge.outcome       // .converged | .maxIterationsReached
 
 let predictions = ridge.predict(testX)
+let oneValue = ridge.predict(2000.0)            // Double → Double (single sample, featureCount == 1)
 ```
 
 L2-regularized regression: minimizes `(1/n)‖Xθ − y‖² + λ‖θ‖²`, the squared-error objective plus a penalty on coefficient size that curbs overfitting and steadies the unstable fits collinear features produce. At `lambda` of zero the penalty vanishes and the fit reproduces ordinary least squares; as `lambda` grows the slopes shrink toward zero. The intercept is never penalized. Conforms to `Regressor`, so it substitutes for `LinearRegression` in any pipeline, and is fit by the same descent optimizer behind `GradientDescent`. Note `lambda` scales a bare penalty against a `1/n` error term, so its values are not interchangeable with conventions that fold in a `1/2m` or `λ/2m` factor. When the need for regularization is unclear, a large `conditionNumber` on the feature matrix is the collinearity the penalty is built to absorb.
+
+## Logistic Regression (1.4.0)
+
+```swift
+// Standardize first — defaults assume unit variance. Binary labels (0/1) only.
+let scaled = StandardScaler.fit(features: trainX).transform(trainX)
+
+let lr = try LogisticRegression.fit(
+    features: scaled, labels: trainY,
+    learningRate: 0.5, maxIterations: 1000, tolerance: 1.0e-6
+)
+// throws GradientDescentError on divergence — shares Gradient Descent's failure modes
+
+lr.coefficients         // [Double] — [intercept, weight1, ...]
+lr.featureCount         // Int
+lr.hasIntercept         // Bool
+lr.finalLoss            // Double — final cross-entropy (log loss)
+lr.lossHistory          // [Double] — loss at every iteration, starting at log 2 (θ = 0)
+lr.outcome              // .converged | .maxIterationsReached
+
+print(lr)               // LogisticRegression: 2 features, converged in 48 iterations (loss: 0.6284)
+
+let labels = lr.predict(scaledTest)              // [[Double]] → [Int] (threshold at 0.5)
+let one = lr.predict(2.5)                        // Double → Int (single sample, featureCount == 1)
+let probs = lr.predictProbabilities(scaledTest)  // [[Double]] → [Double] — P(class = 1) per sample
+let scores = lr.decisionFunction(scaledTest)     // [[Double]] → [Double] — raw log-odds Xθ
+let groups = lr.classify(scaledTest)             // [Classification], grouped by predicted label
+```
+
+Binary classifier trained by gradient descent on cross-entropy loss: the linear score `Xθ` is squashed through `sigmoid` into a probability, and the gradient `(1/n)Xᵀ(σ(Xθ) − y)` shares its shape with the squared-error gradient — the same descent loop behind `GradientDescent`, applied to a different loss. Conforms to `Classifier`, so `predict(_:)` returns `[Int]` and `classify(_:)` is provided for free. `predictProbabilities(_:)` returns a single probability per sample — P(class = 1) — not a per-class row that sums to 1.0 (that is the `GaussianNaiveBayes` shape). `decisionFunction(_:)` exposes the raw log-odds before the sigmoid for threshold tuning and margin inspection. Labels must be `0` or `1`; multinomial is out of scope. On linearly separable data the maximum-likelihood fit has no finite minimum, so the run reaches `maxIterationsReached` by design while still predicting correctly — confirm a `.converged` outcome on overlapping data before relying on the coefficient magnitudes.
 
 ## K-Means Clustering
 
@@ -808,6 +841,7 @@ let knn = KNearestNeighbors.fit(
 // VoteWeight: .uniform, .distance
 
 knn.predict(testX)   // [Int] — raw labels for evaluation pipelines
+knn.predict(8.0)     // Int — single sample, featureCount == 1
 knn.classify(testX)  // [Classification] — grouped by predicted label
 knn.k                // Int
 knn.metric           // DistanceMetric
@@ -828,6 +862,7 @@ let gnb = GaussianNaiveBayes.fit(features: trainX, labels: trainY)
 print(gnb)  // GaussianNaiveBayes: 2 classes, 2 features
 
 gnb.predict(testX)                    // [Int] — raw labels for evaluation pipelines
+gnb.predict(8.0)                      // Int — single sample, featureCount == 1
 gnb.classify(testX)                   // [Classification] — grouped by predicted label
 gnb.predictLogProbabilities(testX)    // [[Double]] — unnormalized log-probabilities
 gnb.predictProbabilities(testX)       // [[Double]] — calibrated probabilities, each row sums to 1.0

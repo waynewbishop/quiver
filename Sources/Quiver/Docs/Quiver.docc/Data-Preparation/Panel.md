@@ -6,7 +6,7 @@ A Quiver type that organizes named columns of numeric data into a single contain
 
 A Panel is a table of named columns. Each column holds an array of numbers. Naming the columns means the data can be read, split, and filtered by name instead of by position, the way a spreadsheet or a database table works.
 
-> Note: This page covers Panel as a data structure — how to construct one, access columns, convert to the shapes models need, and filter rows. For applied workflows — train/test splits, summaries, classification pipelines, charting — see <doc:Panel-Workflows>.
+> Note: This page covers Panel as a data structure: how to construct one, access columns, convert to the shapes models need, and filter rows. For applied workflows such as train/test splits, summaries, classification pipelines, and charting, see <doc:Panel-Workflows>.
 
 ### Creating a panel
 
@@ -24,7 +24,7 @@ let employees = Panel([
 
 ### Creating a panel from a matrix
 
-A `Panel` can also be created from an existing matrix by providing column names. This is useful when we already have data in `[[Double]]` form — from a computation, a file import, or another Quiver operation — and want to add column labels:
+A `Panel` can also be created from an existing matrix by providing column names. This is useful when we already have data in `[[Double]]` form (from a computation, a file import, or another Quiver operation) and want to add column labels:
 
 ```swift
 import Quiver
@@ -44,7 +44,7 @@ if let jumpSpread = athletes["jumpHeight"].standardDeviation() {
 
 ### Wrapping a single array as a panel
 
-Sometimes the data already lives in a plain `[Double]` and we want the Panel surface — typed summaries, head printing, charting — without writing the literal constructor:
+Sometimes the data already lives in a plain `[Double]` and we want the Panel surface (typed summaries, head printing, charting) without writing the literal constructor:
 
 ```swift
 import Quiver
@@ -59,7 +59,7 @@ let panel = scores.toPanel("scores")
 print(panel.head())
 ```
 
-This is the bridge between any `[Double]` and the Panel surface. A column of test scores, a list of sensor readings, an array of probabilities, the output of `.standardized()` or `.cumulativeSum()` — anything that is already a numeric array becomes addressable by name and ready for descriptive statistics, summaries, filtering, and charting.
+This is the bridge between any `[Double]` and the Panel surface. A column of test scores, a list of sensor readings, an array of probabilities, the output of `.standardized()` or `.cumulativeSum()`: anything that is already a numeric array becomes addressable by name and ready for descriptive statistics, summaries, filtering, and charting.
 
 ### Column access
 
@@ -142,7 +142,7 @@ let features = applications.toMatrix(columns: ["creditScore", "balance"])
 
 The subscript returns a `[Double]` vector for continuous values like regression targets. The `labels` method converts to `[Int]` for classifiers that expect integer class identifiers. The `toMatrix` method assembles selected columns into the `[[Double]]` format that every Quiver model accepts.
 
-Quiver's models — `LinearRegression`, `GaussianNaiveBayes`, `KNearestNeighbors`, and `KMeans` — all accept `[[Double]]` and `[Double]` or `[Int]` directly. None of them accept Panel. This is a deliberate design choice: models stay simple and decoupled from how data is organized. Panel handles the naming and alignment; the extraction step above converts to the shapes models expect.
+Quiver's models (`LinearRegression`, `GaussianNaiveBayes`, `KNearestNeighbors`, and `KMeans`) all accept `[[Double]]` and `[Double]` or `[Int]` directly. None of them accept Panel. This is a deliberate design choice: models stay simple and decoupled from how data is organized. Panel handles the naming and alignment; the extraction step above converts to the shapes models expect.
 
 ### Filtering with boolean masks
 
@@ -166,7 +166,7 @@ When a filter matches no rows, the resulting panel keeps its column schema but r
 
 ### Design
 
-The `Panel` type is a value type with a fixed schema — columns are defined at creation and all values are `Double`. The schema is set once at construction and never mutates, which is what lets every downstream operation rely on column alignment without defensive checks.
+The `Panel` type is a value type with a fixed schema: columns are defined at creation and all values are `Double`. The schema is set once at construction and never mutates, which is what lets every downstream operation rely on column alignment without defensive checks.
 
 Panels conform to Swift's `Equatable` protocol. Two panels are equal when they have the same column names in the same order and the same data in every column. This is useful for verifying that a filtering or splitting operation produced the expected result.
 

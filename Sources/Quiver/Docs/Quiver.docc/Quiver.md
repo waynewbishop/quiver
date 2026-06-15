@@ -16,19 +16,15 @@ A Swift package for statistics, linear algebra, and machine learning.
 
 ## Overview
 
-[Quiver](https://github.com/waynewbishop/quiver) expands the Swift ecosystem with a pure, Swift-first approach to statistics, linear algebra, and machine learning. By building directly on Swift's powerful type system and syntax, Quiver creates an intuitive bridge between traditional array operations and advanced mathematical concepts. Built as an extension on the standard `Array` type, the framework embraces Swift's emphasis on readability and expressiveness, offering mathematical operations that feel natural to iOS and macOS developers.
+[Quiver](https://github.com/waynewbishop/quiver) is a pure-Swift package for statistics, linear algebra, and machine learning. The package extends the standard `Array` type, so its operations read as ordinary Swift and compose with the language a developer already knows. The mathematical surface (vectors, matrices, statistics, and models) works the same on iOS, macOS, watchOS, and the server.
 
 ### Data science in Swift
 
-As Swift continues to expand beyond app development into domains like server-side computing, machine learning, and data analysis, the need for robust mathematical tools becomes increasingly important. Quiver serves as a foundation for data science workflows in Swift, enabling operations that are fundamental to fields like computer vision, game development, machine learning, and scientific computing.
+As Swift expands beyond app development into server-side computing, machine learning, and data analysis, it needs mathematical tools to match. Quiver is the numerical foundation for those workflows, covering the operations that fields like [machine learning](<doc:Machine-Learning-Primer>), [semantic search](<doc:Semantic-Search>), computer vision, [signal processing](<doc:Fourier-Transform>), and scientific computing depend on.
 
 ### Why Quiver
 
-Quiver provides developers the tools to work with data directly. This includes analyzing data with statistics, transforming it with linear algebra, preparing it for modeling, or training machine learning models. As a pure Swift library with zero external dependencies, Quiver runs on every Apple platform — iOS, macOS, watchOS, tvOS, and visionOS — as well as server-side Swift with frameworks like Vapor, Linux environments, and containerized deployments. As a lightweight framework, Quiver is ideal for [teaching environments](<doc:Quiver-Notebook-For-Classrooms>), on-device processing, and any context where minimal dependencies and platform portability matter.
-
-### Learn by example
-
-This framework is companion to [Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/), a comprehensive guide that teaches algorithmic thinking through hands-on Swift examples.
+Quiver provides developers the tools to work with data directly. This includes analyzing data with [statistics](<doc:Statistics-Primer>), transforming it with [linear algebra](<doc:Linear-Algebra-Primer>), preparing it for modeling, training [machine learning](<doc:Machine-Learning-Primer>) models, or building [retrieval pipelines](<doc:Retrieving-Context-For-Generation>). As a pure Swift library with zero external dependencies, Quiver runs on every Apple platform (iOS, macOS, watchOS, tvOS, and visionOS) as well as server-side Swift with frameworks like Vapor, Linux environments, and containerized deployments. As a lightweight framework, Quiver is ideal for [teaching environments](<doc:Quiver-Notebook-For-Classrooms>), on-device processing, and any context where [minimal dependencies](<doc:How-It-Works>) and platform portability matter.
 
 ## Topics
 
@@ -52,7 +48,13 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Physics-Primitives-Primer>
 - <doc:Machine-Learning-Primer>
 - <doc:Regularization-Primer>
+- <doc:Model-Interpretation-Primer>
 - <doc:Concurrency-Primer>
+
+### Platform Guides
+- <doc:iOS-Apps>
+- <doc:watchOS-Apps>
+- <doc:Vapor-Server>
 
 ### Vectors
 - <doc:Vector-Operations>
@@ -80,7 +82,6 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 
 ### Data Preparation
 - <doc:Panel>
-- <doc:Panel-Workflows>
 - <doc:Data-Visualization>
 - <doc:Correlation>
 - <doc:Random-Sampling>
@@ -91,28 +92,28 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 ### Similarity and Search
 - <doc:Text-Tokenization>
 - <doc:Similarity-Operations>
-- <doc:Semantic-Search>
 
 ### Models
 - <doc:Linear-Regression>
 - <doc:Regression-Summary>
 - <doc:Gradient-Descent>
 - <doc:Ridge-Regression>
+- <doc:Residual-Model>
 - <doc:Polynomials>
 - <doc:Naive-Bayes>
+- <doc:Logistic-Regression>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:KMeans-Clustering>
 - <doc:Activation-Functions>
 - <doc:Evaluation-Metrics>
 - <doc:Model-Persistence>
 
-### Platform Guides
-- <doc:iOS-Apps>
-- <doc:watchOS-Apps>
-- <doc:Vapor-Server>
-
-### Rendering
-- <doc:Fraction>
+### Worked Examples
+- <doc:Semantic-Search>
+- <doc:Embedding-Sources>
+- <doc:Retrieving-Context-For-Generation>
+- <doc:Panel-Workflows>
+- <doc:Building-An-Effort-Model>
 
 ### Utilities
 - <doc:Quiver-Notebook>
@@ -121,11 +122,13 @@ This framework is companion to [Swift Algorithms & Data Structures](https://wayn
 - <doc:Xcode-Playground>
 - <doc:Quiver-Cookbook>
 - <doc:Quiver-Knowledge-File>
+- <doc:Fraction>
 
 ### Supporting Types
 - ``LogDeterminant``
 - ``Classification``
 - ``Classifier``
+- ``Coefficients``
 - ``AggregationMethod``
 - ``MatrixError``
 - ``Distributions``

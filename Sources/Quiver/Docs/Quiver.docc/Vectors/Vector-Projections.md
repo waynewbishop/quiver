@@ -8,7 +8,7 @@ Every vector can be split into two parts relative to any direction: the part tha
 
 ### What projection measures
 
-Imagine standing in sunlight. Your shadow on the ground is a projection — it shows how much of your height falls along the ground plane. A tall person casts a long shadow. A person lying flat casts a shadow equal to their full length. A person standing perpendicular to the ground casts no shadow at all.
+Imagine standing in sunlight. Your shadow on the ground is a projection: it shows how much of your height falls along the ground plane. A tall person casts a long shadow. A person lying flat casts a shadow equal to their full length. A person standing perpendicular to the ground casts no shadow at all.
 
 Vector projection works the same way. Given a vector and a reference direction, the **scalar projection** measures how far the vector reaches along that direction, which is the length of the shadow. The **vector projection** gives that shadow as a vector, pointing along the reference direction with the measured length. Together they answer: "how much of this vector is aligned with that direction?"
 
@@ -16,7 +16,7 @@ Vector projection works the same way. Given a vector and a reference direction, 
 
 ### What the orthogonal component measures
 
-If the projection is the shadow, the orthogonal component is everything the shadow misses. It captures the part of the vector that points away from the reference direction. "Orthogonal" means perpendicular. The orthogonal component measures how far the vector strays from the direction we care about.
+If the projection is the shadow, the orthogonal component is everything the shadow misses. The orthogonal component captures the part of the vector that points away from the reference direction. "Orthogonal" means perpendicular. The orthogonal component measures how far the vector strays from the direction we care about.
 
 The two parts, parallel and perpendicular, always add back to the original vector. Nothing is lost, nothing is created. Projection is a lossless decomposition.
 
@@ -24,7 +24,7 @@ The two parts, parallel and perpendicular, always add back to the original vecto
 
 ### Computing projections
 
-Quiver provides three methods that work together. Consider a force vector and a ramp direction — we want to know how much force pushes along the ramp versus how much presses into its surface:
+Quiver provides three methods that work together. Consider a force vector and a ramp direction. We want to know how much force pushes along the ramp versus how much presses into its surface:
 
 ```swift
 import Quiver
@@ -45,7 +45,7 @@ let perpendicular = force.orthogonalComponent(to: ramp)  // [-1.0, 2.0]
 let reconstructed = parallel.add(perpendicular)  // [3.0, 4.0]
 ```
 
-The scalar projection is computed as v·u / |u| — the dot product divided by the magnitude of the reference vector. The vector projection scales the reference direction by that amount: proj_u(v) = (v·u / u·u) × u. The orthogonal component is whatever remains: v − proj_u(v).
+The scalar projection is computed as v·u / |u|: the dot product divided by the magnitude of the reference vector. The vector projection scales the reference direction by that amount: proj_u(v) = (v·u / u·u) × u. The orthogonal component is whatever remains: v − proj_u(v).
 
 > Important: The reference vector cannot be a zero vector. A zero vector has no direction, so projection onto it is undefined.
 
@@ -53,7 +53,7 @@ The scalar projection is computed as v·u / |u| — the dot product divided by t
 
 Projection appears anywhere a force, motion, or signal acts at an angle to a surface, path, or direction. The parallel component is the part that does useful work. The perpendicular component is the part that does not.
 
-**Decomposing force on a ramp.** When pushing a crate up a ramp, only the component of force along the ramp moves the crate. The perpendicular component presses the crate into the surface — it creates friction but no movement:
+**Decomposing force on a ramp.** When pushing a crate up a ramp, only the component of force along the ramp moves the crate. The perpendicular component presses the crate into the surface. It creates friction but no movement:
 
 ```swift
 import Quiver
@@ -117,11 +117,11 @@ let driftRate = drift.magnitude  // 51.8 knots sideways
 
 ### Connection to linear regression
 
-The normal equation used in linear regression — θ = (X'X)⁻¹X'y — is a projection. It projects the target vector onto the column space of the feature matrix. The result is the closest point in that space to the target, which is the least-squares best fit.
+The normal equation used in linear regression, θ = (X'X)⁻¹X'y, is a projection. The equation projects the target vector onto the column space of the feature matrix. The result is the closest point in that space to the target, which is the least-squares best fit.
 
-The intuition built here carries directly into that context. The prediction is the parallel component — the part of the target that the features can explain. The residual error is the orthogonal component — the part the features cannot reach. The best-fit model is the one where the error is perpendicular to every feature, meaning no feature can reduce it further.
+The intuition built here carries directly into that context. The prediction is the parallel component: the part of the target that the features can explain. The residual error is the orthogonal component, the part the features cannot reach. The best-fit model is the one where the error is perpendicular to every feature, meaning no feature can reduce it further.
 
-Polynomial regression generalizes the same projection. `polyfit(x:y:degree:)` projects the target vector `y` onto the column space spanned by `[1, x, x², ..., xⁿ]` — a Vandermonde-style basis whose powers replace the raw features of linear regression. The geometry is identical; only the columns change.
+Polynomial regression generalizes the same projection. `polyfit(x:y:degree:)` projects the target vector `y` onto the column space spanned by `[1, x, x², ..., xⁿ]`: a Vandermonde-style basis whose powers replace the raw features of linear regression. The geometry is identical; only the columns change.
 
 For a full treatment of the normal equation and how Quiver solves it, see <doc:Linear-Regression>. For the `Polynomial` value type and `polyfit`, see <doc:Polynomials>.
 

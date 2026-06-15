@@ -231,6 +231,95 @@ extension Pipeline where Model == LinearRegression {
     }
 }
 
+extension Pipeline where Model == GradientDescent {
+
+    /// Fits a scaler, trains a gradient descent regressor, and bundles them
+    /// into a Pipeline.
+    ///
+    /// Gradient descent is sensitive to feature scale — the default learning
+    /// rate assumes unit variance. Bundling the scaler with the model removes
+    /// the two ways that sensitivity bites: training on unscaled data, and
+    /// forgetting to scale query points at prediction time. The returned
+    /// pipeline's ``predict(_:)->[Double]`` takes raw features and scales them internally.
+    ///
+    /// ```swift
+    /// let pipeline = try Pipeline.fit(features: x, targets: y)
+    /// let predictions = pipeline.predict(rawQueryPoints)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - features: Raw (unscaled) training feature matrix.
+    ///   - targets: Continuous target values, one per sample.
+    ///   - learningRate: Step size η. Defaults to `0.01`, the canonical value
+    ///     for standardized features.
+    ///   - maxIterations: Hard cap on iterations. Defaults to `1000`.
+    ///   - tolerance: Relative loss-delta threshold. Defaults to `1.0e-6`.
+    ///   - intercept: Whether to include a bias term. Defaults to `true`.
+    /// - Returns: An immutable `Pipeline<GradientDescent>`.
+    /// - Throws: ``GradientDescentError`` on divergence.
+    public static func fit(
+        features: [[Double]],
+        targets: [Double],
+        learningRate: Double = 0.01,
+        maxIterations: Int = 1000,
+        tolerance: Double = 1.0e-6,
+        intercept: Bool = true
+    ) throws -> Pipeline<GradientDescent> {
+        let scaler = StandardScaler.fit(features: features)
+        let scaled = scaler.transform(features)
+        let model = try GradientDescent.fit(
+            features: scaled, targets: targets,
+            learningRate: learningRate, maxIterations: maxIterations,
+            tolerance: tolerance, intercept: intercept
+        )
+        return Pipeline(scaler: scaler, model: model)
+    }
+}
+
+extension Pipeline where Model == LogisticRegression {
+
+    /// Fits a scaler, trains a logistic regression classifier, and bundles them
+    /// into a Pipeline.
+    ///
+    /// Like ``GradientDescent``, logistic regression is trained iteratively and
+    /// is sensitive to feature scale. Bundling the scaler with the model means
+    /// the pipeline's ``predict(_:)->[Int]`` takes raw features and scales them
+    /// internally — the caller cannot forget to scale query points.
+    ///
+    /// ```swift
+    /// let pipeline = try Pipeline.fit(features: x, labels: y, learningRate: 0.5)
+    /// let predictions = pipeline.predict(rawQueryPoints)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - features: Raw (unscaled) training feature matrix.
+    ///   - labels: Binary class labels (0 or 1), one per sample.
+    ///   - learningRate: Step size η. Defaults to `0.01`, the canonical value
+    ///     for standardized features.
+    ///   - maxIterations: Hard cap on iterations. Defaults to `1000`.
+    ///   - tolerance: Relative loss-delta threshold. Defaults to `1.0e-6`.
+    ///   - intercept: Whether to include a bias term. Defaults to `true`.
+    /// - Returns: An immutable `Pipeline<LogisticRegression>`.
+    /// - Throws: ``GradientDescentError`` on divergence.
+    public static func fit(
+        features: [[Double]],
+        labels: [Int],
+        learningRate: Double = 0.01,
+        maxIterations: Int = 1000,
+        tolerance: Double = 1.0e-6,
+        intercept: Bool = true
+    ) throws -> Pipeline<LogisticRegression> {
+        let scaler = StandardScaler.fit(features: features)
+        let scaled = scaler.transform(features)
+        let model = try LogisticRegression.fit(
+            features: scaled, labels: labels,
+            learningRate: learningRate, maxIterations: maxIterations,
+            tolerance: tolerance, intercept: intercept
+        )
+        return Pipeline(scaler: scaler, model: model)
+    }
+}
+
 // MARK: - CustomStringConvertible
 
 extension Pipeline: CustomStringConvertible {

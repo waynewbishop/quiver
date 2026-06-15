@@ -20,11 +20,11 @@ p.derivative()          // 4x + 3
 p.asExpression()        // "2x² + 3x + 1"
 ```
 
-> Tip: For the rendering side of `Polynomial` — how `asExpression` formats the descending-power form, the `relativeZeroTolerance` parameter that suppresses numerical noise in fitted coefficients, and the broader display family on vectors and matrices — see <doc:Rendering-Math-Primer>.
+> Tip: For the rendering side of `Polynomial` (how `asExpression` formats the descending-power form, the `relativeZeroTolerance` parameter that suppresses numerical noise in fitted coefficients, and the broader display family on vectors and matrices), see <doc:Rendering-Math-Primer>.
 
 ### Evaluating polynomials
 
-A `Polynomial` value is callable. Pass a single `Double` to evaluate at one point, or pass a `[Double]` to evaluate at every point in the array — the second form is the right shape for plotting:
+A `Polynomial` value is callable. Pass a single `Double` to evaluate at one point, or pass a `[Double]` to evaluate at every point in the array. The second form is the right shape for plotting:
 
 ```swift
 import Quiver
@@ -40,7 +40,7 @@ let xs = Array.linspace(start: -2.0, end: 2.0, count: 5)
 p(xs)                   // [3.0, 0.0, 1.0, 6.0, 15.0]
 ```
 
-Evaluation is numerically stable — Quiver uses Horner's method internally to avoid the precision loss that comes from repeated `pow` calls. See <doc:Numerical-Literacy> for the broader pattern of reformulating textbook formulas to keep floating-point error small.
+Evaluation is numerically stable: Quiver uses Horner's method internally to avoid the precision loss that comes from repeated `pow` calls. See <doc:Numerical-Literacy> for the broader pattern of reformulating textbook formulas to keep floating-point error small.
 
 ### Polynomial arithmetic
 
@@ -135,9 +135,9 @@ model.coefficients        // [3.0, 2.0]   — matches polyfit's [a₁, a₂]
 model.predict([[6, 36]])  // [91.0]       — same prediction
 ```
 
-Choose `LinearRegression.fit` when standard errors, p-values, or confidence intervals on the coefficients matter — `polyfit` does not surface them, and the path to get them is exactly the hand-built design matrix shown above followed by `summary`. Choose `polyfit` when the input is a single variable and the output benefits from being a `Polynomial` — evaluable, differentiable, composable. The error contracts also differ: `polyfit` returns `nil` on bad input, while `LinearRegression.fit` throws `MatrixError.singular`. See <doc:Linear-Regression> for the full inference treatment.
+Choose `LinearRegression.fit` when standard errors, p-values, or confidence intervals on the coefficients matter. `polyfit` does not surface them, and the path to get them is exactly the hand-built design matrix shown above followed by `summary`. Choose `polyfit` when the input is a single variable and the output benefits from being a `Polynomial`: evaluable, differentiable, composable. The error contracts also differ: `polyfit` returns `nil` on bad input, while `LinearRegression.fit` throws `MatrixError.singular`. See <doc:Linear-Regression> for the full inference treatment.
 
-> Note: The internal design matrix becomes severely ill-conditioned as degree rises — losing roughly 9 digits of double precision at degree 4 and reaching the edge of representable precision around degree 5 on a typical input range. `polyfit` returns `nil` when the conditioning fails outright; for degrees above 4 on real data, prefer regularization or a basis transformation. See <doc:Numerical-Literacy>.
+> Note: The internal design matrix becomes severely ill-conditioned as degree rises, losing roughly 9 digits of double precision at degree 4 and reaching the edge of representable precision around degree 5 on a typical input range. `polyfit` returns `nil` when the conditioning fails outright; for degrees above 4 on real data, prefer regularization or a basis transformation. See <doc:Numerical-Literacy>.
 
 > Note: For the conceptual background on least squares (projection onto a column space) see <doc:Vector-Projections>. Polynomial regression projects `y` onto the column space spanned by `[1, x, x², ..., xⁿ]`.
 
@@ -167,7 +167,7 @@ a.trimmed() == b             // true  — canonical forms match
 
 The `degree` property reports the highest power with a non-zero coefficient regardless of trailing zeros, so `Polynomial([1, 2, 0])` reports a degree of `1`, not `2`. The zero polynomial, `Polynomial([0])`, has degree `0` by convention, the same as any other constant.
 
-> Experiment: **The Quiver Notebook** is the right surface for watching polynomial fits go wrong. Sweep the degree from 1 to 8 and re-evaluate — R² on the training rows keeps rising, but the curve starts to chase noise between points. The gap between training fit and out-of-sample behaviour is why holdout matters. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right surface for watching polynomial fits go wrong. Sweep the degree from 1 to 8 and re-evaluate. R² on the training rows keeps rising, but the curve starts to chase noise between points. The gap between training fit and out-of-sample behaviour is why holdout matters. See <doc:Quiver-Notebook>.
 
 ## Topics
 

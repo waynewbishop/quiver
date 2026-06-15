@@ -40,7 +40,7 @@ let general = [[3.0, 1.0],
 general.determinant  // 13.0 = (3 × 5) - (1 × 2)
 ```
 
-The sign matters. A negative determinant means the transformation flips orientation — like looking at space in a mirror. A rotation matrix, which preserves both area and orientation, always has a determinant of `1`:
+The sign matters. A negative determinant means the transformation flips orientation, like looking at space in a mirror. A rotation matrix, which preserves both area and orientation, always has a determinant of `1`:
 
 ```swift
 // 90° counterclockwise rotation
@@ -64,7 +64,7 @@ matrix3x3.determinant  // 1.0
 
 #### When the determinant is zero
 
-A determinant of zero signals that the matrix is **singular**. It collapses space into a lower dimension. In 2D, the transformation flattens everything onto a line. In 3D, it compresses a volume into a plane or a line.
+A determinant of zero signals that the matrix is **singular**. A singular matrix collapses space into a lower dimension. In 2D, the transformation flattens everything onto a line. In 3D, it compresses a volume into a plane or a line.
 
 Consider a matrix where both columns point in the same direction:
 
@@ -91,7 +91,7 @@ dependent.determinant  // 0.0
 
 The third equation adds no new information. We have three unknowns but only two independent equations. That is not enough to find a unique solution.
 
-> Important: Calling `.inverted()` on a singular matrix throws a `MatrixError.singular` error. Handle this with `do-catch`, `try?`, or check the determinant first:
+> Important: Calling `.inverted()` on a singular matrix throws a ``MatrixError/singular`` error. Handle this with `do-catch`, `try?`, or check the determinant first:
 
 ```swift
 import Quiver
@@ -128,7 +128,7 @@ let identity = A.multiplyMatrix(inv)
 //  [0.0, 1.0]]
 ```
 
-The product A × A⁻¹ always equals the identity matrix — the transformation that leaves everything unchanged. The determinant connects directly to inversion: the determinant of the inverse equals the reciprocal of the original determinant:
+The product A × A⁻¹ always equals the identity matrix, the transformation that leaves everything unchanged. The determinant connects directly to inversion: the determinant of the inverse equals the reciprocal of the original determinant:
 
 ```swift
 A.determinant                  // 13.0
@@ -139,7 +139,7 @@ This makes geometric sense. If the original transformation scales area by a fact
 
 #### Fractional display
 
-The decimal result `0.0769...` obscures the underlying relationship — the denominator is `13` because the determinant is `13`. The `asFractions` method reveals this structure:
+The decimal result `0.0769...` obscures the underlying relationship: the denominator is `13` because the determinant is `13`. The `asFractions` method reveals this structure:
 
 ```swift
 let A = [[3.0, 1.0],
@@ -153,7 +153,7 @@ inverse.asFractions()
 A.determinant.asFraction()  // 13
 ```
 
-Every element shares the determinant as its denominator. This pattern is hidden by decimal representation. The `Fraction` type is presentation-only; all operations continue to use standard `Double` values internally. Use `asFractions` on any `[Double]` or `[[Double]]` result, or `asFraction` on a single `Double`.
+Every element shares the determinant as its denominator. This pattern is hidden by decimal representation. The ``Fraction`` type is presentation-only; all operations continue to use standard `Double` values internally. Use `asFractions` on any `[Double]` or `[[Double]]` result, or `asFraction` on a single `Double`.
 
 ### Solving linear systems
 
@@ -169,7 +169,7 @@ let solution = A.solve(b)
 // Optional([1.7692307692307692, 4.6923076923076925])
 ```
 
-Under the hood, this is equivalent to inverting the matrix and applying the inverse to `b` — `x = A⁻¹b`. Working through the math by hand makes the geometry visible:
+This is equivalent to inverting the matrix and applying the inverse to `b`: `x = A⁻¹b`. Working through the math by hand makes the geometry visible:
 
 ```swift
 // Equivalent expansion: invert, then multiply
@@ -181,7 +181,7 @@ Both forms only work when the determinant is non-zero. A zero determinant means 
 
 ### Condition number
 
-A matrix can have a non-zero determinant and still produce unreliable results when inverted. The **condition number** quantifies this risk by measuring how sensitive the result is to small changes in the input — think of it like a lever. A well-conditioned matrix amplifies small input changes only slightly, while an ill-conditioned matrix amplifies them enormously.
+A matrix can have a non-zero determinant and still produce unreliable results when inverted. The **condition number** quantifies this risk by measuring how sensitive the result is to small changes in the input. Think of it like a lever: a well-conditioned matrix amplifies small input changes only slightly, while an ill-conditioned matrix amplifies them enormously.
 
 ```swift
 let identity = [[1.0, 0.0],
@@ -198,7 +198,7 @@ nearSingular.determinant      // 0.0000001 (non-zero, technically invertible)
 nearSingular.conditionNumber  // > 1,000,000 (inversion results are unreliable)
 ```
 
-This matrix has a tiny but non-zero determinant, so `try inverted()` returns a result — but that result is numerically unreliable. The condition number catches what the determinant alone misses.
+This matrix has a tiny but non-zero determinant, so `try inverted()` returns a result, but that result is numerically unreliable. The condition number catches what the determinant alone misses.
 
 **Interpreting the condition number:**
 
@@ -234,11 +234,11 @@ if cond < 1_000 {
 
 ### How Quiver uses determinants
 
-The determinant and matrix inversion are not just abstract concepts — they power linear regression behind the scenes. When we call `LinearRegression.fit(features:targets:)`, Quiver solves the normal equation θ = (X'X)⁻¹X'y to find the best-fit coefficients. That formula requires inverting the matrix `X'X`, which is only possible when its determinant is non-zero.
+The determinant and matrix inversion are not just abstract concepts: they power linear regression behind the scenes. When we call `LinearRegression.fit(features:targets:)`, Quiver solves the normal equation θ = (X'X)⁻¹X'y to find the best-fit coefficients. That formula requires inverting the matrix `X'X`, which is only possible when its determinant is non-zero.
 
-If the feature vectors are linearly dependent — for example, temperature in both Celsius and Fahrenheit — the matrix `X'X` becomes singular (`determinant = 0`) and the inversion fails. That is why `fit` throws `MatrixError.singular`. This is the determinant telling us that the features do not contain enough independent information to solve the problem.
+If the feature vectors are linearly dependent (for example, temperature in both Celsius and Fahrenheit), the matrix `X'X` becomes singular (`determinant = 0`) and the inversion fails. That is why `fit` throws `MatrixError.singular`. This is the determinant telling us that the features do not contain enough independent information to solve the problem. The <doc:Model-Interpretation-Primer> uses this same pair as an advance warning: reading the condition number before a fit, and the lopsided coefficients after one, to judge whether a model can be trusted.
 
-> Note: The same math used in <doc:Matrix-Transformations> to rotate and scale points is what `LinearRegression` applies to find coefficients. The difference is context: in graphics we transform geometry, in regression we solve for the line that best fits the data.
+> Note: The same math used in <doc:Matrix-Transformations> to rotate and scale points is what ``LinearRegression`` applies to find coefficients. The difference is context: in graphics we transform geometry, in regression we solve for the line that best fits the data.
 
 ### Putting it all together
 
@@ -258,7 +258,7 @@ let cond = matrix.conditionNumber  // small value — safe to invert
 let inverse = try matrix.inverted()
 ```
 
-For matrices that fail these checks, we know to handle the situation gracefully — whether that means removing redundant features, adjusting the data, or reporting that the computation cannot be performed reliably.
+For matrices that fail these checks, we know to handle the situation gracefully: removing redundant features, adjusting the data, or reporting that the computation cannot be performed reliably.
 
 > Experiment: **The Quiver Notebook** is the right place to feel how the determinant and condition number move together. Build a 2×2 matrix that starts well-conditioned, then sweep one element toward making the columns parallel — print `determinant` and `conditionNumber` at each step. Watching the determinant slide toward zero while the condition number races toward infinity is the fastest way to see why both diagnostics matter. See <doc:Quiver-Notebook>.
 

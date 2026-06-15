@@ -101,6 +101,21 @@ final class LinearRegressionTests: XCTestCase {
         XCTAssertEqual(convenience[1], 21.0, accuracy: 1e-9)
     }
 
+    // Scalar convenience predict returns a single Double for a single-feature sample
+    func testScalarPredict() throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let targets = [3.0, 5.0, 7.0, 9.0]  // y = 2x + 1
+
+        let model = try LinearRegression.fit(features: features, targets: targets)
+
+        // Scalar overload returns Double; must agree with the batch path's first element
+        let scalar = model.predict(5.0)
+        let batch = model.predict([[5.0]])[0]
+
+        XCTAssertEqual(scalar, batch, accuracy: 1e-9)
+        XCTAssertEqual(scalar, 11.0, accuracy: 1e-9)
+    }
+
     // Single-feature convenience fit accepts [Double] instead of [[Double]]
     func testSingleFeatureFit() throws {
         let features = [1.0, 2.0, 3.0, 4.0]
