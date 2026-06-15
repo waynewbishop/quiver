@@ -8,8 +8,6 @@ Measuring exercise effort is complex because our bodies produce multiple signals
 
 A **True Effort Score** (TES) keeps all six dimensions of a run in play. We look at heart rate, pace, cadence, grade, altitude, and vertical oscillation together to form a complete picture of what the body is doing in each moment. A heart rate might be high because of heat or a steep climb; by looking at all signals at once, we can tell these cases apart.
 
-> Note: The [quiver-demo-watchos](https://github.com/waynewbishop/quiver-demo-watchos) is the reference implementation of this article: the Ridge baseline, the `ResidualModel` wrapper, the k-nearest-neighbors classifier, and the session accumulator assembled into a working watchOS app.
-
 ## Reading the full signal
 
 We treat heart rate as a reaction to work rather than a measure of it. We use other signals to predict what the heart rate should be in any given moment. The gap between our prediction and the real heart rate, a diagnostic tool we call a **residual**, measures how far the heart rate has drifted from what the workload explains.
@@ -18,23 +16,23 @@ In exercise science, this drift is called **cardiac decoupling**. It happens whe
 
 ### The models that do the work
 
-Four Quiver types do the work, each with a distinct job. A ``StandardScaler`` puts the signals on a common scale so no single dimension dominates due to its raw units. A ``Ridge`` regression acts as our baseline: it predicts expected heart rate from workload signals: pace, cadence, grade, vertical oscillation, and altitude. A ``ResidualModel`` wraps that fitted baseline and reports the gap against the observed heart rate, the part a single-signal reading misses. A ``KNearestNeighbors`` classifier labels the moment based on its resemblance to past efforts, catching abrupt cases the residual cannot, such as a descent where heart rate stays high while work falls away. The label is what the score accumulates, while the residual provides the context to decide whether to trust the heart rate. The classifier rides inside a ``Pipeline`` with its own scaler, so the two are always applied together.
-
-Throughout, the signals stay together. Each moment remains a single vector, flowing through scaling, regression, and classification without being flattened to a single number first. This "full-signal principle" is what the whole approach rests on. We assemble the effort model from these Quiver types, just as we assemble a search pipeline from smaller parts using <doc:Semantic-Search>.
+We combine four types. [StandardScaler](<doc:Feature-Scaling>) normalizes signals to prevent dimension dominance; <doc:Ridge-Regression> predicts expected heart rate from pace, cadence, grade, vertical oscillation, and altitude; <doc:Residual-Model> surfaces the gap between expected and observed heart rate; and <doc:Nearest-Neighbors-Classification> classifies the moment to catch cases the residual misses. The classifier fits inside a `Pipeline` to ensure consistency. Each moment is treated as a vector, flowing through these components without reduction until the final score.
 
 > Important: The sensor values throughout this article are illustrative, chosen to make the arithmetic checkable. A real model would train on a runner's own recorded history. The score classifies the character of a moment; it is not a validated training load, and no number here should be read as a prescription.
 
+> Note: The [quiver-demo-watchos](https://github.com/waynewbishop/quiver-demo-watchos) is the reference implementation of this article: the Ridge baseline, the `ResidualModel` wrapper, the k-nearest-neighbors classifier, and the session accumulator assembled into a working watchOS app.
+
 ## Why one number falls short
 
-On a steep descent, heart rate can hold at `160` while cardiovascular demand drops because the runner is braking against gravity, not driving the pace. A heart-rate-only score reads that `160` and calls the stretch hard. However, the cost here is muscular, not cardiac: each downhill stride lands with the quadriceps lengthening under load, leading to next-day soreness. A single number overstates the cardiovascular demand and misses the mechanical load entirely. Both "hard" and "easy" are true, but for different systems; one number cannot hold both.
+On a steep descent, heart rate can hold at 160 while cardiovascular demand drops. A heart-rate-only score reads this as "hard," missing that the effort is muscular (quadriceps load) rather than cardiac. A single number overstates the cardiovascular demand and misses the mechanical load entirely. Both "hard" and "easy" are true, but for different systems; one number cannot hold both.
 
-On a climb too steep to run, the runner drops to a power-hike. Pace falls toward eighteen or twenty minutes per mile and cadence collapses, so a pace- or cadence-based score reads the moment as nearly a rest. That score is wrong: lifting bodyweight up a steep grade is hard work, and here the heart rate reflects it honestly. Cardiovascular and muscular demand both rise, so heart rate tells close to the truth. Pace is the misleading signal here, reading slow while the work is among the hardest of the session.
+On steep climbs, runners may drop to a power-hike, causing pace and cadence to collapse. Pace-based scores misinterpret this as rest, failing to account for the work of lifting bodyweight against gravity. Here, heart rate provides an honest reflection of effort, showing that pace is misleading.
 
 This problem does not require extreme terrain. At a steady, conversational pace on a flat loop on a warm afternoon, heart rate drifts ten or fifteen beats upward over the back half. The effort never changed; the cost of cooling did, as blood shunts to the skin and the heart beats faster to do the same job. The flat, unchanging pace is the signal that identifies the rising heart rate as drift rather than effort.
 
 ### The same number, different efforts
 
-The thread through all these examples is that the same heart rate means different things depending on what the rest of the body is doing. A `160` plunging downhill, a `160` grinding uphill, and a `160` drifting upward on a hot flat road are three different efforts. The information that separates them does not live in the heart rate: it lives in the pace, the cadence, and the grade alongside it. Training-load scores that collapse a workout down to one signal cannot distinguish these moments. We keep the signals together and read heart rate in their context — asking not "how high is the heart rate" but "how high is it, given everything else the body is doing right now?"
+Heart rate carries different meanings depending on what the rest of the body is doing. A 160 bpm plunging downhill, grinding uphill, or drifting upward on a hot flat road represent three distinct physiological states. Heart rate alone cannot separate these; only pace, cadence, and grade together distinguish the effort. We keep these signals together to ask not "how high is the heart rate," but "how high is it given the rest of the body's activity?"
 
 ## Keeping every dimension
 
@@ -174,7 +172,11 @@ This anchor makes the number meaningful. An hour entirely at an easy jog lands n
 
 ### How a moment becomes load
 
-The path from sensor sample to final score is a short pipeline. For each sample, the classifier returns an effort level (Easy, Steady, Tempo, or Hard) carrying a fixed weight (`0.25`, `0.50`, `0.75`, `1.00`). The moment's contribution to the load is that weight times the sample duration. We sum these contributions and express the total against the reference of one hour at threshold (Tempo, `0.75`).
+The path from sensor sample to final score is a short pipeline. For each sample, the classifier returns an effort level (Easy, Steady, Tempo, or Hard) carrying a fixed weight (`0.25`, `0.50`, `0.75`, `1.00`). The moment's contribution to the load is that weight times the sample duration. We sum these contributions and express the total against the reference of one hour at threshold (Tempo, `0.75`):
+
+`TES = 100 × (Σₜ L(lₜ)·Δtₜ) / (L(Tempo) · 3600)`
+
+Here `L(lₜ)` maps a sample's effort label to its weight, `Δtₜ` is the sample's duration in seconds, and `L(Tempo) · 3600` is the anchor: one hour held at threshold. The factor of `100` sets the scale, so an hour at Tempo lands at `100`, an hour at Easy near `33`, and an hour at Hard near `133`.
 
 Three session-level terms (**variance**, **duration**, and **transition**) are then folded onto that base. The base carries the session's intensity and time; these terms carry the structure those two numbers alone cannot see.
 

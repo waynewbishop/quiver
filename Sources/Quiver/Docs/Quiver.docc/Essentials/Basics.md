@@ -8,7 +8,7 @@ A starting point for developers new to numerical computing.
 
 ## Overview
 
-If we have any experience writing code we already have most of what we need to work with data. The challenge with numerical computing is rarely the code but the vocabulary that surrounds it. Variance, regression, determinant, normalization, gradient. These words sound like a different field of study, but every one of them describes something we can compute, see, and verify in a few lines of Swift.
+If we have any experience writing code we already have most of what we need to work with data. The challenge with numerical computing is rarely the code but the vocabulary that surrounds it. Variance, regression, determinant, normalization, gradient. These words sound like a different field of study, but they all describe something we can compute, see and verify.
 
 > Note: This page is a starting point organized around three areas that show up in any data work. **Statistics** (describing what is in the data), **linear algebra** (treating numbers as positions in space), and **machine learning** (using the first two to make predictions).
 
