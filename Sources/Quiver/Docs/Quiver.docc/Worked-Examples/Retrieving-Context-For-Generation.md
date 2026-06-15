@@ -63,7 +63,7 @@ Paragraph splitting is the baseline, not the ceiling. Two refinements matter in 
 
 Retrieval is a write-once, read-many pattern. The chunks are embedded a single time when a document enters the system, the vectors are stored, and only the query is embedded at search time. Embedding every chunk on every query would pay the expensive step repeatedly for a result that never changes.
 
-We embed through a `some Embedder` source (the contract <doc:Embedding-Sources> defines) so the vectors can come from a hand-built table while learning the pipeline and from an on-device sentence model in production, with no change to the code around them. Each chunk's vector is stored alongside the chunk itself, so provenance rides along into the index:
+We embed through an `Embedder` source (the object <doc:Embedding-Sources> defines) so the vectors can come from a hand-built table while learning the pipeline and from an on-device sentence model in production, with no change to the code around them. Each chunk's vector is stored alongside the chunk itself, so provenance rides along into the index:
 
 ```swift
 import Quiver
