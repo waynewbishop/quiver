@@ -26,8 +26,9 @@ let x = [1.0, 2.0]
 let y = [3.0, 5.0]
 
 let model = try LinearRegression.fit(features: x, targets: y)
-model.intercept     // 1.0
-model.coefficients  // [2.0]
+model.coefficients      // [1.0, 2.0] — intercept first, then slope
+model.coefficients[0]   // 1.0 — the intercept
+model.coefficients[1]   // 2.0 — the slope
 ```
 
 When we add more points and overdetermine the system, the normal equation returns the line that minimizes the sum of squared vertical distances rather than passing through every point.
@@ -61,7 +62,7 @@ let features: [[Double]] = [
 let price = [180000.0, 260000.0, 350000.0, 230000.0, 290000.0, 420000.0]
 
 let model = try LinearRegression.fit(features: features, targets: price)
-print(model.coefficients)  // [137.84, 7162.16] — dollars per sqft, dollars per bedroom
+print(model.coefficients)  // [-6621.62, 137.84, 7162.16] — intercept, dollars per sqft, dollars per bedroom
 ```
 
 ### Making predictions
@@ -185,7 +186,7 @@ run1 == run2  // true
 
 This is useful for unit tests, debugging, and verifying that a pipeline produces stable output.
 
-> Experiment: **The Quiver Notebook** is the right place to see outlier leverage. Take the workflow above, push one entry of `price` far above the rest, refit, and compare R² and the coefficients—the line bends to chase the outlier and the metric drops. The bent line and the lower R² are the signal that one point is doing disproportionate work, leverage made visible. See Quiver Notebook.
+> Experiment: **The Quiver Notebook** is the right place to see outlier leverage. Take the workflow above, push one entry of `price` far above the rest, refit, and compare R² and the coefficients—the line bends to chase the outlier and the metric drops. The bent line and the lower R² are the signal that one point is doing disproportionate work, leverage made visible. See [Quiver Notebook](<doc:Quiver-Notebook>).
 
 ## Topics
 

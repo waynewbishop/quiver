@@ -10,7 +10,9 @@ A **True Effort Score** (TES) keeps all six dimensions of a run or other activit
 
 ## Reading the full signal
 
-Our model treats heart rate as a reaction to work. As a result, other signals are used to predict what the heart rate **should** be in any given moment. The gap between our prediction and the real heart rate is known as the **residual**. This measures how far the heart rate has drifted from the expected workload.
+Our model treats heart rate as a reaction to work. As a result, other signals are used to predict what the heart rate **should** be in any given moment. The gap between our prediction and the real heart rate is known as the **residual**. This measures how far the heart rate has drifted from the expected workload:
+
+![A predicted heart rate curve with the observed heart rate above it, the vertical gap between them marked as the residual](diagram-residual-modeling)
 
 In exercise science, this drift is called **cardiac decoupling**. It happens when heart rate and workload stop moving together. For instance, heart rate might climb while pace holds steady. A single-signal score cannot see this divergence but our model reads heart rate in context and decides when to trust the signal and when to look at the other data instead.
 
@@ -24,7 +26,9 @@ The algorithm is based on four models. [StandardScaler](<doc:Feature-Scaling>) n
 
 ## Why one number falls short
 
-On a steep descent heart rate can stay low while the legs take a heavy pounding. The quadriceps work eccentrically to brake against gravity on every footstrike, a genuinely hard muscular load. Yet the cardiovascular cost is light so one's heart rate can sit well below what the effort deserves. A heart-rate-only score reads this as "easy," missing the mechanical load entirely. Both "hard" and "easy" are true but for different systems.
+On a steep descent heart rate can stay low while the legs take a heavy pounding. The quadriceps work eccentrically to brake against gravity on every footstrike, a genuinely hard muscular load. Yet the cardiovascular cost is light so one's heart rate can sit well below what the effort deserves. A heart-rate-only score reads this as "easy," missing the mechanical load entirely. Both "hard" and "easy" are true but for different systems:
+
+![A steep descent where heart rate stays low while muscular load stays high, showing cardiovascular cost and mechanical cost diverging](diagram-load-cost)
 
 On steep climbs runners may drop to a power-hike causing pace and cadence to collapse. Pace-based scores misinterpret this as rest, failing to account for the work of lifting bodyweight against gravity. Here, heart rate provides an honest reflection of effort showing that pace is misleading.
 
@@ -34,9 +38,11 @@ Heart rate carries different meanings depending on what the rest of the body is 
 
 ## Keeping every dimension
 
-As we know, sensors on a modern watch provide more metrics than heart rate alone. As a result, each instant of a run can be a six-signal snapshot: a point in six-dimensional space describing what the body is doing.
+As we know, sensors on a modern watch provide more metrics than heart rate alone. As a result, each instant of a run can be a six-signal snapshot: a point in six-dimensional space describing what the body is doing:
 
-Quiver treats each moment as a complete vector (a plain `[Double]` of every signal at once), and the same array flows through scaling, regression, and classification. Working in the full space allows us to hold a fast descent and a threshold effort apart instead of scoring them alike. While the model may not use every signal in every component, the starting point is always the full vector.
+![A single moment of a run represented as a six-signal vector feeding into scaling, regression, and classification](diagram-vector-modeling)
+
+Quiver treats each moment as a **complete vector** (a plain `[Double]` of every signal at once), and the same array flows through scaling, regression, and classification. Working in the full space allows us to hold a fast descent and a threshold effort apart instead of scoring them alike. While the model may not use every signal in every component, the starting point is always the full vector.
 
 ## Sorting what misleads the reading
 
@@ -79,7 +85,9 @@ The `lambda` of `1.0` above is a starting point. If the penalty is too small ove
 
 ## Scaling the signals
 
-Next, we transform the features with a ``StandardScaler`` before training. The signals live on wildly different scales: cadence near `170`, grade roughly between `−3%` and `+4%` and altitude in the hundreds of meters. Ridge compares coefficient magnitudes. Standardizing puts every signal in the same z-score units to apply `lambda` fairly. We discuss the transform itself in <doc:Feature-Scaling>.
+Next, we transform the features with a ``StandardScaler`` before training. The signals live on wildly different scales: cadence near `170`, grade roughly between `−3%` and `+4%` and altitude in the hundreds of meters. Ridge compares coefficient magnitudes. Standardizing puts every signal in the same z-score units to apply `lambda` fairly. We discuss the transform itself in <doc:Feature-Scaling>:
+
+![Signals on different raw scales, such as cadence and altitude, transformed into shared z-score units by the standard scaler](diagram-standard-scaler)
 
 We fit the scaler once on the training data and store it. At prediction time we transform each live sample with that same stored scaler and never re-fit it. Re-fitting on new data would compute new means and standard deviations, silently shifting features out from under the trained coefficients.
 
@@ -110,7 +118,9 @@ Measured as `9.1` beats-per-minute (BPM) is heart rate not explained by the exte
 
 ## Classifying the moment
 
-The residual is not privy to masking effects, so we use a ``KNearestNeighbors`` classifier to label each moment as `Easy`, `Steady`, `Tempo`, or `Hard` based on its resemblance to past efforts. A steep-downhill sample (low heart rate, fast pace, negative grade, high vertical oscillation from braking) lands near other steep-downhill samples and is labeled Hard, regardless of the calm heart rate. The classifier doesn't need to reason about terrain; it just needs past examples.
+The residual is not privy to masking effects, so we use a ``KNearestNeighbors`` classifier to label each moment as `Easy`, `Steady`, `Tempo`, or `Hard` based on its resemblance to past efforts. A steep-downhill sample (low heart rate, fast pace, negative grade, high vertical oscillation from braking) lands near other steep-downhill samples and is labeled Hard, regardless of the calm heart rate. The classifier doesn't need to reason about terrain; it just needs past examples:
+
+![A new moment placed among past efforts in kinematic space, classified Hard by its nearest neighbors despite a low heart rate](diagram-load-classifier)
 
 The classifier reads a different slice of the moment than the baseline, because it asks a different question. The regression treats heart rate as the target and predicts it from the workload, with altitude entering as a slow environmental drift that shifts expected heart rate up at elevation. The classifier instead reads the **kinematic** signature. We compare heart rate, pace, cadence, grade, and vertical oscillation against past efforts. Altitude is left out here on purpose. This measure is a position, not a motion. It informs what heart rate to **expect** (the baseline) and what a moment **costs** (the accumulator, later), but not what kind of effort the body is doing. The moment is recorded as the full six signals. Each component reads the subset its question needs.
 
@@ -148,7 +158,9 @@ A personal model is only as good as the history behind it. A new watch provides 
 
 1.  **Cold start:** With no personal data, the classifier trains on ground-truth examples (steep downhills at low heart rate are `Hard` from the eccentric load, power-hikes up steep grades are `Hard` despite the collapsed pace), providing a usable score immediately. The baseline starts from population-level expectations.
 2.  **Personalizing:** As the athlete logs sessions and corrects effort labels, the baseline refits on their specific data and the classifier retrains. The model drifts toward the athlete's resting baseline and pace-to-effort mapping. This is also how we bring a sea-level runner who starts training at altitude back into calibration. The first runs in thin air read as inflated residuals. As those runs enter the history the baseline refits and the residuals settle again.
-3.  **Established:** After enough history, residuals center near zero on unseen sessions, and labels match reported feelings. This trust is built gradually, just as a new watch requires a few weeks for long-term metrics to settle.
+3.  **Established:** After enough history, residuals center near zero on unseen sessions, and labels match reported feelings. This trust is built gradually, just as a new watch requires a few weeks for long-term metrics to settle:
+
+![Residuals shrinking toward zero across three phases as the model personalizes from cold start to established history](diagram-personalization-model)
 
 ## Reading the baseline as math
 
@@ -167,7 +179,9 @@ Reading the comparison as a ranking matters here because signals often overlap. 
 
 While per-sample models classify each instant we fold in session-level effects at the end. Metrics include a variance term for interval oscillation, a duration term for fatigue past forty-five minutes, and a transition term for neuromuscular costs of abrupt changes (e.g., intervals).
 
-A set of hill repeats shows why these terms exist. Each repeat is a hard climbing surge followed by an easy recovery jog, swung back and forth several times. Every moment is already classified — the surges `Hard`, the recoveries `Easy` — but the base load alone would score the session as if those efforts had been spread evenly. The variance term catches the swing between levels, and the transition term catches the abrupt jumps across them, so a session of repeats costs more than the same minutes run at a steady middle pace.
+A set of hill repeats shows why these terms exist. Each repeat is a hard climbing surge followed by an easy recovery jog, swung back and forth several times. Every moment is already classified — the surges `Hard`, the recoveries `Easy` — but the base load alone would score the session as if those efforts had been spread evenly. The variance term catches the swing between levels, and the transition term catches the abrupt jumps across them, so a session of repeats costs more than the same minutes run at a steady middle pace:
+
+![A hill-repeats session alternating between Hard climbing surges and Easy recovery jogs, the swings the variance and transition terms capture](diagram-hill-repeats)
 
 Including (absolute) altitude as a baseline signal helps the model learn that for an acclimatized runner, a given workload costs slightly more beats per minute up high. The result is that the expected heart rate shifts up and the residual stays honest. This calibrates for a runner's habitual environment, not for sea-level runners arriving at altitude.
 

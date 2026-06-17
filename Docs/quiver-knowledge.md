@@ -452,6 +452,29 @@ embeddings.nearest(to: target, k: 1)  // [(1, "queen", 1.0)]
 
 Entries whose vector dimension does not match the query are silently skipped. Zero-magnitude vectors score 0.0 (perpendicular by convention). Default k = 5.
 
+## Embedding Sources (1.4.0)
+
+```swift
+// Conform any text-to-vector source to Embedder — Quiver ships the contract, not the embedder.
+struct TableEmbedder: Embedder {
+    let table: [String: [Double]]
+    func embed(_ text: String) -> [Double]? {
+        text.tokenize().embed(using: table).meanVector()   // nil when no words are recognized
+    }
+}
+
+let docs = ["a long slow rise", "knead the dough well", "proof the yeast"]
+let embedded = docs.embedded(using: TableEmbedder(table: embeddings))
+// [(text: String, vector: [Double])] — strings that embed to nil are dropped, text stays paired with its vector
+
+if let query = TableEmbedder(table: embeddings).embed("how long should bread rise") {
+    let hits = embedded.mostSimilar(to: query, k: 3)
+    // [(rank: Int, text: String, score: Double)] — highest score first
+}
+```
+
+`Embedder` is a one-method protocol — `embed(_ text: String) -> [Double]?` — that turns text into a fixed-dimension vector, or `nil` for empty text or text with no recognized tokens. Quiver defines the contract and ships no embedder: swapping a small word-vector table for a richer on-device sentence model changes the one line that creates the embedder, and every line that tokenizes, ranks, and reports stays as written. `[String].embedded(using:)` batches the call into `(text, vector)` pairs (dropping `nil` results, so a skipped string never shifts another's label), and `.mostSimilar(to:k:)` ranks those pairs against a query as `(rank, text, score)`. The produced vectors are plain `[Double]`, so they flow straight into `cosineSimilarities`/`topIndices`. This is the pluggable generalization of the dictionary-based Embedding Dictionary Search above (the retrieval step in a retrieval-augmented generation pipeline); `embed(_:)` here is distinct from the `[String].embed(using:)` token-table lookup it may call internally.
+
 ## Broadcasting
 
 ### Scalar (named methods):
@@ -671,6 +694,15 @@ for fold in folds {
 
 `kFoldIndices(k:seed:)` returns index sets, not sliced data — so a scaler can fit on the training indices alone and validation rows never leak into the fit. Bounds: `2 ≤ k ≤ count`. Every position is validated exactly once across the `k` folds; fold sizes differ by at most one. After cross-validation picks the best configuration, retrain that choice on the full dataset before deploying.
 
+```swift
+// Class balance — inspect and correct imbalance before training a classifier
+let counts = labels.classDistribution()        // [Int: Int] — samples per label
+let ratio = labels.imbalanceRatio()             // Double? — largest class ÷ smallest (nil if empty)
+let (balancedX, balancedY) = features.oversample(labels: labels)  // synthesizes minority rows to parity
+```
+
+`classDistribution()` counts samples per label; `imbalanceRatio()` returns the largest class divided by the smallest (`nil` on empty input), where `1.0` is perfectly balanced and higher values signal skew. `oversample(labels:)` brings every smaller class up to the majority count by generating synthetic points interpolated between existing class members (not plain duplicates), returning the rebalanced features and labels together. Oversample before splitting, and never on the test set alone.
+
 ## Feature Scaling
 
 ```swift
@@ -811,6 +843,23 @@ let groups = lr.classify(scaledTest)             // [Classification], grouped by
 ```
 
 Binary classifier trained by gradient descent on cross-entropy loss: the linear score `Xθ` is squashed through `sigmoid` into a probability, and the gradient `(1/n)Xᵀ(σ(Xθ) − y)` shares its shape with the squared-error gradient — the same descent loop behind `GradientDescent`, applied to a different loss. Conforms to `Classifier`, so `predict(_:)` returns `[Int]` and `classify(_:)` is provided for free. `predictProbabilities(_:)` returns a single probability per sample — P(class = 1) — not a per-class row that sums to 1.0 (that is the `GaussianNaiveBayes` shape). `decisionFunction(_:)` exposes the raw log-odds before the sigmoid for threshold tuning and margin inspection. Labels must be `0` or `1`; multinomial is out of scope. On linearly separable data the maximum-likelihood fit has no finite minimum, so the run reaches `maxIterationsReached` by design while still predicting correctly — confirm a `.converged` outcome on overlapping data before relying on the coefficient magnitudes.
+
+## Residual Model (1.4.0)
+
+```swift
+// Fit a regressor first, then wrap it — ResidualModel holds no state of its own.
+let baseline = try LinearRegression.fit(features: trainX, targets: trainY)
+let residualModel = ResidualModel(model: baseline)
+
+let gaps = residualModel.residuals(features: laterX, targets: laterY)  // [Double] — observed − predicted, per sample
+let gap  = residualModel.residual(features: oneRow, observed: 162.0)   // Double — scalar form
+let yhat = residualModel.expected(laterX)                              // [Double] — pass-through to the wrapped model's predict
+residualModel.model                                                    // the wrapped regressor
+```
+
+`ResidualModel<Model: Regressor>` wraps any fitted regressor and reports what the model could not explain: the residual `observed − predicted`. It composes like `Pipeline` — the caller fits the regressor, then wraps it — and forwards `expected(_:)` straight to the wrapped model's `predict`. Computing a residual needs both the features and the observed target (there is no `observed − predicted` without the observed). Fit the baseline on one period and residualize a *later* sample: residualizing the training data understates the true error.
+
+The `Coefficients` protocol travels with this type. It exposes a uniform `coefficients: [Double]` (intercept first), and `LinearRegression`, `Ridge`, and `GradientDescent` conform; a `ResidualModel` forwards its wrapped model's coefficients when that model conforms. `LogisticRegression` deliberately does not conform — it is a classifier, and a residual is undefined for a probability or a 0/1 label. Distance- and tree-based models do not conform either, which is why the capability is its own protocol rather than a requirement on every regressor.
 
 ## K-Means Clustering
 
@@ -979,28 +1028,7 @@ let bins = raw.histogram(bins: 5)              // for bar charts
 ### O(n log n) — Sorting-based
 `median()`, `percentile(_:)`, `quartiles()`, `percentileRanks()`, `topIndices(k:)`, `sortedIndices()` — sort internally. When computing multiple percentiles, `quartiles()` sorts once.
 
-### Benchmarks (release build, Apple Silicon M-series, March 2026)
-
-Quiver's performance is optimized for educational datasets (hundreds to low thousands of samples), on-device inference (real-time sensor data), and server-side queries (similarity search on embedded vectors).
-
-| Operation | Data Size | Time | Memory Δ |
-|---|---|---|---|
-| Naive Bayes fit + predict | 10K train, 1K query, 20 features | 1ms | +0.2 MB |
-| KMeans fit | 1K samples, k=5, 10 features | 1ms | +0.0 MB |
-| Linear Regression fit | 5K samples, 10 features | 2ms | +2.5 MB |
-| KNN Euclidean predict | 1K train, 100 query, 10 features | 3ms | +0.0 MB |
-| KNN Cosine predict | 1K train, 100 query, 10 features | 4ms | +0.1 MB |
-| Matrix Multiply | 100×100 | 30ms | +0.0 MB |
-| Transpose | 500×500 | 32ms | +3.9 MB |
-| Determinant | 150×150 | 97ms | +0.3 MB |
-| findDuplicates | 500 vectors, 20 dims | <1ms | +0.0 MB |
-| clusterCohesion | 500 vectors, 20 dims | <1ms | +0.0 MB |
-
-**What these numbers mean for app developers:** Training a Naive Bayes classifier on 10,000 samples takes 1ms — fast enough for real-time use on watchOS. KNN prediction on 1,000 training points completes in 3ms — well within a 60fps frame budget. Matrix operations are comfortable up to a few hundred rows.
-
-**Where performance scales and where it doesn't:** ML models, statistics, similarity operations, and boolean masking all scale linearly and handle tens of thousands of elements comfortably. Matrix multiplication, inversion, and determinant are cubic — they perform well up to a few hundred rows but grow rapidly beyond that. Pairwise operations (findDuplicates, clusterCohesion) are quadratic — use them on subsets, not entire datasets.
-
-Run benchmarks locally: `swift test -c release --filter QuiverStressTests`
+Quiver is optimized for hundreds to low thousands of samples: linear operations (ML models, statistics, similarity, boolean masking) handle tens of thousands comfortably, cubic matrix operations stay fast to a few hundred rows, and quadratic pairwise operations are best on subsets. Run benchmarks locally with `swift test -c release --filter QuiverStressTests`.
 
 ---
 
@@ -1058,7 +1086,8 @@ Quiver's ML models follow a consistent pattern: `fit()` → `predict()` → eval
 - **Features and labels.** Features are the input measurements (`[[Double]]` matrix, rows = samples, columns = measurements). Labels are what we predict (`[Int]` for classification, `[Double]` for regression).
 - **Train/test split.** Never evaluate on training data. Use `trainTestSplit(testRatio:seed:)` or `stratifiedSplit(labels:testRatio:seed:)` to hold out evaluation data.
 - **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) and iterative optimizers (`GradientDescent`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling.
-- **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent, Ridge. All use static `fit()` methods — no unfitted state exists.
+- **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent, Ridge, LogisticRegression. All use static `fit()` methods — no unfitted state exists.
+- **Scalar prediction.** Single-feature models accept a scalar in place of a one-row matrix: `model.predict(3500.0)` returns one value — `Double` for regressors, `Int` for classifiers. The convenience is protocol-provided on every `Regressor` and `Classifier`; it applies only when the model was trained on a single feature.
 - **Model persistence.** All models conform to `Codable`. Train once, encode to JSON with `JSONEncoder`, decode on any platform with `JSONDecoder` — identical predictions guaranteed by `Equatable`. When scaling is used, persist both the scaler and model together. See the Model-Persistence documentation page for platform-specific guidance (iOS, watchOS, Vapor, SwiftData).
 - **Naive Bayes variance.** The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
 - **Evaluation (after training):** `confusionMatrix(actual:)` for classification (accuracy, precision, recall, F1). `rSquared(actual:)`, `meanSquaredError(actual:)` for regression. `classificationReport(actual:)` for a formatted summary.
@@ -1066,16 +1095,7 @@ Quiver's ML models follow a consistent pattern: `fit()` → `predict()` → eval
 
 ### Vector Operations
 
-Vectors have magnitude (length), direction (normalized), and relationships to other vectors (dot product, angle, distance).
-
-- **Magnitude:** `v.magnitude` — Pythagorean theorem extended to any dimension. `[3.0, 4.0].magnitude` = 5.0.
-- **Normalization:** `v.normalized` — unit vector (length 1) preserving direction. Zero vector returns zero vector.
-- **Dot product:** `v1.dot(v2)` — sum of element-wise products. Zero means perpendicular.
-- **Angle:** `v1.angle(with: v2)` (radians), `v1.angleInDegrees(with: v2)` (degrees), `v1.cosineOfAngle(with: v2)` (raw cosine value).
-- **Distance:** `v1.distance(to: v2)` — Euclidean distance. Used internally by KNN and KMeans.
-- **Arithmetic:** `.add()`, `.subtract()`, `.multiply()` (Hadamard), `.divide()`. Named methods, not operators.
-- **Matrix-vector:** `vector.transformedBy(matrix)` or `matrix.transform(vector)` — two syntaxes, same result.
-- **Averaging:** `vectors.averaged()` and `vectors.meanVector()` — both return optionals. Key for building document vectors from word embeddings.
+See the Vector Arithmetic section above for signatures. Key idea: vectors carry magnitude (length), direction (normalized), and relationships to other vectors (dot product zero = perpendicular; distance drives KNN and KMeans). Arithmetic uses named methods (`.add()`, `.subtract()`, `.multiply()`), not operators.
 
 ### Vector Projections
 
@@ -1090,102 +1110,31 @@ Decompose any vector into parallel and perpendicular components relative to a re
 
 ### Boolean Masking
 
-Filter and select array elements using comparisons, logical conditions, and boolean masks.
-
-- **Comparisons return `[Bool]`:** `isGreaterThan()`, `isLessThan()`, `isGreaterThanOrEqual()`, `isLessThanOrEqual()`, `isEqual(to:)` (takes array, not scalar).
-- **Combine masks:** `.and()`, `.or()`, `.not` (computed property).
-- **Apply masks:** `data.masked(by: mask)` extracts matching elements. `mask.trueIndices` returns positions.
-- **Conditional selection:** `data.choose(where: mask, otherwise: otherArray)` — picks from first array where true, second where false. Both parameters are arrays.
-- **Panel integration:** `panel.filtered(where: mask)` applies the same mask to all columns simultaneously.
+See the Boolean Masking section above for signatures. Key idea: comparisons return `[Bool]`, combine with `.and()`/`.or()`/`.not`, apply with `data.masked(by:)` or `data.choose(where:otherwise:)`. Panel integration: `panel.filtered(where: mask)` applies the same mask to all columns simultaneously.
 
 ### Statistical Operations
 
-Three questions about any dataset: where is the center, how spread out, and which values are unusual.
-
-- **Aggregation:** `sum()`, `product()` (non-optional). `argMin()`, `argMax()` (optional — return indices).
-- **Central tendency:** `mean()`, `median()` — both optional. When they diverge, data is skewed.
-- **Dispersion:** `variance(ddof:)`, `standardDeviation(ddof:)`, `standardError(ddof:)` — all optional. Default `ddof: 1` (sample); pass `ddof: 0` for an entire population.
-- **Cumulative:** `cumulativeSum()`, `cumulativeProduct()` — non-optional. Running totals.
-- **Outlier detection:** `outlierMask(threshold:)` — z-score method, returns `[Bool]`. Default std of 1.0 when all values identical.
-- **Vector averaging:** `meanVector()` — element-wise mean across multiple vectors. Returns optional.
-- **Info:** `.info()` — quick summary (count, mean, std, min, max; adds shape/size for matrices).
+See the Statistics section above for signatures. Key idea: when `mean()` and `median()` diverge, the data is skewed. Dispersion methods (`variance`, `standardDeviation`, `standardError`) default to `ddof: 1` (sample); pass `ddof: 0` for a full population.
 
 ### Matrix Operations
 
-Work with 2D arrays using element-wise arithmetic and linear algebra.
-
-- **Element-wise:** `.add()`, `.subtract()`, `.multiply()` (Hadamard), `.divide()` — same as vectors but for matrices.
-- **Scalar broadcast:** `matrix * 2.0`, `matrix + 10.0` — operators work for scalar-matrix.
-- **Transpose:** `.transpose()` or `.transposed()` — flip rows and columns.
-- **Matrix multiply:** `.multiplyMatrix(other)` — true matrix multiplication (dot products of rows × columns). Inner dimensions must match.
-- **Column access:** `.column(at: index)` — extract a column as `[Double]`.
-- **Determinant:** `.determinant` — non-optional. Zero means singular.
-- **Inverse:** `try .inverted()` — throws `MatrixError.singular` or `.notSquare`.
-- **Fractions:** `.asFractions()` on inverted matrices reveals rational structure behind decimal results.
+See the Matrix Operations section above for signatures. Key idea: `.asFractions()` on an inverted matrix reveals the rational structure behind decimal results — useful for teaching and verification.
 
 ### Shape and Size
 
-Inspect matrix dimensions and convert between 1D and 2D without altering data.
-
-- `.shape` returns `(rows: Int, columns: Int)` named tuple — only on `[[Numeric]]`.
-- `.size` returns total element count (rows × columns). Differs from `.count` which returns row count only.
-- Supports tuple destructuring: `let (stores, days) = sales.shape`.
-- Compile-time safety: calling `.shape` on `[Double]` or `[String]` is a compile-time error.
-- `flat.reshaped(rows:columns:)` — 1D → 2D, fills row-major. Total elements must equal rows × columns.
-- `matrix.flattened()` — 2D → 1D, concatenates rows.
-- `matrix.reshaped(rows:columns:)` — 2D → different 2D, flattens internally then reshapes.
-- Round-trip: `matrix.flattened().reshaped(rows:columns:)` restores original.
-
-### Array Generation
-
-Static methods on `[Double]` (or `[Int]`) to create arrays with specific patterns.
-
-- **1D:** `[Double].zeros(5)`, `.ones(5)`, `.full(5, value: 3.14)`.
-- **2D:** `[Double].zeros(2, 3)`, `.ones(2, 3)`, `.full(2, 3, value: 7.0)` — called on `[Double]`, returns `[[Double]]`.
-- **Special:** `[Double].identity(3)` (3×3 identity), `[Double].diag([1,2,3])` (diagonal matrix).
-- **Sequences:** `[Double].linspace(start: 0, end: 1, count: 5)` — includes both endpoints. `[Double].arange(0, 10, step: 2.5)` — excludes end.
-
-### Random Number Generation
-
-Generate random arrays for testing, simulation, and initialization.
-
-- **Uniform:** `[Double].random(5)` (0–1), `[Double].random(5, in: -1.0...1.0)`, `[Double].random(2, 3)` (2D).
-- **Normal:** `[Double].randomNormal(5, mean: 0.0, standardDeviation: 1.0)`, `[Double].randomNormal(2, 3, mean: 5.0, standardDeviation: 2.0)` — uses Box-Muller transform.
-- **Integer:** `[Int].random(5, in: 0..<100)` — half-open range.
-- Works with both `Float` and `Double`.
+See the Shape and Size section above for signatures. Two gotchas worth keeping: `.size` (total elements, rows × columns) differs from `.count` (row count only), and calling `.shape` on a `[Double]` or `[String]` is a compile-time error — it exists only on `[[Numeric]]`.
 
 ### Broadcasting Operations
 
-Apply operations between arrays and scalars or between arrays of different dimensions.
-
-- **Scalar methods:** `.broadcast(adding:)`, `.broadcast(subtracting:)`, `.broadcast(multiplyingBy:)`, `.broadcast(dividingBy:)`.
-- **Scalar operators:** `array + 2.0`, `2.0 * array`, `matrix * 0.5` — commutative.
-- **Matrix-vector:** `.broadcast(addingToEachRow:)`, `.broadcast(addingToEachColumn:)`, `.broadcast(multiplyingEachRowBy:)`, `.broadcast(multiplyingEachColumnBy:)`.
-- **Custom:** `.broadcast(with: value, operation: { $0 + $1 })`, `.broadcast(withRowVector:operation:)`.
-- **When to use:** Broadcasting for scalar math on arrays (reads like math notation). `map` for custom/non-numeric transformations.
+See the Broadcasting section above for signatures. When to use: broadcasting reads like math notation for scalar/row/column math on arrays; reach for `map` when the transformation is custom or non-numeric.
 
 ### Matrix Transformations
 
-Matrices transform vectors through multiplication. Each row produces one element of the result via dot product.
-
-- **Basic usage:** `vector.transformedBy(matrix)` or `matrix.transform(vector)`.
-- **Basis vectors:** Column 1 = where i-hat [1,0] lands. Column 2 = where j-hat [0,1] lands. The result is a linear combination of columns weighted by the vector.
-- **Identity:** `[Double].identity(2)` — leaves vectors unchanged. Starting point for building transformations.
-- **Diagonal:** `[Double].diag([2.0, 3.0])` — scales each axis independently.
-- **Dimension rule:** Matrix columns must match vector length.
-- **Rotation:** `[[cos θ, -sin θ], [sin θ, cos θ]]`. 90° = `[[0,-1],[1,0]]`. Preserves magnitude.
-- **Scaling:** Diagonal matrix. Uniform = same factor all axes. Non-uniform = different per axis.
-- **Reflection:** Negate one axis. `reflectX = [[1,0],[0,-1]]`, `reflectY = [[-1,0],[0,1]]`. Preserves distances.
-- **Shear:** Off-diagonal element. Horizontal shear `[[1,k],[0,1]]` shifts x proportionally to y.
+See the Matrix Transformations section above for signatures. Key idea: a matrix's columns are where the basis vectors land — column 1 is where `[1,0]` goes, column 2 where `[0,1]` goes — and the result is a linear combination of those columns. Rotation `[[cos θ, -sin θ], [sin θ, cos θ]]` preserves magnitude; a diagonal matrix scales each axis.
 
 ### Composing Transformations
 
-Combine multiple transformations via matrix multiplication.
-
-- `A.multiplyMatrix(B)` means "first apply B, then apply A" (right-to-left order).
-- **Two approaches:** Compose first then apply once (efficient for many vectors), or apply sequentially (simpler for single vectors).
-- **Order matters:** `rotate.multiplyMatrix(scale) ≠ scale.multiplyMatrix(rotate)`.
-- **Rotate around a point:** Translate to origin → rotate → translate back.
+`A.multiplyMatrix(B)` means "first apply B, then apply A" (right-to-left). Order matters: `rotate.multiplyMatrix(scale) ≠ scale.multiplyMatrix(rotate)`. Compose once then apply to many vectors for efficiency.
 - **Performance:** Precompute composed matrix when applying to many vectors. Matrix multiplication is O(n³); matrix-vector is O(n²).
 - **Inverse transformations:** Rotation inverse is the negative angle. Scaling inverse is the reciprocal. `try matrix.inverted()` for general inverse.
 
@@ -1216,114 +1165,55 @@ Find information by meaning, not keywords. Full pipeline: tokenize → embed →
 
 ### Panel
 
-Organizes named columns of numeric data into a lightweight container focused on numeric ML workflows.
-
-- **Create:** `Panel([("age", [25.0, 30.0]), ("income", [50000.0, 60000.0])])` or `Panel(matrix:columns:)`.
-- **Access:** `panel["age"]` → `[Double]`. `panel.labels("age")` → `[Int]`. `panel.toMatrix(columns:)` → `[[Double]]`.
-- **Properties:** `.columnNames`, `.rowCount`, `.shape` → `(rows: Int, columns: Int)` — same format as matrix `.shape`.
-- **Filter:** `panel.filtered(where: boolMask)` — applies mask to all columns simultaneously.
-- **Split:** `panel.trainTestSplit(testRatio:seed:)` — splits all columns atomically by the same rows.
-- **Head:** `panel.head()` — tabular display of first 10 rows. `panel.head(n: 3)` for custom count.
-- **Summary:** `panel.summary()` — per-column summary statistics.
-- **Design:** Value type, fixed schema, all `Double` columns. Models accept `[[Double]]` and `[Int]` directly — Panel organizes data, models consume raw arrays.
+See the Panel (Columnar Data) section above for signatures. Design note: `Panel` is a value type with a fixed schema and all-`Double` columns. It organizes data, but models consume raw `[[Double]]`/`[Int]` directly — Panel never sits between the data and the model.
 
 ### Train-Test Split
 
-Split data into training and testing subsets for honest evaluation.
-
-- **Basic:** `data.trainTestSplit(testRatio: 0.2, seed: 42)` → `(train, test)` named tuple. Works on any array type.
-- **Paired arrays:** Use same seed for features and labels to keep rows aligned.
-- **Reproducible:** Same seed + same data = same split every time.
-- **Stratified:** `features.stratifiedSplit(labels:testRatio:seed:)` preserves class proportions. Returns 4-tuple: `(trainFeatures, testFeatures, trainLabels, testLabels)`.
-- **Choosing ratio:** 0.2 is standard. 0.1 for small datasets. 0.3 for large datasets.
-- **Class balance diagnostics:** `labels.classDistribution()` → `[Int: Int]` mapping each label to its count. `labels.imbalanceRatio()` → `Double?` ratio of largest to smallest class (1.0 = balanced, 4.0 = 4x imbalance, nil for empty/single-class). Developers set their own threshold to decide when to oversample.
-- **Oversample:** `features.oversample(labels: labels)` → `(features: [[Double]], labels: [Int])`. Auto-detects smaller classes, generates synthetic points by interpolating between existing samples. Handles multi-class. Call before splitting.
+See the Sampling and Splitting section above for signatures (`trainTestSplit`, `stratifiedSplit`, `classDistribution`, `imbalanceRatio`, `oversample`). Choosing a ratio: 0.2 is standard, 0.1 for small datasets, 0.3 for large. Always use the same seed across paired feature/label arrays to keep rows aligned.
 
 ### Feature Scaling
 
-Normalize features to a common range so no single feature dominates.
-
-- **Fit:** `FeatureScaler.fit(features: trainX)` or `FeatureScaler.fit(features: trainX, range: -1.0...1.0)`.
-- **Transform:** `scaler.transform(data)` — applies the learned min/max statistics.
-- **Rule:** Fit on training data only. Transform both train and test with the same scaler. Prevents data leakage.
-- **Constant columns:** Mapped to lower bound of target range (no division by zero).
-- **Properties:** `.minimums`, `.maximums`, `.range`, `.featureCount`.
-- **Immutable:** Once fitted, statistics cannot change. Safe to reuse on production data.
+See the Feature Scaling section above for signatures. Two rules worth keeping: fit on training data only, then transform both train and test with the same scaler (fitting on the full set leaks the test distribution into the fit); and constant columns map to the lower bound of the target range, so there is no division by zero.
 
 ### Data Visualization
 
-Prepare data for Swift Charts and other visualization frameworks.
-
-- **Scaling:** `scaled(to: range)` (min-max), `standardized()` (z-score), `asPercentages()` (share of total).
-- **Stacking:** `series.stackedCumulative()` (absolute stacked area), `series.stackedPercentage()` (100% stacked bars).
-- **Heatmap:** `vectors.correlationMatrix()` → `[[Double]]`. `vectors.heatmapData(labels:)` → `[(x, y, value)]` for `RectangleMark`.
-- **Downsampling:** `data.downsample(factor:using:)` with `AggregationMethod`: `.mean`, `.max`, `.min`, `.sum`, `.count`.
-- **Grouping:** `data.groupBy(categories, using: .sum)` → `[String: Double]`. `data.groupedData(by:using:)` → `[(category, value)]`.
-- **Boolean filtering:** Split data into series using `.masked(by:)` for normal vs outlier chart layers.
-- **ML visualization:** Confusion matrix → heatmap, KMeans elbow → line chart, regression → scatter + fitted line overlay, softMax → bar chart.
+See the Data Visualization section above for signatures. ML-specific mappings: confusion matrix → heatmap, KMeans elbow → line chart, regression → scatter plus fitted-line overlay, softMax → bar chart.
 
 ### Gaussian Naive Bayes
 
-Simplest effective classifier. Assumes features are conditionally independent given the class label.
-
-- **Fit:** `GaussianNaiveBayes.fit(features: trainX, labels: trainY)` — learns per-class means, variances, and priors.
-- **Predict:** `model.predict(testX)` → `[Int]` — raw labels for evaluation pipelines.
-- **Classify:** `model.classify(testX)` → `[Classification]` — groups inputs by predicted label, same pattern as KNN.
-- **Log probabilities:** `model.predictLogProbabilities(testX)` → `[[Double]]` — one row per sample, one column per class. Unnormalized.
-- **Probabilities:** `model.predictProbabilities(testX)` → `[[Double]]` — softmax of the log-probabilities, each row sums to 1.0. Use this for cost-sensitive decisions or threshold tuning rather than just the argmax label from `predict`.
-- **Inspect:** `model.classes` → `[ClassStats]` with `.label`, `.prior`, `.means`, `.variances`, `.count`. Each `ClassStats` conforms to `CustomStringConvertible`: `print(stats)` shows `Class 0: prior 50.0%, means [...], N samples`.
-- **Internal:** Uses `Distributions.normal.logPDF` for per-feature log-densities — the same public function callers can reach directly.
-- **When to use:** Baseline classifier. Fast training. Works well with small datasets. Good first model before trying more complex approaches.
+See the Gaussian Naive Bayes section above for signatures. When to use: a fast baseline classifier that works well on small datasets — a good first model before trying more complex approaches. Prefer `predictProbabilities` over the argmax `predict` label when decisions are cost-sensitive or need threshold tuning.
 
 ### K-Nearest Neighbors
 
-Classifies by finding the k closest training examples and voting on their labels.
-
-- **Fit:** `KNearestNeighbors.fit(features:labels:k:metric:weight:)`.
-- **Metrics:** `.euclidean` (default), `.cosine` (for high-dimensional text/embeddings).
-- **Weights:** `.uniform` (majority vote), `.distance` (closer neighbors have more influence).
-- **Predict:** `model.predict(testX)` → `[Int]` — raw labels for evaluation pipelines.
-- **Classify:** `model.classify(testX)` → `[Classification]` — groups inputs by predicted label. Each `Classification` conforms to `Sequence` with `.label`, `.points`, `.count`.
-- **Properties:** `.k`, `.metric`, `.featureCount`.
-- **When to use:** Non-linear decision boundaries. When similar items should be classified similarly. Feature scaling recommended.
+See the K-Nearest Neighbors section above for signatures. When to use: non-linear decision boundaries, or when similar items should be classified similarly. Feature scaling is recommended, and `.cosine` suits high-dimensional text/embeddings.
 
 ### K-Means Clustering
 
-Unsupervised grouping of data into k clusters.
-
-- **Fit:** `KMeans.fit(data:k:seed:)` — assigns each point to nearest centroid, iterates until stable.
-- **Properties:** `.centroids`, `.labels`, `.inertia` (total within-cluster distance), `.iterations`, `.featureCount`.
-- **Predict:** `model.predict(newData)` → `[Int]` — assigns new points to existing clusters.
-- **Best fit:** `KMeans.bestFit(data:k:attempts:)` — runs multiple times, returns lowest inertia.
-- **Elbow method:** `KMeans.elbowMethod(data:kRange:seed:)` → `[Double]` inertias. Plot against k to find the "elbow."
-- **Clusters:** `model.clusters(from: data)` → `[Cluster]`. Each `Cluster` has `.centroid` (`[Double]`), `.points` (`[[Double]]`), `.count` (`Int`), and conforms to `Sequence`.
+See the K-Means Clustering section above for signatures. When to use: unsupervised grouping. Use `elbowMethod(data:kRange:seed:)` to find the elbow that suggests a good `k`, and `bestFit(data:k:attempts:)` to escape unlucky initializations by keeping the lowest-inertia run.
 
 ### Linear Regression
 
-Fits a line (or hyperplane) to continuous data using the normal equation.
+See the Linear Regression section above for signatures. When to use: roughly linear relationships, exact one-pass closed-form fit. `.coefficients` carries the intercept as its first element (the `Coefficients` protocol; see Residual Model). For inferential questions (standard errors, p-values), pair `fit` with `summary`.
 
-- **Fit:** `try LinearRegression.fit(features: trainX, targets: trainY)` — throws `MatrixError.singular` if features are linearly dependent.
-- **Predict:** `model.predict(testX)` → `[Double]` for `[[Double]]` input. `model.predict(xValues)` → `[Double]` for single-feature `[Double]` input.
-- **Properties:** `.coefficients` (includes intercept as first element), `.featureCount`, `.hasIntercept`.
-- **Evaluation:** `predicted.rSquared(actual:)`, `predicted.meanSquaredError(actual:)`, `predicted.rootMeanSquaredError(actual:)`.
+### Logistic Regression
+
+See the Logistic Regression section above for signatures. When to use: binary classification (labels 0/1). It is trained iteratively on cross-entropy, so standardize features first and confirm `.outcome == .converged` before trusting coefficient magnitudes — on perfectly separable data it reaches the iteration cap by design. Use `predictProbabilities` for P(class = 1) and `decisionFunction` for raw log-odds. See the Logistic-Regression documentation page.
+
+### Residual Model
+
+See the Residual Model section above for signatures. When to use: to surface what a fitted regressor could not explain (`observed − predicted`). Wrap any fitted `Regressor`, then residualize a *later* sample — residualizing the training data understates the true error. The `Coefficients` protocol is documented there too: `LinearRegression`, `Ridge`, and `GradientDescent` conform, exposing a uniform `coefficients: [Double]`; `LogisticRegression` does not, because a residual is undefined for a classifier. See the Residual-Model documentation page.
+
+### Embedding Sources
+
+See the Embedding Sources section above for signatures. When to use: to plug any text-to-vector source into Quiver's similarity surface (the retrieval step in a retrieval-augmented generation pipeline). Conform a type to `Embedder` (one method, `embed(_:) -> [Double]?`), batch with `[String].embedded(using:)`, and rank with `.mostSimilar(to:k:)`. This is the pluggable generalization of the dictionary-based Embedding Dictionary Search; the contract stays fixed when the source changes. See the Embedding-Sources documentation page.
 
 ### Evaluation Metrics
 
-Measure model performance after prediction.
-
-- **Classification:** `predictions.confusionMatrix(actual: truth)` → `ConfusionMatrix` with `.truePositives`, `.falsePositives`, `.trueNegatives`, `.falseNegatives`, `.accuracy` (non-optional), `.precision` (optional), `.recall` (optional), `.f1Score` (optional). Conforms to `Equatable` and `CustomStringConvertible`.
-- **Classification report:** `predictions.classificationReport(actual: truth)` → per-class precision, recall, F1, and support with accuracy, macro avg, and weighted avg.
-- **Standalone:** `predictions.accuracy(actual:)`, `.precision(actual:)`, `.recall(actual:)`, `.f1Score(actual:)`.
-- **Regression:** `predicted.rSquared(actual:)` (1.0 = perfect), `.meanSquaredError(actual:)`, `.rootMeanSquaredError(actual:)`.
+See the Classification Metrics and Regression Metrics sections above for signatures (`confusionMatrix`, `classificationReport`, standalone `accuracy`/`precision`/`recall`/`f1Score`, `rSquared`, `meanSquaredError`, `rootMeanSquaredError`).
 
 ### Activation Functions
 
-Convert raw scores (logits) into probabilities.
-
-- **SoftMax:** `logits.softMax()` → `[Double]` summing to 1.0. For multi-class classification. Uses numerically stable variant (subtracts max before exp). Handles large values like `[1000, 1001, 1002]` without overflow.
-- **Sigmoid:** `logits.sigmoid()` → `[Double]` each in (0,1). For binary classification. Element-wise, independent. Property: σ(x) + σ(−x) = 1.0.
-- **When to use:** SoftMax for "which one?" (exactly one label). Sigmoid for "yes or no?" (per-element binary).
-- **With Quiver models:** Built-in models handle probability conversion internally. These functions are most useful for external model output or custom scoring systems.
+See the Activation section above for signatures. When to use: SoftMax for "which one?" (exactly one label, outputs sum to 1.0); Sigmoid for "yes or no?" (per-element, independent). Quiver's built-in models convert probabilities internally — these are for external model output or custom scoring.
 
 ### Installation
 
