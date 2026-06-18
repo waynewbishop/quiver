@@ -13,48 +13,6 @@
 
 import Foundation
 
-// MARK: - Matrix Error Type
-
-/// Errors thrown by matrix operations that can fail at runtime.
-public enum MatrixError: Error, Equatable, CustomStringConvertible, Sendable {
-    /// The operation requires a square matrix but received a non-square one.
-    case notSquare
-    /// The matrix is singular (determinant = 0) and cannot be inverted.
-    case singular
-
-    public var description: String {
-        switch self {
-        case .notSquare:
-            return "Matrix operation requires a square matrix"
-        case .singular:
-            return "Matrix is singular and cannot be inverted (determinant = 0)"
-        }
-    }
-}
-
-// MARK: - Log Determinant Result Type
-
-/// Represents the sign and natural logarithm of a matrix determinant.
-///
-/// This type enables numerically stable determinant computations for large matrices
-/// where the raw determinant value would overflow or underflow floating-point range.
-///
-/// The determinant can be reconstructed via the `value` property, which computes
-/// `sign * exp(logAbsValue)`.
-public struct LogDeterminant: Sendable {
-
-    /// The sign of the determinant: -1, 0, or 1
-    public let sign: Double
-
-    /// The natural logarithm of the absolute determinant value
-    public let logAbsValue: Double
-
-    /// Reconstructs the determinant value (sign times exp of log absolute value)
-    public var value: Double {
-        sign * Foundation.exp(logAbsValue)
-    }
-}
-
 // MARK: - Standard Numeric Vector Operations
 
 public extension Array where Element: Numeric {

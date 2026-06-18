@@ -13,49 +13,6 @@
 
 import Foundation
 
-// MARK: - Distance Metric
-
-/// The distance metric used to compare samples in K-Nearest Neighbors.
-///
-/// Euclidean distance measures straight-line distance between points and works
-/// well when features have similar scales. Cosine distance measures the angle
-/// between vectors and works well for text embeddings and high-dimensional data
-/// where magnitude is less meaningful than direction.
-public enum DistanceMetric: Codable, Equatable, Sendable {
-
-    /// Euclidean distance: √Σ(aᵢ − bᵢ)².
-    ///
-    /// Sensitive to feature scale — consider using ``FeatureScaler`` before
-    /// fitting when features have different units or magnitudes.
-    case euclidean
-
-    /// Cosine distance: 1 − cosine similarity.
-    ///
-    /// Scale-invariant — vectors pointing in the same direction have distance
-    /// 0 regardless of their magnitude. Preferred for text embeddings, TF-IDF
-    /// vectors, and other high-dimensional sparse data.
-    case cosine
-}
-
-// MARK: - Vote Weighting
-
-/// The weighting strategy for neighbor votes in K-Nearest Neighbors.
-///
-/// Uniform weighting gives each neighbor one vote. Distance weighting gives
-/// closer neighbors more influence, which can improve accuracy when the
-/// decision boundary is near the query point.
-public enum VoteWeight: Codable, Equatable, Sendable {
-
-    /// Each neighbor gets one vote regardless of distance.
-    case uniform
-
-    /// Closer neighbors get more influence: weight = 1 / distance.
-    ///
-    /// When a neighbor has distance 0 (exact match), the model predicts
-    /// that neighbor's label immediately without voting.
-    case distance
-}
-
 // MARK: - K-Nearest Neighbors
 
 /// A trained K-Nearest Neighbors classifier.

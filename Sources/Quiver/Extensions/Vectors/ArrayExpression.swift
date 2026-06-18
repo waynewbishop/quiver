@@ -15,14 +15,6 @@
 
 import Foundation
 
-/// The visual form a vector takes when rendered via `asExpression()`.
-public enum VectorForm: Sendable {
-    /// Column form with stacked Unicode brackets — the textbook default.
-    case column
-    /// Inline angle-bracket form, `⟨a, b, c⟩` — the prose-friendly variant.
-    case inline
-}
-
 public extension Array where Element == Double {
 
     /// Returns the vector as a string, with each entry formatted by the
