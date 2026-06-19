@@ -24,9 +24,10 @@ let model = try LinearRegression.fit(features: sqft, targets: prices)
 // LinearRegression: 1 feature, intercept: 38000.00, slope: 110.00
 
 model.coefficients   // [38000.0, 110.0] — intercept first, then one slope per feature
+model.equation()     // "y = 38000.00 + 110.00x" — the same fit, read as algebra
 ```
 
-This layout is worth holding onto. When `hasIntercept` is `true`, the first element is the bias term and the remaining elements are the feature weights in input order, so `coefficients[0]` is the intercept, not the first feature's slope. When `hasIntercept` is `false`, the array shifts down, and `coefficients[0]` becomes the first feature's slope. ``GradientDescent`` and ``Ridge`` use the same layout, making them interchangeable when we read their output.
+This layout is worth holding onto. When `hasIntercept` is `true`, the first element is the bias term and the remaining elements are the feature weights in input order, so `coefficients[0]` is the intercept, not the first feature's slope. When `hasIntercept` is `false`, the array shifts down, and `coefficients[0]` becomes the first feature's slope. ``GradientDescent`` and ``Ridge`` use the same layout, making them interchangeable when we read their output. The ``Coefficients/equation()`` method renders any of them as the intercept-first formula above, the same numbers in the form `ŷ = θ₀ + θ₁x₁ + …`.
 
 A near-zero weight does not necessarily mean the feature is unimportant. On raw units, a tiny weight can sit on a feature measured in large numbers. Furthermore, under collinearity, a feature's weight can collapse toward zero simply because a correlated twin absorbed its share. Read coefficient magnitudes only after scaling, and only once collinearity has been ruled out. Comparing weights provides a ranking, not a measurement of absolute importance; the next sections show how to make that ranking honest.
 

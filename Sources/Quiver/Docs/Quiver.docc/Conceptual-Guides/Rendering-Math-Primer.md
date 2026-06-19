@@ -95,6 +95,23 @@ Polynomial([0]).asExpression()       // "0" — the zero polynomial
 
 See <doc:Polynomials> for the type itself, including evaluation, differentiation, and least-squares fitting.
 
+### Models as equations
+
+A fitted linear model is also a row of coefficients, and the same rendering instinct applies. Where a polynomial is one variable raised to ascending powers, a model is many features each carrying one weight. The ``Coefficients/equation()`` method renders that fit as a formula: the intercept first, then each weight paired with its variable in input order. A single-feature model uses a bare `x`; a multi-feature model numbers them `x₁`, `x₂`, … so the terms stay distinct.
+
+```swift
+let sqft   = [1000.0, 1500.0, 2000.0, 2500.0, 3000.0]
+let prices = [150000.0, 200000.0, 260000.0, 310000.0, 370000.0]
+
+let model = try LinearRegression.fit(features: sqft, targets: prices)
+model.coefficients   // [38000.0, 110.0]
+model.equation()     // "y = 38000.00 + 110.00x" — one feature, so a bare x
+```
+
+The same three conventions from the polynomial form carry over: a zero weight drops its term, a weight of exactly one renders as the bare variable (`x`, not `1.00x`), and a negative weight joins with ` - ` rather than ` + -`. The difference is direction — a model reads intercept-first and ascending, matching how a regression equation is written, where a polynomial reads highest-power-first. Because `equation()` lives on ``Coefficients``, ``LinearRegression``, ``Ridge``, and ``GradientDescent`` all render the same way.
+
+> Note: The rendered weights are in the units the model was fit in. When the features were standardized first, each is a per-standard-deviation slope rather than a raw-unit one — see <doc:Model-Interpretation-Primer> for what that means when reading the numbers.
+
 ### Chaining structure into display
 
 Decimal output and rational output answer different questions. A 2×2 inverse computed in decimals looks like four unrelated numbers. The same inverse, rendered as fractions, reveals that every entry shares the determinant as its denominator:

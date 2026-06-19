@@ -15,39 +15,80 @@ import Foundation
 
 // MARK: - Coefficients
 
-/// A model whose fit is summarized by a vector of coefficients.
+/// A model you can read the numbers out of.
 ///
-/// The regressors that report a fit as `coefficients` — ``LinearRegression``,
-/// ``Ridge``, ``GradientDescent`` — conform (intercept first, then one weight
-/// per feature). Distance- and tree-based models do not, so this capability is
-/// its own protocol rather than a requirement on every regressor.
+/// Some models make a prediction by multiplying each input by a learned number
+/// and adding the results up. Those learned numbers are the model's
+/// **coefficients** — they are the model. A house-price model might learn that
+/// each square foot is worth about $110 and that a sale starts from a base of
+/// $38,000 before any size is counted. Predict a price and you are really just
+/// doing `38,000 + 110 × size`.
 ///
-/// ``LogisticRegression`` also stores coefficients, but it is a ``Classifier``,
-/// not a ``Regressor``, so it is not wrapped by `ResidualModel` and is left out
-/// of this protocol. The exclusion rests on meaning, not on a structural
-/// barrier: a residual `observed − predicted` is defined for a continuous
-/// target, not for a probability or a 0/1 label.
+/// `Coefficients` is the protocol for any model whose learning boils down to a
+/// list of those numbers. Conforming to it means the model can hand back its
+/// learned values, and — because reading them is the same act for every such
+/// model — print itself as a plain formula.
+///
+/// This matters for two everyday reasons. First, it lets you **inspect** what a
+/// model actually decided: a big number means that input mattered a lot, a small
+/// one means it barely moved the prediction. Second, it lets you **explain** the
+/// model. A model that prints `y = 38000.00 + 110.00x` is not a black box; a
+/// teammate, a reviewer, or a student can read it and check it by hand.
+///
+/// ```swift
+/// import Quiver
+///
+/// // Learn a price from square footage.
+/// let model = try LinearRegression.fit(features: x, targets: y)
+///
+/// model.coefficients   // [38000.0, 110.0] — the base value, then the price per square foot
+/// model.equation()     // "y = 38000.00 + 110.00x" — the same model, written out
+/// ```
+///
+/// ## How the numbers are arranged
+///
+/// `coefficients` is one `[Double]`, and the order is always the same: the base
+/// value (the **intercept**) comes first, then one number per input, in the
+/// order the inputs were given. So `coefficients[0]` is the starting value
+/// before any input is counted, and the rest are how much each input pushes the
+/// prediction up or down.
+///
+/// ## Which models conform
+///
+/// The models whose fit *is* a list of numbers conform: ``LinearRegression``,
+/// ``Ridge``, and ``GradientDescent``. Models that predict a different way — by
+/// comparing a new point to stored examples, like nearest-neighbors, or by
+/// splitting on thresholds, like a tree — have no such list, so they do not
+/// conform. That is why this is its own protocol and not something every model
+/// is forced to provide.
+///
+/// To go deeper — what a number really tells you, and when it can mislead you —
+/// see <doc:Model-Interpretation-Primer>. For more on printing models and
+/// matrices as readable math, see <doc:Rendering-Math-Primer>.
 public protocol Coefficients {
-    /// The fitted coefficients: intercept first, then one weight per feature.
+    /// The model's learned numbers: the base value (intercept) first, then one
+    /// weight per input, in the order the inputs were given.
     var coefficients: [Double] { get }
 }
 
 extension Coefficients {
 
-    /// Renders the fit as a readable equation, such as `y = 38000.00 + 110.00x₁`.
+    /// Renders the fit as a readable equation, such as `y = 38000.00 + 110.00x`.
     ///
     /// The formula is built from ``coefficients`` directly: `coefficients[0]` is
-    /// the intercept and each remaining weight pairs with a subscripted variable
-    /// `x₁`, `x₂`, … in input order. Terms with a zero weight are dropped, and a
-    /// weight of exactly one renders as the bare variable (`x₁`, not `1.00x₁`).
-    /// The weights are rendered in the units the model was fit in — when the
-    /// features were standardized first, each is a per-standard-deviation slope.
+    /// the intercept and each remaining weight pairs with a variable in input
+    /// order. A single-feature model uses a bare `x`; a multi-feature model uses
+    /// subscripts (`x₁`, `x₂`, …) so the terms stay distinct. Terms with a zero
+    /// weight are dropped, and a weight of exactly one renders as the bare
+    /// variable (`x`, not `1.00x`). The weights are rendered in the units the
+    /// model was fit in — when the features were standardized first, each is a
+    /// per-standard-deviation slope.
     ///
     /// ```swift
     /// import Quiver
     ///
     /// let model = try LinearRegression.fit(features: x, targets: y)
-    /// print(model.equation())  // y = 38000.00 + 110.00x₁
+    /// print(model.equation())  // y = 38000.00 + 110.00x
     /// ```
     ///
     /// - Returns: The fitted formula as a string. An empty coefficient vector
@@ -56,13 +97,17 @@ extension Coefficients {
         let c = coefficients
         guard !c.isEmpty else { return "y = 0" }
 
-        // coefficients[0] is the intercept; the rest pair with x₁, x₂, …
+        // coefficients[0] is the intercept; the rest are the feature weights.
+        // A lone feature uses a bare `x`; two or more take subscripts so the
+        // terms never collide.
+        let weights = c.dropFirst()
+        let single = weights.count == 1
         var pieces = [String(format: "%.2f", c[0])]
 
-        for (offset, weight) in c.dropFirst().enumerated() where weight != 0 {
-            let variable = "x" + Self.subscriptDigits(offset + 1)
+        for (offset, weight) in weights.enumerated() where weight != 0 {
+            let variable = single ? "x" : "x" + Self.subscriptDigits(offset + 1)
             let magnitude = Swift.abs(weight)
-            // A weight of exactly 1 renders as the bare variable (x₁, not 1.00x₁).
+            // A weight of exactly 1 renders as the bare variable (x, not 1.00x).
             let coefficientText = magnitude == 1 ? "" : String(format: "%.2f", magnitude)
             pieces.append((weight < 0 ? "- " : "+ ") + coefficientText + variable)
         }

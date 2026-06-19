@@ -141,6 +141,7 @@ a == b  // true — same closed-form coefficients
 
 ### Coefficients
 - ``Coefficients``
+- ``Coefficients/equation()``
 - ``ResidualModel/coefficients``
 
 ### Related

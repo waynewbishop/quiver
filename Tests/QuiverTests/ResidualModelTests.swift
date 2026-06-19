@@ -234,10 +234,10 @@ final class ResidualModelTests: XCTestCase {
         let coefficients: [Double]
     }
 
-    // Single feature: intercept first, then one slope, %.2f, x₁ subscript.
+    // Single feature: intercept first, then one slope, %.2f, bare x (no subscript).
     func testEquationSingleFeature() {
         let model = FakeCoefficients(coefficients: [38000.0, 110.0])
-        XCTAssertEqual(model.equation(), "y = 38000.00 + 110.00x₁")
+        XCTAssertEqual(model.equation(), "y = 38000.00 + 110.00x")
     }
 
     // Multi-feature: each weight pairs with x₁, x₂, … in order.
@@ -258,10 +258,16 @@ final class ResidualModelTests: XCTestCase {
         XCTAssertEqual(model.equation(), "y = 5.00 + 2.00x₁ + 4.00x₃")
     }
 
-    // A weight of exactly 1 renders as the bare variable (x₁, not 1.00x₁).
+    // A weight of exactly 1 renders as the bare variable (multi-feature: x₁, not 1.00x₁).
     func testEquationUnitCoefficientDropsTheOne() {
         let model = FakeCoefficients(coefficients: [0.0, 1.0, -1.0])
         XCTAssertEqual(model.equation(), "y = 0.00 + x₁ - x₂")
+    }
+
+    // A single-feature unit weight renders as a bare x with no coefficient.
+    func testEquationSingleFeatureUnitCoefficient() {
+        let model = FakeCoefficients(coefficients: [2.0, 1.0])
+        XCTAssertEqual(model.equation(), "y = 2.00 + x")
     }
 
     // Ten-plus features use multi-digit subscripts: x₁₀, not x₁0.
@@ -279,6 +285,7 @@ final class ResidualModelTests: XCTestCase {
     }
 
     // Each conforming model produces a non-empty equation from its real fit.
+    // These are single-feature fits, so the variable is a bare x.
     func testEquationOnAllConformers() throws {
         let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0], [5.0]]
         let targets = [3.0, 5.0, 7.0, 9.0, 11.0]
@@ -289,7 +296,7 @@ final class ResidualModelTests: XCTestCase {
 
         for eq in [linear.equation(), ridge.equation(), gd.equation()] {
             XCTAssertTrue(eq.hasPrefix("y = "), "got \(eq)")
-            XCTAssertTrue(eq.contains("x₁"), "got \(eq)")
+            XCTAssertTrue(eq.contains("x"), "got \(eq)")
         }
     }
 

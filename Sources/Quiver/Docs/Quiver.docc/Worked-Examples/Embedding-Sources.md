@@ -8,7 +8,7 @@ The `Embedder` protocol bridges text and ranked search. Just as <doc:Data-Visual
 
 We need a way to convert text into vectors. Quiver assembles this conversion manually, tokenizing the text and averaging the word vectors it looks up, as shown in <doc:Text-Tokenization>; the source is left open. A small word-vector table works for learning; a production app reaches for an on-device sentence model. The `Embedder` protocol defines a single operation, text in and vector out, allowing ranking methods to work against any source without modification.
 
-The `Embedder` protocol names a single operation, text in and vector out, and lets every downstream method work against that operation rather than against any particular source. Conform once, and the ranking surface treats a hand-built dictionary and a Core AI model exactly alike.
+The `Embedder` protocol names a single operation, text in and vector out, and lets every downstream method work against that operation rather than against any particular source. Conform once, and the ranking surface treats a hand-built dictionary and an `NLContextualEmbedding` model exactly alike.
 
 > Note: This article builds on <doc:Semantic-Search>, which introduces tokenization, embedding lookup, and cosine similarity. The examples here are self-contained, but the vocabulary of vectors and similarity carries over.
 
@@ -110,7 +110,7 @@ A single contract spans the full range of embedding sources, from a hand-typed t
 | 0 | Hand-built `[String: [Double]]` | Zero setup; every number inspectable |
 | 1 | [GloVe](https://github.com/stanfordnlp/GloVe) word vectors with averaging | Teaching baseline; order-blind |
 | 2 | [NLEmbedding](https://developer.apple.com/documentation/naturallanguage/nlembedding) sentence vectors | Production quality; returns a vector natively |
-| 3 | Custom Core AI model on Apple silicon | Highest fidelity; vectors converted to `[Double]` |
+| 3 | `NLContextualEmbedding` transformer vectors | Highest fidelity; contextual vectors pooled to `[Double]` |
 
 > Important: The contract is the boundary. Code that ranks, stores, or reports results depends on `Embedder`, never on the source behind it. Swapping level 1 for level 3 changes the one line that constructs the embedder and nothing else.
 

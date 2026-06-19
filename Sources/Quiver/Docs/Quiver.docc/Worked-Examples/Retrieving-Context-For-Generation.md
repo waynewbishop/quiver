@@ -23,39 +23,24 @@ The "generation" part is simply one possible outcome for the data we find. A lan
 
 A whole document is too large to retrieve against directly, so the first step is to split each one into **chunks**: fragments small enough to retrieve precise information and large enough to carry a coherent thought.
 
-Quiver ships no chunker, because chunking is a design decision. Where to cut, how large to make each piece, and how much neighboring chunks should overlap all depend on the documents being indexed. A paragraph-aware splitter is a good starting point: it cuts on the document's own structure rather than splitting sentences at arbitrary points.
+Quiver ships the ``Chunker`` protocol but no chunker of its own because chunking is a design decision. Where to cut, how large to make each piece, and how much neighboring chunks should overlap all depend on the documents being indexed. We conform a type to `Chunker` and Quiver's `chunked(using:)` calls it — the same arrangement an `Embedder` uses one step later. A paragraph-aware splitter is a good starting point: it cuts on the document's own structure rather than splitting sentences at arbitrary points.
 
 ```swift
-// A chunk carries provenance, not just text, so a retrieved fragment
-// can be attributed back to its source. Sendable lets it cross the task
-// boundaries a server handler or a background app task introduces.
-struct Chunk: Codable, Sendable {
-    let sourceID: String
-    let index: Int
-    let text: String
+import Quiver
 
-    // The form handed to the model later — text tagged with its provenance,
-    // e.g. "[bread-guide#0] Let the dough…". Keeping the format on the type
-    // means the citation is one fact in one place, not re-spelled at assembly.
-    var citedForm: String { "[\(sourceID)#\(index)] \(text)" }
-}
-
-// Split a document on paragraph boundaries into provenance-tagged chunks.
-func chunked(_ document: String, sourceID: String) -> [Chunk] {
-    let paragraphs = document.components(separatedBy: "\n\n")
-    var chunks: [Chunk] = []
-    var index = 0
-    for paragraph in paragraphs {
-        let trimmed = paragraph.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { continue }
-        chunks.append(Chunk(sourceID: sourceID, index: index, text: trimmed))
-        index += 1
+// A Chunker that splits a document on paragraph boundaries. Quiver ships the
+// `Chunker` contract and the `Chunk` type (index + text); we supply the
+// strategy. The cut is the only thing that varies, so the conformer hands its
+// pieces to `asChunks()`, which trims them, drops the empties, and numbers what
+// remains — the bookkeeping every chunker would otherwise repeat.
+struct ParagraphChunker: Chunker {
+    func chunk(_ text: String) -> [Chunk] {
+        text.components(separatedBy: "\n\n").asChunks()
     }
-    return chunks
 }
 ```
 
-The `Chunk` carries more than its text. A retrieved fragment has to be attributable (which document it came from, and where in it) so the assembled context can cite its sources and a reader can trust where the answer is grounded. That is the one field this needs beyond the `(text, vector)` pairing in <doc:Embedding-Sources>: a provenance tag that survives all the way to the final block.
+A `Chunk` carries its `index` so a retrieved fragment stays attributable to where it sat in the document. That position is half of provenance; the other half — which document it came from — is added at ingest, when the chunk is paired with its vector and its source. <doc:Embedding-Sources> establishes the `(text, vector)` pairing; the index built next extends it with the source tag that survives all the way to the final block.
 
 Paragraph splitting is the baseline, not the ceiling. Two refinements matter in practice and are worth naming. Small chunks retrieve precisely but fragment context; large chunks keep context coherent but dilute the similarity score and waste the model's limited input budget. And a fixed split can strand an answer that straddles a boundary, so production splitters carry a small overlap from one chunk into the next. Both are tuning decisions for the developer's own documents; the math downstream does not change when the split does.
 
@@ -68,35 +53,41 @@ We embed through an `Embedder` source (the object <doc:Embedding-Sources> define
 ```swift
 import Quiver
 
-// A chunk paired with its embedding. Binding the two in one value is what keeps
-// labels honest: chunk and vector are structurally inseparable, so a later edit
-// cannot silently desync two arrays kept aligned by hand. The chunk is also the
-// readable form the vector cannot be read back into, so storing it here means a
-// ranked hit already holds its text — nothing to recover from the index. Both
-// fields are already Codable, so the whole index persists.
+// Our own type, not one Quiver requires — the ranking methods take it as a
+// label generically. Binding chunk and vector in one value keeps them
+// inseparable (no two hand-aligned arrays to desync), and `sourceID` +
+// `citedForm` carry provenance to the model, e.g. "[bread-guide#0] Let the
+// dough…". Codable lets the index persist; Sendable lets it build off the main
+// thread. Both are for our app, not for Quiver.
 struct StoredChunk: Codable, Sendable {
     let chunk: Chunk
     let vector: [Double]
+    let sourceID: String
+
+    var citedForm: String { "[\(sourceID)#\(chunk.index)] \(chunk.text)" }
 }
 
-// `embedder` is any `some Embedder`; the chunks come from `chunked(_:sourceID:)`.
-let chunks = chunked(document, sourceID: "bread-guide")
+// `embedder` is any `some Embedder`; the chunks come from a `some Chunker`.
+// `chunked(using:)` is Quiver's method — it hands the document to the chunker.
+let chunks = document.chunked(using: ParagraphChunker())
 
-// Embed each chunk once, at ingest. Chunk and vector go into `stored` together —
-// never as two arrays the code has to keep aligned itself.
+// Embed each chunk once, at ingest. Chunk, vector, and source go into `stored`
+// together — never as separate arrays the code has to keep aligned itself.
 var stored: [StoredChunk] = []
 for chunk in chunks {
     if let vector = embedder.embed(chunk.text) {
-        stored.append(StoredChunk(chunk: chunk, vector: vector))
+        stored.append(StoredChunk(chunk: chunk, vector: vector, sourceID: "bread-guide"))
     }
 }
 ```
 
-Each `StoredChunk` is a plain `Codable` value pairing the chunk with its `[Double]` vector: the same `(text, vector)` honesty <doc:Embedding-Sources> establishes, now carrying provenance too. An index that stored only the searchable vector would have to reconstruct the readable text on the way out; pairing the text with its vector means there is nothing to reconstruct — what we rank is what we read. So the index persists to disk and loads at the next launch: a document is embedded once in its lifetime and queried for free thereafter. See <doc:Model-Persistence> for the encode-and-decode shape this index shares with every persisted value.
+Each `StoredChunk` is our own type, not one Quiver requires: the ranking methods accept it as a label generically, so the pipeline works whatever shape we choose. The two conformances are for our app, not for Quiver. `Codable` is what lets the index persist to disk and load at the next launch, so a document is embedded once in its lifetime and queried for free thereafter. That works only because `Chunk` is itself `Codable`. `Sendable` lets the index be built off the main thread, in a background task or a server request handler, without crossing an isolation boundary unsafely. Drop the persistence and the concurrency and both conformances fall away; keep them and the index is a durable, shareable value. See <doc:Model-Persistence> for the encode-and-decode shape this index shares with every persisted value.
+
+Pairing the chunk with its vector is the same `(text, vector)` honesty <doc:Embedding-Sources> establishes, now carrying provenance too. An index that stored only the searchable vector would have to reconstruct the readable text on the way out; pairing the text with its vector means there is nothing to reconstruct — what we rank is what we read.
 
 ## Retrieving the relevant chunks
 
-With the index built, retrieval is the ranking pipeline <doc:Semantic-Search> teaches, run against the stored vectors. The query is embedded through the same source, then `cosineSimilarities(to:)` scores every chunk in one call. `topIndices(k:labels:)` reads off the closest few, carrying each chunk through as the label, so provenance survives the ranking without a second lookup:
+With the index built, retrieval is the ranking pipeline <doc:Semantic-Search> teaches, run against the stored vectors. The query is embedded through the same source, then `cosineSimilarities(to:)` scores every chunk in one call. `topIndices(k:labels:)` reads off the closest few, carrying each stored chunk through as the label, so provenance survives the ranking without a second lookup:
 
 ```swift
 import Quiver
@@ -107,25 +98,24 @@ guard let queryVector = embedder.embed("how long should the dough rise") else {
 }
 
 // `stored` is the single source of truth. Derive the parallel views the ranking
-// needs — vectors to score, chunks to carry through as labels — both in `stored` order.
+// needs — vectors to score, stored chunks to carry through as labels — both in
+// `stored` order.
 var vectors: [[Double]] = []
-var chunks: [Chunk] = []
 for item in stored {
     vectors.append(item.vector)
-    chunks.append(item.chunk)
 }
 
 let scores = vectors.cosineSimilarities(to: queryVector)
-let hits = scores.topIndices(k: 2, labels: chunks)
-// hits[0]: (rank: 1, label: Chunk(bread-guide, 0, …), score: 0.9939)
-// hits[1]: (rank: 2, label: Chunk(bread-guide, 1, …), score: 0.8046)
+let hits = scores.topIndices(k: 2, labels: stored)
+// hits[0]: (rank: 1, label: StoredChunk(bread-guide#0, …), score: 0.9939)
+// hits[1]: (rank: 2, label: StoredChunk(bread-guide#1, …), score: 0.8046)
 ```
 
-Passing the chunks as `labels` is what keeps retrieval honest: each hit arrives already holding the `Chunk` that produced its score (text and provenance) so there is no array to index back into after ranking. The vectors and chunks are derived from `stored` for this one call and discarded; `stored` stays the single source of truth, the pairing intact. The raw cosine value is the right thing to keep here, not a percentage: it is a similarity, and a retrieval system uses it as a threshold for whether a chunk is relevant enough to include, not as a confidence that the answer is correct.
+Passing the stored chunks as `labels` is what keeps retrieval honest: each hit arrives already holding the `StoredChunk` that produced its score (text, position, and source) so there is no array to index back into after ranking. The vectors are derived from `stored` for this one call and discarded; `stored` stays the single source of truth, the pairing intact. The raw cosine value is the correct measure to retain here rather than a percentage. Because it represents similarity, a retrieval system uses it as a threshold to determine relevance, not as a confidence score that the answer is correct.
 
 ## Assembling the context block
 
-The retrieved chunks become a single **context block**: the formatted text handed to the model. Assembly is plain string work: walk the hits and join each chunk's `citedForm` (its text tagged with provenance) so the model can attribute what it reads. Because the citation format lives on `Chunk`, the loop never re-spells it. The block is bounded by `k` and by chunk size, the two ends of the chunking tradeoff, so it stays inside the model's input limit without a separate budget:
+The retrieved chunks become a single **context block**: the formatted text handed to the model. Assembly is plain string work: walk the hits and join each stored chunk's `citedForm` (its text tagged with provenance) so the model can attribute what it reads. Because the citation format lives on `StoredChunk`, the loop never has to reconstruct the string. The block is bounded by `k` and by chunk size, the two ends of the chunking tradeoff, so it stays inside the model's input limit without a separate budget:
 
 ```swift
 // Build the context block from the ranked hits — each carries its own chunk.

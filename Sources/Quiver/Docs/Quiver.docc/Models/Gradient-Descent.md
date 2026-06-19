@@ -189,6 +189,10 @@ Gradient descent on squared error is the simplest case: the loss is convex, the 
 - ``GradientDescent/Outcome``
 - ``GradientDescent/learningRate``
 
+### Reading the fit
+- ``Coefficients``
+- ``Coefficients/equation()``
+
 ### Errors
 - ``GradientDescentError``
 

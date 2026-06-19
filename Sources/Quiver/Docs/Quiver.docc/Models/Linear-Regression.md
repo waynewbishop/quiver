@@ -197,6 +197,10 @@ This is useful for unit tests, debugging, and verifying that a pipeline produces
 - ``LinearRegression/fit(features:targets:intercept:)-8lsme``
 - ``LinearRegression/fit(features:targets:intercept:)-20bry``
 
+### Reading the fit
+- ``Coefficients``
+- ``Coefficients/equation()``
+
 ### Evaluation
 - ``Swift/Array/rSquared(actual:)``
 - ``Swift/Array/meanSquaredError(actual:)``
