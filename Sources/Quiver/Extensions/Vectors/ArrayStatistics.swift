@@ -264,6 +264,40 @@ public extension Array where Element: FloatingPoint {
         return vector.standardError(ddof: ddof)
     }
 
+    /// Standardizes a single value against this array's mean and standard deviation,
+    /// returning how many standard deviations the value sits from the mean:
+    /// `(value - mean) / standardDeviation`.
+    ///
+    /// A z-score expresses a value on a scale-free axis: a result near `0` sits at the
+    /// mean, `2.0` is two standard deviations above it, `-1.5` is one and a half below.
+    /// Because the units cancel, z-scores from arrays measured on different scales can be
+    /// compared directly — which is what makes them a natural way to flag an unusually
+    /// high or low value relative to the distribution it came from.
+    ///
+    /// The value need not be a member of the array; it is measured against the array's
+    /// own center and spread.
+    ///
+    /// Example:
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let scores = [0.18, 0.22, 0.31, 0.14, 0.45]
+    ///
+    /// let z = scores.zScore(of: 0.45)   // 1.54 — the top value is 1.54 std devs above the mean
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - value: The value to standardize against this array.
+    ///   - ddof: Delta Degrees of Freedom — 1 for sample (default), 0 for population.
+    /// - Returns: The z-score of `value`, or nil if the array is empty, has fewer elements
+    ///   than `ddof + 1`, or has zero standard deviation (no spread to measure against).
+    func zScore(of value: Element, ddof: Int = 1) -> Element? {
+        guard let mean = mean(),
+              let sd = standardDeviation(ddof: ddof),
+              sd != 0 else { return nil }
+        return (value - mean) / sd
+    }
+
     /// Returns the sample skewness of the array — a single number describing how lopsided
     /// the distribution is.
     ///
