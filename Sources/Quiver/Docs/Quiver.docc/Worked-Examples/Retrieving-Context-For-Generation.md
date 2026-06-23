@@ -23,7 +23,7 @@ The "generation" part is simply one possible outcome for the data we find. A lan
 
 A whole document is too large to retrieve against directly, so the first step is to split each one into **chunks**: fragments small enough to retrieve precise information and large enough to carry a coherent thought.
 
-Quiver ships the ``Chunker`` protocol but no chunker of its own because chunking is a design decision. Where to cut, how large to make each piece, and how much neighboring chunks should overlap all depend on the documents being indexed. We conform a type to `Chunker` and Quiver's `chunked(using:)` calls it — the same arrangement an `Embedder` uses one step later. A paragraph-aware splitter is a good starting point: it cuts on the document's own structure rather than splitting sentences at arbitrary points.
+Quiver ships the ``Chunker`` protocol but no chunker of its own because chunking is a design decision. Where to cut, how large to make each piece, and how much neighboring chunks should overlap all depend on the documents being indexed. We conform a type to `Chunker` and Quiver's `chunked(using:)` calls it, the same arrangement an `Embedder` uses one step later. A paragraph-aware splitter is a good starting point: it cuts on the document's own structure rather than splitting sentences at arbitrary points.
 
 ```swift
 import Quiver
@@ -48,81 +48,79 @@ Paragraph splitting is the baseline, not the ceiling. Two refinements matter in 
 
 Retrieval is a write-once, read-many pattern. The chunks are embedded a single time when a document enters the system, the vectors are stored, and only the query is embedded at search time. Embedding every chunk on every query would pay the expensive step repeatedly for a result that never changes.
 
-We embed through an `Embedder` source (the object <doc:Embedding-Sources> defines) so the vectors can come from a hand-built table while learning the pipeline and from an on-device sentence model in production, with no change to the code around them. Each chunk's vector is stored alongside the chunk itself, so provenance rides along into the index:
+We embed through an `Embedder` source (the object <doc:Embedding-Sources> defines) so the vectors can come from a hand-built table while learning the pipeline and from an on-device sentence model in production, with no change to the code around them. The vectors are held in an `EmbeddingIndex`: the value that stores each chunk's embedding beside the chunk and ranks them against a query.
 
 ```swift
 import Quiver
 
-// Our own type, not one Quiver requires — the ranking methods take it as a
-// label generically. Binding chunk and vector in one value keeps them
-// inseparable (no two hand-aligned arrays to desync), and `sourceID` +
-// `citedForm` carry provenance to the model, e.g. "[bread-guide#0] Let the
-// dough…". Codable lets the index persist; Sendable lets it build off the main
-// thread. Both are for our app, not for Quiver.
-struct StoredChunk: Codable, Sendable {
+// Our own label type, not one Quiver requires — the index stores it generically
+// beside each vector. It carries provenance to the model: `sourceID` names the
+// document, `chunk.index` names the fragment, and `citedForm` renders both as a
+// tag, e.g. "[bread-guide#0] Let the dough…". The index owns the vector, so this
+// type does not carry one.
+struct SourcedChunk: Codable, Equatable {
     let chunk: Chunk
-    let vector: [Double]
     let sourceID: String
 
     var citedForm: String { "[\(sourceID)#\(chunk.index)] \(chunk.text)" }
 }
 
-// `embedder` is any `some Embedder`; the chunks come from a `some Chunker`.
-// `chunked(using:)` is Quiver's method — it hands the document to the chunker.
-let chunks = document.chunked(using: ParagraphChunker())
-
-// Embed each chunk once, at ingest. Chunk, vector, and source go into `stored`
-// together — never as separate arrays the code has to keep aligned itself.
-var stored: [StoredChunk] = []
-for chunk in chunks {
-    if let vector = embedder.embed(chunk.text) {
-        stored.append(StoredChunk(chunk: chunk, vector: vector, sourceID: "bread-guide"))
-    }
+// The index takes the embedder once and vectorizes each chunk's text on the way
+// in. `add` embeds the text and stores it beside its label in one step — no
+// parallel vectors array to keep aligned, and an unembeddable chunk is skipped
+// rather than half-stored.
+var index = EmbeddingIndex<SourcedChunk>(embedder: embedder)
+for chunk in document.chunked(using: ParagraphChunker()) {
+    index.add(chunk.text, label: SourcedChunk(chunk: chunk, sourceID: "bread-guide"))
 }
 ```
 
-Each `StoredChunk` is our own type, not one Quiver requires: the ranking methods accept it as a label generically, so the pipeline works whatever shape we choose. The two conformances are for our app, not for Quiver. `Codable` is what lets the index persist to disk and load at the next launch, so a document is embedded once in its lifetime and queried for free thereafter. That works only because `Chunk` is itself `Codable`. `Sendable` lets the index be built off the main thread, in a background task or a server request handler, without crossing an isolation boundary unsafely. Drop the persistence and the concurrency and both conformances fall away; keep them and the index is a durable, shareable value. See <doc:Model-Persistence> for the encode-and-decode shape this index shares with every persisted value.
-
-Pairing the chunk with its vector is the same `(text, vector)` honesty <doc:Embedding-Sources> establishes, now carrying provenance too. An index that stored only the searchable vector would have to reconstruct the readable text on the way out; pairing the text with its vector means there is nothing to reconstruct — what we rank is what we read.
+The label is whatever the app wants each match to carry, here a `SourcedChunk` holding the chunk and its document tag. Making the label `Codable` is what lets the index persist to disk and load at the next launch, so a document is embedded once in its lifetime and queried for free thereafter. That works only because `Chunk` is itself `Codable`. The index holds the `(text, vector)` pairing <doc:Embedding-Sources> establishes, now carrying provenance too: an index that stored only the searchable vector would have to reconstruct the readable text on the way out, but pairing the text with its vector means there is nothing to reconstruct. What we rank is what we read.
 
 ## Retrieving the relevant chunks
 
-With the index built, retrieval is the ranking pipeline <doc:Semantic-Search> teaches, run against the stored vectors. The query is embedded through the same source, then `cosineSimilarities(to:)` scores every chunk in one call. `topIndices(k:labels:)` reads off the closest few, carrying each stored chunk through as the label, so provenance survives the ranking without a second lookup:
+With the index built, retrieval is a single call. Only the query is embedded at search time. The chunks were embedded at ingest. `retrieve` scores every stored chunk by cosine similarity and returns the closest few, each hit already holding the `SourcedChunk` that produced its score, so provenance survives the ranking without a second lookup:
 
 ```swift
-import Quiver
+let result = index.retrieve("how long should the dough rise", k: 2)
 
-// Only the query is embedded at search time — the chunks were embedded at ingest.
-guard let queryVector = embedder.embed("how long should the dough rise") else {
-    return
+for hit in result.hits {
+    print(hit.rank, hit.score, hit.label.chunk.text)
 }
-
-// `stored` is the single source of truth. Derive the parallel views the ranking
-// needs — vectors to score, stored chunks to carry through as labels — both in
-// `stored` order.
-var vectors: [[Double]] = []
-for item in stored {
-    vectors.append(item.vector)
-}
-
-let scores = vectors.cosineSimilarities(to: queryVector)
-let hits = scores.topIndices(k: 2, labels: stored)
-// hits[0]: (rank: 1, label: StoredChunk(bread-guide#0, …), score: 0.9939)
-// hits[1]: (rank: 2, label: StoredChunk(bread-guide#1, …), score: 0.8046)
+// rank 1   0.9939   Let the dough rise slowly. A slow proof develops flavor…
+// rank 2   0.8046   Knead the dough until smooth. Good kneading builds…
 ```
 
-Passing the stored chunks as `labels` is what keeps retrieval honest: each hit arrives already holding the `StoredChunk` that produced its score (text, position, and source) so there is no array to index back into after ranking. The vectors are derived from `stored` for this one call and discarded; `stored` stays the single source of truth, the pairing intact. The raw cosine value is the correct measure to retain here rather than a percentage. Because it represents similarity, a retrieval system uses it as a threshold to determine relevance, not as a confidence score that the answer is correct.
+Each `RetrievedHit` carries its `SourcedChunk` as the label, so text, position, and source survive the ranking with no array to index back into. The raw cosine value arrives on `hit.score` untouched. It is the correct measure to retain rather than a percentage. Because it represents similarity, a retrieval system uses it as a threshold to determine relevance, not as a confidence score that the answer is correct.
+
+The result keeps more than the ranked few. `result.scores` is every chunk's similarity, in storage order, and `result.mean`, `result.standardDeviation`, and `result.topZScore` describe the field as a whole, so the geometry behind a ranking stays inspectable, not just the answer it produced.
+
+## Deciding what counts as relevant
+
+A ranking is not yet a decision. The top match always exists, even for a question the corpus does not cover. It is simply the least-bad of a weak field. Turning a ranking into "worth answering" is a judgment, and `isAboveGate(floor:outlierZ:)` makes it once the caller supplies the bar:
+
+```swift
+if result.isAboveGate(floor: 0.30, outlierZ: 3.0) {
+    // the corpus covers this question — assemble a context block
+} else {
+    // nothing stands out — the corpus does not cover this question
+}
+```
+
+The top match passes when its score clears the floor on its own, or when it stands out as an outlier above the field by the given number of standard deviations, and either path is enough, which keeps the gate permissive. The thresholds are required, with no defaults, on purpose: a cosine value carries no fixed meaning across embedders, so a cutoff that signals a strong match for one source is unremarkable for another. The gate supplies the composition; the cutoff stays with the caller, who alone knows the embedder and the corpus.
+
+The outlier path needs a field with enough spread to measure. When a corpus holds only one or two chunks, the standard deviation is undefined or near zero, so the z-score cannot be computed and the gate falls back entirely to the `floor`. A small corpus is decided on the absolute score alone, which is the safe behavior. The gate never errors on a thin field, it simply leans on the bar that always applies.
 
 ## Assembling the context block
 
-The retrieved chunks become a single **context block**: the formatted text handed to the model. Assembly is plain string work: walk the hits and join each stored chunk's `citedForm` (its text tagged with provenance) so the model can attribute what it reads. Because the citation format lives on `StoredChunk`, the loop never has to reconstruct the string. The block is bounded by `k` and by chunk size, the two ends of the chunking tradeoff, so it stays inside the model's input limit without a separate budget:
+The retrieved chunks become a single **context block**: the formatted text handed to the model. Assembly is plain string work: walk the hits and join each chunk's `citedForm` (its text tagged with provenance) so the model can attribute what it reads. Because the citation format lives on the label, the loop never has to reconstruct the string. The block is bounded by `k` and by chunk size, the two ends of the chunking tradeoff, so it stays inside the model's input limit without a separate budget:
 
 ```swift
-// Build the context block from the ranked hits — each carries its own chunk.
+// Build the context block from the ranked hits — each carries its own label.
 // The separator goes between entries, not after each, so the block carries no
 // trailing blank line.
 var block = ""
-for hit in hits {
+for hit in result.hits {
     let separator = block.isEmpty ? "" : "\n\n"
     block += separator + hit.label.citedForm
 }
@@ -133,4 +131,32 @@ for hit in hits {
 
 A model reads a fixed amount of text at once, its **context window**, so retrieval selects the few fragments most worth that budget rather than handing over the whole document. The block is the last thing Quiver produces: a plain string, ready to hand to whatever model the app runs.
 
-> Experiment: **The Quiver Notebook** is the right place to watch retrieval narrow a document to its relevant fragments. Load `Dataset.glove50d`, chunk a short multi-paragraph passage, and retrieve the top fragments for a question — then change the question and re-run. The same chunks re-rank, a different block assembles, and the fragment that answers the new question rises to the top. That shift is retrieval doing its one job. See <doc:Quiver-Notebook>.
+Where the pipeline ends is the point. Quiver returns a `String` and stops, binding the retrieval half to no particular generator. The same block feeds an on-device model on a phone, a hosted model behind an API, or a server-side model on Linux, with no change to the retrieval that produced it. The generator is the caller's choice, made after retrieval has done its work, which is why the same pipeline serves an app and a server without a fork in the code.
+
+## Persisting the index
+
+A document is embedded once and queried many times, so the index is worth keeping between launches. An index persists through the same encode-and-decode pattern a trained model uses: its `snapshot` is a `Codable` value carrying the entries, and `JSONEncoder` writes it to disk.
+
+```swift
+// Save: encode the snapshot, the same call a model uses.
+let data = try JSONEncoder().encode(index.snapshot)
+try data.write(to: url)
+
+// Restore: decode the snapshot, then pair it with an embedder.
+let saved = try Data(contentsOf: url)
+let snapshot = try JSONDecoder().decode(
+    EmbeddingIndex<SourcedChunk>.Snapshot.self, from: saved)
+let index = EmbeddingIndex(snapshot, embedder: embedder)
+```
+
+The embedder is not part of the snapshot. It is a model or a table, not data, so it is supplied again at reconstruction rather than serialized. What persists is the field of vectors and their labels, the part that was expensive to compute, so a document is embedded once in its lifetime and searched for free thereafter. See <doc:Model-Persistence> for the encode-and-decode shape this shares with every persisted value.
+
+> Important: The saved vectors belong to the embedder that produced them. Cosine similarity is only meaningful when the query and the stored chunks occupy the same vector space, so switching to an embedder of a different architecture or dimension invalidates a saved index. After such a change, discard the saved file and re-embed the corpus.
+
+> Experiment: **The Quiver Notebook** is the right place to watch retrieval narrow a document to its relevant fragments. Load `Dataset.glove50d`, chunk a short multi-paragraph passage, and retrieve the top fragments for a question, then change the question and re-run. The same chunks re-rank, a different block assembles, and `result.topZScore` rises as the answering fragment pulls ahead of the field. That shift is retrieval doing its one job. See <doc:Quiver-Notebook>.
+
+## See Also
+
+- <doc:Semantic-Search>
+- <doc:Embedding-Sources>
+- <doc:Model-Persistence>

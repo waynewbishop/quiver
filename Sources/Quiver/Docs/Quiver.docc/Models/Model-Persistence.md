@@ -93,6 +93,36 @@ let predictions = restored.predict(newData)
 
 `Pipeline` scales inputs automatically at prediction time, so the caller never touches the scaler directly. See <doc:Pipeline> for the full API.
 
+### Persisting a retrieval index
+
+A retrieval pipeline persists the same way a model does, and for the same reason: embedding a corpus is the expensive step, and an `EmbeddingIndex` should be built once and reused across launches. An index exposes its persistable state as a `Codable` `snapshot` — the entries, each a stored label and its vector — which encodes and decodes exactly like a fitted model.
+
+```swift
+import Quiver
+import Foundation
+
+// Build the index once, embedding each chunk on the way in
+var index = EmbeddingIndex<SourcedChunk>(embedder: embedder)
+for chunk in document.chunked(using: ParagraphChunker()) {
+    index.add(chunk.text, label: SourcedChunk(chunk: chunk, sourceID: "bread-guide"))
+}
+
+// Save the snapshot as one JSON blob, the same call a model uses
+let data = try JSONEncoder().encode(index.snapshot)
+try data.write(to: indexURL)
+
+// On next launch, decode the snapshot and pair it with an embedder
+let saved = try Data(contentsOf: indexURL)
+let snapshot = try JSONDecoder().decode(
+    EmbeddingIndex<SourcedChunk>.Snapshot.self, from: saved
+)
+let restored = EmbeddingIndex(snapshot, embedder: embedder)
+```
+
+The one difference from a model is the embedder. A model is fully self-contained, so decoding restores everything; an index depends on an embedder, which is a model or a lookup table rather than data, so it is supplied again at reconstruction rather than stored in the snapshot. This is the same reason a distance-based model needs its scaler back: the persisted vectors live in the embedder's coordinate space, so the embedder paired at reconstruction must be the one that produced them.
+
+> Important: The persisted vectors belong to the embedder that produced them. Pairing a snapshot with an embedder of a different architecture or dimension lands queries in a different coordinate space and returns meaningless matches with no error. After changing the embedder, discard the snapshot and re-embed the corpus. See <doc:Retrieving-Context-For-Generation> for the full retrieval pipeline.
+
 ### Verifying round-trip fidelity
 
 Since all models conform to `Equatable`, verifying that encoding and decoding preserved the model exactly is a single expression:
@@ -132,6 +162,7 @@ Once a model is encoded, the resulting `Data` value can go anywhere Swift can wr
 
 ### Related
 - <doc:Pipeline>
+- <doc:Retrieving-Context-For-Generation>
 - <doc:Machine-Learning-Primer>
 - <doc:Linear-Regression>
 - <doc:Naive-Bayes>
