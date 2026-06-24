@@ -11,7 +11,7 @@ min ‖Xθ − y‖²
 
 Linear regression is the workhorse choice when the relationship between features and a target is roughly linear, predicting continuous values like prices, temperatures, or scores.
 
-> Important: Linear regression is **supervised**: every training row is paired with a known target value, and the model learns the relationship between the features and that target. Unlike clustering models like ``KMeans`` that discover structure on their own, linear regression needs labelled data to find anything at all.
+> Important: Linear regression is **supervised**: every training row is paired with a known target value, and the model learns the relationship between the features and that target. Where clustering models such as ``KMeans`` discover structure on their own, linear regression needs labeled data to find anything at all.
 
 ![Scatter plot of training points with the fitted regression line passing through them](diagram-linear-regression)
 

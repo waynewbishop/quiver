@@ -4,7 +4,7 @@ Connect Quiver's search surface to other embedding sources through a single prot
 
 ## Overview
 
-The `Embedder` protocol bridges text and ranked search. Just as <doc:Data-Visualization> prepares data for charting, `Embedder` separates vector creation from vector ranking. We own the ranking and reporting logic; you own the vector source.
+The `Embedder` protocol bridges text and ranked search. Just as <doc:Data-Visualization> prepares data for charting, `Embedder` separates vector creation from vector ranking. Quiver owns the ranking and reporting logic; the caller owns the vector source.
 
 We need a way to convert text into vectors. Quiver assembles this conversion manually, tokenizing the text and averaging the word vectors it looks up, as shown in <doc:Text-Tokenization>; the source is left open. A small word-vector table works for learning; a production app reaches for an on-device sentence model. The `Embedder` protocol defines a single operation, text in and vector out, allowing ranking methods to work against any source without modification.
 

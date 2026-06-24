@@ -104,7 +104,7 @@ public struct RetrievalResult<Label: Codable & Equatable>: CustomStringConvertib
     }
 
     /// Whether the top hit clears a relevance gate the caller defines: its score
-    /// is high enough on its own (`floor`), **or** it stands out as a clear
+    /// is high enough on its own (`floor`), or it stands out as a clear
     /// outlier above the field (`outlierZ` standard deviations).
     ///
     /// The thresholds are required, with no defaults, on purpose: the right

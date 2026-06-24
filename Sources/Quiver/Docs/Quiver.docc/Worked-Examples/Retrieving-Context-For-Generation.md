@@ -4,18 +4,15 @@ Assembling retrieved context blocks from chunked documents to ground a language 
 
 ## Overview
 
-Retrieval is often discussed only as a way to help language models. However the math behind it serves many practical purposes beyond generating text. Finding a specific product in a large catalog or a citation in a long report uses the exact same ranking logic. We call this broader pattern **retrieval-augmented context** (commonly known as RAG).
+Retrieval is often discussed only as a way to help language models. The math behind it serves many practical purposes beyond generating text. Finding a specific product in a large catalog or a citation in a long report uses the exact same ranking logic. We call this broader pattern **retrieval-augmented context** (commonly known as RAG).
 
-The core operation is a choice of discovery. We use numeric vectors to identify the most relevant fragments from a larger dataset. This mathematical search uncovers
-relationships that keyword matching would miss entirely. For example a search for a "fast shoe" can surface a "racing flat" because the two concepts occupy a similar position in vector space. The math understands the relationship even if the words do not match.
-
+The core operation is a choice of discovery. We use numeric vectors to identify the most relevant fragments from a larger dataset. This mathematical search uncovers relationships that keyword matching would miss entirely. For example, a search for a "fast shoe" can surface a "racing flat" because the two concepts occupy a similar position in vector space. The math understands the relationship even when the words do not match.
 
 ## Many applications
 
-The "generation" part is simply one possible outcome for the data we find. A language model can turn those fragments into a natural sentence but a search engine can
- present them as a ranked list of products. We can even use this same logic to build automated summaries or to group related documents together. 
+The "generation" part is simply one possible outcome for the data we find. A language model can turn those fragments into a natural sentence, and a search engine can present them as a ranked list of products. We can even use this same logic to build automated summaries or to group related documents together.
 
- Quiver provides the mathematical foundation for this work. It handles the heavy lifting of the search so we can focus on how to present the results. This makes advanced discovery tools approachable for any app that needs to find meaning in its data.
+Quiver provides the mathematical foundation for this work. It handles the search itself so we can focus on how to present the results. This makes advanced discovery tools approachable for any app that needs to find meaning in its data.
 
 > Note: This article builds on <doc:Semantic-Search>, which teaches the embedding-and-ranking pipeline, and <doc:Embedding-Sources>, which defines the swappable source of vectors. The examples here are self-contained, but the vocabulary of vectors and similarity carries over. The embedding values shown are illustrative, chosen so the ranking is easy to follow.
 
@@ -109,7 +106,7 @@ if result.isAboveGate(floor: 0.30, outlierZ: 3.0) {
 
 The top match passes when its score clears the floor on its own, or when it stands out as an outlier above the field by the given number of standard deviations, and either path is enough, which keeps the gate permissive. The thresholds are required, with no defaults, on purpose: a cosine value carries no fixed meaning across embedders, so a cutoff that signals a strong match for one source is unremarkable for another. The gate supplies the composition; the cutoff stays with the caller, who alone knows the embedder and the corpus.
 
-The outlier path needs a field with enough spread to measure. When a corpus holds only one or two chunks, the standard deviation is undefined or near zero, so the z-score cannot be computed and the gate falls back entirely to the `floor`. A small corpus is decided on the absolute score alone, which is the safe behavior. The gate never errors on a thin field, it simply leans on the bar that always applies.
+The outlier path needs a field with enough spread to measure. When a corpus holds only one or two chunks, the standard deviation is undefined or near zero, so the z-score cannot be computed and the gate falls back entirely to the `floor`. A small corpus is decided on the absolute score alone, which is the safe behavior. The gate never errors on a thin field; it simply leans on the bar that always applies.
 
 ## Assembling the context block
 
