@@ -22,7 +22,7 @@ The algorithm is based on four models. [StandardScaler](<doc:Feature-Scaling>) n
 
 > Important: The sensor values throughout this article are illustrative, chosen to make the arithmetic checkable. A real model would train on a runner's own recorded history.
 
-> Note: The [quiver-demo-watchos](https://github.com/waynewbishop/quiver-demo-watchos) is the reference implementation for this article. The <doc:Ridge> baseline, <doc:ResidualModel> wrapper, <doc:KNearestNeighbors> classifier and the session accumulator are assembled into a working watchOS app.
+> Note: The [quiver-demo-watchos](https://github.com/waynewbishop/quiver-demo-watchos) is the reference implementation for this article. The <doc:Ridge-Regression> baseline, <doc:Residual-Model> wrapper, <doc:Nearest-Neighbors-Classification> classifier, and the session accumulator are assembled into a working watchOS app.
 
 ## Why one number falls short
 

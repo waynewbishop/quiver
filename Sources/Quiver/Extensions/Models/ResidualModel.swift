@@ -138,32 +138,13 @@ public struct ResidualModel<Model: Regressor & Codable & Equatable & Sendable>:
 
 // MARK: - Coefficient access
 
-/// A model whose fit is summarized by a vector of coefficients.
-///
-/// The regressors that report a fit as `coefficients` — ``LinearRegression``,
-/// ``Ridge``, ``GradientDescent`` — conform (intercept first, then one weight
-/// per feature). Distance- and tree-based models do not, so this capability is
-/// its own protocol rather than a requirement on every regressor.
-///
-/// ``LogisticRegression`` also stores coefficients, but it is a ``Classifier``,
-/// not a ``Regressor``, so it is not wrapped by `ResidualModel` and is left out
-/// of this protocol. The exclusion rests on meaning, not on a structural
-/// barrier: a residual `observed − predicted` is defined for a continuous
-/// target, not for a probability or a 0/1 label.
-public protocol Coefficients {
-    /// The fitted coefficients: intercept first, then one weight per feature.
-    var coefficients: [Double] { get }
-}
-
-extension LinearRegression: Coefficients {}
-extension Ridge: Coefficients {}
-extension GradientDescent: Coefficients {}
-
 /// When the wrapped model reports coefficients, the wrapper forwards them — so
 /// reading `residualModel.coefficients` is consistent with reading them off any
 /// other linear model. The conditional conformance means this convenience
 /// exists only for coefficient-bearing models and is a compile error for the
 /// rest, rather than a runtime surprise.
+///
+/// The `Coefficients` protocol itself lives in `Coefficients.swift`.
 extension ResidualModel: Coefficients where Model: Coefficients {
     public var coefficients: [Double] { model.coefficients }
 }

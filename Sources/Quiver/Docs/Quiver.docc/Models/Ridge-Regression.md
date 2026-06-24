@@ -236,6 +236,10 @@ run1 == run2  // true
 - ``Ridge/Outcome``
 - ``Ridge/learningRate``
 
+### Reading the fit
+- ``Coefficients``
+- ``Coefficients/equation()``
+
 ### Evaluation
 - ``Swift/Array/rSquared(actual:)``
 - ``Swift/Array/meanSquaredError(actual:)``

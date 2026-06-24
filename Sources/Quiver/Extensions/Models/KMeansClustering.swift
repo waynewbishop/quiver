@@ -13,44 +13,6 @@
 
 import Foundation
 
-// MARK: - Cluster
-
-/// A single cluster from a K-Means model, containing a centroid and its assigned data points.
-///
-/// Each cluster holds the centroid position and the data points assigned to it.
-/// Conforms to `Sequence` so you can iterate directly over the points:
-///
-/// ```swift
-/// let clusters = model.clusters(from: data)
-/// for cluster in clusters {
-///     print("Center: \(cluster.centroid), size: \(cluster.count)")
-///     for point in cluster {
-///         print(point)
-///     }
-/// }
-/// ```
-public struct Cluster: Codable, Sequence, CustomStringConvertible, Equatable, Sendable {
-
-    public var description: String {
-        let center = centroid.map { String(format: "%.2f", $0) }.joined(separator: ", ")
-        return "Cluster: center [\(center)], \(count) \(count == 1 ? "point" : "points")"
-    }
-
-    /// The centroid position for this cluster.
-    public let centroid: [Double]
-
-    /// The data points assigned to this cluster.
-    public let points: [[Double]]
-
-    /// The number of data points in this cluster.
-    public var count: Int { points.count }
-
-    /// Returns an iterator over the data points in this cluster.
-    public func makeIterator() -> IndexingIterator<[[Double]]> {
-        return points.makeIterator()
-    }
-}
-
 // MARK: - K-Means Clustering
 
 /// A trained K-Means clustering model.

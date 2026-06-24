@@ -12,43 +12,6 @@ import Foundation
 
 // MARK: - Chart Helper Functions
 
-/// Specifies how values within a group or window are combined into a single result.
-///
-/// Used by `groupBy(_:using:)`, `groupedData(by:using:)`, and `downsample(factor:using:)`
-/// to control how multiple values are aggregated.
-public enum AggregationMethod: Sendable {
-    /// Sum all values in the group
-    case sum
-    /// Calculate the arithmetic mean of the group
-    case mean
-    /// Count the number of values in the group
-    case count
-    /// Select the minimum value in the group
-    case min
-    /// Select the maximum value in the group
-    case max
-    /// Sum all values per group, then normalize so all groups sum to 100
-    case percentage
-}
-
-/// Names a rule for choosing the number of bins in a histogram.
-///
-/// Passed to `histogram(rule:)`. Each rule picks a bin count from the data
-/// itself, freeing the caller from guessing a number. The three rules cover
-/// the common design space: a quick exploration rule that ignores the data's
-/// shape, a classical rule derived under a normal assumption, and a modern
-/// robust rule that uses the interquartile range. See the "Choosing a bin
-/// rule" section of <doc:Identifying-A-Distribution> for the history of each
-/// rule and the trade-offs that motivate the choice.
-public enum BinRule: Sendable {
-    /// `k = ⌈√n⌉`. Depends only on sample size. Quick first look.
-    case squareRoot
-    /// `k = ⌈log₂(n) + 1⌉`. Sturges, 1926; assumes roughly normal data.
-    case sturges
-    /// `width = 2·IQR / n^(1/3)`, then `k = ⌈(max − min) / width⌉`. Freedman-Diaconis, 1981; robust to outliers.
-    case freedmanDiaconis
-}
-
 public extension Array where Element: FloatingPoint {
 
     // MARK: - Time Series Operations

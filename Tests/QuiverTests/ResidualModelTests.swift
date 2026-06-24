@@ -225,4 +225,90 @@ final class ResidualModelTests: XCTestCase {
             XCTAssertEqual(residuals[i], reference[i], accuracy: 1e-12)
         }
     }
+
+    // MARK: - equation() rendering (Coefficients protocol)
+
+    // A tiny conforming stand-in lets us assert the rendering contract directly
+    // on chosen coefficient vectors, independent of any model's fit.
+    private struct FakeCoefficients: Coefficients {
+        let coefficients: [Double]
+    }
+
+    // Single feature: intercept first, then one slope, %.2f, bare x (no subscript).
+    func testEquationSingleFeature() {
+        let model = FakeCoefficients(coefficients: [38000.0, 110.0])
+        XCTAssertEqual(model.equation(), "y = 38000.00 + 110.00x")
+    }
+
+    // Multi-feature: each weight pairs with x₁, x₂, … in order.
+    func testEquationMultiFeature() {
+        let model = FakeCoefficients(coefficients: [-6621.62, 137.84, 7162.16])
+        XCTAssertEqual(model.equation(), "y = -6621.62 + 137.84x₁ + 7162.16x₂")
+    }
+
+    // Negative weight renders as " - 7162.16x₂", never " + -7162.16x₂".
+    func testEquationNegativeCoefficientSpacing() {
+        let model = FakeCoefficients(coefficients: [10.0, 3.0, -7162.16])
+        XCTAssertEqual(model.equation(), "y = 10.00 + 3.00x₁ - 7162.16x₂")
+    }
+
+    // A zero weight drops its whole term — no "+ 0.00x₂".
+    func testEquationZeroCoefficientDropped() {
+        let model = FakeCoefficients(coefficients: [5.0, 2.0, 0.0, 4.0])
+        XCTAssertEqual(model.equation(), "y = 5.00 + 2.00x₁ + 4.00x₃")
+    }
+
+    // A weight of exactly 1 renders as the bare variable (multi-feature: x₁, not 1.00x₁).
+    func testEquationUnitCoefficientDropsTheOne() {
+        let model = FakeCoefficients(coefficients: [0.0, 1.0, -1.0])
+        XCTAssertEqual(model.equation(), "y = 0.00 + x₁ - x₂")
+    }
+
+    // A single-feature unit weight renders as a bare x with no coefficient.
+    func testEquationSingleFeatureUnitCoefficient() {
+        let model = FakeCoefficients(coefficients: [2.0, 1.0])
+        XCTAssertEqual(model.equation(), "y = 2.00 + x")
+    }
+
+    // Ten-plus features use multi-digit subscripts: x₁₀, not x₁0.
+    func testEquationMultiDigitSubscripts() {
+        let model = FakeCoefficients(coefficients: Array(repeating: 1.0, count: 11))
+        let eq = model.equation()
+        XCTAssertTrue(eq.contains("x₁₀"), "expected x₁₀ in \(eq)")
+        XCTAssertFalse(eq.contains("x₁0"), "subscript digits must all be subscript")
+    }
+
+    // Empty coefficient vector renders as the zero polynomial.
+    func testEquationEmptyVector() {
+        let model = FakeCoefficients(coefficients: [])
+        XCTAssertEqual(model.equation(), "y = 0")
+    }
+
+    // Each conforming model produces a non-empty equation from its real fit.
+    // These are single-feature fits, so the variable is a bare x.
+    func testEquationOnAllConformers() throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0], [5.0]]
+        let targets = [3.0, 5.0, 7.0, 9.0, 11.0]
+
+        let linear = try LinearRegression.fit(features: features, targets: targets)
+        let ridge = try Ridge.fit(features: features, targets: targets, lambda: 1.0)
+        let gd = try GradientDescent.fit(features: features, targets: targets)
+
+        for eq in [linear.equation(), ridge.equation(), gd.equation()] {
+            XCTAssertTrue(eq.hasPrefix("y = "), "got \(eq)")
+            XCTAssertTrue(eq.contains("x"), "got \(eq)")
+        }
+    }
+
+    // ResidualModel forwards equation() through its conditional Coefficients
+    // conformance, matching the wrapped model exactly.
+    func testEquationForwardsThroughResidualModel() throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0], [5.0]]
+        let targets = [3.0, 5.0, 7.0, 9.0, 11.0]
+
+        let model = try LinearRegression.fit(features: features, targets: targets)
+        let residualModel = ResidualModel(model: model)
+
+        XCTAssertEqual(residualModel.equation(), model.equation())
+    }
 }

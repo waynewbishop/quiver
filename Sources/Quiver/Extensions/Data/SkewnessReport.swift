@@ -10,28 +10,6 @@
 
 import Foundation
 
-/// How an outlier-sensitive and an outlier-resistant skewness measure relate.
-///
-/// `skewnessReport()` computes skewness two independent ways — the moment coefficient,
-/// which weighs every value (and so is pulled hard by extremes), and the Bowley quartile
-/// coefficient, which is built only from the quartiles and so ignores the tails. When the
-/// two measures point the same way the shape is corroborated; when they conflict, a few
-/// extreme values are likely distorting the moment number.
-public enum SkewnessAgreement: Equatable, Sendable, Codable {
-
-    /// Both measures land in their symmetric band, or both lean the same direction.
-    /// The skew, whatever its size, is corroborated by a measure that ignores outliers.
-    case agree
-
-    /// One measure reads as roughly symmetric while the other reads as decisively skewed.
-    /// The decisive measure is not corroborated — a sign that extremes may be at work.
-    case mixed
-
-    /// The two measures lean in opposite directions. The strongest signal that the moment
-    /// number is driven by a few extreme values rather than the underlying shape.
-    case direction
-}
-
 /// A two-measure skewness diagnostic: the moment coefficient, the robust Bowley coefficient,
 /// and whether the two agree.
 ///
