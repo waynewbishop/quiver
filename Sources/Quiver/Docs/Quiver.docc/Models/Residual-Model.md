@@ -4,11 +4,11 @@ Wrapping a fitted regressor to read the part of a signal it could not explain.
 
 ## Overview
 
-A **residual** is what a prediction leaves behind: the observed value minus the predicted one, computed for each sample. Where a regressor answers "what value do these features predict?", the residual answers "how far did the real value land from that prediction?": the information a single number throws away. ``ResidualModel`` wraps an already-fitted ``Regressor`` and surfaces that gap through three reads: the expected values, the residuals across a batch, and the residual for one sample.
+A **residual** is simply what a prediction leaves behind: the observed value minus the predicted one. If a regressor asks, "What value do these features predict?", the residual asks, "How far off was that prediction?" It represents the exact variance that a single predicted number throws away. In the framework, ``ResidualModel`` wraps an already-fitted ``Regressor`` to expose this gap, providing three distinct reads: the expected values, the residuals across an entire batch, and the specific residual for a single sample.
 
 The technique is the standard move behind residual analysis: model out the part of an outcome a set of inputs explains, then study what is left. A sale price inflated by a renovation reads the same as one inflated by location until a baseline predicts the price the square footage and bedroom count alone should produce. The gap between that prediction and the real price isolates the rest. The math name for partialling out an explained part this way is Frisch–Waugh–Lovell, and the residual is its output.
 
-> Important: Read residuals out of sample. Fit the baseline on one block of data, then residualize a *later* block the baseline never trained on. Residuals computed on the same rows the baseline was fit on are optimistically small. The fit was tuned to those rows, so it explains them better than it will ever explain fresh data. The reading understates what the model actually misses.
+> Important: Always read residuals out of sample. Fit the baseline on one block of data, then compute the residuals for a later block the baseline never trained on. Residuals computed on the exact same rows the baseline was fit on will be optimistically small. Because the fit was tuned specifically to those rows, it explains them better than it ever will fresh data. Ultimately, an in-sample reading understates what the model actually misses.
 
 ### How it works
 
@@ -71,15 +71,14 @@ residualModel.coefficients  // [100.0, 100.0] — intercept, then slope, forward
 baseline.coefficients       // [100.0, 100.0] — the identical array, read off the model directly
 ```
 
-Those forwarded coefficients *are* the model — there is nothing else to its prediction. Rendering them turns the fit into readable math the reader can check by hand:
+Those forwarded coefficients **are** the model — there is nothing else to its prediction. Rendering them turns the fit into readable math the reader can check by hand:
 
 ```swift
 residualModel.coefficients.asExpression(form: .inline)  // "⟨100, 100⟩"
+residualModel.equation()  // "y = 100.00 + 100.00x" — forwarded from the wrapped baseline
 ```
 
-Read `⟨100, 100⟩` back into a line and the baseline is `price = 100 + 100 · sqft`, the same rule the fit recovered from the earlier block. See <doc:Rendering-Math-Primer> for the rendering family this draws on.
-
-This forwarding is decided at compile time, not at runtime. ``LinearRegression``, ``Ridge``, and ``GradientDescent`` all conform to ``Coefficients``, so the property is available on a `ResidualModel` wrapping any of them. A model with no coefficient vector has no `.coefficients` to forward, and reading it is a compile error rather than a value that surprises us at runtime. The capability follows the wrapped type, and the compiler enforces the match.
+This forwarding is decided at compile time. ``LinearRegression``, ``Ridge``, and ``GradientDescent`` all conform to ``Coefficients``, so the property is available on a `ResidualModel` wrapping any of them. A model with no coefficient vector has no `.coefficients` to forward, and reading it is a compile error rather than a value that surprises us at runtime. The capability follows the wrapped type, and the compiler enforces the match.
 
 ### Using it out of sample
 
