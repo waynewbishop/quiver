@@ -1,16 +1,16 @@
 # Vector Operations
 
-Transform arrays into mathematical vectors with magnitude, direction, and spatial relationships.
+Give arrays magnitude, direction, and distance by treating them as mathematical vectors.
 
 ## Overview
 
-Quiver provides a comprehensive set of vector operations that treat `arrays` as mathematical **vectors**, enabling calculations like `magnitude`, `normalization`, dot products, and angle measurements. For the conceptual foundations behind these operations, see <doc:Linear-Algebra-Primer>. 
+Quiver treats ordinary `arrays` as mathematical **vectors**, so a plain list of numbers gains a length, a direction, and a set of operations for comparing it to other vectors. From an array we can compute its `magnitude`, produce a normalized version, take a dot product, or measure the angle to another vector. For the ideas behind these operations, see <doc:Linear-Algebra-Primer>.
 
-> Note: Vector operations are essential for graphics programming, physics simulations, machine learning algorithms, and any application that deals with spatial data or mathematical modeling. For a comprehensive introduction to vector mathematics, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
+> Note: Vector operations underpin machine learning, and they turn up anywhere an app reasons about direction, distance, or spatial data. For a comprehensive introduction to vector mathematics, see [Vectors](https://waynewbishop.github.io/swift-algorithms/20-vectors.html) in Swift Algorithms & Data Structures.
 
 ### Basic vector properties
 
-Quiver enables calculating fundamental vector properties. A `vector` is a mathematical object that represents both `magnitude` and direction. Unlike a scalar value, which represents only size (like temperature or weight), a `vector` captures directional information alongside its size:
+Every vector has two fundamental properties: a `magnitude` (its length) and a direction (where it points). This is what sets a vector apart from a scalar. A scalar is a single number that carries only size — a temperature or a weight — while a vector carries a direction as well. Each number inside a vector is a component, and the count of components is the vector's dimension: `[3.0, 4.0]` has two components, so it lives in two dimensions.
 
 ```swift
 import Quiver
@@ -45,13 +45,13 @@ v1.angle(with: v2)        // π/2 radians (90 degrees)
 v1.angleInDegrees(with: v2)  // 90.0 degrees
 ```
 
-These angle functions work with vectors of any dimension. The `cosineOfAngle(with:)` method returns the raw cosine value, while `angle(with:)` applies `acos` to produce the angle in radians. The dot product is zero when vectors are perpendicular, which is why a 90° angle produces a cosine of zero.
+These angle functions work with vectors of any dimension. The `cosineOfAngle(with:)` method returns the cosine of the angle directly, and `angle(with:)` applies `acos` to that cosine to give the angle in radians. This is why perpendicular vectors are a clean test case: their dot product is zero, so the cosine is zero, and the angle comes out to 90°.
 
-> Experiment: **The Quiver Notebook** is the right place to trace cosine similarity geometrically. Hold one vector fixed and rotate the other from aligned to perpendicular to opposite — the score moves through 1.0 → 0 → −1, mapping the angle directly to a number. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to watch the angle change. Hold one vector fixed and rotate the other from aligned, to perpendicular, to pointing the opposite way — the cosine of the angle moves through 1.0 → 0 → −1. A single number tells us how closely the two vectors point in the same direction. See <doc:Quiver-Notebook>.
 
 ### Distance
 
-Both `magnitude` and `distance(to:)` use the Pythagorean theorem, but they measure different things. `magnitude` measures a single vector's length from the origin: how far a point is from `[0, 0, ...]`. `distance(to:)` measures the gap between any two points by computing the `magnitude` of their difference vector:
+`magnitude` and `distance(to:)` both rest on the Pythagorean theorem, but they answer different questions. `magnitude` measures one vector's length from the origin — how far a point sits from `[0, 0, ...]`. `distance(to:)` measures the gap between any two points, which it finds by taking the `magnitude` of the vector between them:
 
 ```swift
 let a = [1.0, 2.0]
@@ -67,11 +67,11 @@ a.distance(to: b)  // √((4-1)² + (6-2)²) = √25 = 5.0
 [0.0, 0.0].distance(to: a)  // √5 ≈ 2.24 (same as a.magnitude)
 ```
 
-This distinction matters throughout Quiver. Cosine similarity divides by both magnitudes to remove length bias and isolate direction. Quiver's models use `distance(to:)` to find the most similar training examples, group data points into clusters, and rank how related two arrays are. For a deeper look at how distance and similarity work together, see <doc:Similarity-Operations>.
+This distinction matters throughout Quiver. Its models use `distance(to:)` to find the closest training examples, to group data points into clusters, and to rank how related two arrays are. Measuring the angle between vectors is a separate tool. Dividing the dot product by both magnitudes cancels length and leaves a pure measure of direction. For how distance and angle-based comparison work together, see <doc:Similarity-Operations>.
 
 ### Vector arithmetic
 
-Quiver provides `add`, `subtract`, `multiply`, and `divide` methods for element-wise array arithmetic. These methods are the foundation that higher-level vector operations build on:
+Quiver provides `add`, `subtract`, `multiply`, and `divide` methods for element-wise array arithmetic — each operation pairs up matching components and combines them. These methods are the foundation that higher-level vector operations build on:
 
 ```swift
 import Quiver
@@ -86,7 +86,7 @@ let product = a.multiply(b)     // [4.0, 10.0, 18.0]
 let quotient = a.divide(b)      // [0.25, 0.4, 0.5]
 ```
 
-These methods appear throughout Quiver's ML pipeline. `distance(to:)` is implemented as `self.subtract(other).magnitude`: it subtracts two vectors element-wise, then computes the `magnitude` of the difference. Every time `KNearestNeighbors` finds the closest training example or `KMeans` assigns a point to a cluster, it relies on this subtraction:
+These methods run underneath Quiver's machine learning models. `distance(to:)` is really just `self.subtract(other).magnitude` — it subtracts the two vectors component by component, then takes the `magnitude` of what's left. Every time `KNearestNeighbors` finds the closest training example, or `KMeans` assigns a point to a cluster, that subtraction is doing the work:
 
 ```swift
 let sample = [5.2, 3.1]
@@ -98,7 +98,7 @@ diff.magnitude                          // √(0.16 + 0.16) ≈ 0.566
 sample.distance(to: trainingPoint)      // 0.566 (same result)
 ```
 
-Addition and division power `averaged`, which combines multiple word embedding vectors into a single document vector for semantic search. Individual word vectors each capture one word's meaning. Averaging them produces a vector that represents the entire document's meaning in the same vector space:
+Addition and division together power `averaged`, which combines several word vectors into a single vector. Each word vector captures the meaning of one word. Averaging them produces one vector that stands for the meaning of the whole document, in the same space as the words themselves:
 
 ```swift
 // Word embedding vectors (simplified to 3 dimensions)
@@ -136,7 +136,7 @@ let transformed2 = matrix.transform(vector)     // [-2.0, 1.0]
 
 > Note: Use `matrix.transform(vector)` to emphasize the matrix acting on the vector, matching mathematical notation Mv = w. Use `vector.transformedBy(matrix)` to emphasize the vector being transformed.
 
-Matrix transformations are powerful tools for implementing rotations, scaling, and other geometric operations.
+Matrix transformations are how we implement rotations, scaling, and other geometric operations.
 
 ### Mathematical foundation
 
@@ -146,7 +146,7 @@ Vector operations in Quiver are based on well-established mathematical principle
 - **Normalization**: v / ||v||
 - **Dot product**: v₁·v₂ = v₁₁×v₂₁ + v₁₂×v₂₂ + ... + v₁ₙ×v₂ₙ
 - **Euclidean distance**: d(v₁, v₂) = √((v₁₁−v₂₁)² + (v₁₂−v₂₂)² + ... + (v₁ₙ−v₂ₙ)²)
-- **Cosine similarity**: cos(θ) = (v₁·v₂) / (||v₁|| × ||v₂||)
+- **Cosine of the angle**: cos(θ) = (v₁·v₂) / (||v₁|| × ||v₂||)
 
 > Note: Quiver follows standard mathematical conventions for vector operations, making it easier to translate mathematical formulas directly into code.
 
@@ -156,7 +156,7 @@ Vector operations in Quiver are based on well-established mathematical principle
 - ``Swift/Array/magnitude``
 - ``Swift/Array/normalized``
 
-### Vector Relationships
+### Vector relationships
 - ``Swift/Array/distance(to:)``
 - ``Swift/Array/dot(_:)``
 - ``Swift/Array/angle(with:)-piry``
