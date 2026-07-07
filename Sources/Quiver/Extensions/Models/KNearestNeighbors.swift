@@ -168,6 +168,12 @@ public struct KNearestNeighbors: Classifier, Codable, CustomStringConvertible, E
             }
             let denom = Foundation.sqrt(magA) * Foundation.sqrt(magB)
             return denom > 0 ? 1.0 - dot / denom : 1.0
+        case .manhattan:
+            var sum = 0.0
+            for i in 0..<a.count {
+                sum += abs(a[i] - b[i])
+            }
+            return sum
         }
     }
 

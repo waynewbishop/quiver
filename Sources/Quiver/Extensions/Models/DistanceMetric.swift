@@ -20,7 +20,8 @@ import Foundation
 /// Euclidean distance measures straight-line distance between points and works
 /// well when features have similar scales. Cosine distance measures the angle
 /// between vectors and works well for text embeddings and high-dimensional data
-/// where magnitude is less meaningful than direction.
+/// where magnitude is less meaningful than direction. Manhattan distance sums
+/// the absolute differences along each axis and is more robust to outliers.
 public enum DistanceMetric: Codable, Equatable, Sendable {
 
     /// Euclidean distance: √Σ(aᵢ − bᵢ)².
@@ -35,4 +36,13 @@ public enum DistanceMetric: Codable, Equatable, Sendable {
     /// 0 regardless of their magnitude. Preferred for text embeddings, TF-IDF
     /// vectors, and other high-dimensional sparse data.
     case cosine
+
+    /// Manhattan distance: Σ|aᵢ − bᵢ|.
+    ///
+    /// Sums the absolute differences along each axis — the number of grid steps
+    /// between two points. More robust to outliers than Euclidean, since a large
+    /// per-feature difference contributes linearly rather than squared. Like
+    /// Euclidean, it is scale-sensitive; consider using ``FeatureScaler`` before
+    /// fitting when features have different units or magnitudes.
+    case manhattan
 }

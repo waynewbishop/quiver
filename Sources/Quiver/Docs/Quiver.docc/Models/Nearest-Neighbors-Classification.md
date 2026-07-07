@@ -57,7 +57,7 @@ The value of `k` controls the tradeoff between sensitivity and smoothness. A sma
 
 ### Distance metrics
 
-Quiver supports two distance metrics via the `DistanceMetric` enum:
+Quiver supports three distance metrics via the `DistanceMetric` enum:
 
 **Euclidean distance** (default) measures straight-line distance between points. Euclidean distance works well when features have similar scales, but can be dominated by high-magnitude features when scales differ. The `StandardScaler` type is the recommended choice for distance-based classifiers because it centers each feature at zero with unit variance, preventing any single feature from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred:
 
@@ -93,6 +93,19 @@ let model = KNearestNeighbors.fit(
 ```
 
 > Note: Cosine similarity measures how closely two vectors point in the same direction, so a high score means similar. **Cosine distance** flips this: `1 − similarity`, so a low score means similar. Nearest Neighbors uses the distance form because the algorithm looks for the smallest values to find the closest neighbors. For more on cosine similarity, see <doc:Similarity-Operations>.
+
+**Manhattan distance** sums the absolute differences along each axis, the number of grid steps between two points. For the points `[1, 2]` and `[4, 6]`, Manhattan distance is `|4 − 1| + |6 − 2| = 7`, compared with the Euclidean straight-line distance of `5`. It is more robust to outliers than Euclidean, since a large per-feature difference contributes linearly rather than squared. Like Euclidean, it is scale-sensitive, so the same scaling advice applies:
+
+```swift
+import Quiver
+
+let model = KNearestNeighbors.fit(
+    features: trainX,
+    labels: trainY,
+    k: 5,
+    metric: .manhattan
+)
+```
 
 ### Vote weighting
 

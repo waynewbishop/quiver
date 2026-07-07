@@ -81,6 +81,61 @@ final class KNearestNeighborsTests: XCTestCase {
         XCTAssertEqual(model.predict([[100.0, -100.0]]), [1])
     }
 
+    // Manhattan (L1) distance ranks by sum of absolute per-axis differences.
+    // Fixture chosen so L1 and L2 disagree on the nearest neighbor (see arithmetic
+    // in the test body), exercising the .manhattan arm rather than the raw metric.
+    func testManhattanMetricRanksByL1() {
+        // Query at origin. Candidate A = [2.5, 2.5], candidate B = [0, 4].
+        //   Euclidean: A = √12.5 ≈ 3.54 (nearer),  B = 4.0
+        //   Manhattan: A = 5.0,               B = 4.0 (nearer)
+        let features: [[Double]] = [[2.5, 2.5], [0.0, 4.0]]
+        let labels = [0, 1]
+
+        // Euclidean picks A (class 0); Manhattan picks B (class 1) — guards against
+        // the .manhattan arm silently falling through to Euclidean.
+        let euclidean = KNearestNeighbors.fit(
+            features: features, labels: labels, k: 1, metric: .euclidean
+        )
+        let manhattan = KNearestNeighbors.fit(
+            features: features, labels: labels, k: 1, metric: .manhattan
+        )
+        XCTAssertEqual(euclidean.predict([[0.0, 0.0]]), [0])
+        XCTAssertEqual(manhattan.predict([[0.0, 0.0]]), [1])
+        XCTAssertEqual(manhattan.metric, .manhattan)
+    }
+
+    // DistanceMetric.manhattan survives a Codable round-trip
+    func testManhattanCodableRoundTrip() throws {
+        let encoded = try JSONEncoder().encode(DistanceMetric.manhattan)
+        let decoded = try JSONDecoder().decode(DistanceMetric.self, from: encoded)
+        XCTAssertEqual(decoded, .manhattan)
+    }
+
+    // A KNN model built with .manhattan encodes and decodes with the metric intact
+    func testManhattanModelCodableRoundTrip() throws {
+        let model = KNearestNeighbors.fit(
+            features: [[1.0, 2.0], [3.0, 4.0]], labels: [0, 1], k: 1, metric: .manhattan
+        )
+
+        let encoded = try JSONEncoder().encode(model)
+        let decoded = try JSONDecoder().decode(KNearestNeighbors.self, from: encoded)
+        XCTAssertEqual(decoded.metric, .manhattan)
+    }
+
+    // Existing .euclidean / .cosine values still decode unchanged after adding .manhattan
+    func testExistingMetricsStillDecode() throws {
+        let euclidean = try JSONDecoder().decode(
+            DistanceMetric.self,
+            from: try JSONEncoder().encode(DistanceMetric.euclidean)
+        )
+        let cosine = try JSONDecoder().decode(
+            DistanceMetric.self,
+            from: try JSONEncoder().encode(DistanceMetric.cosine)
+        )
+        XCTAssertEqual(euclidean, .euclidean)
+        XCTAssertEqual(cosine, .cosine)
+    }
+
     // Distance weighting should favor the closer neighbor when counts tie
     func testDistanceWeighting() {
         // Two class-0 points far away, one class-1 point very close
