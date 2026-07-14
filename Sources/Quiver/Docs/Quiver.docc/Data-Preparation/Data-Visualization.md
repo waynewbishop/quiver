@@ -325,6 +325,7 @@ The tallest bar is the model's prediction. The relative heights show how confide
 - ``Swift/Array/histogram(rule:)``
 - ``BinRule``
 - ``Swift/Array/quartiles()``
+- ``Quartiles``
 - ``Swift/Array/percentile(_:)``
 - ``Swift/Array/percentileRank(of:)``
 - ``Swift/Array/percentileRanks()``
@@ -352,3 +353,4 @@ The tallest bar is the model's prediction. The relative heights show how confide
 ### Grouping and aggregation
 - ``Swift/Array/groupBy(_:using:)``
 - ``Swift/Array/groupedData(by:using:)``
+- ``AggregationMethod``

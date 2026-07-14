@@ -141,6 +141,7 @@ Every function in `Distributions` returns `Double?`. Invalid inputs—such as no
 ## Topics
 
 ### Distributions
+- ``Distributions``
 - ``Distributions/normal``
 - ``Distributions/t``
 - ``Distributions/chiSquared``

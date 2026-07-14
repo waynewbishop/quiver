@@ -170,3 +170,6 @@ Uniform random generation uses Swift's built-in `Double.random(in:)` and `Float.
 ### Normal distribution
 - ``Swift/Array/randomNormal(_:mean:standardDeviation:)->[Double]``
 - ``Swift/Array/randomNormal(_:_:mean:standardDeviation:)->[[Double]]``
+
+### Deterministic generation
+- ``SeededRandomNumberGenerator``

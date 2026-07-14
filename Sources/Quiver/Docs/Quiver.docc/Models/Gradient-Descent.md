@@ -196,6 +196,9 @@ Gradient descent on squared error is the simplest case: the loss is convex, the 
 ### Errors
 - ``GradientDescentError``
 
+### Derivatives
+- ``jacobian(of:at:step:)``
+
 ### Related
 - <doc:Feature-Scaling>
 - <doc:Pipeline>

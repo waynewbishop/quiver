@@ -171,6 +171,9 @@ The `degree` property reports the highest power with a non-zero coefficient rega
 
 ## Topics
 
+### Type
+- ``Polynomial``
+
 ### Creating a polynomial
 - ``Polynomial/init(_:)``
 

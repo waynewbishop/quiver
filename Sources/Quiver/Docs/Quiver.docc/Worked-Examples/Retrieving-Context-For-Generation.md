@@ -157,3 +157,12 @@ The embedder is not part of the snapshot. It is a model or a table, not data, so
 - <doc:Semantic-Search>
 - <doc:Embedding-Sources>
 - <doc:Model-Persistence>
+
+## Topics
+
+### Retrieval
+- ``Chunk``
+- ``Chunker``
+- ``EmbeddingIndex``
+- ``RetrievalResult``
+- ``RetrievedHit``

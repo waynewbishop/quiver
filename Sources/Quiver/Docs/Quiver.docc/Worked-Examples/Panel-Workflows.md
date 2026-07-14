@@ -229,3 +229,13 @@ The grouping happens once, in Quiver. The chart receives sorted, labeled tuples 
 ### Scope
 
 These workflows are intentionally scoped to numeric columnar data for ML. The split-scale-train-evaluate cycle above is what `Panel` is optimized for; everything on this page is a thin shape adapter over that cycle. When the work outgrows that scope (categorical encoding, time-series resampling, multi-table joins), drop down to plain arrays and matrices, do the transformation, and wrap the result back into a `Panel` for the next stage.
+
+## Topics
+
+### Column summaries
+- ``ColumnSummary``
+- ``PanelSummary``
+
+### Diagnostics
+- ``ContingencyTable``
+- ``SkewnessAgreement``

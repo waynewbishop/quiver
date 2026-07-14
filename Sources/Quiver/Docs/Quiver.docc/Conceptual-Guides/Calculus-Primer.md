@@ -150,13 +150,37 @@ let model = try GradientDescent.fit(features: scaled, targets: targets, learning
 
 Linear regression's closed form is the case where calculus reaches the answer in a single matrix expression. Gradient descent is the case where calculus reaches the answer over many small ones. Both are calculus. The difference is whether the math can be solved directly or only followed step by step.
 
-Gradient descent is a **first-order** method: it uses only the first derivative (the slope) to decide which way to walk. A second family of optimizers also uses the second derivative, the rate at which the slope itself changes, to judge how far to step as well as which way. Those second-order methods, Newton's method and the Taylor approximations behind it, converge in fewer steps on some problems, at the cost of computing and inverting the matrix of second derivatives. Quiver's optimizer is first-order throughout; the second-order family is a separate track it does not implement.
+Gradient descent is a **first-order** method: it uses only the first derivative (the slope) to decide which way to walk. A second family of optimizers also uses the second derivative, the rate at which the slope itself changes, to judge how far to step as well as which way. Those second-order methods for optimization, Newton's method among them, converge in fewer steps on some problems, at the cost of computing and inverting the matrix of second derivatives — the Hessian. Quiver's optimizer is first-order throughout; the second-order family is a separate track it does not implement.
 
 This matters because the models beyond linear regression (``LogisticRegression``, and the support vector machines that will follow it) minimize error formulas for which no closed form exists. There is no normal equation for them. The only way to fit them is iteratively. The optimizer introduced here is the one those models use: <doc:Logistic-Regression> runs this same descent on a cross-entropy loss.
 
+### Every output's slope at once
+
+The gradient collected one partial derivative per input for a formula with a single output — the loss. Some functions return more than one number. A function that takes a length and a width and returns both an area and a perimeter has two outputs, and each output has its own slope along each input. Collecting all of those slopes into a grid gives the **Jacobian**: for a function mapping an n-vector to an m-vector, the m×n matrix whose entry in row i, column j is the rate at which output i changes as input j changes.
+
+The Jacobian answers a sensitivity question: if an input drifts by a small amount, how much does each output move. Multiplying a small change in the inputs by the Jacobian predicts the resulting change in the outputs — the same way a matrix transforms a vector in the <doc:Linear-Algebra-Primer>. This is how a measurement error propagates. When the inputs are known only approximately, the Jacobian carries that uncertainty forward to say how approximate the outputs are.
+
+```swift
+import Quiver
+
+// f(length, width) = [area, perimeter]
+func plotMetrics(_ v: [Double]) -> [Double] {
+    let length = v[0]
+    let width = v[1]
+    return [length * width, 2 * (length + width)]
+}
+
+let point = [3.0, 2.0]
+let sensitivity = jacobian(of: plotMetrics, at: point)
+// [[2.0, 3.0],   area rises 2 per unit of length, 3 per unit of width
+//  [2.0, 2.0]]   perimeter rises 2 per unit of either
+```
+
+Each row is one output's gradient: the top row is the gradient of area, the bottom row the gradient of perimeter. A single-output function has a Jacobian of one row, which is exactly the gradient from before. `jacobian(of:at:)` estimates each slope by nudging one input a small step in both directions and comparing the outputs, so it works on any function that returns an array of numbers — no formula required, the same way `derivative(sampleRate:)` recovers a rate from samples.
+
 ### From calculus to optimization
 
-Calculus runs through Quiver in four places. `Polynomial.derivative()` returns the derivative of a known formula. `Array.derivative(sampleRate:)` returns the derivative of a list of samples. `LinearRegression.fit` uses calculus to find the line of least squared error in one step. ``GradientDescent`` uses calculus to walk to a minimum when no closed form exists.
+Calculus runs through Quiver in five places. `Polynomial.derivative()` returns the derivative of a known formula. `Array.derivative(sampleRate:)` returns the derivative of a list of samples. `jacobian(of:at:)` returns every output's slope along every input as a matrix. `LinearRegression.fit` uses calculus to find the line of least squared error in one step. `GradientDescent` uses calculus to walk to a minimum when no closed form exists.
 
 The same idea, four shapes. A derivative tells a model how fast something is changing, which direction is downhill, and when the ground is flat. That is everything calculus does here, and it is everything the models that follow will need. The inverse operation, accumulating the area under a curve to recover a total from a rate, appears as integration in the <doc:Physics-Primitives-Primer>, where a signal's samples are summed back into a quantity like distance or energy.
 

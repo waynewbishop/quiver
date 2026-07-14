@@ -154,6 +154,10 @@ print(predictions.classificationReport(actual: testY))
 - ``Swift/Array/f1Score(actual:positiveLabel:)``
 - ``Swift/Array/classificationReport(actual:)``
 
+### Classification report
+- ``ClassificationReport``
+- ``ClassMetrics``
+
 ### Related
 - <doc:Machine-Learning-Primer>
 - <doc:Model-Interpretation-Primer>

@@ -230,3 +230,20 @@ let residual = Int(segment.hr.rounded()) - expected              // observed −
 This model combines simple, interpretable components rather than a single complex algorithm: regression carries the baseline, classification carries the context-specific patterns, and the full signal vector flows through the pipeline without being reduced to a scalar that loses its context. Personalization is calibration, rather than a separate model. The same baseline starts from population-level anchors and centers its residuals around zero as it learns one runner's responses to workload and environment. That path, from general baseline to personal calibration, is a design pattern that carries to any model operating on individual data.
 
 > Experiment: **The Quiver Notebook** is the place to watch the prediction and the residual move independently. Fit a ``Ridge`` baseline on a handful of samples, wrap it in a ``ResidualModel``, and raise one observed value while holding its inputs fixed. One should see the residual climb while the prediction stays put. Then refit across a few `lambda` values — try `0.1`, `1`, and `10` — and watch the coefficients shrink without the residual's job changing. Seeing the gap respond to the observation while the prediction tracks the inputs is the clearest way to feel why the two readouts measure different things. See <doc:Quiver-Notebook>.
+
+## Topics
+
+### Effort model
+- ``TrueEffortScore``
+
+### Inputs
+- ``Workout``
+- ``EffortSignals``
+
+### Results
+- ``TESResult``
+- ``TESBaseline``
+- ``EffortClass``
+
+### Errors
+- ``TESError``

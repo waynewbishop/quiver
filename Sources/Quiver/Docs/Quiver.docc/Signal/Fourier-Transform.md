@@ -133,6 +133,7 @@ Fourier methods are stateless functions on `[Double]` and do not modify their in
 - ``Swift/Array/fourierFrequencies(sampleRate:)``
 - ``Swift/Array/fourierFrequenciesHalf(sampleRate:)``
 - ``Swift/Array/fourierPhase()``
+- ``PowerSpectrum``
 
 ### Convenience
 - ``Swift/Array/fourierDominantFrequency(sampleRate:)``

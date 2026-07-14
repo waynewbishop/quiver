@@ -119,3 +119,8 @@ A single contract spans the full range of embedding sources, from a hand-typed t
 The embedder is the swappable front of the search pipeline; the rest of that pipeline lives in <doc:Semantic-Search>, which shows how tokenization, embedding lookup, and cosine similarity fit together. For the vector operations underneath (dot products, magnitudes, and cosine similarity itself), see <doc:Vector-Operations> and <doc:Similarity-Operations>. The averaging step that builds a single document vector is one application of the descriptive statistics in <doc:Statistics-Primer>.
 
 > Experiment: **The Quiver Notebook** is the right place to feel the swap that the contract enables. Load `Dataset.glove50d`, wrap it in a `TableEmbedder`, and rank a three-document corpus against a query with `embedded(using:)` then `mostSimilar(to:k:)`. Then change only the embedder (swap in a different table, or a richer source) and re-run the exact same ranking lines. The results shift while the pipeline stays still, and that gap between source and pipeline is the whole point of the contract. See <doc:Quiver-Notebook>.
+
+## Topics
+
+### Embedding contract
+- ``Embedder``

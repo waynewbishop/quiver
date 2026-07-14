@@ -197,6 +197,12 @@ A second instability comes from the variance itself. The Gaussian density divide
 - ``Classification``
 - ``Classifier``
 
+### Bayesian updating
+- ``Bayes``
+- ``BayesPrior``
+- ``BayesLikelihood``
+- ``BayesPosterior``
+
 ### Related
 - <doc:Machine-Learning-Primer>
 - <doc:Working-With-Distributions>

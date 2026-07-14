@@ -167,6 +167,9 @@ Vector operations in Quiver are based on well-established mathematical principle
 ### Matrix operations
 - ``Swift/Array/transformedBy(_:)``
 
+### Rendering
+- ``VectorForm``
+
 ### Related articles
 - <doc:Vector-Projections>
 - <doc:Linear-Algebra-Primer>
