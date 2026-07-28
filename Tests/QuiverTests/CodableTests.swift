@@ -179,4 +179,44 @@ final class CodableTests: XCTestCase {
 
         XCTAssertEqual(classification, decoded)
     }
+
+    // MARK: - Eigendecomposition
+
+    // Round-trip preserves equality, eigenpairs, and solver metadata
+    func testEigenDecompositionCodable() throws {
+        let matrix: [[Double]] = [
+            [2.0, 1.0, 0.0],
+            [1.0, 2.0, 0.0],
+            [0.0, 0.0, 3.0]
+        ]
+        let eigen = try matrix.eigenDecomposed()
+
+        let data = try JSONEncoder().encode(eigen)
+        let decoded = try JSONDecoder().decode(EigenDecomposition.self, from: data)
+
+        XCTAssertEqual(eigen, decoded)
+        XCTAssertEqual(eigen.sweepsUsed, decoded.sweepsUsed)
+        XCTAssertEqual(eigen.converged, decoded.converged)
+    }
+
+    // MARK: - PCA
+
+    // Round-trip preserves equality and transformation output
+    func testPCACodable() throws {
+        let features: [[Double]] = [
+            [2.5, 24.0, 0.31],
+            [0.5, 11.0, 0.20],
+            [2.2, 22.0, 0.28],
+            [1.9, 20.0, 0.25],
+            [3.1, 30.0, 0.36]
+        ]
+        let pca = PCA.fit(features: features, componentCount: 2)
+
+        let data = try JSONEncoder().encode(pca)
+        let decoded = try JSONDecoder().decode(PCA.self, from: data)
+        XCTAssertEqual(pca, decoded)
+
+        let testInput: [[Double]] = [[2.0, 21.0, 0.27]]
+        XCTAssertEqual(pca.transform(testInput), decoded.transform(testInput))
+    }
 }

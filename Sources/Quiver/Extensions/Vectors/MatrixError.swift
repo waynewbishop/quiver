@@ -21,6 +21,8 @@ public enum MatrixError: Error, Equatable, CustomStringConvertible, Sendable {
     case notSquare
     /// The matrix is singular (determinant = 0) and cannot be inverted.
     case singular
+    /// The operation requires a symmetric matrix but received an asymmetric one.
+    case notSymmetric
 
     public var description: String {
         switch self {
@@ -28,6 +30,8 @@ public enum MatrixError: Error, Equatable, CustomStringConvertible, Sendable {
             return "Matrix operation requires a square matrix"
         case .singular:
             return "Matrix is singular and cannot be inverted (determinant = 0)"
+        case .notSymmetric:
+            return "Matrix operation requires a symmetric matrix"
         }
     }
 }

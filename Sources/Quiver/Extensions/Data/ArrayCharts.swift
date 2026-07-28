@@ -861,6 +861,10 @@ public extension Array where Element == [Double] {
     /// //  [-0.99, -0.98, 1.0]]    // hot cocoa
     /// ```
     ///
+    /// - Note: The rows of the input are series, one per variable. This is the
+    ///   opposite orientation from `covarianceMatrix()`, whose rows are samples.
+    ///   Feeding a samples-as-rows design matrix to this method produces an
+    ///   n × n matrix where p × p was intended.
     /// - Complexity: O(*n*²·*m*) where *n* is the number of series and *m* is
     ///   the series length. Performs well for up to a few hundred series.
     /// - Returns: A 2D array of Pearson correlation coefficients between all series pairs
