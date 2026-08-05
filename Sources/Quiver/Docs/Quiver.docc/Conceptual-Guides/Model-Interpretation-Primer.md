@@ -66,7 +66,7 @@ let scaled = StandardScaler.fit(features: collinear).transform(collinear)
 scaled.transposed().multiplyMatrix(scaled).conditionNumber   // 402610 — near-singular
 ```
 
-A condition number in the low tens is healthy. Once it climbs into the thousands, ordinary least squares is on unstable ground, and its coefficients can no longer be trusted. Computing this on `XᵀX` rather than on `X` is crucial: forming `XᵀX` squares the condition number, which is why the matrix the solver actually inverts degrades so much faster than the data alone suggests. The <doc:Determinants-Primer> explores this diagnostic in detail.
+A condition number in the low tens is healthy. A condition number in the thousands is alarming here because this is `XᵀX` — already the square of the feature matrix's own condition number — so it corresponds to only mild conditioning in the raw data, and the bands in the <doc:Determinants-Primer> read the same standard before that squaring. Forming `XᵀX` roughly squares the condition number, which is why the matrix the solver actually inverts degrades so much faster than the data alone suggests.
 
 ### Reading the failure in the coefficients
 

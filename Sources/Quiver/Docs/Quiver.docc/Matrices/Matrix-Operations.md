@@ -125,9 +125,12 @@ let det = matrix.determinant  // -6.0
 ```
 
 The [determinant](<doc:Determinants-Primer>) provides important information about a matrix:
-- `det = 0`: Matrix is singular (not invertible)
-- `det ≠ 0`: Matrix is invertible
+- `det = 0`: the matrix is singular and has no inverse
+- `det ≠ 0`: the matrix is invertible in exact arithmetic
+- A tiny but non-zero determinant marks a near-singular matrix, whose inverse is numerically unreliable — the condition number, not the determinant, is what measures that risk
 - Magnitude indicates volume scaling in geometric transformations
+
+See the <doc:Determinants-Primer> for the condition number, and the <doc:Solving-Systems-Primer> for what singularity means when solving a system.
 
 ### Matrix inversion
 
@@ -146,7 +149,7 @@ let identity = matrix.multiplyMatrix(inverse)
 The inverse matrix A⁻¹ satisfies: A × A⁻¹ = I (identity matrix)
 
 **Common uses:**
-- Solving linear systems: Ax = b becomes x = A⁻¹b
+- Solving linear systems: `Ax = b` becomes `x = A⁻¹b` — see the <doc:Solving-Systems-Primer>
 - Reversing transformations
 - Computing least squares solutions
 

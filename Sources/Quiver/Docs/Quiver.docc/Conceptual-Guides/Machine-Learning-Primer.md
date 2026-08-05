@@ -173,7 +173,7 @@ let report = predictions.classificationReport(actual: actual)
 
 Start simple:
 
-- **Naive Bayes** for classification, especially when features are roughly independent.
+- **Naive Bayes** for classification, especially when features are roughly independent. This is *statistical* independence — features contributing information separately given the label — not the *linear* independence of columns that regression needs; the <doc:Linear-Independence-Primer> pulls the two senses apart.
 - **Linear Regression** for continuous targets.
 - **Nearest Neighbors** when decision boundaries are non-linear (remember to scale features, as `distance(to:)` is sensitive to magnitude).
 - **KMeans** to discover natural groupings in unlabeled data.

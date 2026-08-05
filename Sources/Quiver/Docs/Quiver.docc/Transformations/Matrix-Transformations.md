@@ -82,6 +82,8 @@ let rotate90 = [
 
 This column-based perspective explains why matrix-vector multiplication works: the result is a linear combination of the matrix columns, weighted by the vector components. For a vector [a, b], the transformed result equals `a × column1 + b × column2`.
 
+These two readings of a matrix are different objects. The columns tell us where the basis vectors land, the geometry, while the rows are the dot-product recipe for each output coordinate, the arithmetic. The column vectors and the row vectors match only when the matrix is symmetric, as it is for the identity and for diagonal scaling. A shear, shown later, is where they visibly diverge.
+
 ```swift
 // Transform [3, 2] using scaling matrix
 let scale = [[2.0, 0.0],
@@ -316,6 +318,8 @@ let shearV = [
 [2.0, 4.0].transformedBy(shearH)  // [4.0, 4.0]
 [2.0, 4.0].transformedBy(shearV)  // [2.0, 5.0]
 ```
+
+Shear is where the column and row readings split apart. Column two of `shearH` is `[0.5, 1]`, where `j-hat` lands after the tilt. But row two is `[0, 1]`, the recipe that computes the output's y coordinate. These are different vectors. For the identity and for diagonal scaling the columns and rows matched, only because those matrices are symmetric; a shear breaks that coincidence.
 
 ### Practical examples
 

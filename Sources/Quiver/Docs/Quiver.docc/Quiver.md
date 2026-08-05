@@ -37,18 +37,20 @@ Quiver provides developers the tools to work with data directly. This includes a
 
 - <doc:Numerical-Literacy>
 - <doc:Rendering-Math-Primer>
+- <doc:Linear-Algebra-Primer>
+- <doc:Solving-Systems-Primer>
+- <doc:Linear-Independence-Primer>
+- <doc:Determinants-Primer>
+- <doc:Machine-Learning-Primer>
 - <doc:Statistics-Primer>
 - <doc:Probability-Primer>
 - <doc:Central-Limit-Theorem>
 - <doc:Inferential-Statistics-Primer>
-- <doc:Linear-Algebra-Primer>
-- <doc:Determinants-Primer>
 - <doc:Calculus-Primer>
 - <doc:Optimization-Primer>
-- <doc:Physics-Primitives-Primer>
-- <doc:Machine-Learning-Primer>
 - <doc:Regularization-Primer>
 - <doc:Model-Interpretation-Primer>
+- <doc:Physics-Primitives-Primer>
 - <doc:Concurrency-Primer>
 
 ### Platform Guides

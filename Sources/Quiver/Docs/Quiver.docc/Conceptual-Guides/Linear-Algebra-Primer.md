@@ -107,7 +107,11 @@ point.transformedBy(rotation)  // [-1.0, 3.0]
 
 The point `[3.0, 1.0]` moves to `[-1.0, 3.0]`. The matrix describes the rule; `transformedBy` applies it. This particular matrix doesn't represent data about an object but an *operation* that rotates any vector to a new position. Matrices can also scale (stretch or compress), reflect (mirror across an axis), shear (tilt), and compose multiple transformations together.
 
+There is a second way to read the same matrix. Its columns are where the basis vectors land: column one is where the vector [1, 0] goes, column two where [0, 1] goes. The identity matrix [[1,0],[0,1]] leaves both in place, which is why it changes nothing. Any other matrix moves at least one of them, and each vector follows to the same combination of their new positions.
+
 Beyond transformations, matrices organize collections of data. In a dataset, each row might represent a different sample and each column a different measurement. A matrix of athlete performance data with rows for athletes and columns for speed, endurance, and strength is three vectors stacked together, and matrix operations let us process all of them simultaneously.
+
+These are two different jobs a matrix can do. As a transformation, a column tells us where a basis vector lands. As a data table, a column is a feature. Same grid, different reading, and the context tells us which.
 
 > Important: For a matrix to transform a vector, the number of columns must match the vector's length.
 
@@ -119,10 +123,12 @@ The same machinery solves systems of linear equations. Given the system `Ax = b`
 let A = [[2.0, 1.0],
          [1.0, 3.0]]
 let b = [5.0, 10.0]
-A.solve(b)   // [1.0, 3.0]
+A.solve(b)   // Optional([1.0, 3.0])
 ```
 
-The method returns `nil` when the matrix is singular, the same condition that makes inversion fail. For the geometric meaning of singularity and condition number, see <doc:Determinants-Primer>.
+The method returns `nil` when the matrix is singular, the same condition that makes inversion fail. The <doc:Solving-Systems-Primer> is the canonical guide to `solve(_:)` and the systems that have no unique answer; the <doc:Determinants-Primer> covers the geometry of singularity and the condition number.
+
+The basis-vector reading is the seed of a larger theme. When both columns land in the same direction, they carry the same information twice, the columns become **linearly dependent**, and the transformation collapses the plane onto a line. That collapse is exactly when the determinant is zero, the inverse disappears, and `solve(_:)` returns `nil` — one property standing behind every one of those failures. The <doc:Linear-Independence-Primer> names that property and shows why the determinant, invertibility, and unique solvability are a single fact.
 
 ### From arrays to algorithms
 
