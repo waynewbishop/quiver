@@ -123,7 +123,7 @@ print(model.predict(200.0)) // 140.0 — expected HR at 200W for this wearer
 
 The fitted `model` is a value with a `predict` method. Passing in 200 watts returns the heart rate the wearer's slope expects at that effort — here, 140 bpm. A different wearer's data would fit a different slope and a different intercept, and the predicted HR at 200W would land somewhere else; the model is *personal* in exactly that sense.
 
-With a single feature there is no overlap between predictors to destabilize the fit, so the closed-form least-squares line is exact and stable. The moment several correlated signals enter the same fit — power alongside pace and grade, which carry much of the same information — the plain fit turns unstable and the regression needs a regularized form (`Ridge`) instead. That multi-signal case is worked end to end in <doc:Building-An-Effort-Model>, the effort-model demonstration this guide accompanies.
+With a single feature there is no overlap between predictors to destabilize the fit, so the closed-form least-squares line is exact and stable. The moment several correlated signals enter the same fit — power alongside pace and grade, which carry much of the same information — the plain fit turns unstable and the regression needs a regularized form (`Ridge`) instead.
 
 ### Persisting the model across sessions
 

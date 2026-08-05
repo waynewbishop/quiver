@@ -103,7 +103,7 @@ Residualizing `recentPrice` against a baseline fit on `trainPrice` gives an hone
 
 ### When to use a residual model
 
-Reach for `ResidualModel` when a raw signal mixes an effect we can model with one we want to study. Predicting the part we understand and subtracting it leaves the remainder isolated: the over-and-under-priced houses after size is accounted for, or the workload-explained portion of a sensor reading removed so the rest stands alone. The downstream effort classifier in <doc:Building-An-Effort-Model> is built on exactly this step.
+Reach for `ResidualModel` when a raw signal mixes an effect we can model with one we want to study. Predicting the part we understand and subtracting it leaves the remainder isolated: the over-and-under-priced houses after size is accounted for, or the workload-explained portion of a sensor reading removed so the rest stands alone. A downstream classifier that reads the cleaned signal is built on exactly this step.
 
 The quality of the residual is only as good as the baseline. A held-out R² from <doc:Evaluation-Metrics> is the first check: a baseline that explains little of the target leaves residuals that mix model error with the signal worth studying. On collinear or ill-conditioned feature matrices, where two columns carry nearly the same information, ordinary least squares hands the pair large opposing weights that swing with the sample, and residuals computed from those unstable predictions inherit the instability. A stabilized regressor such as ``Ridge`` keeps the weights small and steady, so prefer it as the baseline when the features overlap. The `conditionNumber` of the standardized feature matrix is the gauge: a value in the low tens is fine, while one in the thousands signals the overlap that makes ``Ridge`` the safer baseline. The <doc:Model-Interpretation-Primer> covers reading that number before any fit.
 
@@ -148,4 +148,3 @@ a == b  // true — same closed-form coefficients
 - <doc:Model-Interpretation-Primer>
 - <doc:Evaluation-Metrics>
 - <doc:Train-Test-Split>
-- <doc:Building-An-Effort-Model>
