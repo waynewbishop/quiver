@@ -230,7 +230,7 @@ Everything this primer measures is one property viewed from different sides. The
 
 > Important: For a square matrix `A`, the columns are linearly independent ⇔ the `determinant` is non-zero ⇔ `A` is **invertible** ⇔ `Ax = b` has exactly one solution for every `b` ⇔ the transformation **preserves dimension** ⇔ the `conditionNumber` is finite. Negate one statement and every other statement falls with it.
 
-Independence is the root property. The determinant is the test that reports it as a single value. Invertibility is the consequence for the matrix, and the one-answer-or-none split is the consequence for systems. The `conditionNumber` is the continuous version of the same test, catching near-dependence where an exact zero would see nothing.
+Independence is the root property. The determinant is the test that reports it as a single value. Invertibility is the consequence for the matrix, and the one-answer-or-none split is the consequence for systems. The `conditionNumber` is the continuous version of the same test, catching near-dependence where an exact zero would see nothing. One more face waits in the <doc:Eigenvalues-Primer>: the determinant is the product of the matrix's eigenvalues, the characteristic stretch factors that the primer builds from geometry.
 
 ### Putting it all together
 

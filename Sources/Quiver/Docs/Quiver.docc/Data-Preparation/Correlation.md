@@ -62,6 +62,31 @@ print(result.matrix[0][2])     // -0.9934 — hours vs fatigue
 
 Pairing the columns with the matrix in one return value means a chart or report can label its axes from the same tuple it draws the numbers from. The order of `columns` is the order the panel was built in, so a downstream caller does not have to look up names separately.
 
+### Covariance before the rescaling
+
+The numerator of every Pearson cell is a covariance, and Quiver exposes that quantity on its own. `covarianceMatrix(ddof:)` on `[[Double]]` returns the full matrix of them: each feature's variance on the diagonal, each pairing's co-movement off it. The orientation is the opposite of the bare-matrix `correlationMatrix()` — `covarianceMatrix(ddof:)` takes samples as rows, the same design-matrix shape `StandardScaler` and the fitted models use, while `correlationMatrix()` takes each series as a row. Feeding one shape to the other method silently produces an n × n matrix where p × p was intended, so the shape is worth checking before either call.
+
+Rebuilding the panel's first two columns as one row per session makes the relationship concrete:
+
+```swift
+import Quiver
+
+// [hours, score] — the panel's first two columns, one row per session
+let sessions = [
+    [1.0, 60.0],
+    [2.0, 70.0],
+    [3.0, 75.0],
+    [4.0, 85.0],
+    [5.0, 95.0]
+]
+
+sessions.covarianceMatrix()
+// Optional([[2.5, 21.25],
+//           [21.25, 182.5]])
+```
+
+The diagonal holds the two variances — `2.5` for hours, `182.5` for score — and the off-diagonal `21.25` is their covariance. Rescaling by the standard deviations recovers the correlation the panel matrix printed: `21.25 / √(2.5 × 182.5) ≈ 0.9948`. Correlation is covariance with the units divided out, and the choice between the two matrices follows from that difference. The correlation matrix compares strength across pairs on a common `-1` to `+1` scale. The covariance matrix keeps the raw magnitudes, which is exactly what <doc:Principal-Component-Analysis> needs when it splits total variance into directions.
+
 ### What the diagonal and symmetry guarantee
 
 Two structural properties hold for every correlation matrix that Quiver returns, and they are useful as quick sanity checks when the rest of a pipeline is uncertain.
@@ -126,3 +151,4 @@ For a panel with five columns and a thousand rows, this is twenty-five pairwise 
 - ``Swift/Array/correlation(with:)``
 - ``Panel/correlationMatrix()``
 - ``Swift/Array/correlationMatrix()``
+- ``Swift/Array/covarianceMatrix(ddof:)``

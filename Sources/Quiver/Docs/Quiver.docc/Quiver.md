@@ -41,6 +41,7 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Solving-Systems-Primer>
 - <doc:Linear-Independence-Primer>
 - <doc:Determinants-Primer>
+- <doc:Eigenvalues-Primer>
 - <doc:Machine-Learning-Primer>
 - <doc:Statistics-Primer>
 - <doc:Probability-Primer>
@@ -106,6 +107,7 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Logistic-Regression>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:KMeans-Clustering>
+- <doc:Principal-Component-Analysis>
 - <doc:Activation-Functions>
 - <doc:Evaluation-Metrics>
 - <doc:Model-Persistence>
