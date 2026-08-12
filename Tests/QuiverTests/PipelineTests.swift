@@ -255,4 +255,157 @@ final class PipelineTests: XCTestCase {
         let testData: [[Double]] = [[6.5], [2.5], [4.0]]
         XCTAssertEqual(pipeline.predict(testData), model.predict(scaler.transform(testData)))
     }
+
+    // MARK: - Reducer Pipeline
+
+    // Three correlated features, two separable classes — the reducer suite's
+    // shared fixture.
+    private let reducerFeatures: [[Double]] = [
+        [1.0, 2.0, 3.0], [1.2, 2.3, 3.1], [0.9, 1.8, 2.8],
+        [6.0, 8.0, 9.0], [6.3, 8.4, 9.2], [5.8, 7.7, 8.9]
+    ]
+    private let reducerLabels = [0, 0, 0, 1, 1, 1]
+
+    func testReducerPipelinePredicts() {
+        let pipeline = Pipeline.fit(
+            features: reducerFeatures, labels: reducerLabels,
+            componentCount: 2, k: 3
+        )
+
+        // Raw features in — scaling and projection happen internally.
+        let predictions = pipeline.predict([[1.1, 2.1, 3.0], [6.1, 8.1, 9.1]])
+        XCTAssertEqual(predictions, [0, 1])
+    }
+
+    // The pipeline result must equal the hand-rolled scaler + PCA + model +
+    // transformed-query path exactly — the bundling is a faithful shortcut.
+    func testReducerPipelineMatchesManual() {
+        let pipeline = Pipeline.fit(
+            features: reducerFeatures, labels: reducerLabels,
+            componentCount: 2, k: 3
+        )
+
+        let scaler = StandardScaler.fit(features: reducerFeatures)
+        let scaled = scaler.transform(reducerFeatures)
+        let reducer = PCA.fit(features: scaled, componentCount: 2)
+        let model = KNearestNeighbors.fit(
+            features: reducer.transform(scaled), labels: reducerLabels, k: 3
+        )
+
+        let testData: [[Double]] = [[1.1, 2.1, 3.0], [6.1, 8.1, 9.1], [3.5, 5.0, 6.0]]
+        let manual = model.predict(reducer.transform(scaler.transform(testData)))
+        XCTAssertEqual(pipeline.predict(testData), manual)
+
+        // Expected labels cross-validated against an equivalent external
+        // scale-project-classify pipeline on the same fixture.
+        XCTAssertEqual(pipeline.predict(testData), [0, 1, 0])
+    }
+
+    func testReducerPipelineCodableRoundTrip() throws {
+        let original = Pipeline.fit(
+            features: reducerFeatures, labels: reducerLabels,
+            componentCount: 2, k: 3
+        )
+
+        let data = try JSONEncoder().encode(original)
+        let restored = try JSONDecoder().decode(Pipeline<KNearestNeighbors>.self, from: data)
+
+        XCTAssertEqual(original, restored)
+        let testData: [[Double]] = [[1.1, 2.1, 3.0], [6.1, 8.1, 9.1]]
+        XCTAssertEqual(original.predict(testData), restored.predict(testData))
+    }
+
+    // A reducer-free pipeline must encode without a reducer key — the exact
+    // archive shape shipped before the reducer stage existed — and such an
+    // archive must decode with reducer nil and predict identically.
+    func testLegacyArchiveDecodesWithNilReducer() throws {
+        let original = Pipeline.fit(features: reducerFeatures, labels: reducerLabels, k: 3)
+
+        let data = try JSONEncoder().encode(original)
+        if let json = String(data: data, encoding: .utf8) {
+            XCTAssertFalse(json.contains("reducer"))
+        } else {
+            XCTFail("Encoded pipeline should be valid UTF-8")
+        }
+
+        let restored = try JSONDecoder().decode(Pipeline<KNearestNeighbors>.self, from: data)
+        XCTAssertNil(restored.reducer)
+        let testData: [[Double]] = [[1.1, 2.1, 3.0], [6.1, 8.1, 9.1]]
+        XCTAssertEqual(original.predict(testData), restored.predict(testData))
+    }
+
+    // The validating decoder rejects an archive whose reducer disagrees with
+    // the scaler on feature width, rather than constructing a pipeline whose
+    // predict path would fail later.
+    func testDecoderRejectsReducerWidthMismatch() throws {
+        let scaler = StandardScaler.fit(features: reducerFeatures)  // 3 features
+
+        let narrowFeatures: [[Double]] = [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]
+        let narrowReducer = PCA.fit(features: narrowFeatures, componentCount: 1)  // 2 features
+
+        let model = KNearestNeighbors.fit(
+            features: [[1.0], [2.0]], labels: [0, 1], k: 1
+        )
+        let mismatched = Pipeline(scaler: scaler, reducer: narrowReducer, model: model)
+
+        let data = try JSONEncoder().encode(mismatched)
+        XCTAssertThrowsError(try JSONDecoder().decode(Pipeline<KNearestNeighbors>.self, from: data)) { error in
+            XCTAssertTrue(error is DecodingError)
+        }
+    }
+
+    func testPipelineEquatableDiffersOnReducer() {
+        let withReducer = Pipeline.fit(
+            features: reducerFeatures, labels: reducerLabels,
+            componentCount: 2, k: 3
+        )
+        let withoutReducer = Pipeline.fit(features: reducerFeatures, labels: reducerLabels, k: 3)
+
+        XCTAssertNotEqual(withReducer, withoutReducer)
+    }
+
+    // The classifier trains on the projection, so its feature width is the
+    // component count, not the raw column count.
+    func testFittedModelWidthMatchesComponentCount() {
+        let pipeline = Pipeline.fit(
+            features: reducerFeatures, labels: reducerLabels,
+            componentCount: 2, k: 3
+        )
+
+        XCTAssertEqual(pipeline.model.featureCount, 2)
+        XCTAssertEqual(pipeline.reducer?.componentCount, 2)
+        XCTAssertEqual(pipeline.reducer?.featureCount, 3)
+    }
+
+    func testReducerPipelineDescription() {
+        let pipeline = Pipeline.fit(
+            features: reducerFeatures, labels: reducerLabels,
+            componentCount: 2, k: 3
+        )
+
+        XCTAssertTrue(pipeline.description.contains("reducer"))
+        XCTAssertTrue(pipeline.description.contains("PCA"))
+
+        // A reducer-free pipeline keeps its original description shape.
+        let plain = Pipeline.fit(features: reducerFeatures, labels: reducerLabels, k: 3)
+        XCTAssertFalse(plain.description.contains("reducer"))
+    }
+
+    // MARK: - Transformer Protocol
+
+    // Both fitted stage types are usable through the Transformer existential.
+    func testTransformerExistentialAppliesStages() {
+        let scaler = StandardScaler.fit(features: reducerFeatures)
+        let reducer = PCA.fit(features: scaler.transform(reducerFeatures), componentCount: 2)
+
+        let stages: [any Transformer] = [scaler, reducer]
+
+        var transformed = reducerFeatures
+        for stage in stages {
+            transformed = stage.transform(transformed)
+        }
+
+        XCTAssertEqual(transformed.count, reducerFeatures.count)
+        XCTAssertEqual(transformed[0].count, 2)
+    }
 }

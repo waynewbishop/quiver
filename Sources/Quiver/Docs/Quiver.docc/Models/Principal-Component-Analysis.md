@@ -114,7 +114,7 @@ The restored row is close to the original but not equal to it, and the gap is ex
 
 ### When to use principal components
 
-Reach for PCA when features are many and correlated. Collinear columns that destabilize a regression collapse into a smaller set of independent ones. Embedding vectors compress before a similarity search over them, trading a controlled slice of variance for less storage and faster distance computations — see <doc:Semantic-Search> for the search pipeline itself. Embedding dimensions already share one scale, so the fit runs on them directly, with no scaler step. And any high-dimensional dataset becomes chartable by keeping its top two components, the same unsupervised spirit as <doc:KMeans-Clustering>: both find structure in unlabeled data.
+Reach for PCA when features are many and correlated. Collinear columns that destabilize a regression collapse into a smaller set of independent ones. For nearest-neighbor classification, `Pipeline.fit(features:labels:componentCount:k:metric:weight:)` bundles the whole chain — scaler, reducer, and classifier — into one value that scales and projects every query with the fitted training parameters automatically. Embedding vectors compress before a similarity search over them, trading a controlled slice of variance for less storage and faster distance computations — see <doc:Semantic-Search> for the search pipeline itself. Embedding dimensions already share one scale, so the fit runs on them directly, with no scaler step. And any high-dimensional dataset becomes chartable by keeping its top two components, the same unsupervised spirit as <doc:KMeans-Clustering>: both find structure in unlabeled data.
 
 One boundary applies to all three uses: the projection is linear. Structure that bends — points along a curve, clusters around a ring — survives only as well as a flat axis can represent it, and the variance a curved pattern carries can spread across many components instead of concentrating in a few.
 
@@ -157,6 +157,7 @@ The model is `Codable` for persistence, and its decoder validates. Decoding reje
 - ``Swift/Array/eigenDecomposed()``
 - ``EigenDecomposition``
 - ``StandardScaler``
+- ``Transformer``
 
 ### Errors
 

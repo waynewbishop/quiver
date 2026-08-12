@@ -66,6 +66,29 @@ scores.standardDeviation(ddof: 0)  // 6.2638 — population
 
 Knowing this convention prevents discrepancies when comparing results against standard textbooks or other software.
 
+### When two columns move together
+
+Variance describes one column alone. **Covariance** extends the same idea to a pair of columns: multiply each row's deviation from one column's mean by its deviation from the other's, and average the products. When the deviations tend to share a sign — above-average values in one column landing beside above-average values in the other — the products come out positive, and so does the covariance. When one column runs above its mean while the other runs below, the products turn negative. A covariance near zero says the columns move independently.
+
+Five study sessions make the arithmetic concrete: `hours = [1, 2, 3, 4, 5]` and `score = [60, 70, 75, 85, 95]`, with means of `3` and `77`. The first session sits `2` below the hours mean and `17` below the score mean, so it contributes `(−2) × (−17) = 34` — below-with-below counts as moving together. The five products sum to `85`, and dividing by `n − 1` gives a covariance of `21.25`.
+
+```swift
+// [hours, score] — one row per study session
+let sessions = [
+    [1.0, 60.0],
+    [2.0, 70.0],
+    [3.0, 75.0],
+    [4.0, 85.0],
+    [5.0, 95.0]
+]
+
+sessions.covarianceMatrix()
+// Optional([[2.5, 21.25],
+//           [21.25, 182.5]])
+```
+
+`covarianceMatrix(ddof:)` computes every pairing at once. The diagonal holds each column's variance — the covariance of a column with itself — and the off-diagonal cells hold each pair's covariance, mirrored across the diagonal. Like variance, covariance carries awkward units (hours-times-points here) and a magnitude that depends on scale, which is why it usually appears in one of two rescaled forms. Dividing by the two standard deviations gives correlation, covered in <doc:Correlation>. Eigendecomposing the whole matrix gives principal components, covered in <doc:Principal-Component-Analysis>.
+
 ### The five-number summary
 
 Mean and median describe a single point. They compress the whole dataset into one number, which is useful but loses information. A more complete picture comes from **quartiles**: the four cut points that divide the data into four equal-sized groups.

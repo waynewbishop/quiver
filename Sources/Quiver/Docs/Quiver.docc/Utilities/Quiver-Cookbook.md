@@ -1,10 +1,10 @@
 # The Quiver Cookbook
 
-Learning Quiver through domain problems in science, engineering, and math.
+Learn Quiver through domain problems in science, engineering, and math.
 
 ## Overview
 
-[The Quiver Cookbook](https://github.com/waynewbishop/quiver-cookbook) is a collection of single-file recipes that work through scenarios from aerospace, sports analytics, finance, sensor processing, and applied mathematics. Every recipe uses the `Playground` macro from Xcode 26+, which evaluates the file in the Canvas.
+[The Quiver Cookbook](https://github.com/waynewbishop/quiver-cookbook) is a set of single-file examples that showcase how Quiver can analyze and solve data problems in areas from aerospace and sensor processing to sports analytics and finance. Each one uses the `Playground` macro in Xcode 26+ to evaluate live in the Canvas, so you can read the code and see the result in the same place.
 
 > Important: The `Playground` macro is not the same as a `.playground` file. Traditional `Playground` files run in a separate sandbox and cannot import Swift packages. The playground macro compiles as part of the project, with full access to SPM dependencies including Quiver.
 

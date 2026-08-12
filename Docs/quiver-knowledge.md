@@ -861,6 +861,37 @@ residualModel.model                                                    // the wr
 
 The `Coefficients` protocol travels with this type. It exposes a uniform `coefficients: [Double]` (intercept first), and `LinearRegression`, `Ridge`, and `GradientDescent` conform; a `ResidualModel` forwards its wrapped model's coefficients when that model conforms. `LogisticRegression` deliberately does not conform — it is a classifier, and a residual is undefined for a probability or a 0/1 label. Distance- and tree-based models do not conform either, which is why the capability is its own protocol rather than a requirement on every regressor.
 
+## Principal Component Analysis (1.6.0)
+
+```swift
+// Standardize first when units differ — variance in large units dominates otherwise.
+let scaled = StandardScaler.fit(features: trainX).transform(trainX)
+
+let pca = PCA.fit(features: scaled, componentCount: 2)   // non-throwing; preconditions on shape
+
+pca.components               // [[Double]] — one unit-length direction per ROW; components[0] is the top direction
+pca.explainedVariances       // [Double] — variance per component, descending
+pca.explainedVarianceRatios  // [Double] — fractions of total variance; sum to 1.0 when every component is kept
+pca.means                    // [Double] — column means subtracted at fit time
+pca.componentCount           // Int
+pca.featureCount             // Int
+
+print(pca)                   // PCA: 2 components, 3 features (97.2% variance explained)
+
+let projected = pca.transform(scaled)            // [[Double]] — samples stay rows, columns become component scores
+let restored  = pca.inverseTransform(projected)  // [[Double]] — back to feature space, minus the dropped variance
+
+// Supporting primitives (also 1.6.0)
+let covariance = samples.covarianceMatrix()      // [[Double]]? — samples-as-rows design matrix; ddof: 1 default; p × p
+let eigen = try covariance?.eigenDecomposed()    // EigenDecomposition? — symmetric matrices only
+// eigen.eigenvalues descending; eigen.eigenvectors one per row, sign-fixed (largest-magnitude element positive)
+// throws MatrixError.notSquare / MatrixError.notSymmetric
+```
+
+Dimensionality reduction by projection onto the directions of largest variance: `fit` centers the data, forms the sample covariance matrix (`ddof: 1`), eigendecomposes it, and keeps the top `componentCount` eigenvectors as components. Standardize mixed-unit features first — the fit centers internally but cannot equalize units; embedding vectors already share one scale and fit directly with no scaler. Conforms to `Codable` (validating decoder rejects mismatched shapes and non-finite values with `DecodingError.dataCorrupted`), `Equatable`, `Sendable`, and `CustomStringConvertible`. Note the orientation contrast: `covarianceMatrix()` takes samples as rows, while `correlationMatrix()` on a bare matrix takes each series as a row.
+
+The `Transformer` protocol (1.6.0) names the fitted-preprocessing-stage capability — single requirement `transform(_:) -> [[Double]]` — and `StandardScaler` and `PCA` both conform. `Pipeline` carries an optional `reducer: PCA?` stage between scaler and model: `Pipeline.fit(features:labels:componentCount:k:metric:weight:)` fits scaler → PCA → KNN in one call, and predict runs scaler → reducer → model on raw inputs. Archives written before the reducer existed decode unchanged with `reducer = nil`; decoding validates that reducer and scaler agree on feature width.
+
 ## K-Means Clustering
 
 ```swift

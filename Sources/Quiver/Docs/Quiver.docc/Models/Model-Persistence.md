@@ -60,7 +60,7 @@ let labels = restored.predict(newReadings)
 
 Distance-based models like `KNearestNeighbors` and `KMeans` measure how far apart data points are. When features have different scales (a credit score ranging 300-850 and an account balance ranging 0-250,000), the larger feature dominates every distance calculation. Feature scaling normalizes all columns to the same range so each one contributes equally.
 
-When scaling is used, the scaler and model become a matched pair. The model's learned distances and boundaries exist in the scaled coordinate space, so every future input must be scaled using the same min and max values from training. Losing the scaler means new inputs land in a different coordinate space, producing incorrect predictions with no error or warning.
+When scaling is used, the scaler and model become a matched pair. The model's learned distances and boundaries exist in the scaled coordinate space, so every future input must be scaled using the same values learned from training. Losing the scaler means new inputs land in a different coordinate space, producing incorrect predictions with no error or warning.
 
 > Note: ``LinearRegression`` and ``GaussianNaiveBayes`` do not require scaling: regression coefficients compensate for different magnitudes mathematically, and Naive Bayes evaluates each feature independently. For these models, the scaler is optional and the model can be persisted on its own.
 
@@ -73,7 +73,7 @@ import Quiver
 import Foundation
 
 // Train and bundle
-let scaler = FeatureScaler.fit(features: trainingData)
+let scaler = StandardScaler.fit(features: trainingData)
 let model = KNearestNeighbors.fit(
     features: scaler.transform(trainingData), labels: labels, k: 5
 )
@@ -92,6 +92,8 @@ let predictions = restored.predict(newData)
 ```
 
 `Pipeline` scales inputs automatically at prediction time, so the caller never touches the scaler directly. See <doc:Pipeline> for the full API.
+
+A pipeline can also carry an optional `PCA` reducer between the scaler and the model, and the reducer persists inside the same blob. The stage is encoded only when present, so archives written before the reducer existed decode unchanged, with `reducer` set to `nil`. Decoding validates that the stages agree on feature width and throws `DecodingError.dataCorrupted` on a mismatch, rather than restoring a pipeline whose predictions would silently fail.
 
 ### Persisting a retrieval index
 
