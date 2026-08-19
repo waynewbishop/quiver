@@ -8,7 +8,7 @@ In linear algebra, a square matrix can be thought of as a transformation that st
 
 The same number also answers the algebraic question the previous primer left open. The determinant is the single-value test for linear independence, returning a non-zero value exactly when the matrix's columns are independent, and returning zero the moment any column is a combination of the others. The determinant tells us three things at once: how much a transformation scales the coordinate space, whether its columns carry genuinely independent directions, and whether the transformation can be undone.
 
-> Note: This primer builds on the <doc:Linear-Independence-Primer>, which defines the property the determinant tests for. That property first showed itself as a failure back in the <doc:Solving-Systems-Primer>, where a system returned no unique answer. This primer also draws on concepts introduced in the <doc:Linear-Algebra-Primer>, <doc:Shape-And-Size>, and <doc:Matrix-Transformations>.
+> Note: This primer builds on the <doc:Linear-Independence-Primer>, which defines the property the determinant tests for and shows it first as a failure — a system with no unique answer. This primer also draws on concepts introduced in the <doc:Linear-Algebra-Primer>, <doc:Shape-And-Size>, and <doc:Matrix-Transformations>.
 
 ### Scaling space
 
@@ -157,7 +157,7 @@ A.determinant.asFraction()  // 13
 
 Every element shares the determinant as its denominator. Decimal representation hides that pattern. The ``Fraction`` type is presentation-only. Every operation still runs on standard `Double` values internally. Use `asFractions` on any `[Double]` or `[[Double]]` result, or `asFraction` on a single `Double`.
 
-Matrix inversion also answers systems of equations. Solving `Ax = b` is applying `A⁻¹` to `b`. The `solve(_:)` method from the first primer handles this, and the <doc:Solving-Systems-Primer> is where we first met the shapes that have no unique answer. This primer stays with what the determinant and condition number reveal about the matrix itself.
+Matrix inversion also answers systems of equations. Solving `Ax = b` is applying `A⁻¹` to `b`. The `solve(_:)` method handles this, and the <doc:Linear-Independence-Primer> is where we first met the shapes that have no unique answer. This primer stays with what the determinant and condition number reveal about the matrix itself.
 
 ### Condition number
 

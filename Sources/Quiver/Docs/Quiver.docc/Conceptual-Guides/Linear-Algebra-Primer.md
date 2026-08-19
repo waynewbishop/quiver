@@ -126,7 +126,7 @@ let b = [5.0, 10.0]
 A.solve(b)   // Optional([1.0, 3.0])
 ```
 
-The method returns `nil` when the matrix is singular, the same condition that makes inversion fail. The <doc:Solving-Systems-Primer> is the canonical guide to `solve(_:)` and the systems that have no unique answer; the <doc:Determinants-Primer> covers the geometry of singularity and the condition number.
+The method returns `nil` when the matrix is singular, the same condition that makes inversion fail. The <doc:Linear-Independence-Primer> is the canonical guide to `solve(_:)` and the systems that have no unique answer; the <doc:Determinants-Primer> covers the geometry of singularity and the condition number.
 
 The basis-vector reading is the seed of a larger theme. When both columns land in the same direction, they carry the same information twice, the columns become **linearly dependent**, and the transformation collapses the plane onto a line. That collapse is exactly when the determinant is zero, the inverse disappears, and `solve(_:)` returns `nil` — one property standing behind every one of those failures. The <doc:Linear-Independence-Primer> names that property and shows why the determinant, invertibility, and unique solvability are a single fact.
 
@@ -149,7 +149,7 @@ a.distance(to: b)  // √((4-1)² + (6-2)²) = √25 = 5.0
 
 > Note: Distance builds on vector subtraction — each (aᵢ − bᵢ) term is one element of the difference vector. The `magnitude` of that difference vector is the distance between the two points.
 
-`Distance` is what connects linear algebra to machine learning. Quiver's models use distance to find the most similar training examples, group data points together, and rank how related two arrays are. The <doc:Machine-Learning-Primer> explores each of these models and how they apply these concepts.
+`Distance` is what connects linear algebra to machine learning. Quiver's models use distance to find the most similar training examples, group data points together, and rank how related two arrays are. When the comparison should run on direction rather than straight-line gap, the cosine converts to a distance — `1 − cosineOfAngle(with:)` — so that smaller still means closer; <doc:Similarity-Operations> explains the flip from similarity to distance. The <doc:Machine-Learning-Primer> explores each of these models and how they apply these concepts.
 
 > Experiment: **The Quiver Notebook** is the right place to see vectors-as-positions become tangible. Pick two 2D vectors, then sweep one of them from parallel to perpendicular to opposite — print `dot`, `cosineOfAngle(with:)`, and the angle in degrees at each step. Watching three numbers move together as the geometry changes is what makes "direction" stop being an abstraction. See <doc:Quiver-Notebook>.
 

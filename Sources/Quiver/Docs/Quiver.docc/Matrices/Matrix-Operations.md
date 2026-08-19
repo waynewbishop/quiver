@@ -130,7 +130,7 @@ The [determinant](<doc:Determinants-Primer>) provides important information abou
 - A tiny but non-zero determinant marks a near-singular matrix, whose inverse is numerically unreliable — the condition number, not the determinant, is what measures that risk
 - Magnitude indicates volume scaling in geometric transformations
 
-See the <doc:Determinants-Primer> for the condition number, and the <doc:Solving-Systems-Primer> for what singularity means when solving a system.
+See the <doc:Determinants-Primer> for the condition number, and the <doc:Linear-Independence-Primer> for what singularity means when solving a system.
 
 ### Matrix inversion
 
@@ -149,7 +149,7 @@ let identity = matrix.multiplyMatrix(inverse)
 The inverse matrix A⁻¹ satisfies: A × A⁻¹ = I (identity matrix)
 
 **Common uses:**
-- Solving linear systems: `Ax = b` becomes `x = A⁻¹b` — see the <doc:Solving-Systems-Primer>
+- Solving linear systems: `Ax = b` becomes `x = A⁻¹b` — see the <doc:Linear-Independence-Primer>
 - Reversing transformations
 - Computing least squares solutions
 
