@@ -15,13 +15,17 @@ import Foundation
 
 // MARK: - Distance Metric
 
-/// The distance metric used to compare samples in K-Nearest Neighbors.
+/// The distance metric used to compare two vectors.
 ///
 /// Euclidean distance measures straight-line distance between points and works
 /// well when features have similar scales. Cosine distance measures the angle
 /// between vectors and works well for text embeddings and high-dimensional data
 /// where magnitude is less meaningful than direction. Manhattan distance sums
 /// the absolute differences along each axis and is more robust to outliers.
+///
+/// ``KNearestNeighbors`` accepts a metric when fitting a classifier, and the
+/// vector method `distance(to:metric:)` applies the same metrics directly to
+/// any two arrays.
 public enum DistanceMetric: Codable, Equatable, Sendable {
 
     /// Euclidean distance: √Σ(aᵢ − bᵢ)².

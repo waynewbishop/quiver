@@ -699,7 +699,49 @@ public extension Array where Element: FloatingPoint {
     func distance(to other: [Element]) -> Element {
         return self.subtract(other).magnitude
     }
-        
+
+    /// Calculates the distance between two vectors using the given metric.
+    ///
+    /// The same two points measure differently depending on the question asked.
+    /// Euclidean distance is the straight-line gap, Manhattan distance sums the
+    /// grid steps along each axis, and cosine distance compares direction while
+    /// ignoring magnitude. These are the same metrics ``KNearestNeighbors``
+    /// accepts through its `metric:` parameter, so a metric explored here
+    /// behaves identically inside the model.
+    ///
+    /// ```swift
+    /// let a = [1.0, 2.0]
+    /// let b = [4.0, 6.0]
+    ///
+    /// a.distance(to: b, metric: .euclidean)  // 5.0
+    /// a.distance(to: b, metric: .manhattan)  // |4−1| + |6−2| = 7.0
+    /// a.distance(to: b, metric: .cosine)     // 0.0077 (nearly identical direction)
+    /// ```
+    ///
+    /// Cosine distance is `1 − cosineOfAngle(with:)` and returns 1.0 when either
+    /// vector has zero magnitude, matching the convention ``KNearestNeighbors``
+    /// uses during prediction.
+    ///
+    /// - Parameters:
+    ///   - other: The vector to measure distance to (must have the same number of elements)
+    ///   - metric: The distance metric to apply
+    /// - Returns: The distance between the two vectors under the chosen metric
+    func distance(to other: [Element], metric: DistanceMetric) -> Element {
+        precondition(count == other.count, "Vectors must have the same dimension")
+        switch metric {
+        case .euclidean:
+            return distance(to: other)
+        case .cosine:
+            return 1 - cosineOfAngle(with: other)
+        case .manhattan:
+            var sum: Element = 0
+            for i in 0..<count {
+                sum += abs(self[i] - other[i])
+            }
+            return sum
+        }
+    }
+
     /// Returns the cosine of the angle between two vectors.
     ///
     /// Cosine similarity measures how closely two vectors align in direction, regardless of

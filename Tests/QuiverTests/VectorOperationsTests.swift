@@ -148,6 +148,101 @@ final class VectorOperationsTests: XCTestCase {
         XCTAssertEqual(pointA.distance(to: pointA), 0.0)
     }
 
+    // MARK: - Distance Metric Tests
+    // Cross-validated against scipy.spatial.distance (euclidean/cityblock/cosine), scipy 1.17.1
+
+    func testDistanceMetricEuclideanMatchesExisting() {
+        // The .euclidean case must be indistinguishable from distance(to:)
+        let pairs: [([Double], [Double])] = [
+            ([1.0, 2.0], [4.0, 6.0]),
+            ([-1.0, 2.5, -3.0], [4.0, -1.5, 0.5]),
+            ([0.2, 1.7, 3.14, 9.9], [5.5, 0.0, 2.71, 1.1])
+        ]
+        for (a, b) in pairs {
+            XCTAssertEqual(a.distance(to: b, metric: .euclidean), a.distance(to: b))
+        }
+    }
+
+    func testDistanceMetricManhattan() {
+        let a = [1.0, 2.0]
+        let b = [4.0, 6.0]
+        XCTAssertEqual(a.distance(to: b, metric: .manhattan), 7.0)
+
+        // Cross-validated: scipy cityblock = 12.5
+        let c = [-1.0, 2.5, -3.0]
+        let d = [4.0, -1.5, 0.5]
+        XCTAssertEqual(c.distance(to: d, metric: .manhattan), 12.5, accuracy: 1e-12)
+
+        // Cross-validated: scipy cityblock = 16.23
+        let e = [0.2, 1.7, 3.14, 9.9]
+        let f = [5.5, 0.0, 2.71, 1.1]
+        XCTAssertEqual(e.distance(to: f, metric: .manhattan), 16.23, accuracy: 1e-12)
+    }
+
+    func testDistanceMetricCosine() {
+        // Cross-validated: scipy cosine = 0.00772212328633226
+        let a = [1.0, 2.0]
+        let b = [4.0, 6.0]
+        XCTAssertEqual(a.distance(to: b, metric: .cosine), 0.00772212328633226, accuracy: 1e-12)
+
+        // Cross-validated: scipy cosine = 1.53349356567384 (obtuse angle exceeds 1.0)
+        let c = [-1.0, 2.5, -3.0]
+        let d = [4.0, -1.5, 0.5]
+        XCTAssertEqual(c.distance(to: d, metric: .cosine), 1.53349356567384, accuracy: 1e-12)
+
+        // Cross-validated: scipy cosine = 0.687368131699077
+        let e = [0.2, 1.7, 3.14, 9.9]
+        let f = [5.5, 0.0, 2.71, 1.1]
+        XCTAssertEqual(e.distance(to: f, metric: .cosine), 0.687368131699077, accuracy: 1e-12)
+    }
+
+    func testDistanceMetricIdenticalVectors() {
+        // Every metric reports zero distance from a vector to itself
+        let v = [2.0, 3.0]
+        XCTAssertEqual(v.distance(to: v, metric: .euclidean), 0.0)
+        XCTAssertEqual(v.distance(to: v, metric: .manhattan), 0.0)
+        XCTAssertEqual(v.distance(to: v, metric: .cosine), 0.0, accuracy: 1e-12)
+    }
+
+    func testDistanceMetricZeroVectorCosine() {
+        // Zero magnitude leaves direction undefined; the convention is
+        // distance 1.0, matching KNearestNeighbors' inline behavior
+        let zero = [0.0, 0.0]
+        let v = [3.0, 4.0]
+        XCTAssertEqual(zero.distance(to: v, metric: .cosine), 1.0)
+        XCTAssertEqual(v.distance(to: zero, metric: .cosine), 1.0)
+        XCTAssertEqual(zero.distance(to: zero, metric: .cosine), 1.0)
+    }
+
+    func testDistanceMetricMatchesNearestNeighbors() {
+        // Equivalence with KNearestNeighbors' internal metric switch: points
+        // chosen so Euclidean and Manhattan disagree about the nearest
+        // neighbor, and the k=1 prediction must track the public method
+        let features = [[3.0, 3.0], [0.0, 4.5]]
+        let labels = [0, 1]
+        let query = [0.0, 0.0]
+
+        // Euclidean: √18 ≈ 4.24 beats 4.5, so label 0 is nearest
+        XCTAssertLessThan(query.distance(to: features[0], metric: .euclidean),
+                          query.distance(to: features[1], metric: .euclidean))
+        let euclidean = KNearestNeighbors.fit(features: features, labels: labels, k: 1, metric: .euclidean)
+        XCTAssertEqual(euclidean.predict([query]), [0])
+
+        // Manhattan: 6.0 loses to 4.5, so label 1 is nearest
+        XCTAssertGreaterThan(query.distance(to: features[0], metric: .manhattan),
+                             query.distance(to: features[1], metric: .manhattan))
+        let manhattan = KNearestNeighbors.fit(features: features, labels: labels, k: 1, metric: .manhattan)
+        XCTAssertEqual(manhattan.predict([query]), [1])
+
+        // Cosine: the distant-but-colinear point beats the near-but-rotated one
+        let directional = [[10.0, 1.0], [0.1, 1.0]]
+        let directionalQuery = [1.0, 0.1]
+        XCTAssertLessThan(directionalQuery.distance(to: directional[0], metric: .cosine),
+                          directionalQuery.distance(to: directional[1], metric: .cosine))
+        let cosine = KNearestNeighbors.fit(features: directional, labels: labels, k: 1, metric: .cosine)
+        XCTAssertEqual(cosine.predict([directionalQuery]), [0])
+    }
+
     // MARK: - Matrix Transformation Tests
 
     func testMatrixTransformation() {
