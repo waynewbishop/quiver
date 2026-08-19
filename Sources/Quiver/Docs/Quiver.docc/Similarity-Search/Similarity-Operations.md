@@ -103,6 +103,22 @@ In machine learning and information retrieval, the raw cosine value is typically
 
 Cosine similarity scores fall on a fixed scale, and a few reference points help calibrate intuition. A score of `1.0` means identical direction and indicates very similar vectors. Scores between `0.5` and `0.8` indicate related but not identical vectors. A score of `0.0` means the vectors are orthogonal, or unrelated. A score of `-1.0` means the vectors point in opposite directions.
 
+### From similarity to distance
+
+Cosine similarity has a mirror image. **Cosine distance** subtracts the similarity from one — `1 − cosineOfAngle(with:)` — reporting the same angle on a flipped scale. The `distance(to:metric:)` method computes this form when passed `.cosine`:
+
+```swift
+let a = [1.0, 2.0]
+let b = [4.0, 6.0]
+
+a.cosineOfAngle(with: b)            // 0.9923 (nearly identical direction)
+a.distance(to: b, metric: .cosine)  // 1 − 0.9923 = 0.0077
+```
+
+The two scales run in opposite directions. Similarity moves from 1 (same direction) through 0 (perpendicular) to −1 (opposite), so a larger value means closer. Distance moves from 0 through 1 to 2, so a smaller value means closer. The flip is what earns the word distance: by contract, a distance makes smaller mean closer, and nearest-neighbor search is built on that contract. `KNearestNeighbors` sorts candidates by ascending distance, so ranking by raw similarity would surface the least similar neighbors first.
+
+The measurement is one and the same; the orientation decides which form a task needs. `cosineOfAngle(with:)` fits direct similarity judgments — recommendations and embedding comparisons, where a score of `0.96` reads naturally as very similar. `distance(to:metric:)` with `.cosine` fits anything that ranks by closeness, where the smallest value must win. The zero-vector contracts mirror each other as well: `cosineOfAngle(with:)` returns `0.0` for a zero vector, so the `.cosine` distance returns `1.0`.
+
 ## Batch operations
 
 Compare one vector against many efficiently:
@@ -228,6 +244,7 @@ The `topIndices(k:labels:)` method pairs each score with its original label and 
 ### Similarity metrics
 - ``Swift/Array/cosineOfAngle(with:)``
 - ``Swift/Array/distance(to:)``
+- ``Swift/Array/distance(to:metric:)``
 
 ### Batch operations
 - ``Swift/Array/cosineSimilarities(to:)->[Double]``

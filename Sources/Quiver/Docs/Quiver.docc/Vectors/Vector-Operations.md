@@ -69,6 +69,18 @@ a.distance(to: b)  // √((4-1)² + (6-2)²) = √25 = 5.0
 
 This distinction matters throughout Quiver. Its models use `distance(to:)` to find the closest training examples, to group data points into clusters, and to rank how related two arrays are. Measuring the angle between vectors is a separate tool. Dividing the dot product by both magnitudes cancels length and leaves a pure measure of direction. For how distance and angle-based comparison work together, see <doc:Similarity-Operations>.
 
+### Choosing a distance metric
+
+The straight line is one of three ways to measure the same gap. `distance(to:metric:)` accepts a ``DistanceMetric`` and answers a different question with each case. **Manhattan distance** sums the steps along each axis, and **cosine distance** compares direction while ignoring magnitude:
+
+```swift
+a.distance(to: b, metric: .euclidean)  // 5.0 (straight line)
+a.distance(to: b, metric: .manhattan)  // |4−1| + |6−2| = 7.0 (steps along each axis)
+a.distance(to: b, metric: .cosine)     // 0.0077 (direction, not amount)
+```
+
+The choice is a modeling decision. Manhattan distance is more robust to outliers than Euclidean, since a large difference in one feature contributes linearly rather than squared. Cosine distance suits text embeddings and other high-dimensional data where orientation carries the meaning. The `.cosine` case is `1 − cosineOfAngle(with:)`, the similarity score flipped so that smaller means closer; <doc:Similarity-Operations> walks through the inversion. The same `metric:` parameter appears when fitting a classifier in <doc:Nearest-Neighbors-Classification>, so a metric explored here behaves identically inside the model.
+
 ### Vector arithmetic
 
 Quiver provides `add`, `subtract`, `multiply`, and `divide` methods for element-wise array arithmetic — each operation pairs up matching components and combines them. These methods are the foundation that higher-level vector operations build on:
@@ -158,6 +170,7 @@ Vector operations in Quiver are based on well-established mathematical principle
 
 ### Vector relationships
 - ``Swift/Array/distance(to:)``
+- ``Swift/Array/distance(to:metric:)``
 - ``Swift/Array/dot(_:)``
 - ``Swift/Array/angle(with:)-piry``
 - ``Swift/Array/angleInDegrees(with:)-7n2tx``

@@ -124,7 +124,10 @@ let v = [3.0, 4.0]
 v.magnitude          // 5.0 (non-optional)
 v.normalized         // [0.6, 0.8] (non-optional)
 v.distance(to: w)    // Euclidean distance (non-optional)
+v.distance(to: w, metric: .manhattan)    // DistanceMetric: .euclidean, .manhattan, or .cosine
 ```
+
+`distance(to:metric:)` applies the same `DistanceMetric` cases that `KNearestNeighbors.fit` accepts, so a metric explored on raw vectors behaves identically inside the model. Cosine distance is `1 − cosineOfAngle`, returning 1.0 when either vector has zero magnitude. All three metrics are cross-validated against industry-standard implementations.
 
 ## Angular Operations
 

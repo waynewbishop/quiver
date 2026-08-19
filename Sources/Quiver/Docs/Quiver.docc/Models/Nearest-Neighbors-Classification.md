@@ -57,7 +57,7 @@ The value of `k` controls the tradeoff between sensitivity and smoothness. A sma
 
 ### Distance metrics
 
-Quiver supports three distance metrics via the `DistanceMetric` enum:
+Quiver supports three distance metrics via the `DistanceMetric` enum. The same enum drives `distance(to:metric:)` on plain arrays (see <doc:Vector-Operations>), so any metric can be measured on a single pair of vectors before it ranks a training set:
 
 **Euclidean distance** (default) measures straight-line distance between points. Euclidean distance works well when features have similar scales, but can be dominated by high-magnitude features when scales differ. The `StandardScaler` type is the recommended choice for distance-based classifiers because it centers each feature at zero with unit variance, preventing any single feature from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred:
 
