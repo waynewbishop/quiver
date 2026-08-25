@@ -14,7 +14,7 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
 
 * **Similarity and Distance**
   * Cosine similarity (single and batch)
-  * Euclidean distance
+  * Six distance metrics: Euclidean, Manhattan, Chebyshev, squared Euclidean, cosine, and Minkowski
   * Top-K selection with labels
   * Duplicate detection and cluster analysis
 
@@ -63,7 +63,7 @@ As a pure Swift library with zero external dependencies, Quiver runs on every Ap
 
 * **Machine Learning Models**
   * Gaussian Naive Bayes with calibrated `predictProbabilities` for soft-output classification
-  * K-Nearest Neighbors (classification with Euclidean and cosine distance)
+  * K-Nearest Neighbors (classification with a choice of six distance metrics, including Euclidean, Manhattan, and Minkowski)
   * Linear Regression with single-feature convenience predict
   * Gradient Descent — fits a regression by iterative optimization, exposing the full `lossHistory` and a typed `Outcome` so convergence is observable rather than hidden
   * Ridge Regression — L2-regularized regression that curbs overfitting and absorbs collinear-feature instability, fit by the same descent optimizer

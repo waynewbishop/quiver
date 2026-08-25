@@ -133,10 +133,27 @@ final class CodableTests: XCTestCase {
 
     // DistanceMetric and VoteWeight enums round-trip
     func testKNNEnumsCodable() throws {
-        for metric in [DistanceMetric.euclidean, DistanceMetric.cosine] {
+        // All cases, including the parameterized .minkowski(p:), which drove the
+        // switch from synthesized Codable to a custom discriminator + p encoding.
+        let metrics: [DistanceMetric] = [
+            .euclidean, .cosine, .manhattan, .chebyshev, .squaredEuclidean,
+            .minkowski(p: 3), .minkowski(p: 1.5)
+        ]
+        for metric in metrics {
             let data = try JSONEncoder().encode(metric)
             let decoded = try JSONDecoder().decode(DistanceMetric.self, from: data)
             XCTAssertEqual(metric, decoded)
+        }
+
+        // The Minkowski order must survive the round-trip, not just the case.
+        let m = DistanceMetric.minkowski(p: 2.75)
+        let roundTripped = try JSONDecoder().decode(
+            DistanceMetric.self, from: try JSONEncoder().encode(m))
+        XCTAssertEqual(m, roundTripped)
+        if case let .minkowski(p) = roundTripped {
+            XCTAssertEqual(p, 2.75, accuracy: 1e-12)
+        } else {
+            XCTFail("expected .minkowski after round-trip")
         }
 
         for weight in [VoteWeight.uniform, VoteWeight.distance] {

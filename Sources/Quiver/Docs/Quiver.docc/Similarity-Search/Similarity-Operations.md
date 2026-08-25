@@ -119,6 +119,8 @@ The two scales run in opposite directions. Similarity moves from 1 (same directi
 
 The measurement is one and the same; the orientation decides which form a task needs. `cosineOfAngle(with:)` fits direct similarity judgments — recommendations and embedding comparisons, where a score of `0.96` reads naturally as very similar. `distance(to:metric:)` with `.cosine` fits anything that ranks by closeness, where the smallest value must win. The zero-vector contracts mirror each other as well: `cosineOfAngle(with:)` returns `0.0` for a zero vector, so the `.cosine` distance returns `1.0`.
 
+Cosine is one of six metrics the `DistanceMetric` enum offers. For the full family — Euclidean, Manhattan, Chebyshev, squared Euclidean, and the general Minkowski form, along with guidance on when each suits a task — see the distance-metrics discussion in <doc:Nearest-Neighbors-Classification>.
+
 ## Batch operations
 
 Compare one vector against many efficiently:

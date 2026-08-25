@@ -86,6 +86,36 @@ import Quiver
 
 The Canvas prints a sequence of decisions that shift from `Accelerate` to `Maintain` to `Brake` to `Steer` as the simulated obstacle gets closer: no hardcoded thresholds, no if-else cascade, just the nearest training examples voting. This is not a self-driving car; it is a playful simulation. Real autonomous vehicles use neural networks processing camera feeds, lidar, and radar. But the underlying question is the same — given what the sensors see right now, what should the car do next?
 
+### One distance, many shapes
+
+The `distance(to:metric:)` method offers six ways to measure how far apart two vectors are, and the Minkowski form ties several of them together. Picture two stops on a city grid, three blocks east and four blocks north apart. Walking the streets covers seven blocks (Manhattan), the straight-line crow's flight is five (Euclidean), and the longest single leg is four (Chebyshev). Minkowski reproduces all three by turning one dial, `p`:
+
+```swift
+import Playgrounds
+import Quiver
+
+#Playground("One Distance, Many Shapes") {
+
+    // Two delivery stops on a city grid: [blocks east, blocks north]
+    let stopA = [2.0, 1.0]
+    let stopB = [5.0, 5.0]
+
+    // The three named metrics measure the same gap three ways
+    print("Manhattan:", stopA.distance(to: stopB, metric: .manhattan))  // 7.0
+    print("Euclidean:", stopA.distance(to: stopB, metric: .euclidean))  // 5.0
+    print("Chebyshev:", stopA.distance(to: stopB, metric: .chebyshev))  // 4.0
+
+    // Minkowski is the general form: p=1 is Manhattan, p=2 is Euclidean,
+    // and larger p leans toward Chebyshev's single longest leg
+    for p in [1.0, 1.5, 2.0, 4.0, 10.0] {
+        let d = stopA.distance(to: stopB, metric: .minkowski(p: p))
+        print("Minkowski p=\(p): \(String(format: "%.4f", d))")
+    }
+}
+```
+
+The Canvas shows Minkowski starting at `7.0` for `p = 1`, passing through `5.0` at `p = 2`, and sliding toward `4.0` as `p` grows (`4.28` at `p = 4`, `4.02` at `p = 10`), approaching the Chebyshev value without ever quite reaching it. Raising `p` shifts weight from summing every block walked toward being decided by the single longest leg. The same dial that measures a walk across town also chooses how harshly a classifier should penalize one large per-feature difference.
+
 ### The recipes organized by domain
 
 **Engineering and physical systems.** Recipes that turn a sensor reading or physical measurement into a decision or prediction. [Naive Bayes](<doc:Naive-Bayes>) classifies wing panel rivets against ±0.030″ tolerances. [Linear regression](<doc:Linear-Regression>) on NACA airfoil data recovers the published slope of about 0.11 per degree. [K-Means](<doc:KMeans-Clustering>) clusters a delivery driver's stops into geographic zones, and [KNN](<doc:Nearest-Neighbors-Classification>) classifies decisions from simulated driving sensor data.

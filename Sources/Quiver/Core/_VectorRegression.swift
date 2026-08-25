@@ -17,7 +17,7 @@ import Foundation
 
 /// Internal namespace for regression math.
 ///
-/// Solves the normal equation θ = (X'X)⁻¹X'y using existing Quiver
+/// Solves the normal equation X'X·θ = X'y using existing Quiver
 /// matrix operations. Separated from the public API so that the fitting
 /// logic stays testable without exposing implementation details.
 internal enum _Regression {
@@ -25,7 +25,10 @@ internal enum _Regression {
     /// Solves the ordinary least squares normal equation.
     ///
     /// Prepends a column of ones to the feature matrix when `intercept` is true,
-    /// then computes θ = (X'X)⁻¹X'y. Throws if X'X is singular.
+    /// then solves X'X·θ = X'y. Rather than forming the explicit inverse (X'X)⁻¹,
+    /// the system is solved directly through an LU factorization: solving Ax = b
+    /// by forward and back substitution is both faster and more numerically stable
+    /// than inverting A and multiplying. Throws if X'X is singular.
     ///
     /// - Parameters:
     ///   - features: 2D array where each row is a sample and each column is a feature.
@@ -53,17 +56,15 @@ internal enum _Regression {
 
         let Xt = X.transposed()              // X' — shape [p × n]
         let XtX = Xt.multiplyMatrix(X)        // X'X — shape [p × p]
-        let XtX_inv = try XtX.inverted()      // (X'X)⁻¹ — throws if singular
 
-        // X'y as a column vector: multiply X' (p×n) by y (n×1)
-        let yColumn = targets.map { [$0] }    // n×1 column matrix
-        let XtyMatrix = Xt.multiplyMatrix(yColumn)  // p×1
+        // X'y as a plain vector: multiply X' (p×n) by y (n×1), then flatten.
+        let yColumn = targets.map { [$0] }              // n×1 column matrix
+        let Xty = Xt.multiplyMatrix(yColumn).map { $0[0] }  // p-vector
 
-        // (X'X)⁻¹ · X'y — matrix multiply (p×p) by (p×1) = (p×1)
-        let thetaMatrix = XtX_inv.multiplyMatrix(XtyMatrix)  // p×1
-
-        // Extract column vector to 1D array
-        let theta = thetaMatrix.map { $0[0] }
+        // Solve X'X·θ = X'y directly. luDecomposed() throws MatrixError.singular
+        // on a rank-deficient X'X, preserving the same contract the previous
+        // (X'X)⁻¹ path surfaced; the subsequent solve then cannot fail.
+        let theta = try XtX.luDecomposed().solve(Xty)   // p-vector
 
         return theta
     }

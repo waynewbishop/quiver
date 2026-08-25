@@ -179,6 +179,70 @@ final class VectorOperationsTests: XCTestCase {
         XCTAssertEqual(e.distance(to: f, metric: .manhattan), 16.23, accuracy: 1e-12)
     }
 
+    func testDistanceMetricChebyshev() {
+        // Cross-validated: scipy chebyshev = 4.0
+        let a = [1.0, 2.0]
+        let b = [4.0, 6.0]
+        XCTAssertEqual(a.distance(to: b, metric: .chebyshev), 4.0, accuracy: 1e-12)
+
+        // Cross-validated: scipy chebyshev = 5.0 (the |−3.0 − 0.5| = 3.5 axis loses
+        // to the |−1.0 − 4.0| = 5.0 axis)
+        let c = [-1.0, 2.5, -3.0]
+        let d = [4.0, -1.5, 0.5]
+        XCTAssertEqual(c.distance(to: d, metric: .chebyshev), 5.0, accuracy: 1e-12)
+
+        // A point has zero distance to itself.
+        XCTAssertEqual(a.distance(to: a, metric: .chebyshev), 0.0)
+    }
+
+    func testDistanceMetricSquaredEuclidean() {
+        // Cross-validated: scipy sqeuclidean = 25.0 (= euclidean 5.0, squared)
+        let a = [1.0, 2.0]
+        let b = [4.0, 6.0]
+        XCTAssertEqual(a.distance(to: b, metric: .squaredEuclidean), 25.0, accuracy: 1e-12)
+
+        // Cross-validated: scipy sqeuclidean = 53.25
+        let c = [-1.0, 2.5, -3.0]
+        let d = [4.0, -1.5, 0.5]
+        XCTAssertEqual(c.distance(to: d, metric: .squaredEuclidean), 53.25, accuracy: 1e-12)
+
+        // Squared Euclidean is exactly Euclidean squared.
+        let e = a.distance(to: b, metric: .euclidean)
+        XCTAssertEqual(a.distance(to: b, metric: .squaredEuclidean), e * e, accuracy: 1e-12)
+    }
+
+    func testDistanceMetricMinkowski() {
+        // Cross-validated: scipy minkowski(a, b, 3) = 4.497941445275415
+        let a = [1.0, 2.0]
+        let b = [4.0, 6.0]
+        XCTAssertEqual(a.distance(to: b, metric: .minkowski(p: 3)), 4.497941445275415, accuracy: 1e-12)
+
+        // Cross-validated: scipy minkowski(c, d, 3) = 6.143529891036942
+        let c = [-1.0, 2.5, -3.0]
+        let d = [4.0, -1.5, 0.5]
+        XCTAssertEqual(c.distance(to: d, metric: .minkowski(p: 3)), 6.143529891036942, accuracy: 1e-12)
+    }
+
+    func testMinkowskiUnifiesTheFamily() {
+        // The teaching guarantee: Minkowski generalizes the named metrics.
+        let c = [-1.0, 2.5, -3.0]
+        let d = [4.0, -1.5, 0.5]
+
+        // p = 1 is Manhattan.
+        XCTAssertEqual(c.distance(to: d, metric: .minkowski(p: 1)),
+                       c.distance(to: d, metric: .manhattan), accuracy: 1e-12)
+
+        // p = 2 is Euclidean.
+        XCTAssertEqual(c.distance(to: d, metric: .minkowski(p: 2)),
+                       c.distance(to: d, metric: .euclidean), accuracy: 1e-12)
+
+        // As p grows, Minkowski approaches Chebyshev (scipy p=10 = 5.063996...).
+        let chebyshev = c.distance(to: d, metric: .chebyshev)
+        let largeP = c.distance(to: d, metric: .minkowski(p: 10))
+        XCTAssertEqual(largeP, 5.063996220548665, accuracy: 1e-12)
+        XCTAssertLessThan(largeP - chebyshev, 0.1)  // converging toward 5.0 from above
+    }
+
     func testDistanceMetricCosine() {
         // Cross-validated: scipy cosine = 0.00772212328633226
         let a = [1.0, 2.0]

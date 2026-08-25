@@ -38,7 +38,6 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Numerical-Literacy>
 - <doc:Rendering-Math-Primer>
 - <doc:Linear-Algebra-Primer>
-- <doc:Linear-Independence-Primer>
 - <doc:Determinants-Primer>
 - <doc:Eigenvalues-Primer>
 - <doc:Machine-Learning-Primer>

@@ -126,9 +126,9 @@ let b = [5.0, 10.0]
 A.solve(b)   // Optional([1.0, 3.0])
 ```
 
-The method returns `nil` when the matrix is singular, the same condition that makes inversion fail. The <doc:Linear-Independence-Primer> is the canonical guide to `solve(_:)` and the systems that have no unique answer; the <doc:Determinants-Primer> covers the geometry of singularity and the condition number.
+The method returns `nil` when the matrix is singular, the same condition that makes inversion fail. <doc:Determinants-Primer> is the canonical guide to `solve(_:)`, the systems that have no unique answer, and the geometry of singularity and the condition number.
 
-The basis-vector reading is the seed of a larger theme. When both columns land in the same direction, they carry the same information twice, the columns become **linearly dependent**, and the transformation collapses the plane onto a line. That collapse is exactly when the determinant is zero, the inverse disappears, and `solve(_:)` returns `nil` — one property standing behind every one of those failures. The <doc:Linear-Independence-Primer> names that property and shows why the determinant, invertibility, and unique solvability are a single fact.
+The basis-vector reading is the seed of a larger theme. When both columns land in the same direction, they carry the same information twice, the columns become **linearly dependent**, and the transformation collapses the plane onto a line. That collapse is exactly when the determinant is zero, the inverse disappears, and `solve(_:)` returns `nil` — one property standing behind every one of those failures. <doc:Determinants-Primer> names that property and shows why the determinant, invertibility, and unique solvability are a single fact.
 
 ### From arrays to algorithms
 

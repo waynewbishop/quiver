@@ -739,6 +739,28 @@ public extension Array where Element: FloatingPoint {
                 sum += abs(self[i] - other[i])
             }
             return sum
+        case .chebyshev:
+            var maxDiff: Element = 0
+            for i in 0..<count {
+                let diff = abs(self[i] - other[i])
+                if diff > maxDiff { maxDiff = diff }
+            }
+            return maxDiff
+        case .squaredEuclidean:
+            var sum: Element = 0
+            for i in 0..<count {
+                let diff = self[i] - other[i]
+                sum += diff * diff
+            }
+            return sum
+        case .minkowski(let p):
+            precondition(p > 0, "Minkowski order p must be greater than 0")
+            // The Minkowski norm needs a real-exponent power, which the
+            // FloatingPoint protocol does not provide (unlike squareRoot()). It is
+            // therefore computed in the concrete Double and Float overloads of this
+            // method; reaching this point means Element is some other FloatingPoint
+            // type Quiver does not ship a power routine for.
+            preconditionFailure("Minkowski distance requires a Double or Float element type")
         }
     }
 
@@ -1070,6 +1092,47 @@ public extension Array where Element == [Double] {
 // MARK: - Array Ranking Operations
 
 public extension Array where Element == Double {
+
+    /// Measures the distance between two `[Double]` vectors under the chosen metric.
+    ///
+    /// This concrete overload adds ``DistanceMetric/minkowski(p:)`` support, which the
+    /// generic `FloatingPoint` version cannot express (the protocol offers no
+    /// real-exponent power). All other metrics behave identically to the generic
+    /// method. `[Double]` is the element type ``KNearestNeighbors`` and the embedding
+    /// APIs use, so this is the path most callers take.
+    ///
+    /// - Parameters:
+    ///   - other: The vector to measure distance to. Must have the same dimension.
+    ///   - metric: The distance metric to apply.
+    /// - Returns: The distance between the two vectors under the chosen metric.
+    func distance(to other: [Double], metric: DistanceMetric) -> Double {
+        precondition(count == other.count, "Vectors must have the same dimension")
+        switch metric {
+        case .euclidean:
+            var sum = 0.0
+            for i in 0..<count { let d = self[i] - other[i]; sum += d * d }
+            return sum.squareRoot()
+        case .cosine:
+            return 1 - cosineOfAngle(with: other)
+        case .manhattan:
+            var sum = 0.0
+            for i in 0..<count { sum += abs(self[i] - other[i]) }
+            return sum
+        case .chebyshev:
+            var maxDiff = 0.0
+            for i in 0..<count { let d = abs(self[i] - other[i]); if d > maxDiff { maxDiff = d } }
+            return maxDiff
+        case .squaredEuclidean:
+            var sum = 0.0
+            for i in 0..<count { let d = self[i] - other[i]; sum += d * d }
+            return sum
+        case .minkowski(let p):
+            precondition(p > 0, "Minkowski order p must be greater than 0")
+            var sum = 0.0
+            for i in 0..<count { sum += Foundation.pow(abs(self[i] - other[i]), p) }
+            return Foundation.pow(sum, 1.0 / p)
+        }
+    }
 
     /// Returns the indices and values of the top K highest elements.
     ///

@@ -17,7 +17,7 @@ Linear regression is the workhorse choice when the relationship between features
 
 ### How it works
 
-We model the relationship between features and a target as a linear equation: `ŷ = θ₀ + θ₁x₁ + θ₂x₂ + ... + θₙxₙ`. To find the coefficients θ that minimize our squared error, we use the **normal equation** `θ = (XᵀX)⁻¹Xᵀy`. This provides an exact closed-form solution in one pass: we need no iteration, no learning rate, and no convergence check. This approach relies entirely on the matrix operations shipped in Quiver: transposition, multiplication, and inversion.
+We model the relationship between features and a target as a linear equation: `ŷ = θ₀ + θ₁x₁ + θ₂x₂ + ... + θₙxₙ`. To find the coefficients θ that minimize our squared error, we use the **normal equation** `θ = (XᵀX)⁻¹Xᵀy`. This provides an exact closed-form solution in one pass: we need no iteration, no learning rate, and no convergence check. Rather than forming the inverse `(XᵀX)⁻¹` directly, Quiver solves the system `XᵀX·θ = Xᵀy` through an LU factorization, which is faster and more numerically stable than inverting. This approach relies entirely on the matrix operations shipped in Quiver: transposition, multiplication, and an LU solve.
 
 The two-point case demonstrates this closed form on numbers we can verify by hand. The line `y = 1 + 2x` passes exactly through `(1, 3)` and `(2, 5)`; the normal equation recovers the intercept and slope directly:
 
@@ -101,7 +101,7 @@ Reach for `LinearRegression.fit` when standard errors and confidence intervals m
 
 ### When the normal equation fails
 
-The normal equation requires inverting `XᵀX`. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), the matrix is [singular](<doc:Determinants-Primer>) and cannot be inverted. In this case `fit` throws `MatrixError.singular`, and we must remove redundant features before fitting. The determinant tells us in advance whether the fit will succeed:
+The normal equation requires solving `XᵀX·θ = Xᵀy`. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), `XᵀX` is [singular](<doc:Determinants-Primer>) and the system has no unique solution. In this case `fit` throws `MatrixError.singular`, and we must remove redundant features before fitting. The determinant tells us in advance whether the fit will succeed:
 
 ```swift
 import Quiver
@@ -167,10 +167,10 @@ Linear regression is our tool of choice when relationships are roughly linear, f
 
 We should reach for other models when:
 *   Relationships are strongly non-linear (try polynomial regression or input transformations first).
-*   Feature counts are very high, making matrix inversion expensive.
+*   Feature counts are very high, making the O(*f*³) factorization expensive.
 *   Data is categorical or sparse, violating the linearity assumption.
 
-For these cases, `GradientDescent` scales better, as it avoids matrix inversion and uses a per-iteration cost linear in the number of features. For inferential questions (standard errors, p-values, confidence intervals), we pair `LinearRegression.fit` with `summary`. For reading coefficients, understanding slope units, and recognizing when collinearity makes weights untrustworthy, see the Model Interpretation Primer.
+For these cases, `GradientDescent` scales better, as it avoids the O(*f*³) factorization of `XᵀX` and uses a per-iteration cost linear in the number of features. For inferential questions (standard errors, p-values, confidence intervals), we pair `LinearRegression.fit` with `summary`. For reading coefficients, understanding slope units, and recognizing when collinearity makes weights untrustworthy, see the Model Interpretation Primer.
 
 ### Safe by design
 

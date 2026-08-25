@@ -90,7 +90,7 @@ public struct LinearRegression: Regressor, Codable, CustomStringConvertible, Equ
     ///   - targets: 1D array of target values, one per sample.
     ///   - intercept: Whether to include a bias term. Defaults to `true`.
     /// - Complexity: O(*n*·*f*² + *f*³) where *n* is the number of samples and
-    ///   *f* is the feature count. The *f*³ term comes from matrix inversion.
+    ///   *f* is the feature count. The *f*³ term comes from the LU factorization.
     ///   Performs well for feature counts up to a few hundred.
     /// - Returns: A trained ``LinearRegression`` model.
     /// - Throws: `MatrixError.singular` if the features are linearly dependent.

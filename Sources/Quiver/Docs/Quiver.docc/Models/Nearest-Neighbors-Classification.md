@@ -57,7 +57,16 @@ The value of `k` controls the tradeoff between sensitivity and smoothness. A sma
 
 ### Distance metrics
 
-Quiver supports three distance metrics via the `DistanceMetric` enum. The same enum drives `distance(to:metric:)` on plain arrays (see <doc:Vector-Operations>), so any metric can be measured on a single pair of vectors before it ranks a training set:
+Quiver supports six distance metrics via the `DistanceMetric` enum. The same enum drives `distance(to:metric:)` on plain arrays (see <doc:Vector-Operations>), so any metric can be measured on a single pair of vectors before it ranks a training set:
+
+| Metric | Measures | Reach for it when |
+|---|---|---|
+| `.euclidean` (default) | Straight-line distance, `√Σ(aᵢ − bᵢ)²` | Features share a scale and magnitude matters |
+| `.manhattan` | Grid-step distance, `Σ\|aᵢ − bᵢ\|` | Outliers should count linearly, not squared |
+| `.chebyshev` | The single largest axis gap, `max\|aᵢ − bᵢ\|` | One worst-fitting feature should decide the match |
+| `.squaredEuclidean` | Euclidean without the square root, `Σ(aᵢ − bᵢ)²` | You only need the ranking and want the speed |
+| `.cosine` | Angle between vectors, `1 − similarity` | Direction matters more than magnitude (embeddings) |
+| `.minkowski(p:)` | The general Lᵖ form, `(Σ\|aᵢ − bᵢ\|ᵖ)^(1/p)` | You want to tune between Manhattan and Chebyshev |
 
 **Euclidean distance** (default) measures straight-line distance between points. Euclidean distance works well when features have similar scales, but can be dominated by high-magnitude features when scales differ. The `StandardScaler` type is the recommended choice for distance-based classifiers because it centers each feature at zero with unit variance, preventing any single feature from dominating the distance calculation. The `FeatureScaler` type (min-max scaling) is an alternative when a bounded [0, 1] range is preferred:
 
@@ -78,6 +87,8 @@ let model = KNearestNeighbors.fit(
 // Scale test data using training statistics (prevents data leakage)
 let predictions = model.predict(scaler.transform(testX))
 ```
+
+> Note: When we only need the ranking of neighbors and not the distances themselves, `.squaredEuclidean` drops the final square root. It orders points exactly as `.euclidean` does, so the classification is identical, while saving one square root per comparison. Its values are not true distances, though, and should not be read as straight-line lengths or compared across differently scaled problems.
 
 **Cosine distance** measures the angle between vectors, ignoring their magnitude. Cosine distance is preferred for text embeddings and other cases where direction matters more than scale:
 
@@ -104,6 +115,20 @@ let model = KNearestNeighbors.fit(
     labels: trainY,
     k: 5,
     metric: .manhattan
+)
+```
+
+**Minkowski distance** is the general form that ties the others together. Manhattan, Euclidean, and Chebyshev are all special cases of it: `p = 1` gives Manhattan, `p = 2` gives Euclidean, and as `p → ∞` the sum is dominated by the single largest axis gap, which is Chebyshev. Tuning `p` interpolates between counting every difference and being decided by the worst one, so we can dial in how harshly large per-feature gaps are penalized. Chebyshev is also available directly as `.chebyshev`, since the `p → ∞` limit cannot be evaluated with a finite exponent:
+
+```swift
+import Quiver
+
+// p between 1 and 2 sits between Manhattan and Euclidean
+let model = KNearestNeighbors.fit(
+    features: trainX,
+    labels: trainY,
+    k: 5,
+    metric: .minkowski(p: 1.5)
 )
 ```
 

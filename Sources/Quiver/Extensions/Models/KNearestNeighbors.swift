@@ -174,6 +174,26 @@ public struct KNearestNeighbors: Classifier, Codable, CustomStringConvertible, E
                 sum += abs(a[i] - b[i])
             }
             return sum
+        case .chebyshev:
+            var maxDiff = 0.0
+            for i in 0..<a.count {
+                let diff = abs(a[i] - b[i])
+                if diff > maxDiff { maxDiff = diff }
+            }
+            return maxDiff
+        case .squaredEuclidean:
+            var sum = 0.0
+            for i in 0..<a.count {
+                let diff = a[i] - b[i]
+                sum += diff * diff
+            }
+            return sum
+        case .minkowski(let p):
+            var sum = 0.0
+            for i in 0..<a.count {
+                sum += Foundation.pow(abs(a[i] - b[i]), p)
+            }
+            return Foundation.pow(sum, 1.0 / p)
         }
     }
 

@@ -124,10 +124,10 @@ let v = [3.0, 4.0]
 v.magnitude          // 5.0 (non-optional)
 v.normalized         // [0.6, 0.8] (non-optional)
 v.distance(to: w)    // Euclidean distance (non-optional)
-v.distance(to: w, metric: .manhattan)    // DistanceMetric: .euclidean, .manhattan, or .cosine
+v.distance(to: w, metric: .manhattan)    // DistanceMetric: .euclidean, .manhattan, .chebyshev, .squaredEuclidean, .cosine, .minkowski(p:)
 ```
 
-`distance(to:metric:)` applies the same `DistanceMetric` cases that `KNearestNeighbors.fit` accepts, so a metric explored on raw vectors behaves identically inside the model. Cosine distance is `1 − cosineOfAngle`, returning 1.0 when either vector has zero magnitude. All three metrics are cross-validated against industry-standard implementations.
+`distance(to:metric:)` applies the same `DistanceMetric` cases that `KNearestNeighbors.fit` accepts, so a metric explored on raw vectors behaves identically inside the model. Cosine distance is `1 − cosineOfAngle`, returning 1.0 when either vector has zero magnitude. `.minkowski(p:)` is the general Lᵖ form, with `.manhattan` (p=1), `.euclidean` (p=2), and `.chebyshev` (p→∞) as its special cases; `.squaredEuclidean` skips the final square root for speed and preserves neighbor ordering, though its values are not true distances. All six metrics are cross-validated against industry-standard implementations.
 
 ## Angular Operations
 
@@ -920,7 +920,7 @@ let knn = KNearestNeighbors.fit(
     features: trainX, labels: trainY,
     k: 3, metric: .euclidean, weight: .uniform
 )
-// DistanceMetric: .euclidean, .cosine
+// DistanceMetric: .euclidean, .manhattan, .chebyshev, .squaredEuclidean, .cosine, .minkowski(p:)
 // VoteWeight: .uniform, .distance
 
 knn.predict(testX)   // [Int] — raw labels for evaluation pipelines
@@ -1109,7 +1109,7 @@ The determinant measures how a matrix scales space. For a 2×2 matrix `[[a,b],[c
 - **Invertibility:** Only matrices with non-zero determinant can be inverted. `try matrix.inverted()` throws `MatrixError.singular` if det = 0.
 - **Condition number:** `matrix.conditionNumber` measures numerical stability. Values near 1 = well-conditioned. Values > 1000 = results may be unreliable. Always check before trusting an inverse.
 - **Log determinant:** `matrix.logDeterminant` returns a `LogDeterminant` struct with `.sign`, `.logAbsValue`, and `.value`. Prevents overflow for large matrices where the raw determinant would exceed `Double.greatestFiniteMagnitude`.
-- **How Quiver uses determinants:** `LinearRegression.fit()` solves the normal equation θ = (X'X)⁻¹X'y, which requires inverting X'X. If the feature vectors are linearly dependent, the determinant of X'X is zero and `fit()` throws `MatrixError.singular`. The determinant tells us whether the features contain enough independent information to solve the problem.
+- **How Quiver uses determinants:** `LinearRegression.fit()` solves the normal equation θ = (X'X)⁻¹X'y, which Quiver solves via an LU factorization of X'X rather than forming the inverse. If the feature vectors are linearly dependent, the determinant of X'X is zero, the factorization detects the singularity, and `fit()` throws `MatrixError.singular`. The determinant tells us whether the features contain enough independent information to solve the problem.
 - **Diagnostic chain:** Check determinant → check condition number → attempt inversion → verify with `matrix.multiplyMatrix(inverse)` ≈ identity.
 
 ### Machine Learning Primer

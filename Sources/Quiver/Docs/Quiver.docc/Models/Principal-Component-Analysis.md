@@ -8,6 +8,8 @@ Projecting correlated features onto the directions of largest variance to compre
 
 The method builds on two primitives that ship alongside it. `covarianceMatrix(ddof:)` measures how features move together, and `eigenDecomposed()` splits that matrix into directions and magnitudes. `PCA` packages the full pipeline — center, decompose, project — into the same fit-then-use shape as the other models.
 
+> Note: Eigenvectors and eigenvalues form the engine that powers PCA. If these terms are unfamiliar, read <doc:Eigenvalues-Primer> before digging into how the algorithm works.
+
 ### From covariance to components
 
 Covariance is where the structure lives. Six workouts, described by duration in minutes and active energy in kilocalories:
@@ -86,7 +88,7 @@ full.explainedVariances       // [3.059, 0.44, 0.101]
 full.explainedVarianceRatios  // [0.85, 0.122, 0.028]
 ```
 
-The first component carries 85% of the variance — a shared workout-size direction that duration, energy, and heart rate all follow. The second carries 12.2%, separating high-burn sessions from long easy ones. The third holds 2.8%: measurement noise more than structure. Because the ratios sum to `1.0` across the full set of components, they act as a strict variance budget. Keeping two components preserves `0.85 + 0.122`, the `97.2%` the model description reported, and that cumulative read is the working rule: keep components until the running total crosses the coverage the application needs.
+The first component carries 85% of the variance — a shared workout-size direction that duration, energy, and heart rate all follow. The second carries 12.2%, separating high-burn sessions from long easy ones. The third holds 2.8%, in this case likely measurement noise more than structure. Because the ratios sum to `1.0` across the full set of components, they act as a strict variance budget. Keeping two components preserves `0.85 + 0.122`, the `97.2%` the model description reported, and that cumulative read is the working rule: keep components until the running total crosses the coverage the application needs.
 
 ### Projecting data
 
@@ -98,7 +100,9 @@ projected[0]  // [-1.24, 0.51]
 projected[4]  // [2.47, 0.75]
 ```
 
-Six workouts that lived in three correlated columns now live in two independent ones. The first score places each workout on the overall-size axis — the fifth workout, 66 minutes and 715 kilocalories, sits far right at `2.47` while the first sits left of center at `-1.24`. The second score separates intensity from duration at a given size. Two columns is exactly what a scatter plot can draw, which makes the projection the natural bridge from a high-dimensional feature table to a chart a person can read.
+Six workouts that lived in three correlated columns now live in two uncorrelated ones. The first score places each workout on the overall-size axis — the fifth workout, 66 minutes and 715 kilocalories, sits far right at `2.47` while the first sits left of center at `-1.24`. The second score separates intensity from duration at a given size. Two columns is exactly what a scatter plot can draw, which makes the projection the natural bridge from a high-dimensional feature table to a chart a person can read.
+
+`transform(_:)` applies the same centering that `fit` learned, subtracting the training means before projecting, so new data should arrive in the same scale as the training data and never pre-centered by the caller. If the features were standardized before fitting, standardize new data with the same scaler first.
 
 ### Measuring the cost of compression
 
@@ -110,7 +114,7 @@ restored[0]  // [-0.84, -1.01, -0.27]
 scaled[0]    // [-1.06, -0.85, -0.2]
 ```
 
-The restored row is close to the original but not equal to it, and the gap is exactly the discarded variance. For features standardized with `StandardScaler`, the average squared reconstruction error across all cells equals the variance ratio of the dropped components — `0.028` here, the third ratio read earlier. An error in squared units can match a unitless ratio only because standardization fixes the data's total variance: the share of variance dropped and the average error per cell become the same number. Compression and reconstruction error are the same quantity seen from two sides, which is what makes the ratios trustworthy as a budget: the variance a component claims to carry is precisely what disappears when it is dropped.
+The restored row is close to the original but not equal to it, and the average squared gap across all samples equals the discarded variance. For features standardized with `StandardScaler`, that average squared reconstruction error across all cells equals the variance ratio of the dropped components — `0.028` here, the third ratio read earlier. An error in squared units can match a unitless ratio only because standardization fixes the data's total variance: the share of variance dropped and the average error per cell become the same number. Compression and reconstruction error are the same quantity seen from two sides, which is what makes the ratios trustworthy as a budget: the variance a component claims to carry is precisely what disappears when it is dropped.
 
 ### When to use principal components
 
