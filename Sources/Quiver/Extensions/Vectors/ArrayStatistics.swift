@@ -421,7 +421,7 @@ public extension Array where Element: FloatingPoint {
     ///   - mean: Pre-calculated mean to use instead of computing from the array (optional)
     ///   - standardDeviation: Pre-calculated standard deviation to use instead of computing from the array (optional)
     /// - Returns: Boolean mask where `true` indicates the element at that index is an outlier
-    func outlierMask(threshold: Element = 2.0, mean: Element? = nil, standardDeviation: Element? = nil) -> [Bool] {
+    func outlierMask(threshold: Element = Element(2), mean: Element? = nil, standardDeviation: Element? = nil) -> [Bool] {
         guard !self.isEmpty else { return [] }
 
         let computedMean = mean ?? self.mean() ?? 0
