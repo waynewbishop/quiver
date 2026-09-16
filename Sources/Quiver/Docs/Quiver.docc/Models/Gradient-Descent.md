@@ -87,7 +87,7 @@ let predictions = model.predict(scaler.transform(newHouses))
 // [13.0, 15.0]
 ```
 
-The model carries no scaler of its own: scaling is the caller's step, kept explicit so the training and prediction transforms cannot silently drift apart. See <doc:Feature-Scaling> and <doc:Pipeline> for bundling the two together.
+The model carries no scaler of its own: scaling is the caller's step, kept explicit so the training and prediction transforms cannot silently drift apart. See <doc:Feature-Scaling> and <doc:Working-With-Pipelines> for bundling the two together.
 
 ### Choosing a learning rate
 
@@ -133,7 +133,7 @@ let scaled = scaler.transform(rawFeatures)
 let model = try GradientDescent.fit(features: scaled, targets: targets, learningRate: 0.1)
 ```
 
-The same composition works through `Pipeline` when scaling and fitting are kept together as one unit. See <doc:Feature-Scaling> and <doc:Pipeline>.
+The same composition works through `Pipeline` when scaling and fitting are kept together as one unit. See <doc:Feature-Scaling> and <doc:Working-With-Pipelines>.
 
 ### Comparing to the closed form
 
@@ -201,7 +201,7 @@ Gradient descent on squared error is the simplest case: the loss is convex, the 
 
 ### Related
 - <doc:Feature-Scaling>
-- <doc:Pipeline>
+- <doc:Working-With-Pipelines>
 - <doc:Calculus-Primer>
 - <doc:Regularization-Primer>
 - <doc:Machine-Learning-Primer>

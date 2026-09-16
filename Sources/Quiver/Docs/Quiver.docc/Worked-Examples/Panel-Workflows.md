@@ -185,7 +185,7 @@ let pipeline = Pipeline.fit(
 let predictions = pipeline.predict(test.toMatrix(columns: featureColumns))
 ```
 
-The `Pipeline.fit` call takes it from there: it fits a `StandardScaler` on the raw features, applies it, trains the `GaussianNaiveBayes` model on the scaled data, and returns the two as one bundled value. The `predict` call applies the stored scaler before running the model, which is what keeps every prediction in the same coordinate system the model was trained on. For the full Pipeline surface, see <doc:Pipeline>.
+The `Pipeline.fit` call takes it from there: it fits a `StandardScaler` on the raw features, applies it, trains the `GaussianNaiveBayes` model on the scaled data, and returns the two as one bundled value. The `predict` call applies the stored scaler before running the model, which is what keeps every prediction in the same coordinate system the model was trained on. For the full Pipeline surface, see <doc:Working-With-Pipelines>.
 
 > Tip: The `Panel` type is a convenience, not a requirement. Every Quiver classifier accepts standard `[[Double]]` matrices and `[Int]` label arrays directly. A `Panel` simply keeps columns named and rows aligned. Use it when that organization helps, skip it when raw arrays are simpler.
 

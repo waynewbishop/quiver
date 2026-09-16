@@ -133,7 +133,7 @@ if let stats = responseTimes.summary() {
 }
 ```
 
-The returned `ColumnSummary` is the same value a <doc:Panel> produces for each of its named columns. One shape serves both single arrays and labeled tables, so a dashboard that summarizes a vector of response times and a dashboard that summarizes a panel of named metrics read the same statistics off the same type.
+The returned `ColumnSummary` is the same value a <doc:Working-With-Panels> produces for each of its named columns. One shape serves both single arrays and labeled tables, so a dashboard that summarizes a vector of response times and a dashboard that summarizes a panel of named metrics read the same statistics off the same type.
 
 The `summary()` method returns `nil` for an empty array, matching the contract of `mean()`, `median()`, `standardDeviation()`, and `quartiles()`. An empty column has no descriptive statistics to report. When a column contains `NaN`, `summary()` does return a value, but the `mean`, `std`, and any quartile touching the `NaN` will themselves be `NaN`; the `count` still reports the number of stored elements. The two signals (`nil` for missing data, `NaN` for undefined math) are described together on <doc:Numerical-Literacy>.
 

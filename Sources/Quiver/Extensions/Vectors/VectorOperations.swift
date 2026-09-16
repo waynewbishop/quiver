@@ -432,6 +432,82 @@ public extension Array where Element: Collection, Element.Element: FloatingPoint
 
 public extension Array where Element == [Double] {
 
+    /// Returns the determinant of a square matrix.
+    ///
+    /// This is a specialized overload of the generic ``determinant-6nvv3`` for the common
+    /// `[[Double]]` case. The generic version is constrained to `Element: Collection`,
+    /// which routes every element access through a protocol witness and prevents the
+    /// compiler from specializing the elimination loop. Working directly on `[[Double]]`
+    /// lets the optimizer index the native buffers instead.
+    ///
+    /// Example:
+    /// ```swift
+    /// let matrix = [[4.0, 3.0],
+    ///               [6.0, 3.0]]
+    /// let det = matrix.determinant  // -6.0
+    /// ```
+    ///
+    /// - Complexity: O(*n*³) where *n* is the matrix dimension.
+    /// - Returns: The determinant value
+    var determinant: Double {
+        precondition(!self.isEmpty && self.count == self[0].count,
+                     "Determinant requires a square matrix")
+
+        let n = self.count
+
+        // Base cases
+        if n == 1 {
+            return self[0][0]
+        }
+        if n == 2 {
+            return self[0][0] * self[1][1] - self[0][1] * self[1][0]
+        }
+
+        // LU decomposition for larger matrices
+        var A = self
+        var det = 1.0
+
+        for i in 0..<n {
+            // Find pivot
+            var maxRow = i
+            for k in (i+1)..<n {
+                if abs(A[k][i]) > abs(A[maxRow][i]) {
+                    maxRow = k
+                }
+            }
+
+            // Check for singular matrix (nearly zero pivot)
+            let epsilon = Double.ulpOfOne * 1000
+            if abs(A[maxRow][i]) < epsilon {
+                return 0
+            }
+
+            if maxRow != i {
+                A.swapAt(i, maxRow)
+                det = -det
+            }
+
+            det *= A[i][i]
+
+            // Eliminate column, reading the pivot row through a buffer pointer so
+            // the inner loop is a straight scalar walk over native storage.
+            let pivot = A[i][i]
+            let pivotRow = A[i]
+            for k in (i+1)..<n {
+                let factor = A[k][i] / pivot
+                A[k].withUnsafeMutableBufferPointer { row in
+                    pivotRow.withUnsafeBufferPointer { src in
+                        for j in (i+1)..<n {
+                            row[j] -= factor * src[j]
+                        }
+                    }
+                }
+            }
+        }
+
+        return det
+    }
+
     /// Returns the sign and natural logarithm of the absolute determinant.
     ///
     /// For large matrices, the determinant can overflow or underflow Double's range.
@@ -453,7 +529,7 @@ public extension Array where Element == [Double] {
     /// ```
     ///
     /// - Complexity: O(*n*³) where *n* is the matrix dimension. Preferred
-    ///   over ``determinant`` for large matrices where the raw value may
+    ///   over ``determinant-6nvv3`` for large matrices where the raw value may
     ///   overflow or underflow.
     /// - Returns: A `LogDeterminant` containing the sign (-1, 0, or 1) and log of the absolute determinant
     var logDeterminant: LogDeterminant {

@@ -198,7 +198,7 @@ The method auto-detects which classes are smaller and generates new samples by i
 - ``Swift/Array/oversample(labels:)``
 
 ### Related
-- <doc:Pipeline>
+- <doc:Working-With-Pipelines>
 - <doc:Feature-Scaling>
 - <doc:Machine-Learning-Primer>
 

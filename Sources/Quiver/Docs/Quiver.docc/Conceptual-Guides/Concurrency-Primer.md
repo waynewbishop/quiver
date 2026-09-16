@@ -70,7 +70,7 @@ func trainRegression(features: [[Double]], targets: [Double]) async throws -> Li
 let model = try await trainRegression(features: sqft, targets: prices)
 ```
 
-> Tip: If training pairs a scaler with a model, keep them together so they stay matched at prediction time. For bundling them into a single persistable value, see <doc:Pipeline>.
+> Tip: If training pairs a scaler with a model, keep them together so they stay matched at prediction time. For bundling them into a single persistable value, see <doc:Working-With-Pipelines>.
 
 ### Long-running training
 
@@ -162,7 +162,7 @@ final class WorkoutAnalysisViewModel {
 
 ### From off the main thread to into an app
 
-The patterns here all rest on one property: a fitted Quiver model is an immutable, `Sendable` value, so it crosses task and actor boundaries without a copy ceremony or a lock. Splitting a batch, fitting off the main thread, and handing the result back to a view are three uses of that single guarantee. The <doc:Machine-Learning-Primer> covers the models these patterns wrap, and <doc:Pipeline> shows how scaling and fitting compose into one `Sendable` unit that moves across threads as cleanly as a single model does.
+The patterns here all rest on one property: a fitted Quiver model is an immutable, `Sendable` value, so it crosses task and actor boundaries without a copy ceremony or a lock. Splitting a batch, fitting off the main thread, and handing the result back to a view are three uses of that single guarantee. The <doc:Machine-Learning-Primer> covers the models these patterns wrap, and <doc:Working-With-Pipelines> shows how scaling and fitting compose into one `Sendable` unit that moves across threads as cleanly as a single model does.
 
 > Experiment: **The Quiver Notebook** is a quick place to watch these patterns run before wiring them into an app. Try launching two fits with `async let`, printing on entry and exit, and watching the output interleave from run to run. That ordering is the visible proof the work ran concurrently. The Notebook has no view to update, so the SwiftUI hand-off above belongs in an app. See <doc:Quiver-Notebook>.
 

@@ -82,13 +82,13 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Identifying-A-Distribution>
 
 ### Data Preparation
-- <doc:Panel>
+- <doc:Working-With-Panels>
 - <doc:Data-Visualization>
 - <doc:Correlation>
 - <doc:Random-Sampling>
 - <doc:Train-Test-Split>
 - <doc:Feature-Scaling>
-- <doc:Pipeline>
+- <doc:Working-With-Pipelines>
 
 ### Similarity and Search
 - <doc:Text-Tokenization>
@@ -123,4 +123,4 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Xcode-Playground>
 - <doc:Quiver-Cookbook>
 - <doc:Quiver-Knowledge-File>
-- <doc:Fraction>
+- <doc:Working-With-Fractions>

@@ -246,7 +246,8 @@ The `topIndices(k:labels:)` method pairs each score with its original label and 
 ### Similarity metrics
 - ``Swift/Array/cosineOfAngle(with:)``
 - ``Swift/Array/distance(to:)``
-- ``Swift/Array/distance(to:metric:)``
+- ``Swift/Array/distance(to:metric:)->Double``
+- ``Swift/Array/distance(to:metric:)->Element``
 
 ### Batch operations
 - ``Swift/Array/cosineSimilarities(to:)->[Double]``

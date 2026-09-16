@@ -131,7 +131,7 @@ inverse.asFractions().asExpression()
 // ⎣ -2/13   3/13 ⎦
 ```
 
-The same matrix, the same computation, two readings. One decimal, one structural. The determinant of `A` is `3 · 5 − 1 · 2 = 13`, and the chained form makes that visible. Every cell carries `13` as its denominator. The chain works the same way on vectors. Calling `unit.asFractions().asExpression()` on a normalized vector renders the rational form of every component, stacked as a column. See <doc:Determinants-Primer> for the broader treatment of the determinant as a single number that controls invertibility, and see <doc:Fraction> for the type itself.
+The same matrix, the same computation, two readings. One decimal, one structural. The determinant of `A` is `3 · 5 − 1 · 2 = 13`, and the chained form makes that visible. Every cell carries `13` as its denominator. The chain works the same way on vectors. Calling `unit.asFractions().asExpression()` on a normalized vector renders the rational form of every component, stacked as a column. See <doc:Determinants-Primer> for the broader treatment of the determinant as a single number that controls invertibility, and see <doc:Working-With-Fractions> for the type itself.
 
 ### When the rendering reveals numerical noise
 

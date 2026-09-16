@@ -110,7 +110,7 @@ let model = KMeans.fit(data: scaled, k: 3, seed: 42)
 
 ### Organizing with Panel
 
-Using a <doc:Panel> keeps column names attached to data.
+Using a <doc:Working-With-Panels> keeps column names attached to data.
 
 ```swift
 let customers = Panel([
@@ -122,7 +122,7 @@ let features = customers.toMatrix(columns: ["spending", "income"])
 let model = KMeans.fit(data: StandardScaler.fit(features: features).transform(features), k: 3, seed: 42)
 ```
 
-See <doc:Panel> for the type definition and <doc:Panel-Workflows> for the train-predict workflow with named columns.
+See <doc:Working-With-Panels> for the type definition and <doc:Panel-Workflows> for the train-predict workflow with named columns.
 
 ### When to use K-Means
 
@@ -159,4 +159,4 @@ run1 == run2  // true
 - <doc:Machine-Learning-Primer>
 - <doc:Nearest-Neighbors-Classification>
 - <doc:Feature-Scaling>
-- <doc:Pipeline>
+- <doc:Working-With-Pipelines>

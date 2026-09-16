@@ -61,7 +61,7 @@ let spectrum = Panel(["frequency": frequencies, "magnitude": magnitudes])
 print(spectrum.summary())
 ```
 
-The <doc:Panel> `summary()` readout provides descriptive statistics for each column, helping us identify whether the magnitude has a single dominant peak or distributed energy.
+The <doc:Working-With-Panels> `summary()` readout provides descriptive statistics for each column, helping us identify whether the magnitude has a single dominant peak or distributed energy.
 
 ### Positive-frequency half
 

@@ -136,7 +136,7 @@ let cm = predictions.confusionMatrix(actual: test.labels("churned"))
 print("Accuracy: \(cm.accuracy)")
 ```
 
-The `Panel` type is entirely optional. The classifier accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns, including the typed snapshot a panel returns from `summary()`.
+The `Panel` type is entirely optional. The classifier accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Working-With-Panels> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns, including the typed snapshot a panel returns from `summary()`.
 
 ### Structured results with classify
 
@@ -207,7 +207,7 @@ A second instability comes from the variance itself. The Gaussian density divide
 - <doc:Machine-Learning-Primer>
 - <doc:Working-With-Distributions>
 - <doc:Feature-Scaling>
-- <doc:Pipeline>
+- <doc:Working-With-Pipelines>
 - <doc:Notebook-Datasets>
 - ``GaussianNaiveBayes/predictLogProbabilities(_:)``
 - ``GaussianNaiveBayes/predictProbabilities(_:)``

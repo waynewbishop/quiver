@@ -111,7 +111,7 @@ let model = try Ridge.fit(
 let heldOutR2 = model.predict(scaler.transform(test.toMatrix(columns: ["sqft", "bedrooms"]))).rSquared(actual: test["price"])
 ```
 
-The `Panel` type is entirely optional; `Ridge` accepts arrays directly. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns.
+The `Panel` type is entirely optional; `Ridge` accepts arrays directly. See <doc:Working-With-Panels> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns.
 
 ### Choosing lambda
 

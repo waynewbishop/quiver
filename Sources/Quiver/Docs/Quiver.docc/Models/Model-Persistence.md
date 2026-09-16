@@ -91,7 +91,7 @@ let restored = try JSONDecoder().decode(
 let predictions = restored.predict(newData)
 ```
 
-`Pipeline` scales inputs automatically at prediction time, so the caller never touches the scaler directly. See <doc:Pipeline> for the full API.
+`Pipeline` scales inputs automatically at prediction time, so the caller never touches the scaler directly. See <doc:Working-With-Pipelines> for the full API.
 
 A pipeline can also carry an optional `PCA` reducer between the scaler and the model, and the reducer persists inside the same blob. The stage is encoded only when present, so archives written before the reducer existed decode unchanged, with `reducer` set to `nil`. Decoding validates that the stages agree on feature width and throws `DecodingError.dataCorrupted` on a mismatch, rather than restoring a pipeline whose predictions would silently fail.
 
@@ -163,7 +163,7 @@ This is the natural pattern for apps that load a pre-trained model at startup: d
 Once a model is encoded, the resulting `Data` value can go anywhere Swift can write bytes. On iOS and macOS, write to the app's Application Support directory with `FileManager`, store in `UserDefaults` for small models, or persist as a `Data` property in SwiftData. On watchOS, save to the local documents directory for on-device models, or use `WatchConnectivity` to transfer encoded bytes from a paired iPhone. On server-side Swift with Vapor, write to a file path at deployment time and decode once at startup; the model stays in memory to serve concurrent requests.
 
 ### Related
-- <doc:Pipeline>
+- <doc:Working-With-Pipelines>
 - <doc:Retrieving-Context-For-Generation>
 - <doc:Machine-Learning-Primer>
 - <doc:Linear-Regression>

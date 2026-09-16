@@ -105,7 +105,7 @@ let flagged = features.maskedWithIndices(by: valid.not)
 
 The `maskedWithIndices(by:)` method is useful when we need to know *which* elements matched: annotating outlier points on a chart with their day number, or labeling flagged values in a report.
 
-This integrates directly with <doc:Panel>. When filtering a panel, the same mask applies to every column simultaneously, keeping rows aligned across all features:
+This integrates directly with <doc:Working-With-Panels>. When filtering a panel, the same mask applies to every column simultaneously, keeping rows aligned across all features:
 
 ```swift
 import Quiver

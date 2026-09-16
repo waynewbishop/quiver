@@ -45,7 +45,7 @@ if let stats = responseTimes.summary() {
 }
 ```
 
-The returned `ColumnSummary` is the same value a <doc:Panel> produces for a named column: one shape that serves single arrays and labeled tables alike. See <doc:Statistics-Primer> for the math behind each field and <doc:Panel> for the labeled-table version.
+The returned `ColumnSummary` is the same value a <doc:Working-With-Panels> produces for a named column: one shape that serves single arrays and labeled tables alike. See <doc:Statistics-Primer> for the math behind each field and <doc:Working-With-Panels> for the labeled-table version.
 
 For the full vocabulary (variance, quartiles, percentiles, z-scores), see <doc:Statistics-Primer>. For hypothesis testing, confidence intervals, and sampling, see <doc:Inferential-Statistics-Primer>.
 

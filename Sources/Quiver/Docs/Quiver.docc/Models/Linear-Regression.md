@@ -159,7 +159,7 @@ let model = try LinearRegression.fit(
 let heldOutR2 = model.predict(test.toMatrix(columns: ["sqft", "bedrooms"])).rSquared(actual: test["price"])
 ```
 
-The `Panel` type is entirely optional. The regression model accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Panel> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns.
+The `Panel` type is entirely optional. The regression model accepts arrays directly, and developers who prefer working with raw arrays can continue to do so. See <doc:Working-With-Panels> for the type itself and <doc:Panel-Workflows> for the train-test-predict pattern with named columns.
 
 ### When to use linear regression
 
@@ -213,5 +213,5 @@ This is useful for unit tests, debugging, and verifying that a pipeline produces
 - <doc:Regression-Summary>
 - <doc:Gradient-Descent>
 - <doc:Polynomials>
-- <doc:Pipeline>
+- <doc:Working-With-Pipelines>
 - <doc:Machine-Learning-Primer>

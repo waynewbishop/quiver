@@ -106,7 +106,7 @@ let predictions = pipeline.predict([[6.5], [2.5]])
 // [1, 0]
 ```
 
-See <doc:Feature-Scaling> for why standardization matters and <doc:Pipeline> for the bundled training-and-prediction pattern.
+See <doc:Feature-Scaling> for why standardization matters and <doc:Working-With-Pipelines> for the bundled training-and-prediction pattern.
 
 ### An end-to-end run
 
@@ -214,7 +214,7 @@ Two constraints define its scope. Labels must be binary; more than two classes r
 - <doc:Machine-Learning-Primer>
 - <doc:Optimization-Primer>
 - <doc:Feature-Scaling>
-- <doc:Pipeline>
+- <doc:Working-With-Pipelines>
 - <doc:Nearest-Neighbors-Classification>
 
 ### Data Splitting

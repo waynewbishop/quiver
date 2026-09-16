@@ -4,10 +4,10 @@ Finding the characteristic directions a transformation preserves and the stretch
 
 ## Overview
 
-When a transformation alters space most vectors are knocked off their original path and point in a new direction. However, a
-few special directions stay perfectly aligned with their original line. They might get longer or shorter, but they do not rotate.
+When a transformation alters space most vectors are moved from their original path and point in a new direction. However, a
+few special directions stay perfectly aligned with their original line. They might get longer or shorter but don't rotate.
 
-Finding these special directions and measuring how much they stretch or shrink is the "eigenproblem." The word **eigen** is German for "own" or "proper". An eigenvector is a transformation's own direction, one it keeps to itself, which is why mathematicians also call these the characteristic directions of the matrix. We call the special direction an eigenvector, and the amount it stretches or shrinks its eigenvalue.
+Finding special directions and measuring how much they stretch or shrink is the "eigenproblem." The word **eigen** is German for "own" or "proper". An eigenvector is a transformation's own direction, one it keeps to itself, which is why mathematicians also call these the characteristic directions of the matrix. We call the special direction an eigenvector, and the amount it stretches or shrinks its eigenvalue.
 
 We can understand this best by looking at the geometry before dealing with any algebra. The <doc:Matrix-Transformations> guide showed how a matrix moves space, and the <doc:Determinants-Primer> primer measured the area changes those moves produce. This primer asks another question. After the transformation
 is complete, which vectors are still pointing exactly where they started?

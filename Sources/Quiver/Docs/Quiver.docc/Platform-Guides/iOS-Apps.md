@@ -199,7 +199,7 @@ The fitted model is a value, not a service. That value encodes to JSON, persists
 
 ### Composing scaling and fitting end-to-end
 
-Most personal models need more than one step: a `StandardScaler` learns the column statistics, then the fitted estimator runs on the scaled features. <doc:Pipeline> ties the two together into one fit-and-predict workflow that round-trips through `Codable` as a single value, which keeps the scaling rule and the model coefficients from ever drifting out of sync across app launches.
+Most personal models need more than one step: a `StandardScaler` learns the column statistics, then the fitted estimator runs on the scaled features. <doc:Working-With-Pipelines> ties the two together into one fit-and-predict workflow that round-trips through `Codable` as a single value, which keeps the scaling rule and the model coefficients from ever drifting out of sync across app launches.
 
 > Tip: Quiver ships five fitted models suited to on-device iOS work: `LinearRegression` for personal prediction, `LogisticRegression` for binary decisions, `KNearestNeighbors` for similarity-based classification, `KMeans` for unsupervised grouping, and `GaussianNaiveBayes` for probabilistic classification. Each composes with `StandardScaler` for consistent feature scaling and `Pipeline` for end-to-end fit-and-predict workflows.
 

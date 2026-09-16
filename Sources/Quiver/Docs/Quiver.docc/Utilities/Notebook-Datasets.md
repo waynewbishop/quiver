@@ -37,7 +37,7 @@ print(iris.description)
 print("shape:", panel.shape)
 ```
 
-The `toPanel()` method returns the dataset as a Quiver <doc:Panel>: a table of named columns where every column is a vector of `Double` values. The `head(n:)` method prints the first few rows so we can eyeball what loaded. The `description` property is a one-paragraph summary of where the dataset came from, what its columns mean, and any cleaning that was applied before bundling, and it is useful to read out loud at the start of a lecture. The `shape` property returns the row and column counts as a tuple, so a `print` confirms the load matches expectations before any modeling work begins.
+The `toPanel()` method returns the dataset as a Quiver <doc:Working-With-Panels>: a table of named columns where every column is a vector of `Double` values. The `head(n:)` method prints the first few rows so we can eyeball what loaded. The `description` property is a one-paragraph summary of where the dataset came from, what its columns mean, and any cleaning that was applied before bundling, and it is useful to read out loud at the start of a lecture. The `shape` property returns the row and column counts as a tuple, so a `print` confirms the load matches expectations before any modeling work begins.
 
 ### The bundled tabular datasets
 
@@ -207,7 +207,7 @@ print(Dataset.catalog())
 
 ### Related
 - <doc:Quiver-Notebook>
-- <doc:Panel>
+- <doc:Working-With-Panels>
 - <doc:Panel-Workflows>
 - <doc:Train-Test-Split>
 - <doc:Similarity-Operations>
