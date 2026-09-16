@@ -170,7 +170,8 @@ Vector operations in Quiver are based on well-established mathematical principle
 
 ### Vector relationships
 - ``Swift/Array/distance(to:)``
-- ``Swift/Array/distance(to:metric:)``
+- ``Swift/Array/distance(to:metric:)->Double``
+- ``Swift/Array/distance(to:metric:)->Element``
 - ``Swift/Array/dot(_:)``
 - ``Swift/Array/angle(with:)-piry``
 - ``Swift/Array/angleInDegrees(with:)-7n2tx``
