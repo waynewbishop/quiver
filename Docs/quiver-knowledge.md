@@ -660,6 +660,32 @@ if let p = [Double].polyfit(x: x, y: y, degree: 2) {
 
 `polyfit` builds a Vandermonde-style design matrix and defers to `LinearRegression` to solve the normal equation. For `degree: 1` the result matches `LinearRegression.fit(features: x, targets: y)` exactly. For `degree: 0` the polynomial collapses to the mean of `y`. Returns `nil` on mismatched lengths, fewer points than `degree + 1`, negative degree, or an ill-conditioned system.
 
+### Planned: `Regressor` conformance (1.7.0)
+
+`Polynomial` is already `Codable`, `Equatable`, and `Sendable`, and `callAsFunction` already predicts for both a scalar and an array. The one thing it lacks is `Regressor` conformance, whose sole requirement is `predict(_ features: [[Double]]) -> [Double]`.
+
+```swift
+extension Polynomial: Regressor {
+    public func predict(_ features: [[Double]]) -> [Double] {
+        features.map { row in
+            precondition(row.count == 1,
+                "Polynomial is single-variable; expected one feature per row, got \(row.count)")
+            return self(row[0])
+        }
+    }
+}
+```
+
+**Why it is worth doing.** Not for a new way to predict — `p(x)` already works and reads better. The payoff is composition: `ResidualModel<Model: Regressor & Codable & Equatable & Sendable>` cannot currently wrap a `Polynomial`, because conformance is the only missing constraint of the four. Adding it makes `ResidualModel<Polynomial>` expressible, so a curved baseline can define the expectation that residuals are measured against. The free `predict(_ value: Double)` extension on `Regressor` also arrives at no cost.
+
+**Design decision, settled.** `predict` takes `[[Double]]` while a polynomial is single-variable. Reading `row[0]` and ignoring further columns would silently produce wrong numbers, so the conformance preconditions on `row.count == 1` instead — matching the house rule that a precondition is for using the API wrong, while optionals and typed errors cover data problems.
+
+**Feature gate: 9 PASS / 2 CONDITIONAL / 0 FAIL, both conditionals resolved.**
+- #7 Redundancy was CONDITIONAL because `callAsFunction` already predicts. Resolves to PASS: the justification is protocol composition, not a second prediction method.
+- #9 Error Handling was CONDITIONAL on the multi-column question above. Resolves to PASS via the precondition.
+
+Additive and non-breaking: no stored properties change, no existing call site moves, and archives are unaffected.
+
 ## Info and Debugging
 
 ```swift
@@ -816,6 +842,20 @@ let oneValue = ridge.predict(2000.0)            // Double → Double (single sam
 ```
 
 L2-regularized regression: minimizes `(1/n)‖Xθ − y‖² + λ‖θ‖²`, the squared-error objective plus a penalty on coefficient size that curbs overfitting and steadies the unstable fits collinear features produce. At `lambda` of zero the penalty vanishes and the fit reproduces ordinary least squares; as `lambda` grows the slopes shrink toward zero. The intercept is never penalized. Conforms to `Regressor`, so it substitutes for `LinearRegression` in any pipeline, and is fit by the same descent optimizer behind `GradientDescent`. Note `lambda` scales a bare penalty against a `1/n` error term, so its values are not interchangeable with conventions that fold in a `1/2m` or `λ/2m` factor. When the need for regularization is unclear, a large `conditionNumber` on the feature matrix is the collinearity the penalty is built to absorb.
+
+### Considered and deferred: a closed-form fit (evaluated 2026-08-26)
+
+Ridge has an exact closed form, `θ = (X'X + λI)⁻¹X'y`, and every primitive it needs already ships: `transposed()`, `multiplyMatrix()`, `inverted()`, and `[Double].identity(n)`. The math argument for switching is real. The closed form needs no `learningRate`, no `maxIterations`, and no `tolerance`, it cannot fail to converge, and it is the more numerically stable route precisely here, since the `λI` term is what guarantees the inverse exists. Iterating toward an answer that can be solved exactly is odd on its face.
+
+It was deferred anyway, because the change is far larger than the arithmetic suggests:
+
+- **The public surface is descent-shaped.** `learningRate`, `iterations`, `finalLoss`, `lossHistory`, and `outcome` (`.converged` / `.maxIterationsReached`) are all stored public properties with no meaningful closed-form value. "Converged" is vacuous when nothing iterates.
+- **`Ridge` is `Codable`.** Those fields exist in archives already on disk, and `Model-Persistence.md` documents round-tripping as a feature. Removing or repurposing them is a decode-compatibility break.
+- **Ten DocC files reference Ridge**, including `Optimization-Primer.md` and `Regularization-Primer.md`, which teach the descent path directly. Plus 14 tests in `RidgeTests.swift`.
+
+So the honest scope is a new fit path, a decision about five now-meaningless public properties, a Codable migration story, a test pass, and edits across up to ten documents. That is a major-version conversation, not a point release.
+
+Rejected intermediate options: a second `RidgeClosedForm` type fails the redundancy test, and a `method:` parameter on `fit` exposes an implementation detail the caller should not have to reason about. If the closed form is better, it should simply be what `Ridge.fit()` does.
 
 ## Logistic Regression (1.4.0)
 
