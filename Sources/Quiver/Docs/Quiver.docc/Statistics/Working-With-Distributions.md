@@ -1,6 +1,6 @@
 # Working with Distributions
 
-Evaluating probability densities, cumulative probabilities, and quantiles for the normal, Student's t, chi-squared, Poisson, and binomial distributions.
+Evaluating probability densities, cumulative probabilities, and quantiles for the standard distribution families.
 
 ## Overview
 

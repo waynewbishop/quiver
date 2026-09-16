@@ -1,4 +1,4 @@
-# Panel
+# Working with Panels
 
 A Quiver type that organizes named columns of numeric data into a single container.
 

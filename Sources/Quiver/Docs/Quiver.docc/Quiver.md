@@ -49,7 +49,6 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Optimization-Primer>
 - <doc:Regularization-Primer>
 - <doc:Model-Interpretation-Primer>
-- <doc:Physics-Primitives-Primer>
 - <doc:Concurrency-Primer>
 
 ### Platform Guides
@@ -74,18 +73,19 @@ Quiver provides developers the tools to work with data directly. This includes a
 
 ### Signal Processing
 - <doc:Fourier-Transform>
+- <doc:Physics-Primitives-Primer>
 
 ### Statistics
 - <doc:Frequency-Tables>
 - <doc:Boolean-Masking>
 - <doc:Working-With-Distributions>
 - <doc:Identifying-A-Distribution>
+- <doc:Correlation>
+- <doc:Random-Sampling>
 
 ### Data Preparation
 - <doc:Working-With-Panels>
 - <doc:Data-Visualization>
-- <doc:Correlation>
-- <doc:Random-Sampling>
 - <doc:Train-Test-Split>
 - <doc:Feature-Scaling>
 - <doc:Working-With-Pipelines>

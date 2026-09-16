@@ -1,4 +1,4 @@
-# Fraction
+# Working with Fractions
 
 Representing rational numbers as exact fractions for clear display of matrix and vector results.
 

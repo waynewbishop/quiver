@@ -1,4 +1,4 @@
-# Pipeline
+# Working with Pipelines
 
 Bundle a scaler and model into a single matched pair.
 
