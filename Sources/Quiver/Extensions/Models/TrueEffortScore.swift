@@ -96,7 +96,7 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     /// the cold-start tell.
     ///
     /// - Precondition: `k <= anchorSamples.count`.
-    public init(lambda: Double = 1.0, k: Int = 3, historyLimit: Int? = 60) {
+    public init(lambda: Double = 0.01, k: Int = 3, historyLimit: Int? = 60) {
         precondition(k <= Self.anchorSamples.count,
                      "k (\(k)) must not exceed the anchor sample count (\(Self.anchorSamples.count)).")
         self.lambda = lambda
@@ -119,7 +119,7 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
         history: [Workout],
         labeledSamples: [[Double]] = [],
         labels: [EffortClass] = [],
-        lambda: Double = 1.0,
+        lambda: Double = 0.01,
         k: Int = 3,
         historyLimit: Int? = 60
     ) throws {
@@ -295,7 +295,14 @@ extension TrueEffortScore {
 
         let ridge: Ridge
         do {
-            ridge = try Ridge.fit(features: scaled, targets: heartRates, lambda: lambda)
+            // Ridge adds λ to the mean squared error, so its shrinkage does not fade as history
+            // grows; a light λ keeps the expected-heart-rate slopes close to the data. With so
+            // little penalty the default step and tolerance stop at the iteration cap before
+            // converging, which would quietly shrink the slopes again, so both are set here. A
+            // step of 0.1 is stable for five standardized features.
+            ridge = try Ridge.fit(
+                features: scaled, targets: heartRates, lambda: lambda,
+                learningRate: 0.1, tolerance: 1e-9)
         } catch let error as GradientDescentError {
             throw TESError.baselineDiverged(error)
         }
@@ -315,13 +322,28 @@ extension TrueEffortScore {
         return Array(history.suffix(limit))
     }
 
-    /// Classifies one moment, discounting a doubted heart rate toward the training mean. A fully
-    /// doubted reading holds heart rate at that mean, the center of the heart-rate axis, so the
-    /// kinematic signals decide the label.
+    /// Classifies one moment. Once a personal baseline exists, the classifier reads heart rate no
+    /// higher than the baseline expects for the work, so heat or drift cannot lift the band; that
+    /// excess stays visible in the residual instead. Altitude is a baseline feature, so altitude
+    /// the runner's history covers is already in the expectation. A reading below expected passes
+    /// through, and a doubted reading moves toward the runner's own expected heart rate. Before a
+    /// baseline exists, a doubted reading moves toward the anchor mean.
     func effortClass(for moment: Workout.Moment) -> EffortClass {
         var row = moment.classifierFeatures
-        row[0] = moment.hrTrust * row[0] + (1 - moment.hrTrust) * trainingHeartRateMean
+        if let expected = expectedHeartRate(for: moment) {
+            row[0] = expected + moment.hrTrust * Swift.min(0, row[0] - expected)
+        } else {
+            row[0] = moment.hrTrust * row[0] + (1 - moment.hrTrust) * trainingHeartRateMean
+        }
         return EffortClass(clampingOrdinal: classifier.predict([row])[0])
+    }
+
+    /// The baseline's expected heart rate for one moment's workload, nil at cold start.
+    private func expectedHeartRate(for moment: Workout.Moment) -> Double? {
+        guard let baseline,
+              let scaled = baseline.scaler.transform([moment.regressionFeatures]).first
+        else { return nil }
+        return baseline.expectedHeartRate.predict([scaled]).first
     }
 
     /// The training heart-rate mean in beats per minute, read from the pipeline's scaler. The

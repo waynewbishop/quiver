@@ -267,6 +267,103 @@ final class TrueEffortScoreTests: XCTestCase {
             TrueEffortScore.debouncedBands(ordinals: run.ordinals, durations: run.durations), [0])
     }
 
+    // MARK: - Classifying against the personal baseline
+
+    // Steady Tempo kinematics from the D5 analysis: raw heart rate crosses into Threshold at
+    // about 162 bpm when nothing caps it.
+    private let tempoKinematics = (pace: 5.6, cadence: 171.0, grade: 0.5, verticalOscillation: 8.0)
+
+    /// A model with one finished run of Easy, Tempo, and Threshold stretches, so the baseline
+    /// expects about 131, 150, and 170 bpm at those three workloads.
+    private func establishedModel() -> TrueEffortScore {
+        var tes = TrueEffortScore()
+        let stretches: [(hr: Double, pace: Double, cadence: Double, grade: Double, vo: Double)] = [
+            (131, 6.6, 164, 0.0, 8.7), (150, 5.6, 171, 0.5, 8.0), (170, 4.8, 180, 0.0, 7.0),
+        ]
+        var second = 0.0
+        for _ in 0..<2 {
+            for stretch in stretches {
+                for i in 0..<120 {
+                    tes.record(heartRate: stretch.hr, pace: stretch.pace, cadence: stretch.cadence,
+                               grade: stretch.grade, verticalOscillation: stretch.vo,
+                               altitude: 100 + Double(i % 3),
+                               at: Date(timeIntervalSince1970: second))
+                    second += 1
+                }
+            }
+        }
+        XCTAssertNotNil(tes.finalize())
+        return tes
+    }
+
+    /// Records one Tempo-workload moment at the given heart rate and trust, then reads the band.
+    private func tempoEffort(_ tes: inout TrueEffortScore, heartRate: Double,
+                             hrTrust: Double = 1.0) -> EffortClass? {
+        tes.discardRun()
+        tes.record(heartRate: heartRate, pace: tempoKinematics.pace,
+                   cadence: tempoKinematics.cadence, grade: tempoKinematics.grade,
+                   verticalOscillation: tempoKinematics.verticalOscillation,
+                   altitude: 101, at: Date(timeIntervalSince1970: 0), hrTrust: hrTrust)
+        return tes.currentEffort
+    }
+
+    // Drift at a steady workload lifts the band at cold start, which is the documented
+    // first-run limit
+    func testColdStartDriftLiftsTempoToThreshold() {
+        var tes = TrueEffortScore()
+        XCTAssertEqual(tempoEffort(&tes, heartRate: 150), .tempo)
+        XCTAssertEqual(tempoEffort(&tes, heartRate: 166), .threshold)
+    }
+
+    // Once a baseline exists, heart rate above expected cannot lift the band; the excess
+    // stays visible in the residual
+    func testBaselineStopsDriftLiftingTheBand() {
+        var tes = establishedModel()
+        XCTAssertEqual(tempoEffort(&tes, heartRate: 166), .tempo)
+        XCTAssertEqual(tempoEffort(&tes, heartRate: 180), .tempo)
+        XCTAssertGreaterThan(tes.currentResidual ?? 0, 20)
+    }
+
+    // A reading below expected passes through unchanged, so a genuinely easier moment
+    // still reads easier
+    func testBaselineLetsALowerReadingThrough() {
+        var tes = establishedModel()
+        XCTAssertEqual(tempoEffort(&tes, heartRate: 126), .easy)
+    }
+
+    // The masking cases still classify Hard with a baseline, at full and zero trust
+    func testBaselineKeepsDescentAndPowerHikeHard() {
+        var tes = establishedModel()
+        for trust in [1.0, 0.0] {
+            tes.discardRun()
+            tes.record(heartRate: 131, pace: 5.1, cadence: 157, grade: -5.8,
+                       verticalOscillation: 10.9, altitude: 101,
+                       at: Date(timeIntervalSince1970: 0), hrTrust: trust)
+            XCTAssertEqual(tes.currentEffort, .hard, "descent at trust \(trust)")
+            tes.discardRun()
+            tes.record(heartRate: 166, pace: 9.6, cadence: 144, grade: 9.5,
+                       verticalOscillation: 6.4, altitude: 101,
+                       at: Date(timeIntervalSince1970: 0), hrTrust: trust)
+            XCTAssertEqual(tes.currentEffort, .hard, "power-hike at trust \(trust)")
+        }
+    }
+
+    // An optical spike on an easy jog reads Easy at every trust level once a baseline exists
+    func testBaselineReadsASensorSpikeAsEasy() {
+        var tes = establishedModel()
+        for trust in [0.0, 0.5, 1.0] {
+            tes.discardRun()
+            tes.record(heartRate: 184, pace: 6.6, cadence: 164, grade: 0.0,
+                       verticalOscillation: 8.7, altitude: 101,
+                       at: Date(timeIntervalSince1970: 0), hrTrust: trust)
+            XCTAssertEqual(tes.currentEffort, .easy, "spike at trust \(trust)")
+        }
+    }
+
+    func testDefaultLambdaIsLight() {
+        XCTAssertEqual(TrueEffortScore().lambda, 0.01)
+    }
+
     // MARK: - hrTrust
 
     func testHRTrustZeroDoesNotIntensifyClassification() {
