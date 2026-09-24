@@ -205,24 +205,34 @@ extension _Vector where Element: FloatingPoint {
     }
 
     /// Calculates the scalar projection of this vector onto another vector
+    /// Returns 0 if the target has zero magnitude
     func scalarProjection(onto other: _Vector<Element>) -> Element {
-        let dotProduct = _Vector.dot(self, other)
+        // A zero vector has no direction, so there is no axis to cast a
+        // shadow along and the projected length is zero by convention —
+        // matching normalized() and cosineOfAngle(with:).
         let magnitude = other.magnitude()
-        
-        precondition(magnitude > 0, "Cannot project onto a zero vector")
-        return dotProduct / magnitude
+        guard magnitude > 0 else { return Element.zero }
+
+        return _Vector.dot(self, other) / magnitude
     }
     
     /// Calculates the vector projection of this vector onto another vector
+    /// Returns a zero vector if the target has zero magnitude
     func vectorProjection(onto other: _Vector<Element>) -> _Vector<Element> {
-        let dotProduct = _Vector.dot(self, other)
-        let otherDotProduct = _Vector.dot(other, other)
-        
-        precondition(otherDotProduct > 0, "Cannot project onto a zero vector")
-        
-        // Calculate the scalar multiple
-        let scalar = dotProduct / otherDotProduct
-        
+        // Guards on magnitude, matching scalarProjection, so both methods
+        // draw the zero boundary at the same place. Guarding on
+        // dot(other, other) here and magnitude there meant two conditions
+        // to reason about for one question.
+        let magnitude = other.magnitude()
+        guard magnitude > 0 else {
+            return _Vector(elements: Array(repeating: Element.zero, count: elements.count))
+        }
+
+        // The scalar multiple, as the scalar projection over the magnitude
+        // a second time — equivalently dot(self, other) / dot(other, other),
+        // reusing the guarded magnitude rather than re-forming that sum.
+        let scalar = self.scalarProjection(onto: other) / magnitude
+
         // Create a new vector by scaling each component
         var projectedElements = [Element]()
         for element in other.elements {

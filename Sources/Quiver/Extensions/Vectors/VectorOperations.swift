@@ -946,7 +946,11 @@ public extension Array where Element: FloatingPoint {
     /// v.scalarProjection(onto: axis)  // 3.0
     /// ```
     ///
-    /// - Parameter vector: The vector to project onto (must not be a zero vector)
+    /// Returns 0.0 if the target has zero magnitude. A zero vector has no
+    /// direction, so there is no axis to cast a shadow along — a convention,
+    /// not a measured length.
+    ///
+    /// - Parameter vector: The vector to project onto
     /// - Returns: The scalar length of the projection along the target vector's direction
     func scalarProjection(onto vector: [Element]) -> Element {
         let v1 = _Vector(elements: self)
@@ -966,7 +970,11 @@ public extension Array where Element: FloatingPoint {
     /// v.vectorProjection(onto: axis)  // [3.0, 0.0]
     /// ```
     ///
-    /// - Parameter vector: The vector to project onto (must not be a zero vector)
+    /// Returns a zero vector if the target has zero magnitude. A zero vector
+    /// has no direction to project along, so nothing is contributed — a
+    /// convention, not a measured component.
+    ///
+    /// - Parameter vector: The vector to project onto
     /// - Returns: A new vector pointing in the direction of the target with the projected magnitude
     func vectorProjection(onto vector: [Element]) -> [Element] {
         let v1 = _Vector(elements: self)
@@ -986,7 +994,13 @@ public extension Array where Element: FloatingPoint {
     /// v.orthogonalComponent(to: axis)  // [0.0, 4.0]
     /// ```
     ///
-    /// - Parameter vector: The reference vector to measure perpendicularity against (must not be a zero vector)
+    /// Returns this vector unchanged if the reference has zero magnitude,
+    /// which follows from ``vectorProjection(onto:)`` returning a zero vector:
+    /// with nothing projected away, the whole vector is the perpendicular
+    /// part. The identity that the two components sum back to the original
+    /// holds in that case too.
+    ///
+    /// - Parameter vector: The reference vector to measure perpendicularity against
     /// - Returns: A new vector perpendicular to the reference vector
     func orthogonalComponent(to vector: [Element]) -> [Element] {
         let projection = self.vectorProjection(onto: vector)

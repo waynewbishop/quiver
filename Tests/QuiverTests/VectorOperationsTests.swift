@@ -131,6 +131,57 @@ final class VectorOperationsTests: XCTestCase {
         XCTAssertEqual(result, [0.0, 4.0])
     }
 
+    // A zero reference vector has no direction, so projection contributes
+    // nothing. These are the stationary-runner and body-at-rest cases: the
+    // convention keeps them out of a trap in a per-frame sampling loop.
+    func testScalarProjectionOntoZeroVectorReturnsZero() {
+        let v = [3.0, 4.0]
+        XCTAssertEqual(v.scalarProjection(onto: [0.0, 0.0]), 0.0)
+    }
+
+    func testVectorProjectionOntoZeroVectorReturnsZeroVector() {
+        let v = [3.0, 4.0]
+        XCTAssertEqual(v.vectorProjection(onto: [0.0, 0.0]), [0.0, 0.0])
+    }
+
+    func testOrthogonalComponentOfZeroVectorReturnsSelf() {
+        let v = [3.0, 4.0]
+        XCTAssertEqual(v.orthogonalComponent(to: [0.0, 0.0]), [3.0, 4.0])
+    }
+
+    // The defining identity: the parallel and perpendicular parts sum back
+    // to the original. It must survive the zero case, which is what makes
+    // the convention correct rather than merely convenient.
+    func testProjectionIdentityHoldsForZeroReference() {
+        let v = [3.0, 4.0]
+        let zero = [0.0, 0.0]
+        let parallel = v.vectorProjection(onto: zero)
+        let perpendicular = v.orthogonalComponent(to: zero)
+        XCTAssertEqual(parallel.add(perpendicular), v)
+    }
+
+    // magnitude() sums squares before taking a square root, so a reference
+    // this small underflows to zero magnitude and takes the convention path
+    // rather than dividing. Both methods share that one guard, so they agree
+    // on where the boundary falls instead of disagreeing near it.
+    func testProjectionsAgreeOnUnderflowingReference() {
+        let v = [3.0, 4.0]
+        let tiny = [1e-200, 0.0]
+        XCTAssertEqual(v.vectorProjection(onto: tiny), [0.0, 0.0])
+        XCTAssertEqual(v.scalarProjection(onto: tiny), 0.0)
+        XCTAssertEqual(v.orthogonalComponent(to: tiny), v)
+    }
+
+    // Just above the underflow boundary the reference is a usable direction
+    // and both methods compute a real projection, confirming the convention
+    // path is not swallowing ordinary small-magnitude input.
+    func testProjectionsComputeNormallyJustAboveUnderflow() {
+        let v = [3.0, 4.0]
+        let small = [1e-150, 0.0]
+        XCTAssertEqual(v.scalarProjection(onto: small), 3.0, accuracy: 1e-12)
+        XCTAssertEqual(v.vectorProjection(onto: small)[0], 3.0, accuracy: 1e-12)
+    }
+
     // MARK: - Distance Tests
 
     func testDistance() {
