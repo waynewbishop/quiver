@@ -13,14 +13,16 @@
 
 import Foundation
 
-/// The four effort bands, named as physiological training zones. The `threshold` band anchors
-/// the score, so one hour held at threshold reads about 100, aligning with the FTP and TSS
-/// convention.
+/// The four effort bands. The first three are named as training zones; the top band is named
+/// for the load itself, because it holds heavy muscular work as well as cardiovascular effort.
+/// The `threshold` band anchors the score, so one hour held at threshold reads about 100,
+/// aligning with the FTP and TSS convention.
 ///
 /// - `easy`: recovery and aerobic base.
 /// - `tempo`: sustained sub-threshold effort, roughly marathon-to-half pace.
 /// - `threshold`: at lactate threshold, the score anchor.
-/// - `vo2max`: above threshold.
+/// - `hard`: above threshold, or a heavy muscular load that heart rate does not show, such as a
+///   steep eccentric descent or a power-hike.
 ///
 /// The tempo and threshold bands share a soft boundary: the classifier separates them across a
 /// run but blurs them per moment, since the real distinction is blood lactate rather than a
@@ -30,7 +32,7 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
     case easy
     case tempo
     case threshold
-    case vo2max
+    case hard
 
     /// A display name for a watch face or summary, distinct from the raw case name used for
     /// storage and logic.
@@ -39,7 +41,7 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
         case .easy:      return "Easy"
         case .tempo:     return "Tempo"
         case .threshold: return "Threshold"
-        case .vo2max:    return "VO₂ Max"
+        case .hard:      return "Hard"
         }
     }
 
@@ -50,7 +52,7 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
         case .easy:      return 0.25
         case .tempo:     return 0.50
         case .threshold: return 0.75
-        case .vo2max:    return 1.00
+        case .hard:      return 1.00
         }
     }
 
@@ -61,7 +63,7 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
         case .easy:      return 0
         case .tempo:     return 1
         case .threshold: return 2
-        case .vo2max:    return 3
+        case .hard:      return 3
         }
     }
 
@@ -71,7 +73,7 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
         case 0:  self = .easy
         case 1:  self = .tempo
         case 2:  self = .threshold
-        default: self = .vo2max
+        default: self = .hard
         }
     }
 }

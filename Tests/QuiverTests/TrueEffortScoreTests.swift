@@ -44,8 +44,15 @@ final class TrueEffortScoreTests: XCTestCase {
         XCTAssertEqual(EffortClass.easy.weight, 0.25)
         XCTAssertEqual(EffortClass.tempo.weight, 0.50)
         XCTAssertEqual(EffortClass.threshold.weight, 0.75)
-        XCTAssertEqual(EffortClass.vo2max.weight, 1.00)
+        XCTAssertEqual(EffortClass.hard.weight, 1.00)
         XCTAssertEqual(EffortClass.allCases.map(\.ordinal), [0, 1, 2, 3])
+    }
+
+    // The top band stores and displays as "hard", the name the white paper argues for
+    func testHardBandRawValueAndLabel() {
+        XCTAssertEqual(EffortClass.hard.rawValue, "hard")
+        XCTAssertEqual(EffortClass.hard.label, "Hard")
+        XCTAssertEqual(EffortClass(rawValue: "hard"), .hard)
     }
 
     // MARK: - Construction
@@ -228,7 +235,7 @@ final class TrueEffortScoreTests: XCTestCase {
         tes.record(heartRate: 166, pace: 9.6, cadence: 144, grade: 9.5,
                    verticalOscillation: 6.4, altitude: 100, at: Date(timeIntervalSince1970: 0),
                    hrTrust: 0.0)
-        XCTAssertEqual(tes.currentEffort, .vo2max)
+        XCTAssertEqual(tes.currentEffort, .hard)
     }
 
     // The blend target is the anchor heart-rate mean in beats per minute, not the mean of the

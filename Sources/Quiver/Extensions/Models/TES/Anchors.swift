@@ -33,34 +33,34 @@ extension TrueEffortScore {
         [127, 7.0, 160,  0.0, 9.1],   // easy — relaxed cruise
         [133, 6.4, 166,  0.5, 8.6],   // easy — gentle rise
         [129, 6.7, 163, -0.5, 8.9],   // easy — slight dip
-        [132, 5.0, 158, -6.0, 11.0],  // vo2max — steep downhill, eccentric load
-        [130, 5.2, 156, -5.5, 10.8],  // vo2max — steep downhill, eccentric load
-        [165, 9.5, 145,  9.0, 6.5],   // vo2max — power hike, steep climb
-        [168, 9.8, 142, 10.0, 6.3],   // vo2max — power hike, steep climb
-        [172, 5.8, 178,  5.0, 7.4],   // vo2max — running uphill, still striding
-        [176, 6.0, 176,  6.0, 7.2],   // vo2max — running uphill, still striding
+        [132, 5.0, 158, -6.0, 11.0],  // hard — steep downhill, eccentric load
+        [130, 5.2, 156, -5.5, 10.8],  // hard — steep downhill, eccentric load
+        [165, 9.5, 145,  9.0, 6.5],   // hard — power hike, steep climb
+        [168, 9.8, 142, 10.0, 6.3],   // hard — power hike, steep climb
+        [172, 5.8, 178,  5.0, 7.4],   // hard — running uphill, still striding
+        [176, 6.0, 176,  6.0, 7.2],   // hard — running uphill, still striding
         [150, 5.5, 172,  1.0, 8.0],   // tempo — steady, slight climb
         [148, 5.8, 170,  0.5, 8.1],   // tempo — steady, rolling
         [155, 5.3, 174,  1.5, 7.9],   // threshold — climbing
         [158, 5.0, 176,  1.0, 7.6],   // threshold — fast
         [170, 4.8, 180,  0.0, 7.0],   // threshold — fast, flat (race pace)
-        [178, 4.6, 181,  0.0, 6.9],   // vo2max — sustained above threshold
-        [175, 4.5, 182,  0.5, 6.8],   // vo2max — fast, slight climb
+        [178, 4.6, 181,  0.0, 6.9],   // hard — sustained above threshold
+        [175, 4.5, 182,  0.5, 6.8],   // hard — fast, slight climb
         [172, 4.6, 178,  0.0, 7.1],   // threshold — fast, flat
     ]
 
     /// The effort labels parallel to `anchorSamples`. The old-hard rows split between `.threshold`
-    /// (sustained race pace) and `.vo2max` (climb, descent, and above-threshold surges) by their
+    /// (sustained race pace) and `.hard` (climb, descent, and above-threshold surges) by their
     /// kinematics; that split is the main judgment call awaiting Freya's sign-off.
     public static let anchorLabels: [EffortClass] = [
         .easy, .easy, .easy, .easy, .easy, .easy, .easy,   // demo label 0 → easy
-        .vo2max, .vo2max,                                  // steep downhill eccentric → vo2max
-        .vo2max, .vo2max,                                  // power hike steep climb → vo2max
-        .vo2max, .vo2max,                                  // uphill running → vo2max
+        .hard, .hard,                                      // steep downhill eccentric → hard
+        .hard, .hard,                                      // power hike steep climb → hard
+        .hard, .hard,                                      // uphill running → hard
         .tempo, .tempo,                                    // demo label 1 (steady) → tempo
         .threshold, .threshold,                            // demo label 2 (old tempo) → threshold
         .threshold,                                        // fast flat race pace → threshold
-        .vo2max, .vo2max,                                  // sustained above threshold → vo2max
+        .hard, .hard,                                      // sustained above threshold → hard
         .threshold,                                        // fast flat → threshold
     ]
 }
