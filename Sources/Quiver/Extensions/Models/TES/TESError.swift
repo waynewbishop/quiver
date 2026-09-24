@@ -13,10 +13,11 @@
 
 import Foundation
 
-/// What the seeding init and a decode-time refit can surface, as one catchable type, so a watch
-/// app never traps. The empty init does not throw, and the live loop does not throw, so `try`
-/// appears only when seeding from existing runs or decoding. `.baselineDiverged` nests the
-/// underlying `GradientDescentError` whole, preserving its typed payload and description.
+/// What the seeding initializer can surface, as one catchable type, so a watch app can handle a
+/// failed seed without trapping. The empty init and the live loop do not throw, and decoding a
+/// saved model restores its baseline as stored without refitting, so a `TESError` comes only
+/// from seeding with existing runs. `.baselineDiverged` nests the underlying
+/// `GradientDescentError` whole, preserving its typed payload and description.
 public enum TESError: Error, Equatable, CustomStringConvertible, Sendable {
     /// The seeding init was asked for more neighbors than it has labeled examples. The empty init
     /// preconditions `k <= anchorSamples.count` instead.
