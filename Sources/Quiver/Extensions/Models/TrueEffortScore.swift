@@ -384,7 +384,6 @@ extension TrueEffortScore {
             cumulative += cls.weight * moment.deltaTime
             loadCurve.append(cumulative)
         }
-        let raw = (cumulative / Self.scoreAnchor) * 100.0
 
         let totalTime = moments.reduce(0.0) { $0 + $1.deltaTime }
         var distribution: [EffortClass: Double] = [:]
@@ -394,20 +393,17 @@ extension TrueEffortScore {
             }
         }
 
-        let ordinals = classes.map { Double($0.ordinal) }
-        let variance = varianceMultiplier(ordinals: ordinals, moments: moments)
-        let duration = durationFactor(totalTimerSeconds: totalTime)
-        let transition = Self.transitionLoad(
-            ordinals: ordinals, durations: moments.map(\.deltaTime))
+        let score = Self.sessionScore(
+            ordinals: classes.map { Double($0.ordinal) }, durations: moments.map(\.deltaTime))
 
         return TESResult(
-            adjusted: raw * variance * duration + transition * 0.1,
-            raw: raw,
+            adjusted: score.adjusted,
+            raw: score.raw,
             meanResidual: weightedMeanResidual(moments: moments),
             effortDistribution: distribution,
-            varianceMultiplier: variance,
-            durationFactor: duration,
-            transitionLoad: transition,
+            varianceMultiplier: score.varianceMultiplier,
+            durationFactor: score.durationFactor,
+            transitionLoad: score.transitionLoad,
             loadCurve: loadCurve,
             timerTime: accumulatedTimer,
             elapsedTime: accumulatedElapsed,
@@ -429,19 +425,37 @@ extension TrueEffortScore {
         return denominator > 0 ? numerator / denominator : 0
     }
 
+    /// Scores a band timeline: the raw load against the fixed anchor, the three session terms,
+    /// and the adjusted headline, raw × variance × duration + 0.1 × transition load. The result
+    /// builder calls this after classifying each moment, so the scoring math can be checked from
+    /// bands alone, independent of the classifier and its anchors.
+    static func sessionScore(ordinals: [Double], durations: [TimeInterval]) -> (
+        raw: Double, varianceMultiplier: Double, durationFactor: Double,
+        transitionLoad: Double, adjusted: Double
+    ) {
+        let load = zip(ordinals, durations).reduce(0.0) {
+            $0 + EffortClass(clampingOrdinal: Int($1.0)).weight * $1.1
+        }
+        let raw = (load / scoreAnchor) * 100.0
+        let variance = varianceMultiplier(ordinals: ordinals, durations: durations)
+        let duration = durationFactor(totalTimerSeconds: durations.reduce(0, +))
+        let transition = transitionLoad(ordinals: ordinals, durations: durations)
+        return (raw, variance, duration, transition, raw * variance * duration + transition * 0.1)
+    }
+
     /// 1 + min(0.35, 0.25·v), excluding the first five minutes of elapsed time from the variance.
-    private func varianceMultiplier(ordinals: [Double], moments: [Workout.Moment]) -> Double {
+    static func varianceMultiplier(ordinals: [Double], durations: [TimeInterval]) -> Double {
         var elapsed = 0.0
         var steadyState: [Double] = []
-        for (ordinal, moment) in zip(ordinals, moments) {
-            elapsed += moment.deltaTime
+        for (ordinal, seconds) in zip(ordinals, durations) {
+            elapsed += seconds
             if elapsed >= 300 { steadyState.append(ordinal) }
         }
         return 1.0 + Swift.min(0.35, (steadyState.variance() ?? 0) * 0.25)
     }
 
     /// 1 + 0.1·ln(minutes/45), gated at 45 minutes of active time.
-    private func durationFactor(totalTimerSeconds: TimeInterval) -> Double {
+    static func durationFactor(totalTimerSeconds: TimeInterval) -> Double {
         let minutes = totalTimerSeconds / 60.0
         guard minutes > 45 else { return 1.0 }
         return 1.0 + 0.1 * Foundation.log(minutes / 45.0)
