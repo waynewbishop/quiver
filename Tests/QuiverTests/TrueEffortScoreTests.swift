@@ -207,6 +207,66 @@ final class TrueEffortScoreTests: XCTestCase {
         XCTAssertTrue(labeled.contains("expected HR ="))
     }
 
+    // MARK: - Transition debounce
+
+    /// A 40-minute Tempo run with every fortieth sample misread as Hard, the white paper's
+    /// section 6.4 flicker case, sampled at `hz`.
+    private func flickeringTempo(hz: Double) -> (ordinals: [Double], durations: [TimeInterval]) {
+        let count = Int(40 * 60 * hz)
+        let ordinals = (0..<count).map { $0 % 40 == 39 ? 3.0 : 1.0 }
+        let durations = (0..<count).map { $0 == 0 ? 0.0 : 1.0 / hz }
+        return (ordinals, durations)
+    }
+
+    /// Consecutive bands held for the given seconds each, sampled at 1 Hz.
+    private func heldBands(
+        _ holds: [(band: Double, seconds: Int)]
+    ) -> (ordinals: [Double], durations: [TimeInterval]) {
+        var ordinals: [Double] = []
+        for hold in holds {
+            ordinals += Array(repeating: hold.band, count: hold.seconds)
+        }
+        let durations = ordinals.indices.map { $0 == 0 ? 0.0 : 1.0 }
+        return (ordinals, durations)
+    }
+
+    // The flicker the white paper counts as 238 (1 Hz) and 478 (2 Hz) undebounced adds nothing
+    func testDebounceRemovesFlickerAtAnySampleRate() {
+        for (hz, undebounced) in [(1.0, 238.0), (2.0, 478.0)] {
+            let run = flickeringTempo(hz: hz)
+            let raw = zip(run.ordinals, run.ordinals.dropFirst())
+                .map { abs($1 - $0) }.filter { $0 >= 2 }.reduce(0, +)
+            XCTAssertEqual(raw, undebounced)
+            XCTAssertEqual(
+                TrueEffortScore.transitionLoad(ordinals: run.ordinals, durations: run.durations), 0)
+        }
+    }
+
+    // A real surge, Easy to Hard and back, still counts both jumps
+    func testDebounceKeepsARealSurge() {
+        let run = heldBands([(0, 60), (3, 60), (0, 60)])
+        XCTAssertEqual(
+            TrueEffortScore.transitionLoad(ordinals: run.ordinals, durations: run.durations), 6)
+    }
+
+    // A band held for exactly ten seconds is real; nine seconds is a flicker
+    func testDebounceBoundaryIsTenSeconds() {
+        let held = heldBands([(1, 60), (3, 10), (1, 60)])
+        let flicker = heldBands([(1, 60), (3, 9), (1, 60)])
+        XCTAssertEqual(
+            TrueEffortScore.transitionLoad(ordinals: held.ordinals, durations: held.durations), 4)
+        XCTAssertEqual(
+            TrueEffortScore.transitionLoad(
+                ordinals: flicker.ordinals, durations: flicker.durations), 0)
+    }
+
+    // A short band at the very start takes the first band held long enough
+    func testDebounceLeadingShortBandTakesFirstHeldBand() {
+        let run = heldBands([(3, 5), (0, 60)])
+        XCTAssertEqual(
+            TrueEffortScore.debouncedBands(ordinals: run.ordinals, durations: run.durations), [0])
+    }
+
     // MARK: - hrTrust
 
     func testHRTrustZeroDoesNotIntensifyClassification() {

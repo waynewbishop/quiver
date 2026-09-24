@@ -73,6 +73,10 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     /// The active-time floor, in seconds, below which a run is too short to score or keep.
     static let minimumTimerSeconds: TimeInterval = 60
 
+    /// The shortest hold, in seconds, that counts as a real band when measuring transitions.
+    /// Anything briefer is a classifier flicker at a boundary, not a change of effort.
+    static let minimumBandSeconds: TimeInterval = 10
+
     // MARK: Codable (transient live-run state is excluded)
 
     private enum CodingKeys: String, CodingKey {
@@ -369,7 +373,8 @@ extension TrueEffortScore {
         let ordinals = classes.map { Double($0.ordinal) }
         let variance = varianceMultiplier(ordinals: ordinals, moments: moments)
         let duration = durationFactor(totalTimerSeconds: totalTime)
-        let transition = transitionLoad(ordinals: ordinals)
+        let transition = Self.transitionLoad(
+            ordinals: ordinals, durations: moments.map(\.deltaTime))
 
         return TESResult(
             adjusted: raw * variance * duration + transition * 0.1,
@@ -418,8 +423,42 @@ extension TrueEffortScore {
         return 1.0 + 0.1 * Foundation.log(minutes / 45.0)
     }
 
-    /// Σ|Δclass| for jumps of two or more bands between consecutive moments.
-    private func transitionLoad(ordinals: [Double]) -> Double {
-        zip(ordinals, ordinals.dropFirst()).map { abs($1 - $0) }.filter { $0 >= 2 }.reduce(0, +)
+    /// Σ|Δclass| for jumps of two or more bands between held bands, after debouncing. Counting
+    /// raw consecutive moments instead would score every boundary flicker as a surge, and the
+    /// inflation would grow with the sample rate.
+    static func transitionLoad(ordinals: [Double], durations: [TimeInterval]) -> Double {
+        let bands = debouncedBands(ordinals: ordinals, durations: durations)
+        return zip(bands, bands.dropFirst()).map { abs($1 - $0) }.filter { $0 >= 2 }.reduce(0, +)
+    }
+
+    /// Collapses per-moment bands into the sequence of bands actually held. A band held for less
+    /// than `minimumBandSeconds` (summed moment durations, so the rule is the same at any sample
+    /// rate) merges into the band before it. A short band at the very start of a run has nothing
+    /// before it, so it takes the first band that is held long enough; if none is, the bands
+    /// stand as recorded.
+    static func debouncedBands(ordinals: [Double], durations: [TimeInterval]) -> [Double] {
+        var runs: [(band: Double, seconds: TimeInterval)] = []
+        for (band, seconds) in zip(ordinals, durations) {
+            if let last = runs.last, last.band == band {
+                runs[runs.count - 1].seconds += seconds
+            } else {
+                runs.append((band, seconds))
+            }
+        }
+
+        let firstHeldBand = runs.first { $0.seconds >= minimumBandSeconds }?.band
+        var held: [Double] = []
+        for run in runs {
+            let band: Double
+            if run.seconds >= minimumBandSeconds {
+                band = run.band
+            } else if let previous = held.last {
+                band = previous
+            } else {
+                band = firstHeldBand ?? run.band
+            }
+            if held.last != band { held.append(band) }
+        }
+        return held
     }
 }
