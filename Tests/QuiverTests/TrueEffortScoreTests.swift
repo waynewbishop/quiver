@@ -221,6 +221,25 @@ final class TrueEffortScoreTests: XCTestCase {
         }
     }
 
+    // A fully doubted power-hike keeps its top-band label: heart rate is held at the anchor
+    // mean in beats per minute, so the climb's pace, cadence, and grade still decide it
+    func testHRTrustZeroPowerHikeStaysInTopBand() {
+        var tes = TrueEffortScore()
+        tes.record(heartRate: 166, pace: 9.6, cadence: 144, grade: 9.5,
+                   verticalOscillation: 6.4, altitude: 100, at: Date(timeIntervalSince1970: 0),
+                   hrTrust: 0.0)
+        XCTAssertEqual(tes.currentEffort, .vo2max)
+    }
+
+    // The blend target is the anchor heart-rate mean in beats per minute, not the mean of the
+    // standardized training rows (about zero)
+    func testHRTrustBlendTargetIsRawAnchorMean() {
+        let tes = TrueEffortScore()
+        let anchorMean = TrueEffortScore.anchorSamples.map { $0[0] }.mean() ?? 0
+        XCTAssertEqual(tes.classifier.scaler.means[0], anchorMean, accuracy: 1e-9)
+        XCTAssertEqual(anchorMean, 150.571, accuracy: 0.001)
+    }
+
     // MARK: - Signal z-scores (the "why" surface)
 
     func testCurrentSignalsNilBeforeFirstSample() {

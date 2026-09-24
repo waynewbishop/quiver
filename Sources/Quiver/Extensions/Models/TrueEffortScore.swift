@@ -311,16 +311,20 @@ extension TrueEffortScore {
         return Array(history.suffix(limit))
     }
 
-    /// Classifies one moment, discounting a doubted heart rate toward the training-row mean so a
-    /// fully doubted reading classifies on the four kinematic signals.
+    /// Classifies one moment, discounting a doubted heart rate toward the training mean. A fully
+    /// doubted reading holds heart rate at that mean, the center of the heart-rate axis, so the
+    /// kinematic signals decide the label.
     func effortClass(for moment: Workout.Moment) -> EffortClass {
         var row = moment.classifierFeatures
         row[0] = moment.hrTrust * row[0] + (1 - moment.hrTrust) * trainingHeartRateMean
         return EffortClass(clampingOrdinal: classifier.predict([row])[0])
     }
 
+    /// The training heart-rate mean in beats per minute, read from the pipeline's scaler. The
+    /// model's stored training rows are already standardized, so averaging them gives about
+    /// zero, not a heart rate; the blend above needs the raw mean.
     private var trainingHeartRateMean: Double {
-        (classifier.model.trainingFeatures.map { $0[0] }.mean()) ?? 0
+        classifier.scaler.means[0]
     }
 
     /// The fixed-anchor score for classified moments: 100 × Σ(weight·Δt) / 2700.
