@@ -134,8 +134,9 @@ public struct KNearestNeighbors: Classifier, Codable, CustomStringConvertible, E
             distances.append((index: i, distance: d))
         }
 
-        // Find the k nearest neighbors
-        distances.sort { $0.distance < $1.distance }
+        // Find the k nearest neighbors. Equal distances fall back to training order, so the
+        // neighbor list, and every tie-break that reads it, is the same on every run.
+        distances.sort { ($0.distance, $0.index) < ($1.distance, $1.index) }
         let neighbors = distances.prefix(k)
 
         // Vote among neighbors
@@ -197,17 +198,15 @@ public struct KNearestNeighbors: Classifier, Codable, CustomStringConvertible, E
         }
     }
 
-    /// Returns the most common label among neighbors (one vote each).
+    /// Returns the most common label among neighbors (one vote each), breaking a tie in favor
+    /// of the label held by the nearest neighbor.
     private func _majorityVote(_ neighbors: ArraySlice<(index: Int, distance: Double)>) -> Int {
         var counts: [Int: Int] = [:]
         for neighbor in neighbors {
             let label = trainingLabels[neighbor.index]
             counts[label, default: 0] += 1
         }
-        guard let winner = counts.max(by: { $0.value < $1.value }) else {
-            preconditionFailure("Vote counts must not be empty")
-        }
-        return winner.key
+        return _nearestWinner(counts, neighbors)
     }
 
     /// Returns the label with the highest total weight (weight = 1/distance).
@@ -225,9 +224,27 @@ public struct KNearestNeighbors: Classifier, Codable, CustomStringConvertible, E
             let label = trainingLabels[neighbor.index]
             weights[label, default: 0.0] += 1.0 / neighbor.distance
         }
-        guard let winner = weights.max(by: { $0.value < $1.value }) else {
-            preconditionFailure("Weighted votes must not be empty")
+        return _nearestWinner(weights, neighbors)
+    }
+
+    /// Picks the label with the highest score, walking neighbors nearest first so a tie goes to
+    /// the label of the nearest neighbor. Reading the scores dictionary directly would not do:
+    /// its iteration order changes from one launch to the next, so a tie could resolve
+    /// differently each time the same model ran.
+    private func _nearestWinner<Score: Comparable>(
+        _ scores: [Int: Score],
+        _ neighbors: ArraySlice<(index: Int, distance: Double)>
+    ) -> Int {
+        var winner: (label: Int, score: Score)?
+        for neighbor in neighbors {
+            let label = trainingLabels[neighbor.index]
+            guard let score = scores[label] else { continue }
+            if let current = winner, score <= current.score { continue }
+            winner = (label, score)
         }
-        return winner.key
+        guard let winner else {
+            preconditionFailure("Vote counts must not be empty")
+        }
+        return winner.label
     }
 }

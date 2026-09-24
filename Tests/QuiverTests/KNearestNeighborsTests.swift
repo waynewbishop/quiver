@@ -300,6 +300,28 @@ final class KNearestNeighborsTests: XCTestCase {
         XCTAssertNotEqual(model1, different)
     }
 
+    // A three-way tie goes to the nearest neighbor's label, not to whichever label a
+    // dictionary happens to yield first, so the answer is the same on every launch
+    func testMajorityVoteTieGoesToNearestNeighbor() {
+        let features: [[Double]] = [[0.0], [1.0], [2.0]]
+        let labels = [5, 7, 9]
+        let model = KNearestNeighbors.fit(features: features, labels: labels, k: 3)
+
+        XCTAssertEqual(model.predict([[0.1]]), [5])
+        XCTAssertEqual(model.predict([[1.1]]), [7])
+        XCTAssertEqual(model.predict([[1.9]]), [9])
+    }
+
+    // With equal weights at equal distances, the tie goes to the earlier training row
+    func testDistanceWeightedTieGoesToEarlierRow() {
+        let features: [[Double]] = [[-1.0], [1.0]]
+        let labels = [3, 8]
+        let model = KNearestNeighbors.fit(
+            features: features, labels: labels, k: 2, weight: .distance)
+
+        XCTAssertEqual(model.predict([[0.0]]), [3])
+    }
+
     // Scalar convenience predict returns a single Int label for a single-feature sample
     func testScalarPredict() {
         // One feature, two well-separated groups.
