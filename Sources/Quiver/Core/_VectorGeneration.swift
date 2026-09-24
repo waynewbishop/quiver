@@ -45,7 +45,7 @@ extension _Vector where Element: Numeric {
     /// Creates a 2D array filled with ones
     static func ones2D(_ rows: Int, _ columns: Int) -> [[Element]] {
         precondition(rows >= 0 && columns >= 0, "Dimensions must be non-negative")
-        guard let one = (1 as? Element) else {
+        guard let one = Element(exactly: 1) else {
             preconditionFailure("Element type does not support exact conversion from 1")
         }
         let row = [Element](repeating: one, count: columns)
