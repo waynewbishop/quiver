@@ -29,6 +29,10 @@ final class ArrayGenerationTests: XCTestCase {
     func testGeneration2D() {
         XCTAssertEqual([Int].zeros(2, 3), [[0, 0, 0], [0, 0, 0]])
         XCTAssertEqual([Int].ones(2, 2), [[1, 1], [1, 1]])
+        XCTAssertEqual([Double].ones(2, 3), [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
+        XCTAssertEqual([Float].ones(2, 2), [[1.0, 1.0], [1.0, 1.0]])
+        XCTAssertEqual([Double].ones(0, 3), [])
+        XCTAssertEqual([Double].ones(2, 0), [[], []])
         XCTAssertEqual([Int].full(2, 2, value: 7), [[7, 7], [7, 7]])
         XCTAssertEqual(
             [Double].diag([1.0, 2.0, 3.0]),
