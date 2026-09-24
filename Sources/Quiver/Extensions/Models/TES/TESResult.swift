@@ -19,7 +19,7 @@ import Foundation
 /// deliberately no `score()` accessor that hides them.
 public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
 
-    public let adjusted: Double   // headline; fixed-anchor, about 100 for one hour at threshold
+    public let adjusted: Double   // headline; the raw anchor is 100 for one hour at threshold
     public let raw: Double        // pre-adjustment score, 100 × Σ(weight·Δt) / (0.75 × 3600)
 
     /// Observed minus expected heart rate, the session mean and the core effort signal. Trust- and

@@ -15,8 +15,8 @@ import Foundation
 
 /// The four effort bands. The first three are named as training zones; the top band is named
 /// for the load itself, because it holds heavy muscular work as well as cardiovascular effort.
-/// The `threshold` band anchors the score, so one hour held at threshold reads about 100,
-/// aligning with the FTP and TSS convention.
+/// The `threshold` band anchors the score, so one hour held at threshold reads 100 on the
+/// raw score, following the convention of power-based training stress scores.
 ///
 /// - `easy`: recovery and aerobic base.
 /// - `tempo`: sustained sub-threshold effort, roughly marathon-to-half pace.

@@ -15,7 +15,8 @@ import Foundation
 
 /// A completed run, folded into history and the unit the baseline is fit on. Each moment is stored
 /// as raw signal values rather than a wrapper type, so a caller reads a workout back the same way
-/// they recorded it. Heart rate is stored as an outcome and used only as the regression target.
+/// they recorded it. Heart rate is stored as an outcome: the baseline's regression target and
+/// one of the classifier's inputs.
 public struct Workout: Codable, Equatable, Sendable {
 
     /// One recorded moment, as raw sensor values. Internal: callers record via

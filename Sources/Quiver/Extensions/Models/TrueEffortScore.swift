@@ -20,13 +20,15 @@ import Foundation
 ///
 /// The design classifies every misleading effect by which signal lies and in which direction:
 /// inflating effects (heat, drift, altitude) push heart rate up and surface as the baseline
-/// residual; masking effects (downhill, power hiking) fool heart rate and are caught by the
-/// classifier; session-level effects (intervals, duration) are applied at `finalize()`.
+/// residual, and once a baseline exists they are kept out of the effort band; masking effects
+/// (downhill, power hiking) fool heart rate and are caught by the classifier; session-level
+/// effects (intervals, duration) are applied at `finalize()`.
 ///
 /// Construct empty for a cold start or decode a saved model to resume. Persistence is synthesized
 /// `Codable`, so a caller uses `JSONEncoder` and `JSONDecoder` as with any Quiver model. Heart
-/// rate is only ever the regression target, never an effort feature, so regressing effort on
-/// heart rate is unrepresentable.
+/// rate is the baseline's regression target and never one of its inputs, so the baseline cannot
+/// explain heart rate with heart rate. The classifier does read heart rate, capped at the
+/// baseline's expectation once a baseline exists.
 public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Sendable {
 
     // MARK: Trained models (the composed Quiver half)

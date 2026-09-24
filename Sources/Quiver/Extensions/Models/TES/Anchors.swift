@@ -17,10 +17,12 @@ import Foundation
 // classifier feature vectors [heartRate, pace, cadence, grade, verticalOscillation], parallel to
 // anchorLabels. Public so a reader can inspect what the classifier learned from.
 //
-// FREYA: this is a PLACEHOLDER anchor set pending your signed, fixture-pinned values. It was
-// ported from the shipped watchOS demo's history, remapping the demo's four-label scheme
-// (0 easy / 1 steady / 2 tempo / 3 hard) onto the EffortClass zones; the per-row remap reason is
-// carried inline. Replace before release.
+// Provisional: signed off by the exercise-science review on 2026-09-24, pending the validation
+// study. Ported from the watchOS demo's history, remapping the demo's four-label scheme
+// (0 easy / 1 steady / 2 tempo / 3 hard) onto the EffortClass bands; the per-row remap reason is
+// carried inline. The rows use absolute heart rate and pace for one runner profile, so a runner
+// far from it (a low maximum heart rate, an elite pace) is misjudged at cold start, and Tempo,
+// with 2 of 21 rows, is under-predicted.
 
 extension TrueEffortScore {
 
@@ -51,7 +53,7 @@ extension TrueEffortScore {
 
     /// The effort labels parallel to `anchorSamples`. The old-hard rows split between `.threshold`
     /// (sustained race pace) and `.hard` (climb, descent, and above-threshold surges) by their
-    /// kinematics; that split is the main judgment call awaiting Freya's sign-off.
+    /// kinematics; that split is a judgment call, provisional until the validation study.
     public static let anchorLabels: [EffortClass] = [
         .easy, .easy, .easy, .easy, .easy, .easy, .easy,   // demo label 0 → easy
         .hard, .hard,                                      // steep downhill eccentric → hard
