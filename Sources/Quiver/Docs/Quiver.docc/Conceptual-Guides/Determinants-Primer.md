@@ -130,7 +130,7 @@ scale.determinant  // 15.0
 
 The original `1`×`1` unit square becomes a `3`×`5` rectangle with area `15`. The determinant captures this scaling factor directly. Every region in the original space is now `15` times larger.
 
-![Determinant Scaling](diagram-determinant-scaling)
+![A 1 by 1 unit square stretched by the matrix [[3, 0], [0, 5]] into a 3 by 5 rectangle, with the determinant 15 equal to the scaled area](diagram-determinant-scaling)
 
 Adding a shear component tilts the rectangle into a leaning parallelogram. The shape leans, but the area does not change. Base times height still gives the same result:
 
@@ -178,7 +178,7 @@ singular.determinant  // 0.0
 
 Both transformed basis vectors land on the line `y = x`. Every point in 2D space now maps onto that single line — an entire dimension of information is gone. We cannot rebuild the original 2D positions from a 1D line, so no inverse exists.
 
-![Determinant Singular](diagram-determinant-singular)
+![Both transformed basis vectors landing on the single line y = x, so the unit square flattens to zero area and the determinant is 0](diagram-determinant-singular)
 
 The same thing happens in larger matrices: when one row is a combination of the others, that row carries no new information, the determinant is zero, and the system has no unique solution — three unknowns, say, but only two independent equations.
 

@@ -12,7 +12,7 @@ Quiver provides two column-wise scalers that solve this problem in different way
 
 Not every model requires scaling, but in practice it often makes the difference between a model that works and one that doesn't. Consider a Gaussian Naive Bayes classifier trained on customer data with credit scores (300–850), account balances (0–250,000), and loyalty ratios (0.0–0.56). Without scaling, the balance column overwhelms the probability calculations because its variance is orders of magnitude larger than the other features. The model may predict the same class for every sample, producing zero precision and zero recall.
 
-![Feature Scaler](diagram-feature-scaler)
+![Three raw features on mismatched scales — credit score, balance, and loyalty ratio — shown as bars before min-max scaling and again after, each remapped into the same 0 to 1 range](diagram-feature-scaler)
 
 Scaling all features to a common range gives each one equal influence in the model's calculations. The classifier can then distinguish between classes based on the actual patterns in the data, not on which features happen to have the largest numbers.
 

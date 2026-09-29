@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" font-family="-apple-system, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<defs>
+<marker id="ahS" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#89a5c4"/></marker>
+<marker id="ahT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d2734a"/></marker>
+</defs>
+<rect x="90" y="285" width="75" height="75" fill="none" stroke="#55534d" stroke-width="1.3"/>
+<line x1="90" y1="360" x2="405" y2="360" stroke="#c9c7c0" stroke-width="1"/>
+<line x1="90" y1="360" x2="90" y2="40" stroke="#c9c7c0" stroke-width="1"/>
+<line x1="165" y1="360" x2="165" y2="364" stroke="#c9c7c0" stroke-width="1"/>
+<line x1="240" y1="360" x2="240" y2="364" stroke="#c9c7c0" stroke-width="1"/>
+<line x1="315" y1="360" x2="315" y2="364" stroke="#c9c7c0" stroke-width="1"/>
+<line x1="390" y1="360" x2="390" y2="364" stroke="#c9c7c0" stroke-width="1"/>
+<line x1="86" y1="285" x2="90" y2="285" stroke="#c9c7c0" stroke-width="1"/>
+<line x1="86" y1="210" x2="90" y2="210" stroke="#c9c7c0" stroke-width="1"/>
+<line x1="86" y1="135" x2="90" y2="135" stroke="#c9c7c0" stroke-width="1"/>
+<line x1="86" y1="60" x2="90" y2="60" stroke="#c9c7c0" stroke-width="1"/>
+<text x="90" y="376" font-size="8" fill="#a6a49d" text-anchor="middle">0</text>
+<text x="165" y="376" font-size="8" fill="#a6a49d" text-anchor="middle">1</text>
+<text x="240" y="376" font-size="8" fill="#a6a49d" text-anchor="middle">2</text>
+<text x="315" y="376" font-size="8" fill="#a6a49d" text-anchor="middle">3</text>
+<text x="390" y="376" font-size="8" fill="#a6a49d" text-anchor="middle">4</text>
+<text x="80" y="288" font-size="8" fill="#a6a49d" text-anchor="end">1</text>
+<text x="80" y="213" font-size="8" fill="#a6a49d" text-anchor="end">2</text>
+<text x="80" y="138" font-size="8" fill="#a6a49d" text-anchor="end">3</text>
+<text x="80" y="63" font-size="8" fill="#a6a49d" text-anchor="end">4</text>
+<line x1="90" y1="360" x2="315" y2="135" stroke="#c9c7c0" stroke-width="1.3" stroke-dasharray="5 4"/>
+<line x1="92.8" y1="362.8" x2="167.8" y2="287.8" stroke="#89a5c4" stroke-width="1.3" marker-end="url(#ahS)"/>
+<line x1="87.2" y1="357.2" x2="237.2" y2="207.2" stroke="#d2734a" stroke-width="1.3" marker-end="url(#ahT)"/>
+<text x="127" y="326" font-size="8.8" fill="#a6a49d" text-anchor="middle">1 × 1</text>
+<text x="180" y="306" font-size="8.8" fill="#a6a49d" text-anchor="start">i-hat [1, 1]</text>
+<text x="226" y="192" font-size="8.8" fill="#a6a49d" text-anchor="end">j-hat [2, 2]</text>
+<text x="330" y="250" font-size="10.5" fill="#f0efeb" font-weight="600" text-anchor="start">area = 0</text>
+<text x="330" y="266" font-size="8.8" fill="#a6a49d" text-anchor="start">det = 0.0</text>
+<text x="325" y="130" font-size="7.6" fill="#7d7b74" font-weight="600" letter-spacing="1.1" text-anchor="start">COLLAPSED ONTO Y = X</text>
+</svg>

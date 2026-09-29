@@ -14,6 +14,8 @@ The "Gaussian" in Gaussian Naive Bayes refers to the probability density functio
 
 During prediction the model evaluates the Gaussian PDF for every feature against every class. We then combine these likelihoods with the class prior probabilities to determine which class best explains the observed features. The prior probabilities tell us how common each class is in the training data. The class with the highest combined score wins. Class priors are simply a frequency table over the labels. See <doc:Frequency-Tables> for details.
 
+![Three panels showing Gaussian naive Bayes: training points with per-class means and variances, the learned bell curve for each class, and a new sample classified by likelihood times prior](diagram-naive-bayes)
+
 
 ### Fitting a model
 

@@ -26,3 +26,6 @@ docs/build/
 *.swp
 *~
 .*.sw*
+# Obsidian vault (Quiver.docc is opened as a vault)
+.obsidian/
+Sources/Quiver/Docs/Quiver.docc/_hubs/

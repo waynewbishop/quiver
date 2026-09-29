@@ -115,6 +115,7 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Embedding-Sources>
 - <doc:Retrieving-Context-For-Generation>
 - <doc:Panel-Workflows>
+- <doc:Building-An-Effort-Model>
 
 ### Utilities
 - <doc:Quiver-Notebook>
