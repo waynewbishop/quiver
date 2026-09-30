@@ -166,6 +166,8 @@ tes.isPaused             // false
 
 <!-- TODO(Wayne): discardRun() is missing from the article. It clears the in-progress run without folding it into history (a workout the runner cancels). -->
 
+<!-- TODO(Wayne): indoor runs. Set `tes.location = .indoor` before the first `record` for a treadmill run; the default is `.outdoor`, so outdoor callers change nothing. An indoor run records every grade as `TrueEffortScore.indoorGrade` (0.5%) whatever the caller passes, because the watch's barometric altimeter cannot sense belt incline. Ending the run (finalize, discardRun, or a run under the 60 s floor) resets location to `.outdoor`. Location is live-run state: not encoded, not part of ==, so a decoded model starts outdoor. -->
+
 ## Reading the live values
 
 While the run streams, the model exposes live readouts a UI can poll each tick. The score climbs and never decreases.
@@ -209,6 +211,8 @@ print(result)
 ```
 
 At finalize the run is folded into history, trimmed to `historyLimit`, and the baseline refits from the accumulated history. That refit runs through `try?`, so a divergent fit is swallowed and the previous baseline stays in place. The classifier never refits — it stays frozen after seeding, and only the baseline personalizes over time.
+
+<!-- TODO(Wayne): an indoor run's finalize() returns the full TESResult but does not fold the run into history or refit the baseline, so sessionCount counts outdoor runs only. Reason: a 0.5% stand-in grade on an inclined belt would teach the baseline that this runner's heart rate runs high on level ground, skewing every later outdoor score. The trade-off: an incline treadmill session is under-scored for that one run. -->
 
 <!-- TODO(Wayne): demo app. history stores Workouts (raw moments), not scores; the TESResult returned here is dropped unless the app saves it. The demo must persist each TESResult itself for past-score lists or "runs like this one" retrieval (rescoring old workouts would use today's baseline, not the one in place at the time). A per-run chart of pace or grade from history also has to be recorded by the app for now (see the Workout access note below). -->
 
@@ -340,6 +344,7 @@ This model combines simple, interpretable pieces rather than one opaque algorith
 
 ### Inputs
 - ``Workout``
+- ``WorkoutLocation``
 - ``EffortSignals``
 
 ### Results
