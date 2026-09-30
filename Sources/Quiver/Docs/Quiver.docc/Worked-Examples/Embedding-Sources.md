@@ -6,7 +6,7 @@ Connect Quiver's search surface to other embedding sources through a single prot
 
 The `Embedder` protocol bridges text and ranked search. Just as <doc:Data-Visualization> prepares data for charting, `Embedder` separates vector creation from vector ranking. Quiver owns the ranking and reporting logic; the caller owns the vector source.
 
-We need a way to convert text into vectors. Quiver assembles this conversion manually, tokenizing the text and averaging the word vectors it looks up, as shown in <doc:Text-Tokenization>; the source is left open. A small word-vector table works for learning; a production app reaches for an on-device sentence model. The `Embedder` protocol defines a single operation, text in and vector out, allowing ranking methods to work against any source without modification.
+We need a way to convert text into vectors. Quiver assembles this conversion manually, tokenizing the text and averaging the word vectors it looks up, as shown in <doc:Text-Tokenization>; the source is left open. A word-vector table such as GloVe is the recommended starting point, and an on-device sentence model can take its place whenever it ranks a particular corpus better. The `Embedder` protocol defines a single operation, text in and vector out, allowing ranking methods to work against any source without modification.
 
 The `Embedder` protocol names a single operation, text in and vector out, and lets every downstream method work against that operation rather than against any particular source. Conform once, and the ranking surface treats a hand-built dictionary and an `NLContextualEmbedding` model exactly alike.
 
@@ -108,9 +108,9 @@ A single contract spans the full range of embedding sources, from a hand-typed t
 | Level | Source | Character |
 |---|---|---|
 | 0 | Hand-built `[String: [Double]]` | Zero setup; every number inspectable |
-| 1 | [GloVe](https://github.com/stanfordnlp/GloVe) word vectors with averaging | Teaching baseline; order-blind |
-| 2 | [NLEmbedding](https://developer.apple.com/documentation/naturallanguage/nlembedding) sentence vectors | Production quality; returns a vector natively |
-| 3 | `NLContextualEmbedding` transformer vectors | Highest fidelity; contextual vectors pooled to `[Double]` |
+| 1 | [GloVe](https://github.com/stanfordnlp/GloVe) word vectors with averaging | Recommended starting point; order-blind |
+| 2 | [NLEmbedding](https://developer.apple.com/documentation/naturallanguage/nlembedding) sentence vectors | Built into Apple platforms; returns a vector natively |
+| 3 | `NLContextualEmbedding` transformer vectors | Context-aware; contextual vectors pooled to `[Double]` |
 
 > Important: The contract is the boundary. Code that ranks, stores, or reports results depends on `Embedder`, never on the source behind it. Swapping level 1 for level 3 changes the one line that constructs the embedder and nothing else.
 
@@ -118,7 +118,7 @@ A single contract spans the full range of embedding sources, from a hand-typed t
 
 The embedder is the swappable front of the search pipeline; the rest of that pipeline lives in <doc:Semantic-Search>, which shows how tokenization, embedding lookup, and cosine similarity fit together. For the vector operations underneath (dot products, magnitudes, and cosine similarity itself), see <doc:Vector-Operations> and <doc:Similarity-Operations>. The averaging step that builds a single document vector is one application of the descriptive statistics in <doc:Statistics-Primer>.
 
-> Experiment: **The Quiver Notebook** is the right place to feel the swap that the contract enables. Load `Dataset.glove50d`, wrap it in a `TableEmbedder`, and rank a three-document corpus against a query with `embedded(using:)` then `mostSimilar(to:k:)`. Then change only the embedder (swap in a different table, or a richer source) and re-run the exact same ranking lines. The results shift while the pipeline stays still, and that gap between source and pipeline is the whole point of the contract. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to feel the swap that the contract enables. Load `Dataset.glove50d`, wrap it in a `TableEmbedder`, and rank a three-document corpus against a query with `embedded(using:)` then `mostSimilar(to:k:)`. Then change only the embedder (swap in a different table, or a richer source) and re-run the exact same ranking lines. The results shift while the pipeline stays still, and that gap between source and pipeline is the whole point of the contract. The Notebook's Gate a Retrieval example carries GloVe through a full retrieval, from chunking to a relevance gate. See <doc:Quiver-Notebook>.
 
 ## Topics
 
