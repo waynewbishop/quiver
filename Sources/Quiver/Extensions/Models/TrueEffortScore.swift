@@ -61,6 +61,12 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
 
     // MARK: Live run state (transient; not encoded)
 
+    /// Where the current run takes place, `.outdoor` unless set. Set it before the first sample:
+    /// an indoor run records every grade as `indoorGrade` and is scored but not folded into
+    /// history. Ending the run (`finalize()` or `discardRun()`) resets it to `.outdoor`. Changing
+    /// it mid-run affects only later samples, and `finalize()` reads the value at the end.
+    public var location: WorkoutLocation = .outdoor
+
     private var liveMoments: [Workout.Moment] = []
     private var lastSampleTime: Date?
     private var runStartDate: Date?
@@ -78,6 +84,11 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     /// The shortest hold, in seconds, that counts as a real band when measuring transitions.
     /// Anything briefer is a classifier flicker at a boundary, not a change of effort.
     static let minimumBandSeconds: TimeInterval = 10
+
+    /// The grade, in percent, recorded for every sample of an indoor run. The watch cannot sense
+    /// treadmill incline, so an indoor run is scored as level ground at the usual 0.5% setting;
+    /// an incline the runner sets on the belt is not reflected.
+    public static let indoorGrade = 0.5
 
     // MARK: Codable (transient live-run state is excluded)
 
@@ -148,7 +159,7 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     /// but stamps the start; a post-resume gap advances wall clock only, never timer time or the
     /// run's start. `hrTrust` is the optical-sensor reliability, clamped to `0...1`; a fully
     /// doubted reading classifies on the kinematic signals alone. Grade is signed, negative for
-    /// downhill.
+    /// downhill; on an indoor run it is recorded as `indoorGrade` whatever the caller supplies.
     public mutating func record(
         heartRate: Double,
         pace: Double,
@@ -175,7 +186,8 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
         }
 
         liveMoments.append(Workout.Moment(
-            heartRate: heartRate, pace: pace, cadence: cadence, grade: grade,
+            heartRate: heartRate, pace: pace, cadence: cadence,
+            grade: location == .indoor ? Self.indoorGrade : grade,
             verticalOscillation: verticalOscillation, altitude: altitude,
             hrTrust: Swift.min(1.0, Swift.max(0.0, hrTrust)), deltaTime: delta))
         lastSampleTime = time
@@ -237,7 +249,8 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     // MARK: Finalization
 
     /// Closes the run: returns the breakdown, folds the run into history, and re-fits the baseline
-    /// from the accumulated history (the classifier stays frozen). Returns nil when active
+    /// from the accumulated history (the classifier stays frozen). An indoor run returns its
+    /// breakdown but leaves history and the baseline untouched. Returns nil when active
     /// `timerTime` is below the floor, in which case the run is cleared and not kept.
     public mutating func finalize() -> TESResult? {
         guard timerTime >= Self.minimumTimerSeconds else {
@@ -249,10 +262,12 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
         let start = runStartDate ?? lastSampleTime ?? Date(timeIntervalSince1970: 0)
         let result = buildResult(moments: moments)
 
-        history = Self.trimmed(history + [Workout(moments: moments, startDate: start)],
-                               to: historyLimit)
-        if let refit = try? Self.fitBaseline(history: history, lambda: lambda) {
-            baseline = refit
+        if location == .outdoor {
+            history = Self.trimmed(history + [Workout(moments: moments, startDate: start)],
+                                   to: historyLimit)
+            if let refit = try? Self.fitBaseline(history: history, lambda: lambda) {
+                baseline = refit
+            }
         }
 
         clearLiveRun()
@@ -364,6 +379,7 @@ extension TrueEffortScore {
 
     /// Resets all transient live-run state.
     mutating func clearLiveRun() {
+        location = .outdoor
         liveMoments = []
         lastSampleTime = nil
         runStartDate = nil

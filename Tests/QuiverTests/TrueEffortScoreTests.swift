@@ -633,4 +633,92 @@ final class TrueEffortScoreTests: XCTestCase {
         }
         XCTAssertEqual(tes.sessionCount, 2)
     }
+
+    // MARK: - Workout location
+
+    func testLocationDefaultsToOutdoor() {
+        XCTAssertEqual(TrueEffortScore().location, .outdoor)
+    }
+
+    func testIndoorRunScoresWithoutFoldingIntoHistory() {
+        var tes = establishedModel()
+        let baselineBefore = tes.baseline
+        tes.location = .indoor
+        recordThreshold(&tes, count: 120, start: Date(timeIntervalSince1970: 5_000_000))
+        let result = tes.finalize()
+        XCTAssertNotNil(result)
+        if let r = result {
+            XCTAssertGreaterThan(r.raw, 0)
+        }
+        XCTAssertEqual(tes.sessionCount, 1, "an indoor run must not join history")
+        XCTAssertEqual(tes.baseline, baselineBefore, "an indoor run must not refit the baseline")
+    }
+
+    func testIndoorRunRecordsTheFixedGrade() {
+        let time = Date(timeIntervalSince1970: 0)
+        var indoor = TrueEffortScore()
+        indoor.location = .indoor
+        indoor.record(heartRate: 150, pace: 5.6, cadence: 171, grade: 6.0,
+                      verticalOscillation: 8.0, altitude: 100, at: time)
+        var outdoor = TrueEffortScore()
+        outdoor.record(heartRate: 150, pace: 5.6, cadence: 171, grade: TrueEffortScore.indoorGrade,
+                       verticalOscillation: 8.0, altitude: 100, at: time)
+        XCTAssertNotNil(indoor.currentSignals)
+        XCTAssertEqual(indoor.currentSignals, outdoor.currentSignals,
+                       "the supplied 6% grade should be replaced by the indoor grade")
+    }
+
+    func testOutdoorRunRecordsTheSuppliedGrade() {
+        let time = Date(timeIntervalSince1970: 0)
+        var steep = TrueEffortScore()
+        steep.record(heartRate: 150, pace: 5.6, cadence: 171, grade: 6.0,
+                     verticalOscillation: 8.0, altitude: 100, at: time)
+        var level = TrueEffortScore()
+        level.record(heartRate: 150, pace: 5.6, cadence: 171, grade: TrueEffortScore.indoorGrade,
+                     verticalOscillation: 8.0, altitude: 100, at: time)
+        XCTAssertNotEqual(steep.currentSignals?.grade, level.currentSignals?.grade)
+    }
+
+    func testEndingARunResetsLocationToOutdoor() {
+        var finalized = TrueEffortScore()
+        finalized.location = .indoor
+        recordThreshold(&finalized, count: 120)
+        XCTAssertNotNil(finalized.finalize())
+        XCTAssertEqual(finalized.location, .outdoor)
+
+        var tooShort = TrueEffortScore()
+        tooShort.location = .indoor
+        recordThreshold(&tooShort, count: 30)
+        XCTAssertNil(tooShort.finalize())
+        XCTAssertEqual(tooShort.location, .outdoor)
+
+        var discarded = TrueEffortScore()
+        discarded.location = .indoor
+        recordThreshold(&discarded, count: 120)
+        discarded.discardRun()
+        XCTAssertEqual(discarded.location, .outdoor)
+    }
+
+    func testRunAfterIndoorRunFoldsIntoHistory() {
+        var tes = TrueEffortScore()
+        tes.location = .indoor
+        recordThreshold(&tes, count: 120)
+        _ = tes.finalize()
+        XCTAssertEqual(tes.sessionCount, 0)
+        recordThreshold(&tes, count: 120, start: Date(timeIntervalSince1970: 2_000_000))
+        XCTAssertNotNil(tes.finalize())
+        XCTAssertEqual(tes.sessionCount, 1)
+        XCTAssertNotNil(tes.baseline)
+    }
+
+    func testDecodedModelStartsOutdoor() throws {
+        var tes = TrueEffortScore()
+        recordThreshold(&tes, count: 120)
+        _ = tes.finalize()
+        tes.location = .indoor
+        let data = try JSONEncoder().encode(tes)
+        let restored = try JSONDecoder().decode(TrueEffortScore.self, from: data)
+        XCTAssertEqual(restored.location, .outdoor)
+        XCTAssertEqual(restored, tes, "location is live-run state and does not affect equality")
+    }
 }
