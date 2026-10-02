@@ -167,9 +167,11 @@ The Notebook ships with a small library of bundled teaching datasets: iris measu
 
 Each clone of the Notebook is locked to a specific Quiver release, so a Tuesday lecture and a Thursday exam will run against identical code. The active version is displayed in the footer of the editor, which makes it easy for a class to confirm everyone is on the same release. When a new Quiver version is bundled into the Notebook, it lands on the upstream `main` branch. We pull when we are ready to move forward, or stay on the version a course or workshop started with.
 
-### Privacy and network behavior
+### Privacy
 
-Code and data stay on the machine where they were written. The Notebook does not create accounts, send telemetry, or contact analytics endpoints, and the local server only accepts connections from the same machine: the bind address is fixed at `127.0.0.1` and the server refuses to start if it is changed. Bundled datasets ship with the repository and are read from disk by the local process. CSVs loaded from a custom path are also read locally and never transmitted.
+The Notebook keeps your work on your own Mac. There are no accounts, no telemetry, and no analytics. Code, bundled datasets, and CSVs loaded from a custom path are all read by the local process and never leave the machine.
+
+Only the Notebook's own editor can run code. The local server answers on `127.0.0.1`, making it reachable from this Mac alone. Each launch creates a private key that the editor uses behind the scenes every time you press Run. There's nothing to set up or remember. If the Notebook restarts while a tab is open, the page refreshes itself and picks up right where you left off.
 
 The editor itself uses Monaco (Microsoft's open-source code editor), which the browser loads from a public CDN (`cdnjs.cloudflare.com`) on each page load. This is a one-way asset fetch with no code or data sent back. Schools that block CDN access or require fully offline environments should plan to either allow `cdnjs.cloudflare.com` or vendor Monaco locally before adoption.
 

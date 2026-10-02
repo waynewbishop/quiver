@@ -89,9 +89,9 @@ To hold a course on a specific release across a semester, do not pull from the N
 
 > Note: `swift package update` resolves dependencies to newer versions that satisfy the manifest's version requirements. For range requirements like `from: "1.1.0"`, this can move to any 1.x release. For exact requirements like `.exact("1.1.0")`, the version is fixed and `swift package update` has no effect. The regular `swift run` and `swift build` commands respect whichever requirement is in the manifest.
 
-### Privacy and network behavior
+### Privacy
 
-Code and data stay on the student's machine, the local server accepts connections only from that machine, and there are no accounts, telemetry, or analytics anywhere in the stack. The one outbound request is the browser fetching the Monaco editor from a public CDN at page load, which schools that restrict CDN access can allow or vendor locally. See <doc:Quiver-Notebook> for the full account of the Notebook's privacy and network behavior.
+Code and data stay on the student's machine, the local server accepts connections only from that machine, and there are no accounts, telemetry, or analytics anywhere in the stack. The one outbound request is the browser fetching the Monaco editor from a public CDN at page load, which schools that restrict CDN access can allow or vendor locally. See <doc:Quiver-Notebook> for details.
 
 > Tip: The Notebook is designed for one student per laptop and runs Swift with the permissions of whoever launched it. A shared classroom server is not a supported configuration. A multi-user deployment would need sandboxing, resource limits, and per-user isolation that the current scope does not include.
 
