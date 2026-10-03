@@ -37,33 +37,13 @@ public struct TESBaseline: Codable, Equatable, CustomStringConvertible, Sendable
     /// The regression feature names, in coefficient order after the intercept.
     public static let featureNames = ["pace", "cadence", "grade", "verticalOscillation", "altitude"]
 
-    /// The fitted baseline as readable math with anonymous subscripts, forwarded from
-    /// `Ridge.equation()`. The weights are on standardized features, so each slope is the
-    /// heart-rate change per standard deviation of its signal. See `labeledExpression` to name
-    /// each signal.
-    public var expression: String {
-        expectedHeartRate.equation()
-    }
-
-    /// The fitted baseline with each slope named, such as
-    /// "expected HR = 146.3 − 3.05·pace + 3.09·cadence". The slopes are per standard deviation, so
-    /// they are directly comparable in size.
-    public var labeledExpression: String {
-        let weights = coefficients
-        guard weights.count == Self.featureNames.count + 1 else { return expression }
-        var text = "expected HR = " + Self.formatCoefficient(weights[0], leading: true)
-        for (name, weight) in zip(Self.featureNames, weights.dropFirst()) {
-            text += " " + Self.formatCoefficient(weight, leading: false) + "·" + name
-        }
-        return text
-    }
-
-    private static func formatCoefficient(_ value: Double, leading: Bool) -> String {
-        let magnitude = String(format: "%.4g", abs(value))
-        if leading {
-            return value < 0 ? "-\(magnitude)" : magnitude
-        }
-        return (value < 0 ? "- " : "+ ") + magnitude
+    /// The fitted baseline as a readable equation with each signal named, such as
+    /// `expected HR = 142.69 - 4.62·pace + 2.87·cadence + …`. It forwards to the wrapped Ridge's
+    /// ``Coefficients/equation(variables:response:)``, so it reads the same way as every other
+    /// linear model's equation. The weights are on standardized features, so each slope is the
+    /// heart-rate change per standard deviation of its signal and the sizes compare directly.
+    public func equation() -> String {
+        expectedHeartRate.equation(variables: Self.featureNames, response: "expected HR")
     }
 
     // There is no cached fit-quality metric by design: Quiver keeps quality off the fitted model
@@ -86,6 +66,6 @@ public struct TESBaseline: Codable, Equatable, CustomStringConvertible, Sendable
 
     public var description: String {
         let cond = conditioning.map { String(format: "%.1f", $0) } ?? "n/a"
-        return "TESBaseline: λ=\(lambda), conditioning=\(cond), \(expression)"
+        return "TESBaseline: λ=\(lambda), conditioning=\(cond), \(equation())"
     }
 }

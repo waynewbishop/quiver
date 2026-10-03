@@ -260,7 +260,7 @@ The personal half of the model lives in ``TESBaseline``, reachable read-only as 
 ```swift
 // nil on a cold-start model; present once a run has been finalized.
 if let baseline = tes.baseline {
-    baseline.labeledExpression  // "expected HR = 142.7 - 4.624·pace + ..."
+    baseline.equation()         // "expected HR = 142.69 - 4.62·pace + ..."
     baseline.coefficients       // per-feature weights, intercept at index 0
     baseline.conditioning       // 1-norm condition of XᵀX, nil when not measurable
 }
@@ -274,6 +274,7 @@ To make this concrete, a fit on a synthetic training history that converged afte
 
 The `conditioning` value is the 1-norm condition number of the standardized `XᵀX`, not a singular-value ratio. A value in the tens is information about signal overlap, not a failure. It reads `nil` when the fit is not meaningfully conditioned. The baseline caches no fit-quality metric on purpose — quality is measured on held-out data, not read off the trained object.
 
+<!-- TODO(Wayne, 2026-10-02): API change. labeledExpression is now equation(), and TESResult.baselineExpression (String, "y = (uncalibrated)" fallback) is now TESResult.baseline: TESBaseline?, nil on a first run, holding the baseline that scored the run (captured before finalize() refits, so it can differ from tes.baseline). This paragraph needs rewording. -->
 Before any fit has run, `tes.baseline` is `nil` and reading `tes.baseline?.labeledExpression` yields `nil`. A ``TESResult`` reports the same uncalibrated state through its `baselineExpression`, which falls back to the literal `y = (uncalibrated)` when no baseline is present. That is the honest state of a first-ever finalize, and a UI should read it as "no personal calibration yet" rather than as a model error.
 
 ## How the model learns an athlete

@@ -39,7 +39,10 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
     public let timerTime: TimeInterval      // active time, what the score is built on
     public let elapsedTime: TimeInterval    // wall clock, including pauses
 
-    public let baselineExpression: String   // fitted baseline as math, carried onto the result
+    /// The baseline that scored this run, nil on a first run before any baseline exists. It is
+    /// captured before `finalize()` refits, so it can differ from `tes.baseline`, which has
+    /// already learned from this run. Read it with `baseline?.equation()`.
+    public let baseline: TESBaseline?
 
     /// Shows the breakdown, not just the headline.
     public var description: String {
@@ -52,7 +55,7 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
           duration ×:      \(String(format: "%.3f", durationFactor))
           transitionLoad:  \(String(format: "%.2f", transitionLoad))
           timer/elapsed:   \(Int(timerTime.rounded()))s / \(Int(elapsedTime.rounded()))s
-          baseline:        \(baselineExpression)
+          baseline:        \(baseline?.equation() ?? "uncalibrated")
         """
     }
 }

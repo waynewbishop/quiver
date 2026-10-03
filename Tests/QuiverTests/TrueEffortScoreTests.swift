@@ -201,7 +201,7 @@ final class TrueEffortScoreTests: XCTestCase {
 
     // MARK: - Baseline inspection (anti-black-box)
 
-    func testRefitProducesLabeledExpression() {
+    func testRefitProducesNamedEquation() {
         var tes = TrueEffortScore()
         let start = Date(timeIntervalSince1970: 0)
         for i in 0..<120 {
@@ -213,9 +213,47 @@ final class TrueEffortScoreTests: XCTestCase {
         }
         _ = tes.finalize()
         XCTAssertNotNil(tes.baseline)
-        let labeled = tes.baseline?.labeledExpression ?? ""
-        XCTAssertTrue(labeled.contains("pace"))
-        XCTAssertTrue(labeled.contains("expected HR ="))
+        let equation = tes.baseline?.equation() ?? ""
+        XCTAssertTrue(equation.hasPrefix("expected HR = "))
+        for name in ["pace", "cadence", "verticalOscillation"] {
+            XCTAssertTrue(equation.contains("·" + name), "missing \(name) in \(equation)")
+        }
+        // Grade and altitude never vary in this history, so their weights are zero and drop out,
+        // the same rule every linear model's equation() follows.
+        XCTAssertFalse(equation.contains("grade"))
+        XCTAssertFalse(equation.contains("altitude"))
+    }
+
+    /// A first run has no baseline to score with, so its result carries nil; the next run's result
+    /// carries the baseline that scored it, captured before finalize() refits.
+    func testResultCarriesTheBaselineThatScoredTheRun() {
+        var tes = TrueEffortScore()
+        var start = Date(timeIntervalSince1970: 0)
+
+        for run in 0..<2 {
+            for i in 0..<120 {
+                let hard = i % 2 == 0
+                // The second run reads a few beats higher, so its refit moves the baseline.
+                tes.record(heartRate: (hard ? 170 : 132) + Double(run * 4), pace: hard ? 4.8 : 6.5,
+                           cadence: hard ? 180 : 165, grade: 0.0,
+                           verticalOscillation: hard ? 7.0 : 8.5, altitude: 100,
+                           at: start.addingTimeInterval(Double(i)))
+            }
+            let before = tes.baseline
+            guard let result = tes.finalize() else {
+                XCTFail("run \(run) should be long enough to keep")
+                return
+            }
+            XCTAssertEqual(result.baseline, before)
+            if run == 0 {
+                XCTAssertNil(result.baseline)
+                XCTAssertTrue(result.description.contains("uncalibrated"))
+            } else {
+                XCTAssertNotNil(result.baseline)
+                XCTAssertNotEqual(result.baseline, tes.baseline)
+            }
+            start = start.addingTimeInterval(86_400)
+        }
     }
 
     // MARK: - Transition debounce

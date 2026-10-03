@@ -200,6 +200,7 @@ This is useful for unit tests, debugging, and verifying that a pipeline produces
 ### Reading the fit
 - ``Coefficients``
 - ``Coefficients/equation()``
+- ``Coefficients/equation(variables:response:)``
 
 ### Evaluation
 - ``Swift/Array/rSquared(actual:)``

@@ -284,6 +284,45 @@ final class ResidualModelTests: XCTestCase {
         XCTAssertEqual(model.equation(), "y = 0")
     }
 
+    // Named variables replace x and pair with weights in order, joined by a middle dot.
+    func testEquationNamedSingleFeature() {
+        let model = FakeCoefficients(coefficients: [38000.0, 110.0])
+        XCTAssertEqual(model.equation(variables: ["sqft"], response: "price"),
+                       "price = 38000.00 + 110.00·sqft")
+    }
+
+    // Names follow input order; negative weights keep " - " spacing.
+    func testEquationNamedMultiFeatureNegative() {
+        let model = FakeCoefficients(coefficients: [10.0, 3.0, -7162.16])
+        XCTAssertEqual(model.equation(variables: ["sqft", "age"], response: "price"),
+                       "price = 10.00 + 3.00·sqft - 7162.16·age")
+    }
+
+    // The response defaults to y.
+    func testEquationNamedDefaultResponse() {
+        let model = FakeCoefficients(coefficients: [5.0, 2.0])
+        XCTAssertEqual(model.equation(variables: ["sqft"]), "y = 5.00 + 2.00·sqft")
+    }
+
+    // A zero weight drops its named term; a unit weight renders the bare name.
+    func testEquationNamedZeroAndUnitWeights() {
+        let model = FakeCoefficients(coefficients: [0.0, 1.0, 0.0, -1.0])
+        XCTAssertEqual(model.equation(variables: ["a", "b", "c"]), "y = 0.00 + a - c")
+    }
+
+    // An empty coefficient vector renders as response = 0.
+    func testEquationNamedEmptyVector() {
+        let model = FakeCoefficients(coefficients: [])
+        XCTAssertEqual(model.equation(variables: [], response: "price"), "price = 0")
+    }
+
+    // The named form carries the same numbers as the subscript form.
+    func testEquationNamedMatchesSubscriptNumbers() {
+        let model = FakeCoefficients(coefficients: [-6621.62, 137.84, 7162.16])
+        XCTAssertEqual(model.equation(), "y = -6621.62 + 137.84x₁ + 7162.16x₂")
+        XCTAssertEqual(model.equation(variables: ["x₁", "x₂"]), "y = -6621.62 + 137.84·x₁ + 7162.16·x₂")
+    }
+
     // Each conforming model produces a non-empty equation from its real fit.
     // These are single-feature fits, so the variable is a bare x.
     func testEquationOnAllConformers() throws {

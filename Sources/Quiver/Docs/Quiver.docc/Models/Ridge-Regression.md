@@ -239,6 +239,7 @@ run1 == run2  // true
 ### Reading the fit
 - ``Coefficients``
 - ``Coefficients/equation()``
+- ``Coefficients/equation(variables:response:)``
 
 ### Evaluation
 - ``Swift/Array/rSquared(actual:)``

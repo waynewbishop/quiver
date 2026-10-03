@@ -94,25 +94,66 @@ extension Coefficients {
     /// - Returns: The fitted formula as a string. An empty coefficient vector
     ///   renders as `y = 0`.
     public func equation() -> String {
-        let c = coefficients
-        guard !c.isEmpty else { return "y = 0" }
-
-        // coefficients[0] is the intercept; the rest are the feature weights.
         // A lone feature uses a bare `x`; two or more take subscripts so the
         // terms never collide.
-        let weights = c.dropFirst()
-        let single = weights.count == 1
+        let weightCount = Swift.max(coefficients.count - 1, 0)
+        var variables: [String] = []
+        for index in 0..<weightCount {
+            variables.append(weightCount == 1 ? "x" : "x" + Self.subscriptDigits(index + 1))
+        }
+        return Self.render(coefficients, variables: variables, response: "y", joiner: "")
+    }
+
+    /// Renders the fit as a readable equation with each variable named, such as
+    /// `price = 38000.00 + 110.00·sqft`.
+    ///
+    /// This is ``equation()`` with names in place of `x₁`, `x₂`, …: each name
+    /// pairs with a weight in input order, joined by a middle dot, and the
+    /// left-hand side reads `response`. The formatting rules are the same —
+    /// two decimal places, zero weights dropped, and a weight of exactly one
+    /// rendered as the bare name.
+    ///
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let model = try LinearRegression.fit(features: x, targets: y)
+    /// print(model.equation(variables: ["sqft"], response: "price"))
+    /// // price = 38000.00 + 110.00·sqft
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - variables: One name per weight, in the order the inputs were given.
+    ///   - response: The name of the predicted quantity. Defaults to `y`.
+    /// - Returns: The fitted formula as a string. An empty coefficient vector
+    ///   renders as `response = 0`.
+    /// - Precondition: `variables` holds exactly one name per weight, which is
+    ///   `coefficients.count - 1`.
+    public func equation(variables: [String], response: String = "y") -> String {
+        let c = coefficients
+        guard !c.isEmpty else { return response + " = 0" }
+        precondition(variables.count == c.count - 1,
+                     "equation(variables:) needs one name per weight: expected \(c.count - 1), got \(variables.count)")
+        return Self.render(c, variables: variables, response: response, joiner: "·")
+    }
+
+    /// Joins the intercept and each named, signed weight into `response = …`.
+    private static func render(_ c: [Double], variables: [String], response: String,
+                               joiner: String) -> String {
+        guard !c.isEmpty else { return response + " = 0" }
+
+        // coefficients[0] is the intercept; the rest are the feature weights.
         var pieces = [String(format: "%.2f", c[0])]
 
-        for (offset, weight) in weights.enumerated() where weight != 0 {
-            let variable = single ? "x" : "x" + Self.subscriptDigits(offset + 1)
+        for (offset, weight) in c.dropFirst().enumerated() where weight != 0 {
             let magnitude = Swift.abs(weight)
             // A weight of exactly 1 renders as the bare variable (x, not 1.00x).
-            let coefficientText = magnitude == 1 ? "" : String(format: "%.2f", magnitude)
-            pieces.append((weight < 0 ? "- " : "+ ") + coefficientText + variable)
+            let term = magnitude == 1
+                ? variables[offset]
+                : String(format: "%.2f", magnitude) + joiner + variables[offset]
+            pieces.append((weight < 0 ? "- " : "+ ") + term)
         }
 
-        return "y = " + pieces.joined(separator: " ")
+        return response + " = " + pieces.joined(separator: " ")
     }
 
     /// Converts a positive integer into Unicode subscript digits (10 → "₁₀").

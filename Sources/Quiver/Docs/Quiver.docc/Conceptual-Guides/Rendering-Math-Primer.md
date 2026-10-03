@@ -106,6 +106,7 @@ let prices = [150000.0, 200000.0, 260000.0, 310000.0, 370000.0]
 let model = try LinearRegression.fit(features: sqft, targets: prices)
 model.coefficients   // [38000.0, 110.0]
 model.equation()     // "y = 38000.00 + 110.00x" — one feature, so a bare x
+model.equation(variables: ["sqft"], response: "price")  // "price = 38000.00 + 110.00·sqft"
 ```
 
 The same three conventions from the polynomial form carry over: a zero weight drops its term, a weight of exactly one renders as the bare variable (`x`, not `1.00x`), and a negative weight joins with ` - ` rather than ` + -`. The difference is direction — a model reads intercept-first and ascending, matching how a regression equation is written, where a polynomial reads highest-power-first. Because `equation()` lives on ``Coefficients``, ``LinearRegression``, ``Ridge``, and ``GradientDescent`` all render the same way.

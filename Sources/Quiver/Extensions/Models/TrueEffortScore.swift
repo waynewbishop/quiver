@@ -38,7 +38,7 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     public private(set) var classifier: Pipeline<KNearestNeighbors>
 
     /// The personal expected-heart-rate baseline, derived from `history`. nil at cold start; read
-    /// its `expression`, `coefficients`, and `conditioning` once present.
+    /// its `equation()`, `coefficients`, and `conditioning` once present.
     public private(set) var baseline: TESBaseline?
 
     // MARK: Owned history
@@ -425,7 +425,7 @@ extension TrueEffortScore {
             loadCurve: loadCurve,
             timerTime: accumulatedTimer,
             elapsedTime: accumulatedElapsed,
-            baselineExpression: baseline?.expression ?? "y = (uncalibrated)")
+            baseline: baseline)
     }
 
     /// Σ(hrTrust·Δt·residual) / Σ(hrTrust·Δt). Zero without a fitted baseline.
