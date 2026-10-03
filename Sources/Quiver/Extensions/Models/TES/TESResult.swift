@@ -27,6 +27,11 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
     /// cardiac decoupling but does not diagnose its cause.
     public let meanResidual: Double
 
+    /// The heart rate the baseline expected for this run's workload, the session mean in beats per
+    /// minute. Weighted like `meanResidual`, so the two add up to the run's average heart rate.
+    /// nil on a first run.
+    public let expectedHeartRate: Double?
+
     public let effortDistribution: [EffortClass: Double]  // share of time per band
 
     // The three session terms are kept separate, never pre-multiplied into the headline.
@@ -51,6 +56,7 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
           adjusted:        \(String(format: "%.1f", adjusted))
           raw:             \(String(format: "%.1f", raw))
           meanResidual:    \(String(format: "%.1f", meanResidual)) bpm
+          expected HR:     \(expectedHeartRate.map { String(format: "%.1f bpm", $0) } ?? "n/a")
           variance ×:      \(String(format: "%.3f", varianceMultiplier))
           duration ×:      \(String(format: "%.3f", durationFactor))
           transitionLoad:  \(String(format: "%.2f", transitionLoad))

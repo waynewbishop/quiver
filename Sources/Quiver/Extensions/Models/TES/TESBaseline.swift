@@ -29,9 +29,9 @@ public struct TESBaseline: Codable, Equatable, CustomStringConvertible, Sendable
     public let scaler: StandardScaler
 
     /// The Ridge model that predicts expected heart rate from workload.
-    public let expectedHeartRate: Ridge
+    public let heartRateModel: Ridge
 
-    /// The residual model over `expectedHeartRate`, measuring observed minus expected heart rate.
+    /// The residual model over `heartRateModel`, measuring observed minus expected heart rate.
     public let residualModel: ResidualModel<Ridge>
 
     /// The 1-norm condition number of XᵀX at fit time, with `.infinity` mapped to nil. Cached so
@@ -47,7 +47,7 @@ public struct TESBaseline: Codable, Equatable, CustomStringConvertible, Sendable
     /// linear model's equation. The weights are on standardized features, so each slope is the
     /// heart-rate change per standard deviation of its signal and the sizes compare directly.
     public func equation() -> String {
-        expectedHeartRate.equation(variables: Self.featureNames, response: "expected HR")
+        heartRateModel.equation(variables: Self.featureNames, response: "expected HR")
     }
 
     // There is no cached fit-quality metric by design: Quiver keeps quality off the fitted model
@@ -65,7 +65,7 @@ public struct TESBaseline: Codable, Equatable, CustomStringConvertible, Sendable
 
     /// Per-feature weights, intercept at index 0, forwarded from the fitted Ridge.
     public var coefficients: [Double] {
-        expectedHeartRate.coefficients
+        heartRateModel.coefficients
     }
 
     /// A one-line summary of the penalty, conditioning, and fitted equation.

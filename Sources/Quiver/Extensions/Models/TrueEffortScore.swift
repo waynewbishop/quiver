@@ -44,10 +44,20 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     // MARK: Owned history
 
     /// The runner's accumulated workouts — the data the baseline is fit on, and the thing to
-    /// persist. Grows as `finalize()` folds each run in; bounded by `historyLimit`.
+    /// persist. Grows as `finalize()` folds each run in; bounded by `historyWindow`,
+    /// `minimumHistoryRuns`, and `historyLimit`.
     public private(set) var history: [Workout]
 
-    /// How many recent workouts to retain, oldest dropping off when exceeded. nil keeps all.
+    /// How far back, in seconds, from the newest run the baseline learns. Runs that start earlier
+    /// drop off, so the baseline keeps pace with a runner who is improving. nil keeps every run.
+    public let historyWindow: TimeInterval?
+
+    /// The fewest recent runs kept even when they fall outside `historyWindow`, so a runner
+    /// returning from a break keeps a baseline.
+    public let minimumHistoryRuns: Int
+
+    /// The most workouts retained, oldest dropping off first, applied after the window and the
+    /// floor. It bounds the refit cost for a runner who logs many runs. nil keeps all.
     public let historyLimit: Int?
 
     /// Sessions logged — the cold-start to established axis. The caller decides what "established"
@@ -93,12 +103,15 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     // MARK: Codable (transient live-run state is excluded)
 
     private enum CodingKeys: String, CodingKey {
-        case classifier, baseline, history, historyLimit, lambda, k
+        case classifier, baseline, history, historyWindow, minimumHistoryRuns, historyLimit
+        case lambda, k
     }
 
     public static func == (lhs: TrueEffortScore, rhs: TrueEffortScore) -> Bool {
         lhs.classifier == rhs.classifier && lhs.baseline == rhs.baseline
-            && lhs.history == rhs.history && lhs.historyLimit == rhs.historyLimit
+            && lhs.history == rhs.history && lhs.historyWindow == rhs.historyWindow
+            && lhs.minimumHistoryRuns == rhs.minimumHistoryRuns
+            && lhs.historyLimit == rhs.historyLimit
             && lhs.lambda == rhs.lambda && lhs.k == rhs.k
     }
 
@@ -108,12 +121,24 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     /// seeded from the population set, so a score exists from the first tick; `baseline == nil` is
     /// the cold-start tell.
     ///
-    /// - Precondition: `k <= anchorSamples.count`.
-    public init(lambda: Double = 0.01, k: Int = 3, historyLimit: Int? = 60) {
+    /// The default `historyWindow` is 28 days, with a floor of 8 runs and a cap of 60.
+    ///
+    /// - Precondition: `k <= anchorSamples.count`, `historyWindow > 0` when set, and
+    ///   `minimumHistoryRuns >= 0`.
+    public init(
+        lambda: Double = 0.01,
+        k: Int = 3,
+        historyWindow: TimeInterval? = 28 * 86_400,
+        minimumHistoryRuns: Int = 8,
+        historyLimit: Int? = 60
+    ) {
         precondition(k <= Self.anchorSamples.count,
                      "k (\(k)) must not exceed the anchor sample count (\(Self.anchorSamples.count)).")
+        Self.checkHistoryBounds(window: historyWindow, minimumRuns: minimumHistoryRuns)
         self.lambda = lambda
         self.k = k
+        self.historyWindow = historyWindow
+        self.minimumHistoryRuns = minimumHistoryRuns
         self.historyLimit = historyLimit
         self.history = []
         self.baseline = nil
@@ -125,7 +150,8 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     /// `[heartRate, pace, cadence, grade, verticalOscillation]`, appended to the bundled anchors,
     /// so the classifier never trains on less than the anchor set.
     ///
-    /// - Precondition: `labeledSamples.count == labels.count`.
+    /// - Precondition: `labeledSamples.count == labels.count`, `historyWindow > 0` when set, and
+    ///   `minimumHistoryRuns >= 0`.
     /// - Throws: `TESError.insufficientLabeledSamples` when k exceeds the labeled example count;
     ///   `TESError.baselineDiverged` if the seed fit diverges.
     public init(
@@ -134,20 +160,26 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
         labels: [EffortClass] = [],
         lambda: Double = 0.01,
         k: Int = 3,
+        historyWindow: TimeInterval? = 28 * 86_400,
+        minimumHistoryRuns: Int = 8,
         historyLimit: Int? = 60
     ) throws {
         precondition(labeledSamples.count == labels.count,
                      "labeledSamples.count must equal labels.count.")
+        Self.checkHistoryBounds(window: historyWindow, minimumRuns: minimumHistoryRuns)
         let available = Self.anchorSamples.count + labeledSamples.count
         guard k <= available else {
             throw TESError.insufficientLabeledSamples(k: k, available: available)
         }
         self.lambda = lambda
         self.k = k
+        self.historyWindow = historyWindow
+        self.minimumHistoryRuns = minimumHistoryRuns
         self.historyLimit = historyLimit
         self.classifier = Self.seedClassifier(
             personalRows: labeledSamples, personalLabels: labels, k: k)
-        self.history = Self.trimmed(history, to: historyLimit)
+        self.history = Self.trimmed(history, window: historyWindow,
+                                    minimumRuns: minimumHistoryRuns, limit: historyLimit)
         self.baseline = try Self.fitBaseline(history: self.history, lambda: lambda)
     }
 
@@ -264,7 +296,8 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
 
         if location == .outdoor {
             history = Self.trimmed(history + [Workout(moments: moments, startDate: start)],
-                                   to: historyLimit)
+                                   window: historyWindow, minimumRuns: minimumHistoryRuns,
+                                   limit: historyLimit)
             if let refit = try? Self.fitBaseline(history: history, lambda: lambda) {
                 baseline = refit
             }
@@ -328,15 +361,30 @@ extension TrueEffortScore {
         return TESBaseline(
             lambda: lambda,
             scaler: scaler,
-            expectedHeartRate: ridge,
+            heartRateModel: ridge,
             residualModel: ResidualModel(model: ridge),
             conditionNumberValue: condition.isFinite ? condition : nil)
     }
 
-    /// Keeps the most recent workouts when a limit is set.
-    static func trimmed(_ history: [Workout], to limit: Int?) -> [Workout] {
-        guard let limit, history.count > limit else { return history }
-        return Array(history.suffix(limit))
+    /// Keeps the workouts the baseline learns from. History is in run order. Runs that start within
+    /// `window` of the newest run are kept; when fewer than `minimumRuns` qualify, the most recent
+    /// `minimumRuns` are kept instead. `limit` then caps the count, oldest dropping first.
+    static func trimmed(_ history: [Workout], window: TimeInterval?, minimumRuns: Int,
+                        limit: Int?) -> [Workout] {
+        var kept = history
+        if let window, let newest = history.map(\.startDate).max() {
+            let cutoff = newest.addingTimeInterval(-window)
+            let recent = history.filter { $0.startDate >= cutoff }
+            kept = recent.count >= minimumRuns ? recent : Array(history.suffix(minimumRuns))
+        }
+        if let limit, kept.count > limit { kept = Array(kept.suffix(limit)) }
+        return kept
+    }
+
+    /// Checks the history bounds a caller passes to either initializer.
+    private static func checkHistoryBounds(window: TimeInterval?, minimumRuns: Int) {
+        if let window { precondition(window > 0, "historyWindow must be positive.") }
+        precondition(minimumRuns >= 0, "minimumHistoryRuns must not be negative.")
     }
 
     /// Classifies one moment. Once a personal baseline exists, the classifier reads heart rate no
@@ -362,7 +410,7 @@ extension TrueEffortScore {
         guard let baseline,
               let scaled = baseline.scaler.transform([moment.regressionFeatures]).first
         else { return nil }
-        return baseline.expectedHeartRate.predict([scaled]).first
+        return baseline.heartRateModel.predict([scaled]).first
     }
 
     /// The training heart-rate mean in beats per minute, read from the pipeline's scaler. The
@@ -418,6 +466,7 @@ extension TrueEffortScore {
             adjusted: score.adjusted,
             raw: score.raw,
             meanResidual: weightedMeanResidual(moments: moments),
+            expectedHeartRate: weightedMeanExpectedHeartRate(moments: moments),
             effortDistribution: distribution,
             varianceMultiplier: score.varianceMultiplier,
             durationFactor: score.durationFactor,
@@ -426,6 +475,18 @@ extension TrueEffortScore {
             timerTime: accumulatedTimer,
             elapsedTime: accumulatedElapsed,
             baseline: baseline)
+    }
+
+    /// Σ(hrTrust·Δt·expected) / Σ(hrTrust·Δt). nil without a fitted baseline.
+    private func weightedMeanExpectedHeartRate(moments: [Workout.Moment]) -> Double? {
+        var numerator = 0.0, denominator = 0.0
+        for moment in moments {
+            guard let expected = expectedHeartRate(for: moment) else { return nil }
+            let weight = moment.hrTrust * moment.deltaTime
+            numerator += weight * expected
+            denominator += weight
+        }
+        return denominator > 0 ? numerator / denominator : nil
     }
 
     /// Σ(hrTrust·Δt·residual) / Σ(hrTrust·Δt). Zero without a fitted baseline.

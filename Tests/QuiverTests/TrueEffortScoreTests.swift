@@ -683,6 +683,58 @@ final class TrueEffortScoreTests: XCTestCase {
         XCTAssertEqual(tes.sessionCount, 2)
     }
 
+    /// Folds one short threshold run per entry, each starting the given number of days in.
+    private func foldRuns(_ tes: inout TrueEffortScore, days: [Double]) {
+        for day in days {
+            recordThreshold(&tes, count: 120, start: Date(timeIntervalSince1970: day * 86_400))
+            _ = tes.finalize()
+        }
+    }
+
+    func testHistoryDefaultsAreTwentyEightDaysEightRunsSixtyCap() {
+        let tes = TrueEffortScore()
+        XCTAssertEqual(tes.historyWindow, 28 * 86_400)
+        XCTAssertEqual(tes.minimumHistoryRuns, 8)
+        XCTAssertEqual(tes.historyLimit, 60)
+    }
+
+    func testHistoryWindowDropsRunsOlderThanWindow() {
+        var tes = TrueEffortScore()
+        // Ten runs on days 0–9, then ten on days 40–49: the first ten fall outside 28 days.
+        foldRuns(&tes, days: (0..<10).map(Double.init) + (40..<50).map(Double.init))
+        XCTAssertEqual(tes.sessionCount, 10)
+        XCTAssertEqual(tes.history.first?.startDate, Date(timeIntervalSince1970: 40 * 86_400))
+    }
+
+    func testHistoryFloorKeepsRecentRunsAfterLongGap() {
+        var tes = TrueEffortScore()
+        // Twelve runs, a 90-day break, then one run: only the newest is inside the window.
+        foldRuns(&tes, days: (0..<12).map(Double.init) + [102])
+        XCTAssertEqual(tes.sessionCount, 8, "the floor keeps the eight most recent runs")
+        XCTAssertNotNil(tes.baseline)
+    }
+
+    func testHistoryCapAppliesInsideWindow() {
+        var tes = TrueEffortScore(historyLimit: 5)
+        // Twelve runs inside one window: the cap still bounds the count.
+        foldRuns(&tes, days: (0..<12).map { Double($0) * 0.5 })
+        XCTAssertEqual(tes.sessionCount, 5)
+    }
+
+    func testNilHistoryWindowKeepsRunsUpToCap() {
+        var tes = TrueEffortScore(historyWindow: nil)
+        foldRuns(&tes, days: [0, 100, 200])
+        XCTAssertEqual(tes.sessionCount, 3)
+    }
+
+    func testHistoryBoundsSurviveCodableRoundTrip() throws {
+        let tes = TrueEffortScore(historyWindow: 14 * 86_400, minimumHistoryRuns: 4, historyLimit: 30)
+        let decoded = try JSONDecoder().decode(TrueEffortScore.self, from: JSONEncoder().encode(tes))
+        XCTAssertEqual(decoded, tes)
+        XCTAssertEqual(decoded.historyWindow, 14 * 86_400)
+        XCTAssertEqual(decoded.minimumHistoryRuns, 4)
+    }
+
     // MARK: - Workout location
 
     func testLocationDefaultsToOutdoor() {
