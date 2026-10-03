@@ -13,12 +13,14 @@
 
 import Foundation
 
-/// The four effort bands. The first three are named as training zones; the top band is named
+/// The five effort bands. The middle three are named as training zones; the top band is named
 /// for the load itself, because it holds heavy muscular work as well as cardiovascular effort.
 /// The `threshold` band anchors the score, so one hour held at threshold reads 100 on the
 /// raw score, following the convention of power-based training stress scores.
 ///
-/// - `easy`: recovery and aerobic base.
+/// - `recovery`: flat or gentle walking, which costs well under an easy run per minute. Only
+///   the walking gate assigns it; the classifier never predicts it.
+/// - `easy`: easy running and aerobic base.
 /// - `tempo`: sustained sub-threshold effort, roughly marathon-to-half pace.
 /// - `threshold`: at lactate threshold, the score anchor.
 /// - `hard`: above threshold, or a heavy muscular load that heart rate does not show, such as a
@@ -29,6 +31,7 @@ import Foundation
 /// kinematic signal. The bands are weight-adjacent, so a confusion between them is the cheapest
 /// misclassification in the model.
 public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sendable {
+    case recovery
     case easy
     case tempo
     case threshold
@@ -38,6 +41,7 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
     /// storage and logic.
     public var label: String {
         switch self {
+        case .recovery:  return "Recovery"
         case .easy:      return "Easy"
         case .tempo:     return "Tempo"
         case .threshold: return "Threshold"
@@ -46,9 +50,11 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
     }
 
     /// The band's load weight. Public because the weights are published math — the raw score is
-    /// `100 × Σ(weight·Δt) / 2700` — and a reader has to be able to reach them.
+    /// `100 × Σ(weight·Δt) / 2700` — and a reader has to be able to reach them. Recovery is 0.1
+    /// because level walking costs roughly a third to a half of easy running per minute.
     public var weight: Double {
         switch self {
+        case .recovery:  return 0.10
         case .easy:      return 0.25
         case .tempo:     return 0.50
         case .threshold: return 0.75
@@ -57,9 +63,11 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
     }
 
     /// The integer the classifier trains and predicts on, ordered by ascending weight. Internal;
-    /// the public surface stays the domain-typed `EffortClass`.
+    /// the public surface stays the domain-typed `EffortClass`. Recovery sits below Easy at -1, so
+    /// the classifier's labels and the session terms for running are unchanged by its addition.
     var ordinal: Int {
         switch self {
+        case .recovery:  return -1
         case .easy:      return 0
         case .tempo:     return 1
         case .threshold: return 2
@@ -67,9 +75,10 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
         }
     }
 
-    /// Maps a classifier prediction back to a band, clamping out-of-range values.
+    /// Maps an ordinal back to a band, clamping out-of-range values.
     init(clampingOrdinal value: Int) {
-        switch Swift.min(3, Swift.max(0, value)) {
+        switch Swift.min(3, Swift.max(-1, value)) {
+        case -1: self = .recovery
         case 0:  self = .easy
         case 1:  self = .tempo
         case 2:  self = .threshold

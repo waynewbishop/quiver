@@ -41,11 +41,22 @@ final class TrueEffortScoreTests: XCTestCase {
     }
 
     func testEffortClassWeightsAndOrdinals() {
+        XCTAssertEqual(EffortClass.recovery.weight, 0.10)
         XCTAssertEqual(EffortClass.easy.weight, 0.25)
         XCTAssertEqual(EffortClass.tempo.weight, 0.50)
         XCTAssertEqual(EffortClass.threshold.weight, 0.75)
         XCTAssertEqual(EffortClass.hard.weight, 1.00)
-        XCTAssertEqual(EffortClass.allCases.map(\.ordinal), [0, 1, 2, 3])
+        XCTAssertEqual(EffortClass.allCases.map(\.ordinal), [-1, 0, 1, 2, 3])
+    }
+
+    // Recovery sits below Easy, so the classifier's labels for running keep their ordinals
+    func testRecoveryBandRawValueLabelAndClamping() {
+        XCTAssertEqual(EffortClass.recovery.rawValue, "recovery")
+        XCTAssertEqual(EffortClass.recovery.label, "Recovery")
+        XCTAssertEqual(EffortClass(clampingOrdinal: -1), .recovery)
+        XCTAssertEqual(EffortClass(clampingOrdinal: -5), .recovery)
+        XCTAssertEqual(EffortClass(clampingOrdinal: 0), .easy)
+        XCTAssertFalse(TrueEffortScore.anchorLabels.contains(.recovery))
     }
 
     // The top band stores and displays as "hard", the name the white paper argues for
@@ -720,5 +731,167 @@ final class TrueEffortScoreTests: XCTestCase {
         let restored = try JSONDecoder().decode(TrueEffortScore.self, from: data)
         XCTAssertEqual(restored.location, .outdoor)
         XCTAssertEqual(restored, tes, "location is live-run state and does not affect equality")
+    }
+
+    // MARK: - Walking gate
+
+    /// A moment with the given signals, for testing the walking gate directly.
+    private func moment(heartRate: Double, pace: Double, cadence: Double, grade: Double,
+                        hrTrust: Double = 1.0) -> Workout.Moment {
+        Workout.Moment(heartRate: heartRate, pace: pace, cadence: cadence, grade: grade,
+                       verticalOscillation: 4.5, altitude: 100, hrTrust: hrTrust, deltaTime: 5)
+    }
+
+    /// Records constant-signal blocks every 5 seconds, closing on the last block's signals.
+    private func recordBlocks(
+        _ tes: inout TrueEffortScore,
+        _ blocks: [(seconds: Int, heartRate: Double, pace: Double, cadence: Double,
+                    grade: Double, verticalOscillation: Double)]
+    ) {
+        var t = 0.0
+        for block in blocks {
+            for _ in 0..<(block.seconds / 5) {
+                tes.record(heartRate: block.heartRate, pace: block.pace, cadence: block.cadence,
+                           grade: block.grade, verticalOscillation: block.verticalOscillation,
+                           altitude: 100, at: Date(timeIntervalSince1970: 1_000_000 + t))
+                t += 5
+            }
+        }
+        if let last = blocks.last {
+            tes.record(heartRate: last.heartRate, pace: last.pace, cadence: last.cadence,
+                       grade: last.grade, verticalOscillation: last.verticalOscillation,
+                       altitude: 100, at: Date(timeIntervalSince1970: 1_000_000 + t))
+        }
+    }
+
+    // A flat walk read Hard against the running anchors; the gate reads it Recovery
+    func testFlatWalkReadsRecoveryAndScoresBelowAnEasyRun() throws {
+        var walk = TrueEffortScore()
+        recordBlocks(&walk, [(1800, 100, 12.8, 106, 0, 4.5)])
+        XCTAssertEqual(walk.currentEffort, .recovery)
+        let walked = try XCTUnwrap(walk.finalize())
+        XCTAssertEqual(walked.effortDistribution[.recovery] ?? 0, 1.0, accuracy: 1e-9)
+        XCTAssertEqual(walked.adjusted, 6.6667, accuracy: 1e-4)
+
+        var run = TrueEffortScore()
+        recordBlocks(&run, [(1800, 131, 6.6, 164, 0, 8.7)])
+        let ran = try XCTUnwrap(run.finalize())
+        XCTAssertEqual(ran.adjusted, 16.6667, accuracy: 1e-4)
+    }
+
+    // Every anchor row is a running effort and bypasses the gate, power-hikes included
+    func testAnchorRowsBypassTheWalkingGate() {
+        for row in TrueEffortScore.anchorSamples {
+            let m = moment(heartRate: row[0], pace: row[1], cadence: row[2], grade: row[3])
+            XCTAssertNil(TrueEffortScore.walkingEffort(for: m), "anchor \(row)")
+        }
+        XCTAssertNil(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 125, pace: 7.2, cadence: 154, grade: 0)))
+        XCTAssertNil(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 140, pace: 6.0, cadence: 120, grade: 0)),
+            "a fast low-cadence moment is running")
+    }
+
+    // A walk-run labels each segment on its own: the walks read Recovery, not Hard
+    func testWalkRunReadsRecoveryBetweenRuns() throws {
+        var tes = TrueEffortScore()
+        var blocks: [(seconds: Int, heartRate: Double, pace: Double, cadence: Double,
+                      grade: Double, verticalOscillation: Double)] = []
+        for _ in 0..<17 {
+            blocks += [(40, 125, 7.2, 154, 0, 8.5), (160, 112, 12.8, 104, 0, 4.5)]
+        }
+        recordBlocks(&tes, blocks)
+        let result = try XCTUnwrap(tes.finalize())
+        XCTAssertEqual(result.effortDistribution[.recovery] ?? 0, 0.8015, accuracy: 1e-4)
+        XCTAssertEqual(result.effortDistribution[.easy] ?? 0, 0.1985, accuracy: 1e-4)
+        XCTAssertNil(result.effortDistribution[.hard])
+        XCTAssertEqual(result.adjusted, 17.3720, accuracy: 1e-4)
+    }
+
+    // A climb takes the higher of its vertical-speed band and its heart-rate band
+    func testWalkingClimbTakesTheHigherBand() {
+        // 15% at 14.3 min/km is about 629 m/h: Threshold whatever the heart rate says below 165
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 130, pace: 14.3, cadence: 98, grade: 15)), .threshold)
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 175, pace: 14.3, cadence: 98, grade: 15)), .hard)
+        // 8% at 15 min/km is 320 m/h: Tempo
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 120, pace: 15, cadence: 100, grade: 8)), .tempo)
+        // 5% at 15 min/km is 200 m/h: Easy, unless heart rate lifts it
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 120, pace: 15, cadence: 100, grade: 5)), .easy)
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 155, pace: 15, cadence: 100, grade: 5)), .threshold)
+        // 25% at 12 min/km is 1250 m/h: Hard on vertical speed alone
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 110, pace: 12, cadence: 95, grade: 25)), .hard)
+    }
+
+    // A doubted or dropped heart rate leaves a climb on vertical speed, never below Easy
+    func testWalkingClimbWithoutTrustedHeartRateUsesVerticalSpeed() {
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 180, pace: 15, cadence: 100, grade: 8, hrTrust: 0)), .tempo)
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 0, pace: 15, cadence: 100, grade: 5)), .easy)
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 0, pace: 14.3, cadence: 0, grade: 15)), .threshold,
+            "a cadence dropout on a climb still gates and still reads vertical speed")
+    }
+
+    // A walking descent is Easy, or Tempo when fast, and never Hard; gentle grades are Recovery
+    func testWalkingDescentNeverReadsHard() {
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 98, pace: 17, cadence: 120, grade: -12)), .easy)
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 98, pace: 13.5, cadence: 122, grade: -15)), .tempo)
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 98, pace: 9, cadence: 125, grade: -25)), .tempo)
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 102, pace: 12.9, cadence: 119, grade: -8)), .recovery)
+        XCTAssertEqual(TrueEffortScore.walkingEffort(
+            for: moment(heartRate: 0, pace: 13, cadence: 0, grade: 0)), .recovery,
+            "a cadence dropout while walking still gates")
+    }
+
+    // The gate reads raw heart rate, so the baseline cap cannot pull a hard climb down
+    func testWalkingClimbIgnoresTheBaselineCap() {
+        var tes = establishedModel()
+        tes.discardRun()
+        tes.record(heartRate: 175, pace: 15, cadence: 95, grade: 8, verticalOscillation: 4.5,
+                   altitude: 101, at: Date(timeIntervalSince1970: 0))
+        XCTAssertEqual(tes.currentEffort, .hard)
+    }
+
+    // Walked recoveries sit further from the reps than jogged ones, so the session terms grow
+    func testFixtureWalkedRecoveriesRaiseTransitionLoad() {
+        var walked: [(band: Double, seconds: Int)] = [(0, 600)]
+        var jogged: [(band: Double, seconds: Int)] = [(0, 600)]
+        for _ in 0..<8 {
+            walked += [(3, 120), (-1, 120)]
+            jogged += [(3, 120), (0, 120)]
+        }
+        walked.append((0, 300))
+        jogged.append((0, 300))
+        let w = score(walked), j = score(jogged)
+        XCTAssertEqual(j.adjusted, 76.3598, accuracy: 1e-4)
+        XCTAssertEqual(w.transitionLoad, 63)
+        XCTAssertEqual(w.raw, 47.4444, accuracy: 1e-4)
+        XCTAssertEqual(w.adjusted, 70.6285, accuracy: 1e-4)
+        XCTAssertLessThan(w.raw, j.raw)
+    }
+
+    // The paper's downhill example runs at 157 spm and 5.1 min/km, so the gate leaves it alone
+    func testFixtureDownhillExampleIsUnchangedByTheGate() throws {
+        var tes = TrueEffortScore()
+        var blocks: [(seconds: Int, heartRate: Double, pace: Double, cadence: Double,
+                      grade: Double, verticalOscillation: Double)] = [(300, 128, 6.6, 164, 0, 8.7)]
+        for _ in 0..<4 {
+            blocks += [(480, 130, 5.1, 157, -6, 10.9), (120, 128, 6.4, 162, -2, 9.0)]
+        }
+        blocks.append((600, 128, 6.6, 164, 0, 8.7))
+        recordBlocks(&tes, blocks)
+        let result = try XCTUnwrap(tes.finalize())
+        XCTAssertEqual(result.adjusted, 117.92, accuracy: 0.01)
     }
 }

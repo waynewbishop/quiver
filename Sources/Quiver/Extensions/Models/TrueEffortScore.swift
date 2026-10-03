@@ -344,8 +344,10 @@ extension TrueEffortScore {
     /// excess stays visible in the residual instead. Altitude is a baseline feature, so altitude
     /// the runner's history covers is already in the expectation. A reading below expected passes
     /// through, and a doubted reading moves toward the runner's own expected heart rate. Before a
-    /// baseline exists, a doubted reading moves toward the anchor mean.
+    /// baseline exists, a doubted reading moves toward the anchor mean. Walking moments are
+    /// labeled by the walking gate first and never reach the classifier.
     func effortClass(for moment: Workout.Moment) -> EffortClass {
+        if let walking = Self.walkingEffort(for: moment) { return walking }
         var row = moment.classifierFeatures
         if let expected = expectedHeartRate(for: moment) {
             row[0] = expected + moment.hrTrust * Swift.min(0, row[0] - expected)
