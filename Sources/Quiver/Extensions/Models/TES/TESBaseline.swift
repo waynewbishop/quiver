@@ -13,22 +13,26 @@
 
 import Foundation
 
-/// The personal trained sub-models plus readable diagnostics, reachable as `tes.baseline`. It is
-/// produced by `TrueEffortScore`'s fit and replaced by each refit, never constructed directly.
-/// The classifier is not here — it is anchor-seeded and always present, so it lives on
-/// `TrueEffortScore.classifier`. This holds the personal half only, so `baseline == nil` means
-/// exactly that the expected-heart-rate model is uncalibrated.
+/// The personal trained sub-models and readable diagnostics. Produced by `TrueEffortScore.finalize()`
+/// and replaced by each refit. The classifier lives on `TrueEffortScore.classifier`. If
+/// `baseline == nil`, the expected-heart-rate model is uncalibrated.
 ///
 /// Each field is a wrapped Quiver model: a `StandardScaler`, a `Ridge`, and a `ResidualModel`
 /// over that Ridge. The inspection surface below forwards their own methods, which is the whole
 /// anti-black-box story.
 public struct TESBaseline: Codable, Equatable, CustomStringConvertible, Sendable {
 
+    /// The ridge penalty strength the baseline was fit with.
     public let lambda: Double
 
+    /// The scaler that standardizes each moment's features before the Ridge reads them.
     public let scaler: StandardScaler
-    public let expectedHeartRate: Ridge               // expected heart rate from workload
-    public let residualModel: ResidualModel<Ridge>    // observed minus expected
+
+    /// The Ridge model that predicts expected heart rate from workload.
+    public let expectedHeartRate: Ridge
+
+    /// The residual model over `expectedHeartRate`, measuring observed minus expected heart rate.
+    public let residualModel: ResidualModel<Ridge>
 
     /// The 1-norm condition number of XᵀX at fit time, with `.infinity` mapped to nil. Cached so
     /// the diagnostic survives a Codable round-trip without re-deriving it.
@@ -64,6 +68,7 @@ public struct TESBaseline: Codable, Equatable, CustomStringConvertible, Sendable
         expectedHeartRate.coefficients
     }
 
+    /// A one-line summary of the penalty, conditioning, and fitted equation.
     public var description: String {
         let cond = conditioning.map { String(format: "%.1f", $0) } ?? "n/a"
         return "TESBaseline: λ=\(lambda), conditioning=\(cond), \(equation())"
