@@ -29,6 +29,8 @@ let scale = [[1.0, 0.0],
 
 The horizontal vector is untouched: same direction, same length. The vertical vector still points straight up, but its length has doubled. The diagonal vector loses on both counts: its length grows from `√2 ≈ 1.41` to `√5 ≈ 2.24`, and its angle steepens past 45°, so it no longer lies on its starting line. Any vector other than the horizontal and vertical ones would have been thrown off its line the same way.
 
+![Three vectors — horizontal, vertical, and diagonal at 45 degrees — shown before and after a vertical doubling of space, where the horizontal and vertical vectors stay on their dashed span lines while the diagonal vector tips off its line](diagram-eigenvectors-scaling)
+
 The horizontal and vertical vectors are characteristic of this particular transformation, and they are its eigenvectors. The horizontal one kept its length, so its eigenvalue is `1`. The vertical one doubled, so its eigenvalue is `2`. Quiver computes both at once:
 
 ```swift
@@ -102,7 +104,11 @@ v1.dot(v2)          // 0.0 — perpendicular by construction
 
 The two directions form a right angle: their dot product is `0.0`. Together they act as a new pair of axes, custom-fitted to the transformation. Along those axes the matrix does nothing but stretch: by `5.56` on the first, by `1.44` on the second. And the connection to the <doc:Determinants-Primer> primer falls out directly: the two eigenvalues multiply to `8.0`, exactly the determinant `(4 × 3) − (2 × 2)`. The matrix scales space by `5.56` along one axis and by `1.44` along the perpendicular one, so the area of any shape is multiplied by their product. The determinant is that same area factor, computed here as the product of stretches along the characteristic axes rather than from the matrix entries directly.
 
+![The unit circle stretched into an ellipse along the two perpendicular eigenvector axes of a symmetric matrix, pulled 5.56 times along the major axis and 1.44 times along the minor axis, with a right-angle marker where the axes meet](diagram-eigenvectors-symmetric-axes)
+
 A companion fact rides along. The **trace**, the sum of the diagonal, equals the sum of the eigenvalues: `4 + 3` is `7`, and `5.56 + 1.44` is `7.0`. The determinant multiplies the stretch factors, and the trace adds them.
+
+The trace and determinant also give us a way to find the eigenvalues by hand. An eigenvector satisfies `Av = λv`, which rearranges to `(A − λI)v = 0`: subtracting `λ` from each diagonal entry produces a new matrix that sends the eigenvector to zero. A matrix that flattens a nonzero vector to nothing has collapsed the plane onto a line, and the <doc:Determinants-Primer> primer reads that collapse as a determinant of zero. So the eigenvalues are exactly the values of `λ` that make `det(A − λI) = 0`, which is called the **characteristic equation**. For a 2×2 matrix it expands to `λ² − (trace)λ + det = 0`, and for our symmetric matrix that's `λ² − 7λ + 8 = 0`. The quadratic formula gives `(7 ± √17) / 2`, or `5.56` and `1.44`, the same pair `eigenDecomposed()` returned.
 
 Either direction along an eigenvector's line is equally valid, since a flipped vector still lies on the same line. Quiver fixes each sign so the largest-magnitude element is positive, and repeated runs print identical vectors.
 
@@ -130,6 +136,8 @@ if let covariance = sessions.covarianceMatrix() {
 ```
 
 Read through the geometric lens, these numbers say something concrete about the data. The top eigenvector is the direction in feature space along which the workouts vary most, and its eigenvalue, `36102.26`, is the variance found along it. The second, perpendicular direction holds what little variation is left, and dropping that axis would cost almost none of the data's spread. The eigenproblem has turned a table of numbers into a set of characteristic axes, ordered by how much of the data's spread each one carries.
+
+![Six workouts plotted by duration and active energy forming a tight elongated cloud, with the top eigenvector axis running along the cloud carrying variance 36102 and the short perpendicular axis across it carrying 42.8](diagram-eigenvectors-covariance)
 
 ### From characteristic directions to components
 

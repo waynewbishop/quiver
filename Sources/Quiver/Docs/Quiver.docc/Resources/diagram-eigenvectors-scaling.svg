@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" width="720" height="380" font-family="-apple-system, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<defs>
+<marker id="ahB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5b7a99"/></marker>
+<marker id="ahO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#bf5b34"/></marker>
+<marker id="ahG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6b6b66"/></marker>
+<marker id="ahI" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3d3d3a"/></marker>
+</defs>
+<text x="181" y="30" font-size="7.6" fill="#9a9a94" font-weight="600" letter-spacing="1.1" text-anchor="middle">BEFORE</text>
+<text x="539" y="30" font-size="7.6" fill="#9a9a94" font-weight="600" letter-spacing="1.1" text-anchor="middle">AFTER</text>
+<rect x="22" y="44" width="318" height="300" rx="5" fill="#f4f3ef" stroke="#e2e0d9"/>
+<rect x="380" y="44" width="318" height="300" rx="5" fill="#f4f3ef" stroke="#e2e0d9"/>
+<line x1="344" y1="194" x2="376" y2="194" stroke="#3d3d3a" stroke-width="1.3" marker-end="url(#ahI)"/>
+<text x="360" y="182" font-size="8.8" fill="#6b6b66" text-anchor="middle">× 2</text>
+<line x1="77" y1="314" x2="325" y2="314" stroke="#3d3d3a" stroke-width="1"/>
+<line x1="77" y1="314" x2="77" y2="64" stroke="#3d3d3a" stroke-width="1"/>
+<line x1="197" y1="314" x2="197" y2="318" stroke="#3d3d3a" stroke-width="1"/>
+<line x1="73" y1="194" x2="77" y2="194" stroke="#3d3d3a" stroke-width="1"/>
+<text x="197" y="330" font-size="8" fill="#6b6b66" text-anchor="middle">1</text>
+<text x="69" y="197" font-size="8" fill="#6b6b66" text-anchor="end">1</text>
+<line x1="57" y1="314" x2="332" y2="314" stroke="#9a9a94" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="77" y1="332" x2="77" y2="57" stroke="#9a9a94" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="59" y1="332" x2="257" y2="134" stroke="#9a9a94" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="77" y="194" width="120" height="120" fill="none" stroke="#c9c7c0" stroke-width="1.3"/>
+<text x="137" y="208" font-size="7.6" fill="#9a9a94" font-weight="600" letter-spacing="1.1" text-anchor="middle">UNIT SQUARE</text>
+<line x1="77" y1="314" x2="197" y2="314" stroke="#5b7a99" stroke-width="1.3" marker-end="url(#ahB)"/>
+<line x1="77" y1="314" x2="77" y2="194" stroke="#bf5b34" stroke-width="1.3" marker-end="url(#ahO)"/>
+<line x1="77" y1="314" x2="197" y2="194" stroke="#6b6b66" stroke-width="1.3" marker-end="url(#ahG)"/>
+<text x="137" y="306" font-size="8.8" fill="#6b6b66" text-anchor="middle">[1, 0]</text>
+<text x="69" y="258" font-size="8.8" fill="#6b6b66" text-anchor="end">[0, 1]</text>
+<text x="205" y="188" font-size="8.8" fill="#6b6b66" text-anchor="start">[1, 1]</text>
+<line x1="417" y1="314" x2="692" y2="314" stroke="#3d3d3a" stroke-width="1"/>
+<line x1="417" y1="314" x2="417" y2="64" stroke="#3d3d3a" stroke-width="1"/>
+<line x1="537" y1="314" x2="537" y2="318" stroke="#3d3d3a" stroke-width="1"/>
+<line x1="413" y1="194" x2="417" y2="194" stroke="#3d3d3a" stroke-width="1"/>
+<line x1="413" y1="74" x2="417" y2="74" stroke="#3d3d3a" stroke-width="1"/>
+<text x="537" y="330" font-size="8" fill="#6b6b66" text-anchor="middle">1</text>
+<text x="409" y="197" font-size="8" fill="#6b6b66" text-anchor="end">1</text>
+<text x="409" y="77" font-size="8" fill="#6b6b66" text-anchor="end">2</text>
+<line x1="399" y1="314" x2="700" y2="314" stroke="#9a9a94" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="417" y1="332" x2="417" y2="57" stroke="#9a9a94" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="402" y1="329" x2="617" y2="114" stroke="#9a9a94" stroke-width="1" stroke-dasharray="4 3"/>
+<rect x="417" y="74" width="120" height="240" fill="none" stroke="#c9c7c0" stroke-width="1.3"/>
+<text x="477" y="92" font-size="7.6" fill="#9a9a94" font-weight="600" letter-spacing="1.1" text-anchor="middle">STRETCHED ×2</text>
+<line x1="417" y1="314" x2="537" y2="314" stroke="#5b7a99" stroke-width="1.3" marker-end="url(#ahB)"/>
+<line x1="417" y1="314" x2="417" y2="74" stroke="#bf5b34" stroke-width="1.3" marker-end="url(#ahO)"/>
+<line x1="417" y1="314" x2="537" y2="74" stroke="#6b6b66" stroke-width="1.3" marker-end="url(#ahG)"/>
+<text x="477" y="306" font-size="8.8" fill="#6b6b66" text-anchor="middle">[1, 0] · λ = 1</text>
+<text x="409" y="262" font-size="8.8" fill="#6b6b66" text-anchor="end">[0, 2] · λ = 2</text>
+<text x="545" y="70" font-size="8.8" fill="#6b6b66" text-anchor="start">[1, 2]</text>
+<text x="600" y="152" font-size="8" fill="#9a9a94" text-anchor="start">off its line</text>
+</svg>
