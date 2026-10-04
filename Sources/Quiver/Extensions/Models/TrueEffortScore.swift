@@ -13,10 +13,10 @@
 
 import Foundation
 
-/// A runner's effort model, composed from three Quiver models: a `Ridge` baseline that predicts
-/// expected heart rate from workload, a `ResidualModel` over it that reports the gap, and a
-/// `Pipeline<KNearestNeighbors>` that classifies each moment's effort band. It holds a session's
-/// history, scores a run live tick by tick, and re-fits the baseline as history grows.
+/// `TrueEffortScore` models a runner's effort using three components: a `Ridge` baseline to
+/// predict heart rate from workload, a `ResidualModel` to measure the gap, and a
+/// `Pipeline<KNearestNeighbors>` to classify effort. It tracks session history, scores runs in
+/// real time, and updates the baseline as new data is collected.
 ///
 /// The design classifies every misleading effect by which signal lies and in which direction:
 /// inflating effects (heat, drift, altitude) push heart rate up and surface as the baseline

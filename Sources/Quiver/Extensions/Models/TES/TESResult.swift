@@ -32,7 +32,7 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
     /// nil on a first run.
     public let expectedHeartRate: Double?
 
-    public let effortDistribution: [EffortClass: Double]  // share of time per band
+    public let effortDistribution: [EffortClass: Double]  // share of time per category
 
     // The three session terms are kept separate, never pre-multiplied into the headline.
     public let varianceMultiplier: Double

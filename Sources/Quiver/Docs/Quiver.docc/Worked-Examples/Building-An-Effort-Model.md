@@ -1,351 +1,418 @@
 # Building an Effort Model
 
-<!-- LENGTH: this draft is 25+ lines over the 311-line model-doc ceiling before any stub is written, so writing the stubs must be net-negative. Planned cuts: the paragraph runs in the first three sections, and the Overview repetition in the two-readouts section. -->
-
-Scoring exercise effort from a live sensor stream by reading every signal at once, not just heart rate.
+Measure running effort from six Apple Watch signals, so that work the heart doesn't show still counts.
 
 ## Overview
 
-Measuring exercise effort is hard because the body produces several signals at once. Heart rate, pace, cadence, grade, altitude, and vertical oscillation are all facets of one underlying physiological state. Most training tools reduce that state to a single signal, usually heart rate, and convert it to a score.
-<!-- TODO(Wayne): comparison framing ("Most training tools…") is on the keep-out list; rephrase to describe what the model does, not what others do. --> That reduction often misses the real story of a workout.
+`TrueEffortScore` (TES) measures athletic effort from six signals from Apple Watch: heart rate, pace, cadence, grade, vertical oscillation and altitude. A baseline model learns the heart rate expected for a runner's workload and reports the gap. A classifier model also labels each moment based on how the runner is moving. As a result, efforts that require significant biomechanical effort, such as running downhill, also count as hard work.
 
-A **True Effort Score** reads heart rate, pace, cadence, grade, altitude, and vertical oscillation together to picture what the body is doing in each moment. A heart rate might be high because of altitude or a steep climb. By reading all the signals at once, the model tells those cases apart.
+This article covers the concepts behind the model and the calling surface that puts them to work. The companion white paper, *True Effort Score*, carries the full history and the references.
 
-``TrueEffortScore`` packages this whole model as one streaming value type. It composes a ``Ridge`` baseline, a ``ResidualModel``, and a ``KNearestNeighbors`` classifier internally. A caller feeds it raw sensor moments and reads back a live score, an effort band, and a residual, the lifecycle running from first tick to final breakdown. Unlike a fit-then-predict model, ``TrueEffortScore`` fits incrementally: each `finalize()` refolds history and refits the baseline, while `record` streams moments in between.
+The whole lifecycle is three calls:
 
-## Reading the full signal
+```swift
+import Quiver
 
-The model treats heart rate as a reaction to effort. It uses the other signals to predict what the heart rate should be in a given moment, then measures the gap between that prediction and the real reading. That gap is the **residual**, and it is how far the heart has drifted from the expected workload. The shaded band between the flat expected line and the rising observed line is the residual growing across a session:
+// 1. Start a runner.
+var tes = TrueEffortScore()
 
-![A flat expected heart-rate line at 150 bpm with the observed heart rate rising above it over 40 minutes, the widening gap between them shaded as the residual](diagram-residual-modeling)
+// 2. Record once per sensor sample.
+tes.record(heartRate: 152, pace: 5.4, cadence: 174, grade: 1.2,
+           verticalOscillation: 7.9, altitude: 100, at: sampleDate)
 
-The residual and the effort score are two distinct readouts: both climb as effort rises, but the score measures cumulative load and the residual measures an instantaneous gap. Carrying that distinction through makes every later mention of the residual read the same way.
+// 3. Close the run.
+if let result = tes.finalize() {
+    print(result.adjusted)
+}
+```
 
-This kind of divergence between heart rate and workload is closely related to what endurance coaches call **aerobic decoupling** — heart rate and the work being done stop tracking each other. The classic metric compares the first and second halves of a sustained effort; this model measures the divergence moment to moment as a residual. Heart rate might climb while pace holds steady. A single-signal score cannot see that divergence. The model reads heart rate in context and decides when to trust the signal and when to lean on the other data instead.
+## Where effort scores come from
 
-Internally the type wires three Quiver models together. A ``Ridge`` baseline predicts expected heart rate from pace, cadence, grade, vertical oscillation, and altitude. A ``ResidualModel`` over that baseline surfaces the gap between expected and observed heart rate. A ``KNearestNeighbors`` classifier labels each moment to catch the cases the residual misses. The caller never assembles these by hand — construction, fitting, and scaling all happen inside the streaming type.
+In the 1970s, researchers proposed the fitness-fatigue model: each workout is an impulse that produces fitness, which builds slowly and lasts, and fatigue, which builds quickly and fades. To measure the size of each impulse they defined the training impulse, or TRIMP. By the early 1990s the number came from heart rate: the minutes of a workout, weighted by cardiovascular intensity. Summated heart-rate zones followed in 1993, and session rating of perceived exertion, a self-reported exertion multiplied by minutes, in 2001.
 
-> Important: The sensor values here are illustrative, chosen to make the arithmetic checkable. A real model trains on a runner's own recorded history.
+Most fitness watches still calculate training load from one or a combination of these ideas, and each one shares TRIMP's shape: intensity multiplied by time. TES keeps that shape. What changes is how intensity is decided.
 
-## Why one number falls short
+## What a single number misses
 
-On a steep descent heart rate can stay low while the legs take a heavy pounding. The quadriceps work eccentrically to brake against gravity on every footstrike, a genuinely hard muscular load. The cardiovascular cost is light, so heart rate sits well below what the effort deserves. A heart-rate-only score reads this as easy and misses the mechanical load entirely — the load that shows up as sore quads a day or two later, long after the heart rate said easy. The effort is real for the legs and light for the heart at the same time:
+Successful training requires balancing effort and recovery, and today's runners train muscles, tendons and ligaments as well as the heart. Several common efforts fall outside what a heart-rate score can see:
+
+- **Running downhill.** On a steep descent the quadriceps contract eccentrically to brake every foot strike. Because gravity supplies much of the work, the effort may not register as significant cardiovascular activity.
+- **Interval training.** Surges demand significant cardiovascular output, but averaging them together with the rest periods masks the true intensity.
+- **Technical terrain.** Rocks, roots and loose footing demand concentration and agility on every stride. Pace slows and heart rate may stay moderate, so neither reflects the added work.
+- **Power-hike.** On a steep climb a runner may drop to a hike. Pace and cadence collapse while cardiovascular effort increases.
+- **Environmental factors.** In heat or late in a long run, heart rate climbs while the external workload holds steady. This is cardiac drift. At altitude, heart rate sits higher from the first step for the same work.
+- **Returning from injury.** Measuring progress isn't about increasing cardiovascular effort but about carefully measuring biomechanical load, usually through a walk-run program.
+
+Running power, the other established approach, reduces a run's biomechanics to watts. On a steep descent estimated power drops even as the quadriceps absorb heavy eccentric load, and on a hot day power never sees the heart. The comparison cuts both ways: a foot pod records better raw biomechanics than any wrist sensor, and for steady-state running a power-based load has years of field use behind it. On a descent, though, a heart-rate trace misses the same load that power does:
 
 ![One instant on a steep descent shown as two bars, cardiovascular cost from heart rate reading low while muscular load from eccentric quad braking reads high](diagram-load-cost)
 
-On steep climbs runners often drop to a power-hike, and pace and cadence collapse. Pace-based scores misread this as rest, failing to account for the work of lifting bodyweight against gravity. Here heart rate reflects the effort honestly, and pace is the misleading signal.
-
-### The same number, different efforts
-
-Heart rate carries different meanings depending on what the rest of the body is doing. A low heart rate plunging downhill, a high one grinding uphill, and a high one drifting upward on a hot flat road are three distinct physiological states. A single number flattens them — it reads the downhill as easy while the legs work, and it cannot separate the honest uphill cost from the false rise of heat. Only pace, cadence, and grade together separate these efforts. Other divergences — caffeine, dehydration, a fatigued nervous system — leave the same fingerprint on heart rate and are the caller's to interpret, not the model's.
-
 ## Keeping every dimension
 
-<!-- TODO(Wayne): outline row 5 places the architecture figure here (Planning/whitepapers/true-effort-score/figures/fig-architecture.svg; convert to a DocC image, for example diagram-tes-architecture.png). -->
+TES captures each moment of a run as a vector of six signals and keeps them together rather than reducing them to a single number at the start. Each number represents one aspect of the moment, and together they position that moment in space. The distance between two vectors then shows their similarity: moments that look alike sit close together, moments that differ sit far apart.
 
-A modern watch reports more than heart rate alone. Each instant of a run is a six-signal snapshot, a point in six-dimensional space describing what the body is doing. The model treats each moment as a complete set of signals, and the same moment flows through the baseline and the classifier.
+A strong effort on flat ground and a rapid descent can share nearly the same pace, while their heart rate and vertical oscillation pull in opposite directions. As vectors, the two moments remain distinct:
 
-![The True Effort Score pipeline as two lanes: a baseline lane that scales five workload signals and predicts expected heart rate with a Ridge regression, and a classifier lane that labels each moment's effort band with k-nearest neighbors, with the baseline capping the heart rate the classifier reads and both lanes feeding an accumulator that produces the TES result](diagram-tes-architecture)
+![Two moments of a run as six-signal vectors, a threshold effort on flat ground and a fast descent, scaled to a common range](diagram-vector-modeling)
 
-The two internal models read different slices of that moment on purpose, and the split is unrepresentable by accident:
+> Note: For more on vectors and distance, see <doc:Linear-Algebra-Primer>.
 
-- The regression reads `[pace, cadence, grade, verticalOscillation, altitude]` and predicts heart rate. Heart rate is the target, never a feature.
-- The classifier reads `[heartRate, pace, cadence, grade, verticalOscillation]` and labels the effort. Altitude is left out here — as an absolute position it describes where the runner is, not how hard they are moving. Its influence on heart rate is the baseline's job, not the classifier's.
+## How the model is built
 
-Heart rate is the regression's target and never one of its inputs. That single rule is what lets the model hold a fast descent and a threshold effort apart instead of scoring them alike.
-<!-- REVISED 2026-09-24: was "Heart rate is only ever the regression target and never an effort feature." The classifier does read heart rate (see the list above). -->
+TES asks two questions at each moment. First, what should the heart be doing for this workload? A personal baseline, learned from the runner's own history, predicts the heart rate the workload should produce. Second, what kind of effort does this moment look like? A classifier compares the movement pattern against known efforts and labels it. The score adds up these labeled moments, weighted by intensity and duration, plus a few costs that only exist across a whole run:
 
-<!-- TODO(Wayne): the heart-rate cap (D5, commit b58342c). Once a baseline exists, the classifier reads heart rate no higher than the baseline expects for the moment's workload: HR′ = expected + hrTrust · min(0, HR − expected). Heat and drift therefore cannot lift the band; the excess stays visible in the residual. A reading below expected passes through unchanged. Before a baseline exists (the first run), drift can still lift the band. Example from the tests: a steady Tempo workload (5.6 min/km, 171 spm, +0.5%) reads Threshold from 162 bpm at cold start, and stays Tempo at 166 and 180 bpm once a baseline exists. -->
+![The two branches of TES: the baseline predicts expected heart rate and reports the residual, while the classifier labels each moment and feeds the score](diagram-tes-architecture)
 
-## Sorting what misleads the reading
+Internally the type wires three Quiver models together. A ``Ridge`` regression is the baseline, a ``ResidualModel`` over that baseline measures the gap, and a ``KNearestNeighbors`` classifier inside a ``Pipeline`` labels each moment. The two branches read different slices of the same moment on purpose:
 
-Every misleading effect has a characteristic signature, and that signature decides which internal model catches the effect.
+| Model | Reads | Produces |
+|---|---|---|
+| Baseline | pace, cadence, grade, vertical oscillation, altitude | expected heart rate |
+| Classifier | heart rate, pace, cadence, grade, vertical oscillation | an effort label |
 
-- **Inflating and gradual** — heat, cardiac drift, or altitude. Heart rate reads higher than the workload warrants, and usually creeps rather than jumps. The regression residual catches these.
-  <!-- TODO(Wayne): add that, once a baseline exists, these effects also stay out of the effort band (the heart-rate cap above), so they no longer raise the score. -->
-  <!-- TODO(Wayne): white paper, "Environmental factors" bullet (why TES over TRIMP). Add the missing period after the bold lead-in to match "Power-hike." Consider reframing "A heart-rate score calls it harder than it is": heat adds real systemic strain, so TRIMP is not strictly wrong; the stronger claim is that it cannot separate that strain from work, while TES keeps it apart as the residual (the white paper's own wording in the baseline section). -->
-- **Masking and discontinuous** — a downhill, or a power-hike up a steep grade. Heart rate or pace misreads the moment abruptly. A descent keeps heart rate low while the legs work. A power-hike drops pace while the climb stays hard. The classifier catches these, because the effort resembles past moments of the same kind regardless of heart rate.
-- **Session-level** — intervals, total duration, abrupt transitions. These are properties of the whole sequence, not of any one sample. The breakdown folds them in at the end, in ``TESResult``.
+Heart rate is the baseline's target, so it is never one of its inputs. Altitude is left out of the classifier because, as an absolute position, it describes where the runner is rather than how hard they are moving; its effect on heart rate belongs to the baseline.
 
-## Constructing the model
+## The baseline
 
-An app picks one of two constructors at startup, and every later call uses the same `tes` binding. A brand-new runner starts with no history and no personal baseline. The empty initializer seeds the classifier from a bundled anchor set and leaves the baseline uncalibrated. In this model, `nil` is information, not absence — each `nil` below marks a meaningful state rather than a missing value.
+The baseline learns the heart rate a runner's workload should produce from the last four weeks of that runner's history. It is a ridge regression, a linear regression with a light penalty that keeps the learning stable when signals overlap. The baseline doesn't require age, heart-rate zones or other demographic inputs, and it can be read directly:
+
+```swift
+if let baseline = tes.baseline {
+    print(baseline.equation())
+    // expected HR = 142.69 - 4.62·pace + 2.87·cadence + 4.85·grade
+    //               - 3.95·verticalOscillation + 0.54·altitude
+
+    let weights = baseline.coefficients    // intercept at index 0, then the five signals
+    let overlap = baseline.conditioning    // 1-norm condition of XᵀX, nil when not measurable
+}
+```
+
+This baseline was learned from a synthetic 12-run history. The first number, 142.7, is this runner's average heart rate: the heart rate expected when every signal sits at its usual value. Each coefficient then adds or subtracts beats per minute as its signal moves one standard deviation, a typical swing for this runner, above its average. Because every signal is put on the same scale, their sizes compare directly. For this runner, grade counts about nine times more than altitude. Pace is negative because it is measured in minutes per kilometer, so a larger number means slower running and a lower heart rate.
+
+> Important: The coefficients describe standardized signals. Substituting a raw workload, such as an altitude of 300 meters, into the printed equation gives a meaningless result. The model applies its own scaler before predicting.
+
+A weight near zero can mean a signal carries little information, or that it barely varied in the runner's history. The `conditioning` value often reads in the tens, because pace, cadence, grade and vertical oscillation move together. That is information about overlapping signals, not a failure; the ridge penalty keeps the fit stable. The baseline stores no fit-quality score on purpose, because quality is measured on held-out runs, not read off the trained model.
+
+## The residual
+
+Comparing expected heart rate against measured heart rate reveals the effect of everything the workload doesn't explain. A moment one standard deviation steeper than usual, with every other signal at its average, is expected to read 142.69 + 4.85 ≈ 147.5 bpm. If the watch reads 155 bpm at that moment, the gap of +7.5 bpm is the **residual**:
+
+![A flat expected heart-rate line with the observed heart rate drifting above it over a run, the widening gap between them shaded as the residual](diagram-residual-modeling)
+
+TES reports the residual live and as an average across the run:
+
+```swift
+let liveGap = tes.currentResidual        // observed − expected bpm; nil until a baseline exists
+let sessionGap = result.meanResidual     // trust- and time-weighted; 0 without a baseline
+let expected = result.expectedHeartRate  // mean expected bpm; nil on a first run
+```
+
+The residual is reported beside the score rather than added to it, because the model cannot tell heat from caffeine or fatigue. A high score driven by real work and a high score driven by heat must remain distinguishable. Because `meanResidual` reads 0 on a first run, an app checks `expectedHeartRate` for `nil` to tell a first run from an established one. On an established run the mean can also sit near 0 when gaps above and below prediction cancel, such as a hot climb followed by a shaded descent, so a near-zero mean does not by itself show that the heart tracked the workload all run. A positive session residual means the heart ran above prediction, the signature of heat or drift; a negative one means it ran cooler, as on a fast descent. Interpreting the cause is the app's job.
+
+Once a baseline exists, the residual also protects the effort label through a heart-rate cap. The classifier reads heart rate no higher than the baseline expects for the moment's workload, so heat and drift cannot lift a moment into a harder category; the excess stays visible in the residual instead. The cap is one-sided by design: a reading below expected passes through unchanged, so heart rate suppressed by cold or fatigue can still lower a label. A steady Tempo workload (5.6 min/km, 171 steps per minute, +0.5% grade) that reads Threshold at 162 bpm on a first run stays Tempo at 166 and even 180 bpm once a baseline exists.
+
+## Effort categories
+
+The classifier is a nearest-neighbor model that compares each moment with a set of known efforts and gives it the label of the closest ones. Each ``EffortClass`` carries a weight that sets how much a second of it counts:
+
+| Category | Meaning | Weight |
+|---|---|---|
+| Recovery | Walking, assigned only by the walking gate | 0.10 |
+| Easy | Recovery running and aerobic base | 0.25 |
+| Tempo | Sustained sub-threshold, roughly marathon pace for most runners | 0.50 |
+| Threshold | At lactate threshold | 0.75 |
+| Hard | Above threshold, or a heavy biomechanical load heart rate doesn't show | 1.00 |
+
+A steep-descent moment, with heart rate at 131 bpm, pace at 5.1 min/km and grade at −5.8%, reads Easy by heart rate alone. Its grade and vertical oscillation match the descent efforts among the known efforts, so TES labels it Hard. The top category is intentionally called Hard rather than a cardiovascular name such as VO₂ max. A steep eccentric descent belongs there because the legs are working at the top of their range while the heart is not.
+
+Tempo and Threshold share a soft boundary. The real distinction between them is blood lactate, which no watch signal measures, so the classifier separates them across a run but blurs them moment to moment. Because the two categories sit next to each other in weight, confusing them is the cheapest mistake the model can make.
+
+The known efforts are all running, so walking never reaches the classifier. A provisional walking gate labels it first. A moment with cadence under 130 steps per minute and pace slower than 8 min/km is walking, and its label depends on the terrain:
+
+| Walking moment | Label |
+|---|---|
+| Climb, +3% or steeper | The higher of vertical speed in meters per hour (Tempo at 300, Threshold at 500, Hard at 700) and heart rate (Threshold at 150 bpm, Hard at 165) |
+| Descent, −10% or steeper | Easy, or Tempo at 500 meters per hour |
+| Anything else, flat included | Recovery |
+
+The heart-rate thresholds are skipped when `hrTrust`, the app's confidence in each heart-rate reading described in *Trusting the heart-rate reading*, is under 0.5. A walking descent tops out at Tempo because braking at walking speed loads the legs far less than a running descent; the same slope taken at a running cadence, 130 steps per minute or more, can read Hard. Only the gate assigns Recovery; the classifier never predicts it.
+
+The live label and the signals behind it are available on every sample:
+
+```swift
+let label = tes.currentEffort      // nil before the first sample
+let signals = tes.currentSignals   // five z-scores against the known efforts, nil before the first sample
+```
+
+``EffortSignals`` reports the latest moment as `heartRate`, `pace`, `cadence`, `grade` and `verticalOscillation` z-scores. A large negative `grade` paired with a near-zero `heartRate` is the downhill signature: the legs working while the heart stays calm.
+
+## From moments to a score
+
+Time in each category adds up to a score, and harder categories count more. A moment's contribution is its weight multiplied by its duration in seconds, and the total is expressed against one hour held at threshold:
+
+`raw = 100 × Σ(weight × Δt) / (0.75 × 3600)`
+
+One hour at threshold reads 100, following the convention of power-based training stress scores. By convention, Threshold is a real, repeatable effort a runner can hold for about an hour, rather than an abstract maximum. The score rises with both intensity and time and has no ceiling.
+
+Values for easy running are low by design. An hour at Easy counts a third as much as an hour at Threshold. Power-based scores square intensity instead, so the comparison depends on the runner: at an easy intensity of about 65 percent of threshold, a two-hour easy run reads 73 in TES, where a power-based score would place it near 85. Below about 58 percent of threshold, the power-based score drops more steeply than TES. TES exists to price the work other scores miss, such as descents and surges, so its scale climbs most steeply at the hard end. These weights are design choices drawn from training-load practice that have not yet been tested against measured physiological cost.
+
+## Session costs
+
+Some costs exist only across a whole run, and ``TESResult`` reports each one separately so an app can see what moved the score away from the raw total:
+
+```swift
+let swings = result.varianceMultiplier   // 1 + min(0.35, 0.25 × variance of the per-sample category level, Recovery −1 to Hard 3)
+let fatigue = result.durationFactor      // 1.0 up to 45 minutes, then 1 + 0.1 × ln(minutes / 45)
+let surges = result.transitionLoad       // total size of jumps of two categories or more
+let headline = result.adjusted           // raw × swings × fatigue + 0.1 × surges
+```
+
+Intervals cost more than steady running of the same average effort, so a session that swings between categories raises the variance term; the first five minutes are left out so a warm-up doesn't count as a swing. Abrupt jumps of two or more categories, such as Easy straight to Hard, raise the transition term. Only categories held for at least ten seconds count, so a single misread sample at a boundary never registers as a surge.
+
+Long runs get a small credit for time on feet past 45 minutes. With that credit, the same hour at threshold reads 102.9, the headline adjusted score. The credit grows slowly on purpose: at 150 minutes, the ceiling Jack Daniels sets for any single long run, it reaches 12 percent.
+
+## What a score means
+
+The adjusted score sits on an absolute scale divided into five ranges. Each boundary represents slightly more than one continuous hour in a category: with the time-on-feet credit, a steady hour yields 34 at Easy, 69 at Tempo, 103 at Threshold and 137 at Hard. As a rule of thumb, every 35 points represents one hour spent at the next highest intensity.
+
+| Range | Score | Equivalent continuous effort |
+|---|---|---|
+| Light | < 35 | Up to one hour at Easy |
+| Moderate | 35–70 | Up to one hour at Tempo |
+| Substantial | 70–105 | Up to one hour at Threshold |
+| Heavy | 105–140 | Up to one hour at Hard |
+| Extreme | ≥ 140 | More than one hour at Hard |
+
+TES returns the number, and the app names the range:
+
+```swift
+// Returns the named range for an adjusted score.
+func rangeName(for score: Double) -> String {
+    switch score {
+    case ..<35: return "Light"
+    case ..<70: return "Moderate"
+    case ..<105: return "Substantial"
+    case ..<140: return "Heavy"
+    default: return "Extreme"
+    }
+}
+```
+
+Because surges and abrupt changes compound the score, mixed-intensity sessions often reach higher ranges in less time than steady efforts. The ranges quantify the cost of a workout; they are not recovery suggestions for the next day, because the score adds cardiovascular and muscular cost into one number, and the two recover on different timelines. The boundaries are provisional pending validation. As a calibration point, a recreational runner logging 45 to 70 minute easy runs will generally score between 25 and 40, while a mountain runner sustaining high effort on climbs and descents will routinely land in the Heavy range.
+
+## Scoring examples
+
+Four constructed runs show how these design choices behave. Each notes whether it was scored as a *first run*, with no personal history, or by an *established runner* with a learned baseline. They illustrate intended model behavior rather than physiological accuracy. The downhill, hot-day and injury runs sample every five seconds, and the hill repeats every second.
+
+**A downhill trail run (first run): 117.9, Heavy.** A 55-minute run with four extended −6% descents. Heart rate stays calm, but the movement data labels 58 percent of the run Hard. A heart-rate score would log an easy day; TES prices the eccentric load.
+
+**Hill repeats against steady Tempo (first run): 76.4 against 52.4.** Both 47-minute sessions build nearly the same raw load, 52.8 against 52.2. The repeats, eight two-minute Hard efforts each followed by two minutes Easy, earn a variance multiplier of 1.350 and a transition load of 48. The session terms account for the whole difference.
+
+**A hot day against a cool day (established runner): 62.4 against 62.3.** Both 60-minute runs hold 45 minutes at the same steady pace between a 10-minute warm-up and a 5-minute cool-down, both easy at 131 bpm. Cardiac drift on the hot day takes heart rate from 150 to 166 bpm across those 45 minutes. Because the work is the same, the extra heart rate can't raise the category, and the score barely changes. The extra beats appear in the residual instead: +3.1 bpm on the hot day against −2.8 bpm on the cool day.
+
+**Returning from injury (established runner): 10.9 to 15.6, Light.** A runner recovering from a knee sprain follows a walk-run program. As running time grows from 5 to 28 minutes over six weeks, the score rises gradually from 10.9 to 15.6, with the walking read as Recovery. Adding an 8-minute descent to the same 28-minute run lifts the score to 39.6, Moderate, because grade and vertical oscillation label the downhill Hard while heart rate stays calm. Here TES acts as a load advisor: steady scores show a safe progression, and the spike flags stress heart rate alone would miss.
+
+## Starting a runner
+
+An app picks one of two starting points. A brand-new runner starts empty. The classifier is seeded from a bundled set of 21 known efforts, inspectable as `TrueEffortScore.anchorSamples` and `TrueEffortScore.anchorLabels`, so a score exists from the first sample, while the baseline waits for a finished run:
 
 ```swift
 import Quiver
 
-// Cold start — a brand-new runner, no history:
-var tes = TrueEffortScore(lambda: 0.01, k: 3, historyLimit: 60)
+var tes = TrueEffortScore()   // first run: no personal history yet
 
-tes.baseline       // nil — the cold-start tell
+tes.baseline       // nil, the first-run tell
 tes.sessionCount   // 0
 ```
 
-The classifier is seeded from a fixed anchor set so a score exists from the very first tick. Those anchors are inspectable as `TrueEffortScore.anchorSamples` and `TrueEffortScore.anchorLabels`, a parallel set of classifier feature rows and their effort labels. The specific anchor rows are not the lesson — only that the classifier is never empty, so a score exists from the first tick.
-
-> Important: The cold-start initializer traps if `k` exceeds the anchor count. Validate a user-supplied `k` at the call site before constructing the model, since a precondition failure is a programmer error, not a recoverable one. The anchor count is a public property, so the guard is one line:
->
-> ```swift
-> guard k <= TrueEffortScore.anchorSamples.count else { /* reject the k */ }
-> ```
-
-A returning runner seeds from recorded history instead. History is an array of ``Workout`` values — the settled state of past finalized runs, which the model itself produces, since a finalized ``TESResult`` folds into history automatically. A returning app reloads its persisted model rather than rebuilding this array by hand. This throwing initializer fits the baseline once from that history and can add the runner's own labeled samples to the classifier.
+The defaults are `lambda` 0.01 for the ridge penalty and `k` 3 neighbors. The initializer stops with a precondition failure if `k` exceeds the number of known efforts, so an app that lets a user choose `k` checks it first against the fixed count of bundled known efforts:
 
 ```swift
-import Quiver
-
-// — or, a returning runner, seeded from saved workouts (pastRuns is [Workout]):
-var tes = try TrueEffortScore(history: pastRuns, lambda: 0.01, k: 3)
+let neighborCount = 5
+guard neighborCount <= TrueEffortScore.anchorSamples.count else { return }
+var tunedModel = TrueEffortScore(k: neighborCount)
 ```
 
-To seed the classifier with the runner's own labeled moments, pass matching `labeledSamples` and `labels` arrays. Each `labeledSamples` row is a classifier feature vector in the order `[heartRate, pace, cadence, grade, verticalOscillation]`, appended to the bundled anchors so the classifier never trains on fewer than the anchor set. The two arrays must be the same length — an unequal count traps rather than throws, so match them at the call site.
+A returning runner can also be seeded from saved workouts. The throwing initializer fits the baseline once from that history and can add the runner's own labeled moments to the classifier, each a row of `[heartRate, pace, cadence, grade, verticalOscillation]`:
 
 ```swift
-// Seed the classifier with the runner's own labeled moments alongside history:
 var tes = try TrueEffortScore(
-    history: pastRuns,
-    labeledSamples: labeledRows,   // rows of [heartRate, pace, cadence, grade, verticalOscillation]
-    labels: sampleLabels,          // one EffortClass per row; counts must match
-    lambda: 0.01, k: 3)
+    history: savedWorkouts,          // [Workout] from earlier finalized runs
+    labeledSamples: labeledRows,     // optional personal rows for the classifier
+    labels: rowLabels)               // one EffortClass per row; counts must match
 ```
 
-The seeding initializer throws `TESError.insufficientLabeledSamples` when `k` is larger than the anchor set plus the supplied labeled samples, and `TESError.baselineDiverged` if that first fit fails to converge. Only this initializer throws a `TESError`; decoding a saved model restores its baseline as stored, without refitting.
-<!-- REVISED 2026-09-24: was "Only this initializer and a decode-time refit throw." There is no decode-time refit: Codable is synthesized. --> The live recording path never does. Because `record`, `pause`, `resume`, and `finalize` all mutate the model, the binding is a `var` — a `let` would refuse every one of them.
+Its limit depends on the rows the app supplies at runtime, so it throws instead: ``TESError/insufficientLabeledSamples(k:available:)`` when `k` exceeds the known efforts plus the supplied rows, and ``TESError/baselineDiverged(_:)`` if the first fit fails. Unequal `labeledSamples` and `labels` counts are a programmer error and stop with a precondition failure. Nothing after construction throws. Supplying personal rows also refits the classifier's standardization over the known efforts and those rows together, so the z-scores in `currentSignals` shift slightly.
+
+> Important: Personal labels must come from ground truth: the runner, a coach, or a calibration session with a known effort. Feeding the model's own `currentEffort` readings back in as labels would train the classifier on its own guesses, a self-training loop with nothing to correct it.
 
 ## Recording a live run
 
-The lifecycle has three steps in a fixed order: construct once and hold it in a `var`, call `record` once per sensor tick for the life of the run, then call `finalize` a single time to close it. The whole arc reads as one block before we drill into the pieces:
+The lifecycle runs in a fixed order: construct once and hold the model in a `var`, call `record` once per sensor sample, then call `finalize` once to close the run.
 
 ```swift
-var tes = TrueEffortScore(lambda: 0.01, k: 3, historyLimit: 60)
-
-// One call per tick, each arriving from the sensor stream with its own timestamp:
-for tick in sensorStream {
-    tes.record(
-        heartRate: tick.heartRate, pace: tick.pace, cadence: tick.cadence,
-        grade: tick.grade, verticalOscillation: tick.verticalOscillation,
-        altitude: tick.altitude, at: tick.time)
-}
-
-// Close the run once, at the end. nil when active time never reached 60 seconds:
-guard let result = tes.finalize() else { return }
-print(result.adjusted)
-```
-
-Everything below drills into one step of that arc. The caller feeds one moment per sensor tick, and each `record` call takes the raw signals and an absolute `Date`. The model derives the time delta between samples internally, so the caller never tracks elapsed time. All six signals are required on every call, since there is no missing-value handling inside the model. When a sensor drops a reading, carry the last value forward before calling `record`.
-
-```swift
-// Feed each tick as it arrives from the sensor stream.
 tes.record(
-    heartRate: 152, pace: 5.2, cadence: 174, grade: 1.0,
-    verticalOscillation: 7.7, altitude: 300, at: sampleTime)
+    heartRate: 152, pace: 5.4, cadence: 174, grade: 1.2,
+    verticalOscillation: 7.9, altitude: 100,
+    at: sampleDate)
+// bpm, min/km, steps/min, percent (negative is downhill), cm, meters
 ```
 
-Two contracts protect the stream from noisy hardware. A non-positive delta is dropped, so a duplicate or out-of-order callback discards itself with no upstream de-duplication. The first sample of a run carries zero load but stamps the run's start, so the clock begins on real data.
+Each call takes the raw signals and an absolute `Date`, and the model works out the time between samples itself. All six signals are required on every call; there is no missing-value handling, so when a sensor drops a reading, the app carries the last value forward. Two rules protect the stream from noisy hardware. A sample whose time isn't later than the previous one is dropped, so a duplicate or out-of-order callback discards itself. The first sample of a run carries no load but stamps the run's start.
 
-The `hrTrust` parameter reports optical-sensor reliability and is clamped to `0...1`. A doubted reading is pulled toward the runner's own expected heart rate once a baseline exists, or toward the anchor set's mean (about 150.6 bpm) at cold start, so the kinematic signals decide the label, and the doubted stretch cannot swamp the session's residual.
-<!-- REVISED 2026-09-24: was "pulled toward the training mean, so classification falls back to the four kinematic signals". Heart rate is held at the target, not removed (commits 32bf075, b58342c). -->
-<!-- TODO(Wayne): say the app computes hrTrust (for example, lowering it when heart rate locks onto cadence); the model only applies it. -->
+Grade is a signed percentage, rise over run, negative downhill. No watch sensor reports it directly, so the app supplies it. It is one of the baseline's strongest signals and the basis for recognizing descents, so any smoothing applied before the value reaches `record` changes the scores TES produces.
+
+Any steady sample interval works. Every moment is weighted by its duration, so the hill-repeat session in the scoring examples scores 76.4 whether it is sampled every 1, 2, 5 or 10 seconds. The interval should stay steady within a run, because the variance term counts samples rather than seconds: in an irregular stream, stretches sampled more often carry more weight in the variance.
+
+Pace has no meaningful value when the runner stands still: zero speed is an infinite number of minutes per kilometer. An app pauses the model while the runner is stopped, at a crossing or a water stop, rather than recording that moment. Pausing keeps two clocks apart. A paused span counts toward wall-clock `elapsedTime` but not toward `timerTime`, the clock the score uses:
 
 ```swift
-// A stretch where the wrist sensor is unreliable: trust the kinematics, not the heart rate.
+tes.pause()      // stop the timer; the wall clock keeps running
+tes.resume()     // the next sample bridges the gap on the wall clock only
+tes.isPaused     // false
+```
+
+A run the runner cancels is cleared without being kept:
+
+```swift
+tes.discardRun()   // clears the live run; history and baseline are untouched
+```
+
+While the run streams, the model exposes live readouts available after every sample. The score only climbs:
+
+```swift
+let score = tes.currentScore     // raw score so far, before session costs
+let active = tes.timerTime       // active seconds, pauses excluded
+let wall = tes.elapsedTime       // wall-clock seconds, pauses included
+let samples = tes.sampleCount    // moments recorded this run
+```
+
+## Trusting the heart-rate reading
+
+Optical heart rate is not always reliable. A loose band, cold skin, or cadence lock, where the sensor tracks foot strikes instead of heartbeats, can all distort it. The optional `hrTrust` parameter lets the app mark how far it trusts each reading, from 0 to 1, and it defaults to 1.
+
+A doubted reading moves toward the runner's own expected heart rate once a baseline exists, or toward the average heart rate of the known efforts on a first run. The movement signals then decide the label, and the doubted stretch counts for less in the session residual. Apple Watch reports no per-sample confidence, so the app supplies the rule. One illustrative rule lowers trust when heart rate sits on cadence:
+
+```swift
+// Lowers trust when heart rate tracks cadence, a sign of cadence lock.
+let trust = abs(heartRate - cadence) < 5 ? 0.2 : 1.0
+
 tes.record(
-    heartRate: 210, pace: 5.0, cadence: 176, grade: 0.0,
-    verticalOscillation: 7.4, altitude: 300, at: sampleTime, hrTrust: 0.0)
+    heartRate: heartRate, pace: pace, cadence: cadence, grade: grade,
+    verticalOscillation: verticalOscillation, altitude: altitude,
+    at: sampleDate, hrTrust: trust)
 ```
 
-Pausing and resuming keep two clocks apart. A paused span counts toward wall-clock `elapsedTime` but not toward `timerTime`, and `timerTime` is the basis for the score. After a resume, the next sample re-seeds the clock across the gap and advances the wall clock only, never the timer and never the run's start.
+The 5 bpm and 0.2 values are illustrative, not validated. At hard efforts, heart rate and cadence can legitimately cross for a moment, so a production rule should require the match to persist, for about ten seconds, before lowering trust. The app computes trust; the model only applies it.
+
+## Running indoors
+
+The watch cannot sense treadmill incline: its barometric altimeter measures a change in altitude, and a runner on an inclined belt never rises. Marking the run indoors before the first sample records every grade as a fixed 0.5%, a common treadmill setting, scoring the run as level ground:
 
 ```swift
-tes.pause()              // stop the timer; wall clock keeps running
-// ... rest interval ...
-tes.resume()             // next sample bridges the gap on wall clock alone
-
-tes.isPaused             // false
+tes.location = .indoor   // set before the first sample
 ```
 
-<!-- TODO(Wayne): discardRun() is missing from the article. It clears the in-progress run without folding it into history (a workout the runner cancels). -->
-
-<!-- TODO(Wayne): indoor runs. Set `tes.location = .indoor` before the first `record` for a treadmill run; the default is `.outdoor`, so outdoor callers change nothing. An indoor run records every grade as `TrueEffortScore.indoorGrade` (0.5%) whatever the caller passes, because the watch's barometric altimeter cannot sense belt incline. Ending the run (finalize, discardRun, or a run under the 60 s floor) resets location to `.outdoor`. Location is live-run state: not encoded, not part of ==, so a decoded model starts outdoor. -->
-
-## Reading the live values
-
-While the run streams, the model exposes live readouts a UI can poll each tick. The score climbs and never decreases.
-
-```swift
-tes.currentScore     // cumulative load so far, 0 on an empty run
-tes.currentEffort    // the latest sample's EffortClass, nil before the first sample
-tes.sampleCount      // moments recorded into the live buffer
-tes.timerTime        // active seconds, excludes pauses — the score's basis
-tes.elapsedTime      // wall-clock seconds, includes pauses
-```
-
-The residual is available live once a baseline exists. On a cold-start model it reads `nil`, which is itself the tell that the personal baseline has not yet calibrated.
-
-```swift
-tes.currentResidual  // observed − expected heart rate, nil until a baseline exists
-```
-
-The subtraction is the ``ResidualModel``'s, computed against the baseline's own scaled features — positive means the heart is running above what the workload predicts. That is a signature of an inflating effect such as heat or drift. A negative residual would mean the heart is running cooler than the workload predicts, the high-speed, low-demand coasting of a fast descent. The residual reports a gap and never names its cause.
-
-The classifier also exposes the latest sample's signals as z-scores against its training distribution, which lets a UI flag whichever signal is the outlier.
-
-```swift
-tes.currentSignals   // EffortSignals: five z-scores in σ units, nil before the first sample
-```
-
-A large negative `grade` z-score paired with a near-zero `heartRate` z-score is the downhill signature — the legs working while the heart stays calm. ``EffortSignals`` carries the five values as `heartRate`, `pace`, `cadence`, `grade`, and `verticalOscillation`, in the classifier's feature order.
+An indoor run is scored but kept out of history, so a grade the model cannot trust never shapes the runner's outdoor baseline. Ending the run resets the location to `.outdoor`. An incline set on the belt isn't reflected in the score.
 
 ## Finalizing the run
 
-Calling `finalize` closes the run and returns a ``TESResult``. It returns an optional, and the contract is strict: a run with under 60 seconds of active timer time is cleared and returns `nil`. That is neither an error nor a zero score. It is the model declining to fold a run too short to mean anything.
+Calling `finalize()` closes the run and returns a ``TESResult``. A run with less than 60 seconds of active time is cleared and returns `nil`. That is neither an error nor a zero score; it is the model declining to keep a run too short to mean anything.
 
 ```swift
-// Close the run. nil when the active timer never reached 60 seconds.
-guard let result = tes.finalize() else {
-    // Too short to keep — the live buffer is already cleared.
-    return
-}
+guard let result = tes.finalize() else { return }   // nil under 60 active seconds
 
 print(result)
 ```
 
-At finalize the run is folded into history, trimmed to `historyLimit`, and the baseline refits from the accumulated history. That refit runs through `try?`, so a divergent fit is swallowed and the previous baseline stays in place. The classifier never refits — it stays frozen after seeding, and only the baseline personalizes over time.
+Printing a result always shows the breakdown, never a bare number. For the hot-day run in the scoring examples:
 
-<!-- TODO(Wayne): an indoor run's finalize() returns the full TESResult but does not fold the run into history or refit the baseline, so sessionCount counts outdoor runs only. Reason: a 0.5% stand-in grade on an inclined belt would teach the baseline that this runner's heart rate runs high on level ground, skewing every later outdoor score. The trade-off: an incline treadmill session is under-scored for that one run. -->
-
-<!-- TODO(Wayne): demo app. history stores Workouts (raw moments), not scores; the TESResult returned here is dropped unless the app saves it. The demo must persist each TESResult itself for past-score lists or "runs like this one" retrieval (rescoring old workouts would use today's baseline, not the one in place at the time). A per-run chart of pace or grade from history also has to be recorded by the app for now (see the Workout access note below). -->
-
-## Reading a result
-
-``TESResult`` exposes no bare score accessor, because the headline number is one of several readouts a session earns. The headline is `adjusted`. The scale is anchored so that one hour held at threshold scores 100 on the raw score; the adjusted score for that hour is 102.9, because the duration term begins at forty-five minutes.
-<!-- REVISED 2026-09-24: was "anchored so that one hour held at threshold effort scores about 100". Values pinned in the 2e fixtures. -->
-
-```swift
-result.adjusted          // headline effort score; 102.9 for one steady hour at threshold
-result.raw               // 100 × Σ(weight · Δt) / 2700, before session terms
-result.meanResidual      // trust- and time-weighted mean gap in bpm
-result.effortDistribution  // [EffortClass: Double] — share of time per band
-result.timerTime         // active seconds
-result.elapsedTime       // wall-clock seconds, includes pauses
+```
+TESResult:
+  adjusted:        62.4
+  raw:             58.4
+  meanResidual:    3.1 bpm
+  expected HR:     148.0 bpm
+  variance ×:      1.038
+  duration ×:      1.029
+  transitionLoad:  0.00
+  timer/elapsed:   3600s / 3600s
+  baseline:        expected HR = 142.69 - 4.62·pace + 2.87·cadence + 4.85·grade - 3.95·verticalOscillation + 0.54·altitude
 ```
 
-Threshold, the steady-hard pace a runner could hold for roughly an hour, is the anchor rather than an abstract maximum. That makes the number meaningful. An hour entirely at an easy jog lands near `33` on the raw score, an hour spent entirely in the hard band lands near `133` — a mix no real session sustains, shown only to bound the scale — and a mixed session falls between. The score climbs with both intensity and time and has no ceiling, so it separates a long effort from a short one at the same intensity.
-
-The `meanResidual` is the session's average gap between observed and expected heart rate, in beats per minute, weighted by trust and duration. A positive value means the heart ran above prediction across the session, a signature of heat or drift. It reports the gap and never names the cause. Without a baseline it is `0`.
-
-The `effortDistribution` is a share of time, not a share of samples. Each band's value is the fraction of active time spent there, and the shares sum to about `1.0`. Because it is time-indexed rather than sample-indexed, a run with pauses or dropped ticks will show a time-share that diverges from the raw row count. The same is true of the result's `loadCurve`, which traces cumulative load indexed by recorded moment.
-
-Three session-level terms sit alongside the raw score and are kept separate rather than blended into one opaque number.
+``TESResult`` has no bare score accessor, because the headline is one of several readouts a run earns. Beyond `adjusted` and `raw`, two readouts suit charts:
 
 ```swift
-result.varianceMultiplier  // 1 + min(0.35, 0.25 · variance of steady-state ordinals)
-result.durationFactor      // 1.0 up to 45 min, then grows with ln(minutes / 45)
-result.transitionLoad      // Σ|Δclass| over jumps of two bands or more, between bands held ≥ 10 s
+let shares = result.effortDistribution   // [EffortClass: Double], share of active time per category
+let trace = result.loadCurve             // cumulative weighted load at each sample
+let scoredBy = result.baseline           // the baseline that scored this run, nil on a first run
 ```
 
-The variance term catches a session that swings between effort levels, computed on steady-state moments only. The duration term adds fatigue cost past forty-five minutes. The transition term catches abrupt jumps across two or more bands, counting only bands held for at least ten seconds, which is what makes a session of hill repeats cost more than the same minutes run at a steady middle pace.
-<!-- REVISED 2026-09-24: added the ten-second hold (commit 2e32526). --> The headline `adjusted` combines the raw score with the variance and duration terms and adds a small share of the transition load.
+The shares are a fraction of active time, not of samples, and sum to about 1. The `baseline` on a result is captured before the refit, so it can differ from `tes.baseline`, which has already learned from this run.
 
-<!-- TODO(Wayne): the debounce and the transition term's size. A band held under ten seconds (summed duration) merges into the band before it, so a classifier flicker at a boundary never counts as a surge; before this, a 40-minute Tempo run with one misread sample in forty gained 23.8 points at 1 Hz and 47.8 at 2 Hz, and now gains 0. The term is added (0.1 × transition load), not multiplied, and with ten-second holds it is bounded at 1,077 per hour, or 107.7 points. -->
+## How the model learns a runner
 
-<!-- TODO(Wayne): intervals against a steady run (outline row 14). Cold-start values, pinned in the 2e fixtures: 47-minute hill repeats (10 min Easy, 8 × 2 min Hard / 2 min Easy, 5 min Easy) raw 52.8, variance × 1.350, duration × 1.004, transition load 48, adjusted 76.4. A 47-minute steady Tempo run: raw 52.2, variance × 1.000, transition load 0, adjusted 52.4. Nearly the same raw load; the session terms account for the whole difference. -->
+At finalize an outdoor run joins history and the baseline refits. The baseline learns from the runs of the last 28 days. When fewer than eight runs fall inside that window, the eight most recent are kept instead, and no more than 60 are ever kept. All three are initializer parameters, `historyWindow`, `minimumHistoryRuns` and `historyLimit`. A window rather than the whole history lets the baseline follow a runner who is improving; an equal-weight window trails real change by roughly half its span. The baseline refits between runs, never during one, so a run is always scored against expectations it has not yet changed; a baseline refit mid-run would absorb the very drift its residual exists to report. On a Mac with an M4 Pro, `finalize()` with a refit over 57 hour-long runs took 32 milliseconds. A watch is slower, so an app measures the refit on its target device.
 
-Printing a result is always a labeled multi-line block, never a bare number — adjusted, raw, mean residual, the three session terms, the two clocks, and the baseline expression.
+The model moves through three phases. On a first run the classifier scores from the known efforts and there is no residual. As runs accumulate, the baseline drifts toward the runner's own heart-rate response, and residuals shrink. Once established, residuals center near zero on ordinary runs, so a large one means something:
 
-## Reading the baseline
+![Session residuals falling across three phases, large during first runs, shrinking while personalizing, and settled near zero once established](diagram-personalization-model)
 
-The personal half of the model lives in ``TESBaseline``, reachable read-only as `tes.baseline`. It is `nil` until the first finalize folds a run in and fits it. When present, it exposes the fitted heart-rate model as inspectable math.
+A sea-level runner who starts training at altitude follows the same path, with a caveat. Altitude is one of the baseline's signals, so the baseline adapts over several runs once altitude varies in the history. Until then, the heart-rate cap keeps the excess out of the effort label and in the residual.
+
+Personalization is asymmetric. The baseline refits on every outdoor finalize and becomes the runner's own. The classifier does not: personal labeled moments enter only through the seeding initializer, never through `record`. Started empty, the classifier stays on the known efforts for the life of the model, and only the baseline learns.
+
+## Saving the model
+
+``TrueEffortScore`` is a plain value type built from numbers, and it conforms to `Codable`, `Equatable` and `Sendable`. Encoding the model saves the runner's history and fitted baseline together, and decoding restores the baseline exactly as stored, with no refit and no separate weights file:
 
 ```swift
-// nil on a cold-start model; present once a run has been finalized.
-if let baseline = tes.baseline {
-    baseline.equation()         // "expected HR = 142.69 - 4.62·pace + ..."
-    baseline.coefficients       // per-feature weights, intercept at index 0
-    baseline.conditioning       // 1-norm condition of XᵀX, nil when not measurable
-}
+let encoder = JSONEncoder()
+let saved = try encoder.encode(tes)
+
+let decoder = JSONDecoder()
+let restored = try decoder.decode(TrueEffortScore.self, from: saved)
+restored == tes   // true
 ```
 
-The coefficients are on standardized features, with the intercept at index 0, in the order pace, cadence, grade, vertical oscillation, altitude. Each slope is the change in expected heart rate per one standard deviation of its signal, so the weights are directly comparable. A weight near zero can mean the signal carries little information, or that it barely varied in the training data.
+Only settled state is encoded; the live run is excluded from both encoding and equality, so the model is saved between runs, never during one. A run in progress is therefore lost if the app ends unexpectedly. Because `record` takes absolute dates, replaying the same calls after a relaunch scores the run exactly as it would have scored live.
 
-To make this concrete, a fit on a synthetic training history that converged after 580 iterations produces an intercept and five slopes of `⟨142.7, −4.624, 2.871, 4.853, −3.952, 0.5405⟩`.
-<!-- REVISED 2026-09-24: the old six-row fit (146.3006 …, 416 iterations) is obsolete and cannot be regenerated; its rows were never recorded. New coefficients: Li's history (ii) at the 1.6.0 defaults (λ 0.01), printed through labeledExpression (memo-2e-fixtures.md). Li is giving the full-precision coefficients. -->
-<!-- TODO(Wayne), NEEDS NUMBERS: the worked prediction (workload [5.2, 174, 1.0, 7.7, 300], observed 162.0 → expected and residual) must be recomputed on this baseline. Li computes it through TrueEffortScore (scaler applied), never by substituting the raw workload into the printed per-standard-deviation equation, which gives nonsense (altitude 300 alone would add about 162 bpm). Don't reuse 152.9019 / 9.0981. -->
-
-The `conditioning` value is the 1-norm condition number of the standardized `XᵀX`, not a singular-value ratio. A value in the tens is information about signal overlap, not a failure. It reads `nil` when the fit is not meaningfully conditioned. The baseline caches no fit-quality metric on purpose — quality is measured on held-out data, not read off the trained object.
-
-<!-- TODO(Wayne, 2026-10-02): API change. labeledExpression is now equation(), and TESResult.baselineExpression (String, "y = (uncalibrated)" fallback) is now TESResult.baseline: TESBaseline?, nil on a first run, holding the baseline that scored the run (captured before finalize() refits, so it can differ from tes.baseline). This paragraph needs rewording. -->
-Before any fit has run, `tes.baseline` is `nil` and reading `tes.baseline?.labeledExpression` yields `nil`. A ``TESResult`` reports the same uncalibrated state through its `baselineExpression`, which falls back to the literal `y = (uncalibrated)` when no baseline is present. That is the honest state of a first-ever finalize, and a UI should read it as "no personal calibration yet" rather than as a model error.
-
-## How the model learns an athlete
-
-A personal model is only as good as the history behind it. A new watch gives provisional numbers that earn trust as it learns from the athlete's sessions, and the model moves through three phases.
-
-At cold start there is no personal data. The classifier scores from the anchor set immediately, and the baseline is uncalibrated, so `currentResidual` reads `nil`. As the athlete logs sessions, each finalize folds a run into history and refits the baseline, and the model drifts toward the athlete's own resting baseline and pace-to-effort mapping. This is also how a sea-level runner who starts training at altitude comes back into calibration. The first runs in thin air read as inflated residuals. As those runs enter the history the baseline refits, and the residuals settle. After enough history, residuals center near zero on unseen sessions and labels stabilize into consistent bands for recurring workout types:
-
-<!-- TODO(Wayne): two consequences of the heart-rate cap to state here. (1) First run: with no baseline yet, drift can still lift the band; on a drifting run that is about +13% raw / +19% adjusted, and +50% for a steady +12 bpm offset. It stops at the first finalize(). (2) An effort faster than anything in the runner's history is scored conservatively the first time (a flat above-threshold stretch can read Threshold instead of Hard), and it corrects once that run joins the history. -->
-
-![Session residuals falling across three phases, large and positive during cold-start sessions, shrinking through personalizing sessions, and settled near zero once the model is established](diagram-personalization-model)
-
-Personalization is asymmetric, and knowing which half moves matters for reading the model. The baseline refits on every finalize and becomes the runner's own. The classifier does not — labeled moments enter only through the seeding initializer's `labeledSamples`, never through `record`, so a caller who wants a denser classifier supplies labeled samples up front.
-<!-- REVISED 2026-09-24: was "through the seeding initializer's `history` and `labeledSamples`". `history` feeds only the baseline. --> In the cold-start path the classifier stays on the anchor set for the life of the model, and only the baseline learns.
-
-The classifier needs density to be reliable. A handful of anchor rows shows the shape of each effort but cannot classify a boundary query with confidence, because the effort levels sit close together in signal space, especially tempo against threshold.
-<!-- REVISED 2026-09-24: was "threshold against vo2max". The soft boundary is tempo against threshold (EffortClass doc; the later paragraph on the cheapest misclassification). --> A dense classifier accumulates thousands of labeled moments per effort, so each query lands deep inside a crowd of its own kind and a small `k` returns a stable label. The anchor rows name the kinds of effort to tell apart; the reliability comes from the volume of real data supplied at seeding.
-
-## How a moment becomes load
-
-The path from sensor sample to score is short. For each sample the classifier returns an ``EffortClass``, and each class carries a fixed illustrative weight — `easy` is `0.25`, `tempo` is `0.50`, `threshold` is `0.75`, and `hard` is `1.00`. A moment's contribution to the load is its weight times its duration in seconds. Summing those contributions and expressing the total against one hour held at threshold gives the raw score.
-
-`TES = 100 × (Σₜ L(lₜ) · Δtₜ) / (0.75 · 3600)`
-
-Here `L(lₜ)` maps a sample's effort label to its weight, `Δtₜ` is the sample's duration in seconds, and `0.75 · 3600 = 2700` is the anchor of one hour held at threshold. The factor of `100` sets the scale, so an hour at threshold lands at `100`, an hour at easy near `33`, and an hour spent entirely in the hard band near `133` — a scale bound, not a session any runner sustains. The variance, duration, and transition terms then fold onto that base to produce the headline `adjusted` value.
-
-The tempo-and-threshold boundary is the softest one, and a misclassification there is the cheapest the model can make, because the two weights sit next to each other. The real distinction between them is the lactate threshold, not kinematics, so the model treats the boundary as weight-adjacent rather than sharp.
-
-## The score and the residual are two readouts
-
-Both numbers rise as effort climbs, but they measure different things. The score is a cumulative load that answers how much a session has cost so far. The residual is an instantaneous gap that answers how far the heart is from its expected rate right now. A UI reads both off the live model without any hand arithmetic.
+The saved model grows with its history, because each workout keeps every sample. A full history of 57 hour-long runs sampled every five seconds encodes to about 6.1 MB as JSON and about 1.6 MB as a binary property list, the smaller of the two. The binary figure assumes readings at sensor precision, such as whole beats per minute, because a binary property list stores each repeated value once; unrounded values grow it to about 5 MB:
 
 ```swift
-let score    = Int(tes.currentScore.rounded())   // cumulative effort load
-let residual = tes.currentResidual               // instantaneous gap, nil before a baseline
-let effort   = tes.currentEffort                 // the latest sample's band
+let encoder = PropertyListEncoder()
+encoder.outputFormat = .binary
+let compact = try encoder.encode(tes)
 ```
 
-The score comes from the accumulated load; the residual comes from the baseline. On a cold-start model the score already reads a real number while the residual is still `nil`, which is the clearest picture of what personalization adds — the band and the load work from the first tick, and the residual arrives once the runner's own baseline is fitted.
+`Sendable` lets the model cross actor boundaries without locks. Scoring is deterministic, with ties broken by the nearest neighbor, so the same run always scores the same.
 
-<!-- TODO(Wayne): outline row 17 suggests renaming this section "Two readouts and one correction". Since D5, the residual is also what keeps drift out of the band: the classifier reads heart rate capped at the baseline's expectation. Cut the part that repeats the Overview (Editorial). -->
+## Roadmap
 
-## Knowing whether it works
+Upcoming development for TES includes:
 
-Some of the ways the model breaks are about data and math.
-<!-- REVISED 2026-09-24: was "The model breaks in ways that are about data and math, not about physiology." The anchors carry a physiological limit (below). --> A baseline fitted on too few workouts cannot separate the terrain regimes, and its residuals will not settle. A query scaled differently from the training data reads as a false residual, which is why the scaler is fit once and reused inside the type rather than re-computed per sample. If the baseline is over-fitted, its residuals collapse toward zero and erase the very gap the residual is meant to expose.
-
-The residual detects a misleading reading. It does not diagnose the cause. A positive `meanResidual` says the heart ran above prediction; it does not say whether the reason was heat, altitude, dehydration, or a hard day. Naming the cause is the caller's job with the context the app already holds, and the model deliberately stops at reporting the gap.
-
-<!-- TODO(Wayne): the limits list (Freya's required items). No field validation yet: weights, session constants and anchors are design choices. Provisional anchors use absolute heart rate and pace from one runner profile, so a runner far from it (a low maximum heart rate, an elite pace) is misjudged at cold start; Tempo has 2 of 21 anchors and is under-predicted. Tempo and threshold overlap moment to moment (cheapest error). Ties are broken by the nearest neighbor, so the same run always scores the same. First-run drift leak. Beyond-history efforts scored conservatively the first time; the flat above-threshold margin is 0.4 bpm (shipped code, the history whose equation this article prints), so such moments can switch between Hard and Threshold. Running and hiking only. -->
-
-The model is a plain value type. It is `Codable`, so a run persists between sessions by encoding the model itself — there is no separate load or save. Only the settled state encodes, and the transient live-run buffer is excluded from both `Codable` and equality, so a model must be encoded between runs and never mid-run.
-
-<!-- TODO(Wayne): Workout access before tagging 1.6.0. Workout.Moment and moments are internal; the public surface is startDate, heartRates, deltaTimes and count. Pace, cadence, grade, verticalOscillation, altitude and hrTrust are persisted in history and used by the fit, but a caller cannot read them back. The Workout doc comment ("a caller reads a workout back the same way they recorded it") overstates this. Either widen access or correct the comment; decide before 1.6.0 freezes the public API. -->
+| Area                      | Planned work                                                          |
+| ------------------------- | --------------------------------------------------------------------- |
+| Walking and hiking        | Refining the scoring model for recorded walks and hikes               |
+| Treadmill incline         | Adding manual incline entry to properly score indoor hill sessions    |
+| Personalized heart rate   | Adapting scores to each runner's own heart-rate range                 |
+| Hot days on the first run | Scoring hot days accurately from a runner's very first run            |
+| Unfamiliar elevation      | Adjusting scores for runs at altitudes outside the runner's history   |
 
 ## Where to go from here
 
-This model combines simple, interpretable pieces rather than one opaque algorithm. The ``Ridge`` baseline carries the expected-heart-rate math, the ``ResidualModel`` surfaces the gap, and the ``KNearestNeighbors`` classifier carries the context the residual cannot see. Personalization here is calibration rather than a separate model — the same baseline starts from population anchors and centers its residuals near zero as it learns one runner's responses to workload and environment. That path from a general baseline to a personal calibration is a pattern that carries to any model operating on individual data. See <doc:Ridge-Regression> for the baseline, <doc:Residual-Model> for the gap it wraps, <doc:Nearest-Neighbors-Classification> for the classifier, and <doc:Feature-Scaling> for the standardization that keeps them aligned.
+TES combines simple, readable pieces rather than one opaque algorithm. See <doc:Ridge-Regression> for the baseline, <doc:Residual-Model> for the gap it measures, <doc:Nearest-Neighbors-Classification> for the classifier, and <doc:Feature-Scaling> for the standardization that keeps the two aligned.
 
-<!-- TODO(Wayne): demo app, post-run summary on the watch. Verify Foundation Models availability on watchOS against the real API before any copy says the summary runs "on the watch": the WWDC review notes (transcript only) say watchOS access goes through Private Cloud Compute, which is not on-device. If it's not available, fall back to templated sentences over TESResult fields (numeric nearest-neighbor over past results for retrieval; GloVe only if typed run notes enter the demo). Either way, the summary must not name a cause for the residual or give training advice. -->
-
-> Experiment: **The Quiver Notebook** is the right place to watch the score and the residual move independently. Fit a ``Ridge`` baseline on a handful of samples, wrap it in a ``ResidualModel``, and raise one observed value while holding its inputs fixed. The residual climbs while the prediction stays put. Then refit across a few `lambda` values — try `0.1`, `1`, and `10` — and watch the coefficients shrink without the residual's job changing. Seeing the gap respond to the observation while the prediction tracks the inputs is the clearest way to feel why the two readouts measure different things. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to watch a label change while heart rate stands still. Start an empty ``TrueEffortScore``, record two minutes of flat running at 131 bpm, 5.1 min/km, 172 steps per minute and 8 cm of vertical oscillation, then two more minutes at the same heart rate, pace and cadence on a −6% grade with 10 cm of vertical oscillation. Print `currentEffort` and `currentSignals` after each stretch. The heart rate never moves, yet the label climbs from Tempo to Hard, and the `grade` and `verticalOscillation` z-scores show why. See <doc:Quiver-Notebook>.
 
 ## Topics
 
 ### Effort model
 - ``TrueEffortScore``
+- ``WorkoutLocation``
 
 ### Inputs
 - ``Workout``
-- ``WorkoutLocation``
 - ``EffortSignals``
 
 ### Results

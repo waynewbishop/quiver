@@ -26,6 +26,6 @@ docs/build/
 *.swp
 *~
 .*.sw*
-# Obsidian vault (Quiver.docc is opened as a vault)
+# Obsidian vault (Sources/ is opened as a vault; hubs live outside the Quiver target)
 .obsidian/
-Sources/Quiver/Docs/Quiver.docc/_hubs/
+Sources/_hubs/

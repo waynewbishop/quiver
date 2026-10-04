@@ -19,7 +19,7 @@ import Foundation
 //
 // Provisional: signed off by the exercise-science review on 2026-09-24, pending the validation
 // study. Ported from the watchOS demo's history, remapping the demo's four-label scheme
-// (0 easy / 1 steady / 2 tempo / 3 hard) onto the EffortClass bands; the per-row remap reason is
+// (0 easy / 1 steady / 2 tempo / 3 hard) onto the EffortClass categories; the per-row remap reason is
 // carried inline. The rows use absolute heart rate and pace for one runner profile, so a runner
 // far from it (a low maximum heart rate, an elite pace) is misjudged at cold start, and Tempo,
 // with 2 of 21 rows, is under-predicted.

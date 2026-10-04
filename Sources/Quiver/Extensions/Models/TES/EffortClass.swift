@@ -13,9 +13,9 @@
 
 import Foundation
 
-/// The five effort bands. The middle three are named as training zones; the top band is named
+/// The five effort categories. The middle three are named as training zones; the top category is named
 /// for the load itself, because it holds heavy muscular work as well as cardiovascular effort.
-/// The `threshold` band anchors the score, so one hour held at threshold reads 100 on the
+/// The `threshold` category anchors the score, so one hour held at threshold reads 100 on the
 /// raw score, following the convention of power-based training stress scores.
 ///
 /// - `recovery`: flat or gentle walking, which costs well under an easy run per minute. Only
@@ -26,9 +26,9 @@ import Foundation
 /// - `hard`: above threshold, or a heavy muscular load that heart rate does not show, such as a
 ///   steep eccentric descent or a power-hike.
 ///
-/// The tempo and threshold bands share a soft boundary: the classifier separates them across a
+/// The tempo and threshold categories share a soft boundary: the classifier separates them across a
 /// run but blurs them per moment, since the real distinction is blood lactate rather than a
-/// kinematic signal. The bands are weight-adjacent, so a confusion between them is the cheapest
+/// kinematic signal. The categories are weight-adjacent, so a confusion between them is the cheapest
 /// misclassification in the model.
 public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sendable {
     case recovery
@@ -49,7 +49,7 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
         }
     }
 
-    /// The band's load weight. Public because the weights are published math — the raw score is
+    /// The category's load weight. Public because the weights are published math — the raw score is
     /// `100 × Σ(weight·Δt) / 2700` — and a reader has to be able to reach them. Recovery is 0.1
     /// because level walking costs roughly a third to a half of easy running per minute.
     public var weight: Double {
@@ -75,7 +75,7 @@ public enum EffortClass: String, Codable, Equatable, Hashable, CaseIterable, Sen
         }
     }
 
-    /// Maps an ordinal back to a band, clamping out-of-range values.
+    /// Maps an ordinal back to a category, clamping out-of-range values.
     init(clampingOrdinal value: Int) {
         switch Swift.min(3, Swift.max(-1, value)) {
         case -1: self = .recovery

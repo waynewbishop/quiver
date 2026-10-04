@@ -51,11 +51,6 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Model-Interpretation-Primer>
 - <doc:Concurrency-Primer>
 
-### Platform Guides
-- <doc:iOS-Apps>
-- <doc:watchOS-Apps>
-- <doc:Vapor-Server>
-
 ### Vectors
 - <doc:Vector-Operations>
 - <doc:Vector-Projections>
