@@ -95,6 +95,7 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Gradient-Descent>
 - <doc:Ridge-Regression>
 - <doc:Residual-Model>
+- <doc:True-Effort-Score>
 - <doc:Polynomials>
 - <doc:Naive-Bayes>
 - <doc:Logistic-Regression>
@@ -110,7 +111,6 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Embedding-Sources>
 - <doc:Retrieving-Context-For-Generation>
 - <doc:Panel-Workflows>
-- <doc:Building-An-Effort-Model>
 
 ### Utilities
 - <doc:Quiver-Notebook>
