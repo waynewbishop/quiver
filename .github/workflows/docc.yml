@@ -77,6 +77,11 @@ jobs:
           cp Sources/Quiver/Docs/Quiver.docc/redirect-building-an-effort-model.html \
             ./docs/documentation/quiver/building-an-effort-model/index.html
 
+          # Publish the True Effort Score white paper at a stable URL.
+          # DocC does not emit non-asset files, so it is copied in after the build.
+          mkdir -p ./docs/papers
+          cp Docs/pdf/true-effort-score.pdf ./docs/papers/true-effort-score.pdf
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:

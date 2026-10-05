@@ -6,7 +6,7 @@ A transparent, multi-signal model of running load on Apple Watch.
 
 `TrueEffortScore` (TES) measures athletic effort from six signals from Apple Watch. These include heart rate, pace, cadence, grade, vertical oscillation and altitude. A **baseline** model learns the heart rate expected for a runner's workload and reports the gap. A **classifier** model also labels each moment based on how the runner is moving. As a result, efforts that require significant biomechanical effort, such as running downhill, also count as hard work.
 
-This article covers the concepts behind the model and the calling surface that puts them to work. The companion white paper, *True Effort Score*, carries the full history and the references.
+This article covers the concepts behind the model and the calling surface that puts them to work. The companion white paper, [True Effort Score](https://waynewbishop.github.io/quiver/papers/true-effort-score.pdf), carries the full history and the references.
 
 The whole lifecycle is three calls:
 
