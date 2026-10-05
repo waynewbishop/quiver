@@ -4,9 +4,9 @@ Using the playground macro to inspect Quiver values inside an existing project.
 
 ## Overview
 
-The `#Playground` macro, introduced in [Xcode 26](https://developer.apple.com/xcode/), turns any Swift file inside a project into an interactive surface: write an expression, see the result inline in the Canvas, no build-and-run cycle. For a project that already depends on Quiver, this is the most direct way to inspect a value, verify a calculation, or sanity-check a method without leaving the codebase.
+The `#Playground` macro, introduced in [Xcode 26](https://developer.apple.com/xcode/), turns any Swift file inside a project into an interactive surface: write an expression, see the result inline in the Canvas, with no separate scheme or run step. For a project that already depends on Quiver, this is the most direct way to inspect a value, verify a calculation, or sanity-check a method without leaving the codebase.
 
-> Important: The `#Playground` macro is not the same as a `.playground` file. Traditional `.playground` files run in an isolated sandbox and cannot import Swift packages. The `#Playground` macro compiles as part of the project, so it has full access to SPM dependencies, including Quiver, with no extra configuration. The distinction trips up nearly every first-time user.
+> Important: The `#Playground` macro is not the same as a `.playground` file. A standalone `.playground` file runs in an isolated sandbox and cannot import Swift packages; it gains package access only when added to a workspace whose scheme has already built them. The `#Playground` macro compiles as part of the project, so it has full access to SPM dependencies, including Quiver, with no extra configuration. The distinction trips up nearly every first-time user.
 
 ### Writing a playground inside a project
 
@@ -25,7 +25,7 @@ import Quiver
 }
 ```
 
-The Canvas shows the result inline as the code is written, and re-evaluates on every edit. Changing the input vector, swapping a method, or adjusting a parameter updates the result without a restart. The `asFractions` call in the example above is one of the Quiver-native display methods catalogued in <doc:Rendering-Math-Primer>.
+The Canvas shows the result inline and, with automatic refresh enabled, re-evaluates as the code changes. Changing the input vector, swapping a method, or adjusting a parameter updates the result without a restart. The `asFractions` call in the example above is one of the Quiver-native display methods catalogued in <doc:Rendering-Math-Primer>.
 
 ### Naming blocks for parallel experiments
 
@@ -44,7 +44,7 @@ import Quiver
 #Playground("Cosine similarity") {
     let a = [1.0, 2.0, 3.0]
     let b = [4.0, 5.0, 6.0]
-    print(a.cosineOfAngle(with: b))  // 0.97
+    print(a.cosineOfAngle(with: b))  // 0.9746318461970762
 }
 ```
 

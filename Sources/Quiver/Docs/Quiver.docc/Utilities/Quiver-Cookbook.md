@@ -4,13 +4,13 @@ Learn Quiver through domain problems in science, engineering, and math.
 
 ## Overview
 
-[The Quiver Cookbook](https://github.com/waynewbishop/quiver-cookbook) is a set of single-file examples that showcase how Quiver can analyze and solve data problems in areas from aerospace and sensor processing to sports analytics and finance. Each one uses the `Playground` macro in Xcode 26+ to evaluate live in the Canvas, so you can read the code and see the result in the same place.
+[The Quiver Cookbook](https://github.com/waynewbishop/quiver-cookbook) is a set of single-file examples that showcase how Quiver can analyze and solve data problems in areas from aerospace and sensor processing to sports analytics and finance. Each one uses the `#Playground` macro in Xcode 26+ to evaluate live in the Canvas, so we can read the code and see the result in the same place.
 
-> Important: The `Playground` macro is not the same as a `.playground` file. Traditional `Playground` files run in a separate sandbox and cannot import Swift packages. The playground macro compiles as part of the project, with full access to SPM dependencies including Quiver.
+> Important: The `#Playground` macro is not the same as a `.playground` file. Traditional `.playground` files run in a separate sandbox and cannot import Swift packages. The `#Playground` macro compiles as part of the project, with full access to SPM dependencies including Quiver.
 
 ### A wind tunnel example
 
-This recipe trains a `LinearRegression` model on six wind tunnel measurements of a NACA 2412 airfoil and predicts the lift `coefficient` at an angle the tunnel did not test:
+This recipe trains a `LinearRegression` model on six wind tunnel measurements of a NACA 2412 airfoil and predicts the lift coefficient at an angle the tunnel did not test:
 
 ```swift
 import Playgrounds
@@ -20,24 +20,27 @@ import Quiver
 
     // Simulated wind tunnel readings for a NACA 2412 airfoil
     // Angle of attack (degrees) → measured lift coefficient
-    let angle =  [0.0,  2.0,  4.0,  6.0,  8.0, 10.0]
+    let angles: [[Double]] = [[0.0], [2.0], [4.0], [6.0], [8.0], [10.0]]
     let liftCL = [0.25, 0.47, 0.69, 0.90, 1.10, 1.30]
 
     // Train a regression model on the wind tunnel data
-    let model = try LinearRegression.fit(features: angle, targets: liftCL)
+    let model = try LinearRegression.fit(features: angles, targets: liftCL)
     print(model)
 
     // Predict lift at an angle the tunnel hasn't tested
-    let predicted = model.predict(7.0)
-    print("Angle: 7° → CL: \(String(format: "%.2f", predicted))")
+    let predicted = model.predict([[7.0]])
+    print("Angle: 7° → CL: \(String(format: "%.2f", predicted[0]))")
 
-    // How well does the linear model fit?
-    let r2 = model.predict(angle).rSquared(actual: liftCL)
-    print("R²: \(String(format: "%.4f", r2))")
+    // Is the slope statistically distinguishable from zero, or could the
+    // fit be noise? summary() returns a typed RegressionSummary with the
+    // t-statistic, p-value, and 95% confidence interval for every
+    // coefficient — the engineer's answer to "is this real?"
+    let report = try model.summary(features: angles, targets: liftCL)
+    print(report)
 }
 ```
 
-The Canvas shows the fitted slope at roughly 0.11 per degree (the published value for a typical airfoil), along with the predicted lift at 7° and an R² close to 1.0 confirming the linear fit. The same `fit()` that predicts house prices also predicts whether a wing generates enough lift to fly.
+The Canvas shows the fitted slope at roughly 0.11 per degree (the published value for a typical airfoil) and the predicted lift at 7°, followed by a regression summary: an R² close to 1.0, plus a standard error, t-statistic, p-value, and 95% confidence interval for the slope that together confirm the relationship is real rather than noise. The same `fit()` that predicts house prices also predicts whether a wing generates enough lift to fly.
 
 > Note: NACA stands for the National Advisory Committee for Aeronautics, a U.S. federal agency founded in 1915 that ran wind tunnel research on airfoils for decades. It was dissolved in 1958 when its assets, staff, and facilities became the core of the newly created NASA.
 
@@ -134,12 +137,12 @@ That iteration loop is what the [Quiver Notebook](https://github.com/waynewbisho
 
 ### Getting the cookbook
 
-Clone the repository and open the project in Xcode 26+
+Clone the repository and open the project in Xcode 26+:
 
 ```bash
 git clone https://github.com/waynewbishop/quiver-cookbook.git
 ```
 
-Quiver is included as a package dependency and resolves automatically, with no manual setup. Browse `Sources/Recipes/`, pick a file, and run it. Each recipe uses the `#Playground` macro, so results appear inline in the Canvas as we read.
+Quiver is included as a package dependency and resolves automatically, with no manual setup. Browse `Sources/Recipes/`, pick a file, and run it. Each recipe uses the `#Playground` macro, so results appear inline in the Canvas as we read. See <doc:Xcode-Playground> for how the macro works, including named blocks and automatic refresh.
 
-> Experiment: [quiver-cookbook](https://github.com/waynewbishop/quiver-cookbook) is the fastest way to see a full Quiver workflow evaluate inline. Clone the repo, open any single recipe (wind tunnel lift prediction, the driving classifier, the airfoil polynomial fit), and watch the Canvas update as the recipe runs. Each file is self-contained, so the working surface is one recipe at a time.
+> Experiment: Open the wind tunnel recipe and add one more reading past the stall angle: `[14.0]` to `angles` and `0.95` to `liftCL`. Watch the summary change. R² falls from about 0.9995 to about 0.67, the slope drops from 0.105 to roughly 0.06, and its standard error grows about sixteenfold. A single stalled reading is enough to show what happens when a linear model is asked to describe a wing that has stopped behaving linearly.

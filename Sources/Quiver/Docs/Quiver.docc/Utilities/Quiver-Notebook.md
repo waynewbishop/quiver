@@ -4,11 +4,13 @@ A browser-based Swift IDE for testing and evaluating Quiver models.
 
 ## Overview
 
-The [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) provides a fast, lightweight environment for learning Quiver and for prototyping. Established as a standalone web-based IDE, it serves two audiences: students who want to learn statistics, linear algebra, and machine learning in Swift, and developers who want a quick iteration loop for testing and building their own models.
+The [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) provides a fast, lightweight environment for learning Quiver and for prototyping. A standalone web-based IDE, it serves two audiences: students who want to learn statistics, linear algebra, and machine learning in Swift, and developers who want a quick iteration loop for testing and building their own models.
 
 ### Setting up locally
 
 The Notebook runs on the Swift command-line toolchain and requires macOS 15 (Sequoia) or newer with Swift 6.0 or newer.
+
+Macs with Xcode installed already include a Swift toolchain. Open the **Terminal** application and run `swift --version`. If it prints `Swift version 6.0` or newer, skip ahead to step 4.
 
 #### 1. Install Homebrew
 
@@ -28,7 +30,7 @@ When the install finishes, confirm Homebrew is working by checking its version:
 brew --version
 ```
 
-The terminal should print a line like `Homebrew 4.4.0`. If it says "command not found," the install didn't add Homebrew to the terminal's search path. Close the terminal window, open a new one, and try again.
+The terminal should print a line beginning with `Homebrew` followed by a version number. If it says "command not found," the install didn't add Homebrew to the terminal's search path. Close the terminal window, open a new one, and try again.
 
 #### 2. Install Swiftly through Homebrew
 
@@ -89,17 +91,17 @@ The first launch takes a minute or two while Swift compiles the Notebook and pre
 
 Open the URL in any browser to start writing snippets. Press `Ctrl+C` in the terminal to stop the server.
 
-> Important: The local server binds to `127.0.0.1` by design and refuses to start if the address is changed. The Notebook is reachable only from the same machine that launched it — a deliberate constraint.
+> Important: The local server binds to `127.0.0.1` by design, so the Notebook is reachable only from the Mac that launched it. The server refuses to start if the address is changed.
 
 ### Writing and running snippets
 
-The editor opens with `Quiver` and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter (or Ctrl+Enter on Linux) to compile and run, and output appears in the pane below the editor. The editor auto-saves to the browser's local storage, so refreshing the page does not lose code.
+The editor opens with `Quiver` and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter or Shift+Enter to compile and run, and output appears in the pane below the editor. Cmd+Shift+Enter clears the output before running, and Cmd+K clears it on its own. The editor auto-saves to the browser's local storage, so refreshing the page does not lose code. A `.swift` file dragged onto the editor opens in place of the current snippet.
 
-Hovering over a Quiver symbol shows its signature and a short description pulled directly from Quiver's documentation. Option-clicking (or Alt-clicking) a symbol opens a larger reference popup with the full doc comment. The same documentation that lives in the DocC catalog is available inline as snippets are written.
+Hovering over a Quiver symbol shows its signature and a short description pulled directly from Quiver's documentation. Option-clicking a symbol opens a larger reference popup with the full doc comment. Autocomplete suggests Quiver methods as we type, and signature help shows each parameter while we fill in a call. The same documentation that lives in the DocC catalog is available inline as snippets are written.
 
-The font size has four presets: Tiny, Normal, Large, and Presenter. **Presenter** mode sizes the editor text for projection during a lecture or workshop, so code stays readable from the back of a room without resizing the browser window.
+The font size has four presets: Tiny, Normal, Large, and Presenter. **Presenter** mode sizes the editor text for projection during a lecture or workshop, so code stays readable from the back of a room without resizing the browser window. Cmd+= and Cmd+- step between presets, and Cmd+0 returns to Normal. Pressing `?` outside the editor opens a cheatsheet of every shortcut.
 
-> Note: Cmd+Enter triggers a full Swift compile of the entire editor contents, not a cell-by-cell evaluation. Compile errors stop the run, and there is no shared state between runs: every snippet is its own complete program.
+> Note: Each run compiles the entire editor contents, not a cell-by-cell evaluation. There is no shared state between runs: every snippet is its own complete program. When a build fails, the output pane shows the compiler errors with line numbers that match the editor.
 
 Quiver provides the numerical and machine-learning surface: vectors, matrices, statistics, and models. The Notebook deliberately scopes itself to this one package, so students see the same surface every time they open it.
 
@@ -109,7 +111,8 @@ The first snippet most students write loads a bundled dataset, pulls out the tab
 
 ```swift
 guard let iris = Dataset.iris else {
-    exit(0)
+    print("Couldn't load Dataset.iris.")
+    exit(1)
 }
 
 let panel = iris.toPanel()
@@ -118,7 +121,7 @@ print(iris.description)
 print("shape:", panel.shape)
 ```
 
-The `guard let` checks that the dataset loaded successfully. If the file is missing or unreadable, the `else` branch runs and we call `exit(0)` to end the program cleanly. (Inside an Xcode project the same check would `return` from a function. In the Notebook there is no enclosing function, so `exit(0)` is the equivalent.)
+The `guard let` checks that the dataset loaded successfully. If the file is missing or unreadable, the `else` branch prints a message saying so and calls `exit(1)` to end the program with a failure status. (Inside an Xcode project the same check would `return` from a function. In the Notebook there is no enclosing function, so `exit` is the equivalent.)
 
 Once we have a <doc:Working-With-Panels>, the rest of Quiver is one method call away. We can ask for descriptive statistics, split the data into training and test sets, or pull selected columns into a matrix for a model to learn from. See <doc:Panel-Workflows> for those applied operations and <doc:Train-Test-Split> for the partitioning method. Vector and matrix results print as bracketed Unicode blocks in the Notebook's output pane. See <doc:Rendering-Math-Primer> for the full rendering family.
 
@@ -165,13 +168,13 @@ The Notebook ships with a small library of bundled teaching datasets: iris measu
 
 ### Pinned releases
 
-Each clone of the Notebook is locked to a specific Quiver release, so a Tuesday lecture and a Thursday exam will run against identical code. The active version is displayed in the footer of the editor, which makes it easy for a class to confirm everyone is on the same release. When a new Quiver version is bundled into the Notebook, it lands on the upstream `main` branch. We pull when we are ready to move forward, or stay on the version a course or workshop started with.
+Each clone of the Notebook is locked to a specific Quiver release, so a Tuesday lecture and a Thursday exam will run against identical code. The pin lives in the sandbox's `Package.resolved` file, and the active version is displayed in the footer of the editor, which makes it easy for a class to confirm everyone is on the same release. When a new Quiver version is bundled into the Notebook, it lands on the upstream `main` branch. We pull when we are ready to move forward, or stay on the version a course or workshop started with. Running `swift package update` inside the sandbox moves past the pin, so a course that needs a fixed release should pull upstream changes instead.
 
 ### Privacy
 
-The Notebook keeps your work on your own Mac. There are no accounts, no telemetry, and no analytics. Code, bundled datasets, and CSVs loaded from a custom path are all read by the local process and never leave the machine.
+The Notebook keeps all work on the local Mac. There are no accounts, no telemetry, and no analytics. Code, bundled datasets, and CSVs loaded from a custom path are all read by the local process and never leave the machine.
 
-Only the Notebook's own editor can run code. The local server answers on `127.0.0.1`, making it reachable from this Mac alone. Each launch creates a private key that the editor uses behind the scenes every time you press Run. There's nothing to set up or remember. If the Notebook restarts while a tab is open, the page refreshes itself and picks up right where you left off.
+Only the Notebook's own editor can run code. The local server answers on `127.0.0.1`, making it reachable from this Mac alone. Each launch creates a private key that the editor sends behind the scenes with every run. Nothing needs to be set up or remembered. If the Notebook restarts while a tab is open, the page refreshes itself and picks up where it left off.
 
 The editor itself uses Monaco (Microsoft's open-source code editor), which the browser loads from a public CDN (`cdnjs.cloudflare.com`) on each page load. This is a one-way asset fetch with no code or data sent back. Schools that block CDN access or require fully offline environments should plan to either allow `cdnjs.cloudflare.com` or vendor Monaco locally before adoption.
 
@@ -193,7 +196,7 @@ If a fresh terminal still doesn't recognize `swift`, run `swiftly init` once mor
 
 #### macOS version too old
 
-The Notebook reports that it requires macOS 15 (Sequoia) or newer and prints the version it detected. The toolchain check runs before the server starts, so this stops the launch immediately. The Notebook depends on a Swift 6 runtime that ships with macOS 15, and earlier releases cannot run it. Update macOS through System Settings → General → Software Update, then run `swift run` again.
+The Notebook reports that it requires macOS 15 (Sequoia) or newer and prints the version it detected. The toolchain check runs before the server starts, so this stops the launch immediately. The Notebook's package targets macOS 15, and earlier releases cannot run it. Update macOS through System Settings → General → Software Update, then run `swift run` again.
 
 #### Xcode command-line tools missing or broken
 
@@ -228,7 +231,13 @@ Open a new terminal, confirm the version with `swift --version`, then run `swift
 
 #### Port already in use
 
-Something else on the machine is already serving on port 8080, typically another Notebook session that didn't shut down cleanly, or an unrelated development server. Quit the other process, or restart the Mac if it's unclear what's holding the port. The Notebook can also be moved to a different port. See <doc:Quiver-Notebook-For-Classrooms>.
+Something else on the machine is already serving on port 8080, typically another Notebook session that didn't shut down cleanly, or an unrelated development server. Quit the other process, or restart the Mac if it's unclear what's holding the port. The Notebook can also start on a different port:
+
+```bash
+PORT=8090 swift run
+```
+
+Open `http://localhost:8090` instead. See <doc:Quiver-Notebook-For-Classrooms> for making a different port the default.
 
 #### First launch hangs while resolving dependencies
 
@@ -239,6 +248,14 @@ If the build never proceeds past `Resolving dependencies`, check the network con
 #### Browser cannot reach the Notebook
 
 The Notebook serves only on the local machine and only on `http://localhost:8080`. Confirm the terminal still shows the `Quiver Notebook is running.` banner. If it doesn't, the server has stopped. Run `swift run` again.
+
+#### A compile error doesn't make sense
+
+The output pane shows a trimmed version of the compiler's report, focused on errors in the snippet. To see the full build output, including warnings and the sandbox's own build steps, restart the Notebook with debugging turned on:
+
+```bash
+QUIVER_NOTEBOOK_DEBUG=1 swift run
+```
 
 #### A previously saved snippet is missing
 

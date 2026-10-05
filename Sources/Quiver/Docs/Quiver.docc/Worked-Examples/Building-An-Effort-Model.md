@@ -1,6 +1,6 @@
-# Building an Effort Model
+# True Effort Score
 
-Measure running effort from six Apple Watch signals, so that work the heart doesn't show still counts.
+A transparent, multi-signal model of running load on Apple Watch.
 
 ## Overview
 
