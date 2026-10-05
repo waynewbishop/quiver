@@ -401,7 +401,7 @@ Upcoming development for TES includes:
 
 ## Where to go from here
 
-TES combines simple, readable pieces rather than one opaque algorithm. See <doc:Ridge-Regression> for the baseline, <doc:Residual-Model> for the gap it measures, <doc:Nearest-Neighbors-Classification> for the classifier, and <doc:Feature-Scaling> for the standardization that keeps the two aligned.
+TES combines simple, readable pieces rather than one opaque algorithm. See <doc:Ridge-Regression> for the baseline, <doc:Residual-Model> for the gap it measures, <doc:Nearest-Neighbors-Classification> for the classifier, <doc:Feature-Scaling> for the standardization that keeps the two aligned, and <doc:Model-Interpretation-Primer> for reading the baseline's coefficients honestly.
 
 > Experiment: **The Quiver Notebook** is the right place to watch a label change while heart rate stands still. Start an empty ``TrueEffortScore``, record two minutes of flat running at 131 bpm, 5.1 min/km, 172 steps per minute and 8 cm of vertical oscillation, then two more minutes at the same heart rate, pace and cadence on a −6% grade with 10 cm of vertical oscillation. Print `currentEffort` and `currentSignals` after each stretch. The heart rate never moves, yet the label climbs from Tempo to Hard, and the `grade` and `verticalOscillation` z-scores show why. See <doc:Quiver-Notebook>.
 
