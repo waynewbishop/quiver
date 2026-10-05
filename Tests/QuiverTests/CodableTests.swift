@@ -163,6 +163,60 @@ final class CodableTests: XCTestCase {
         }
     }
 
+    // DistanceMetric reads the synthesized single-key form written by 1.5.0
+    func testDistanceMetricDecodesLegacyForm() throws {
+        let euclidean = try JSONDecoder().decode(
+            DistanceMetric.self, from: Data(#"{"euclidean":{}}"#.utf8))
+        XCTAssertEqual(euclidean, .euclidean)
+
+        let cosine = try JSONDecoder().decode(
+            DistanceMetric.self, from: Data(#"{"cosine":{}}"#.utf8))
+        XCTAssertEqual(cosine, .cosine)
+
+        // Re-encoding writes the current discriminated form, not the legacy one.
+        let reencoded = String(decoding: try JSONEncoder().encode(cosine), as: UTF8.self)
+        XCTAssertEqual(reencoded, #"{"kind":"cosine"}"#)
+
+        // An object with neither form is rejected rather than defaulted.
+        XCTAssertThrowsError(try JSONDecoder().decode(
+            DistanceMetric.self, from: Data(#"{"manhattan":{}}"#.utf8)))
+    }
+
+    // A KNN model saved by 1.5.0 decodes and predicts as it did then
+    func testKNearestNeighborsDecodesLegacyArchive() throws {
+        // Encoded by the 1.5.0 tag: fit(k: 3, metric: .cosine, weight: .distance).
+        let archive = #"""
+        {"featureCount":2,"k":3,"metric":{"cosine":{}},"trainingFeatures":[[1,2],[1.5,1.8],[5,8],[6,9]],"trainingLabels":[0,0,1,1],"weight":{"distance":{}}}
+        """#
+        let model = try JSONDecoder().decode(KNearestNeighbors.self, from: Data(archive.utf8))
+        XCTAssertEqual(model.metric, .cosine)
+        XCTAssertEqual(model.weight, .distance)
+
+        let refit = KNearestNeighbors.fit(
+            features: [[1.0, 2.0], [1.5, 1.8], [5.0, 8.0], [6.0, 9.0]],
+            labels: [0, 0, 1, 1], k: 3, metric: .cosine, weight: .distance
+        )
+        XCTAssertEqual(model, refit)
+
+        // 1.5.0 predicted [1, 1] for these inputs.
+        XCTAssertEqual(model.predict([[1.2, 2.1], [5.5, 8.5]]), [1, 1])
+    }
+
+    // A KNN pipeline saved by 1.5.0 decodes without a reducer
+    func testKNNPipelineDecodesLegacyArchive() throws {
+        // Encoded by the 1.5.0 tag: Pipeline.fit(k: 3, metric: .euclidean).
+        let archive = #"""
+        {"model":{"featureCount":2,"k":3,"metric":{"euclidean":{}},"trainingFeatures":[[-1.0987983707358564,-0.9639603730060446],[-0.8674723979493604,-1.0242078963189225],[0.7518094115561123,0.8434653263802889],[1.2144613571291045,1.144702942944678]],"trainingLabels":[0,0,1,1],"weight":{"uniform":{}}},"scaler":{"featureCount":2,"means":[3.375,5.2],"stds":[2.161452058223823,3.3196385345395667]}}
+        """#
+        let pipeline = try JSONDecoder().decode(
+            Pipeline<KNearestNeighbors>.self, from: Data(archive.utf8))
+        XCTAssertNil(pipeline.reducer)
+        XCTAssertEqual(pipeline.model.metric, .euclidean)
+
+        // 1.5.0 predicted [0, 1] for these inputs.
+        XCTAssertEqual(pipeline.predict([[1.2, 2.1], [5.5, 8.5]]), [0, 1])
+    }
+
     // MARK: - Feature Scaler
 
     // Round-trip preserves equality and transformation output

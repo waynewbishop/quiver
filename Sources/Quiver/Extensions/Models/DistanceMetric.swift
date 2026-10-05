@@ -91,6 +91,11 @@ extension DistanceMetric {
     // The enum gained an associated value (`minkowski(p:)`), so it can no longer
     // use the compiler-synthesized Codable. This encodes a string discriminator
     // plus the Minkowski order, keeping archives stable across the value cases.
+    //
+    // Quiver 1.5.0 and earlier wrote the synthesized form, a single key naming the
+    // case with an empty object, such as {"cosine":{}}. Decoding still reads that
+    // form, so models saved by those versions load unchanged; encoding writes only
+    // the discriminated form.
 
     private enum CodingKeys: String, CodingKey {
         case kind
@@ -101,8 +106,19 @@ extension DistanceMetric {
         case euclidean, cosine, manhattan, chebyshev, squaredEuclidean, minkowski
     }
 
+    // The keys of the synthesized form written by Quiver 1.5.0 and earlier,
+    // when the enum had only these two cases.
+    private enum LegacyKeys: String, CodingKey {
+        case euclidean
+        case cosine
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        guard container.contains(.kind) else {
+            self = try Self.decodeLegacy(from: decoder)
+            return
+        }
         let kind = try container.decode(Kind.self, forKey: .kind)
         switch kind {
         case .euclidean: self = .euclidean
@@ -114,6 +130,16 @@ extension DistanceMetric {
             let p = try container.decode(Double.self, forKey: .p)
             self = .minkowski(p: p)
         }
+    }
+
+    /// Decodes the single-key form written by Quiver 1.5.0 and earlier.
+    private static func decodeLegacy(from decoder: Decoder) throws -> DistanceMetric {
+        let legacy = try decoder.container(keyedBy: LegacyKeys.self)
+        if legacy.contains(.euclidean) { return .euclidean }
+        if legacy.contains(.cosine) { return .cosine }
+        throw DecodingError.dataCorrupted(DecodingError.Context(
+            codingPath: decoder.codingPath,
+            debugDescription: "Unrecognized DistanceMetric encoding: expected a kind key or a 1.5.0 case key"))
     }
 
     public func encode(to encoder: Encoder) throws {
