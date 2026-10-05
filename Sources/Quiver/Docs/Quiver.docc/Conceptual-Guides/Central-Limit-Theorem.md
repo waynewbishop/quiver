@@ -8,7 +8,7 @@ The **Central Limit Theorem** explains why a single sample mean allows us to inf
 
 ### The sampling distribution of the mean
 
-Imagine drawing the same-sized sample from a population over and over again. Each draw produces a slightly different sample mean. A different week of users gives a slightly different mean session time; a different watch session gives a slightly different step rhythm. The collection of all those possible sample means has its own distribution, the **sampling distribution of the mean**, and it describes how much the sample mean wobbles from one draw to the next.
+Imagine drawing the same-sized sample from a population over and over again. Each draw produces a slightly different sample mean. A different week of users gives a slightly different mean session time; a different watch session gives a slightly different step rhythm. The collection of all those possible sample means has its own distribution, the **sampling distribution of the mean**, and it describes how much the sample mean varies from one draw to the next.
 
 This is the change in perspective the rest of the guide depends on. With a single sample, the mean is a number; we compute it once and it sits there. Across all the samples we could have drawn, the mean is a random variable with a distribution of its own. The sampling distribution of the mean is that distribution, and the Central Limit Theorem is a statement about its shape.
 

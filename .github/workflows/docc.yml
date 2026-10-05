@@ -71,6 +71,12 @@ jobs:
           # Copy the Google Search Console verification file to the site root.
           cp Sources/Quiver/Docs/Quiver.docc/google7c15381d4d151a8c.html ./docs/google7c15381d4d151a8c.html
 
+          # Redirect the retired Building-An-Effort-Model URL to its replacement.
+          # DocC's @Redirected does not emit a page under static hosting, so we copy one in.
+          mkdir -p ./docs/documentation/quiver/building-an-effort-model
+          cp Sources/Quiver/Docs/Quiver.docc/redirect-building-an-effort-model.html \
+            ./docs/documentation/quiver/building-an-effort-model/index.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:

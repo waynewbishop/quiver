@@ -37,7 +37,7 @@ The two methods differ in how they treat the upper bound. `linspace` includes bo
 
 ### Filling matrices with constants
 
-The same `zeros`, `ones`, and `full` methods extend to two-dimensional arrays by taking a row count and a column count. The result is a `[[Double]]` (or `[[Int]]`, etc.) with every element set to the fill value.
+The same `zeros`, `ones`, and `full` methods extend to two-dimensional arrays by taking a row count and a column count. The result is a nested array of the same element type, such as `[[Double]]` or `[[Int]]`, with every element set to the fill value.
 
 ```swift
 // Create 2D arrays

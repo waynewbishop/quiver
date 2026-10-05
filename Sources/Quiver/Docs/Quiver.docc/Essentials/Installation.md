@@ -26,7 +26,7 @@ Add Quiver as a dependency in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/waynewbishop/quiver", from: "1.0.0")
+    .package(url: "https://github.com/waynewbishop/quiver", from: "1.6.0")
 ]
 ```
 

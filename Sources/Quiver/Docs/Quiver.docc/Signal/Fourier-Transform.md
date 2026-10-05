@@ -30,7 +30,7 @@ Quiver uses the Cooley-Tukey radix-2 algorithm, a divide-and-conquer approach th
 
 ### Preparing the input
 
-The radix-2 algorithm requires a signal length that is a power of two (8, 16, 32, 64, etc.). Our `padded(toPowerOfTwo:)` method handles this by appending zeros to the next valid length:
+The radix-2 algorithm requires a signal length that is a power of two (8, 16, 32, 64, and so on). Our `padded(toPowerOfTwo:)` method handles this by appending zeros to the next valid length:
 
 ```swift
 import Quiver

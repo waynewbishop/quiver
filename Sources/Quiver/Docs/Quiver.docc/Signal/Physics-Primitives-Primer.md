@@ -50,7 +50,7 @@ let power = force.dot(velocity)                   // 420 W
 
 A watch records instantaneous rates: heart rate, watts, or speed. To calculate **totals** (total energy spent, distance covered) we use **integration**.
 
-Plot the rate on the vertical axis and time on the horizontal axis; the area under the curve is the total. If a cyclist holds 250 watts for 60 seconds, the area (a 250 × 60 rectangle) is 15,000 joules. Because real signals wobble, we treat adjacent pairs of samples as the sides of a trapezoid, average their heights, and multiply by the time interval.
+Plot the rate on the vertical axis and time on the horizontal axis; the area under the curve is the total. If a cyclist holds 250 watts for 60 seconds, the area (a 250 × 60 rectangle) is 15,000 joules. Because real signals carry noise, we treat adjacent pairs of samples as the sides of a trapezoid, average their heights, and multiply by the time interval.
 
 We compute this using `trapezoidalIntegral(dt:)`, where `dt` is the time interval in seconds.
 

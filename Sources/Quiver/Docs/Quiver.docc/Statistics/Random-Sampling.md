@@ -27,7 +27,7 @@ The method returns a plain `[Element]` (`[22.0, 23.0, 32.0, 27.0, 41.0]` for the
 
 ### Why sample when we have the data
 
-The full array of thirty values is sitting right there, so a fair question arises: why not call `mean()` on all thirty and skip the sampling entirely? In this article the population exists for one reason: it is the answer key. We can only judge whether an estimate from five responses is any good because we happen to know the true average is about `32.17`, and the estimate of `29.0` falls a few minutes short of it.
+The full array of thirty values is sitting right there, so a fair question arises: why not call `mean()` on all thirty and skip the sampling entirely? Here the population exists for one reason: it is the answer key. We can only judge whether an estimate from five responses is any good because we happen to know the true average is about `32.17`, and the estimate of `29.0` falls a few minutes short of it.
 
 In real work that answer key never exists. A survey reaches the people who reply and no others. Destructive testing consumes every unit it measures. Polling, forecasting, and controlled experiments all produce a sample and nothing more. The sample is the only data we will ever hold, and the rest of this article is about how to reason carefully from it: how far one estimate might land from the truth, and how to make it land closer.
 

@@ -97,7 +97,7 @@ A pipeline can also carry an optional `PCA` reducer between the scaler and the m
 
 ### Persisting a retrieval index
 
-A retrieval pipeline persists the same way a model does, and for the same reason: embedding a corpus is the expensive step, and an `EmbeddingIndex` should be built once and reused across launches. An index exposes its persistable state as a `Codable` `snapshot` — the entries, each a stored label and its vector — which encodes and decodes exactly like a fitted model.
+A retrieval pipeline persists the same way a model does, and for the same reason: embedding a corpus is the expensive step, and an `EmbeddingIndex` should be built once and reused across launches. An index exposes its persistable state as a `Codable` `snapshot` — the entries, each a stored label and its vector — which encodes and decodes exactly like a fitted model. The example stores each chunk under `SourcedChunk`, a small label type defined in <doc:Retrieving-Context-For-Generation>, where this index is built step by step.
 
 ```swift
 import Quiver

@@ -4,7 +4,7 @@ Understanding when a set of vectors carries genuinely new information.
 
 ## Overview
 
-A set of vectors is **linearly independent** when each vector points in a direction that cannot be reached through a linear combination (a scaled sum) of the others. Each independent vector contributes a new dimension to the space. Conversely, a vector is redundant if it can be expressed as a combination of other vectors in the set. In this article, we'll review linear independence and how to measure a vector space using determinants.
+A set of vectors is **linearly independent** when each vector points in a direction that cannot be reached through a linear combination (a scaled sum) of the others. Each independent vector contributes a new dimension to the space. Conversely, a vector is redundant if it can be expressed as a combination of other vectors in the set. We'll review linear independence and how to measure a vector space using determinants.
 
 > Note: This primer builds on the vectors of the <doc:Linear-Algebra-Primer>, the matrices of <doc:Shape-And-Size> and <doc:Matrix-Operations>, and the transformations of <doc:Matrix-Transformations>.
 

@@ -95,7 +95,7 @@ The closure runs as a standalone task. When it finishes, `.value` returns the fi
 
 The patterns above move work off the main thread so the interface stays responsive. A different goal is to make a single large computation finish faster by running parts of it on several cores at once. A fitted model already gives us the natural seam: predicting one batch of inputs never depends on predicting another, so we can hand each batch to `predict` on its own core. Because the model is a `Sendable` value, every task shares the same fitted model without coordination.
 
-The same task group from earlier does the work. Each task calls `predict` on one batch and returns the result.
+A task group does the work. `withTaskGroup` starts one child task per batch, and each task calls `predict` on its batch and returns the result.
 
 ```swift
 import Quiver
@@ -125,11 +125,11 @@ Each `predict` runs the same Quiver call we would make sequentially; the task gr
 
 Not every operation divides this way, and recognizing which ones do not is as useful as knowing which ones do. Some computations are a chain in which each step consumes the result of the step before it. Matrix inversion and the determinant both work by Gaussian elimination, where every pivot transforms the matrix that the next pivot depends on — there is no way to run a later step before an earlier one finishes. Iterative model fitting has the same shape: each `KMeans` iteration places its centroids based on the assignment from the previous iteration, so the iterations cannot overlap.
 
-These operations gain nothing from `concurrentPerform`, because there are no independent pieces to hand out. What they can still do is run off the main thread using the task patterns shown earlier, so a long inversion or a high-iteration fit proceeds without freezing the interface. The work itself stays sequential; only its relationship to the main thread changes.
+These operations gain nothing from a task group, because there are no independent pieces to hand out. What they can still do is run off the main thread using the task patterns shown earlier, so a long inversion or a high-iteration fit proceeds without freezing the interface. The work itself stays sequential; only its relationship to the main thread changes.
 
 ### Updating SwiftUI when training completes
 
-SwiftUI's `@Observable` macro gives a view model observable properties that trigger view updates when they change. Combined with `@MainActor`, it makes the flow from background training to visible result straightforward: a view model kicks off training inside a task, and the assignment back to the model property happens on the main thread automatically.
+The `@Observable` macro from the Observation framework gives a view model observable properties that trigger view updates when they change. Combined with `@MainActor`, it makes the flow from background training to visible result straightforward: a view model kicks off training inside a task, and the assignment back to the model property happens on the main thread automatically.
 
 ```swift
 import Quiver
@@ -160,7 +160,7 @@ final class WorkoutAnalysisViewModel {
 
 > Tip: The same pattern works for `UIKit` view controllers marked `@MainActor`. The `await` marks the boundary, the training runs off the main thread, and the fitted model arrives back on the main thread as a `Sendable` value.
 
-### From off the main thread to into an app
+### From background work to an app
 
 The patterns here all rest on one property: a fitted Quiver model is an immutable, `Sendable` value, so it crosses task and actor boundaries without a copy ceremony or a lock. Splitting a batch, fitting off the main thread, and handing the result back to a view are three uses of that single guarantee. The <doc:Machine-Learning-Primer> covers the models these patterns wrap, and <doc:Working-With-Pipelines> shows how scaling and fitting compose into one `Sendable` unit that moves across threads as cleanly as a single model does.
 

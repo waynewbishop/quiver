@@ -4,7 +4,7 @@ Measure classifier performance with accuracy, precision, recall, and F1 score.
 
 ## Overview
 
-A classification model is only as useful as its evaluation. We rely on accuracy to understand performance, but a single number often hides the true behavior of our model on imbalanced data. These metrics provide a complete picture of how well the model discriminates between classes.
+A classification model is only as useful as its evaluation. We rely on accuracy to understand performance, but a single number often hides the true behavior of our model on imbalanced data. These metrics provide a complete picture of how well the model distinguishes between classes.
 
 **Accuracy** measures the fraction of correct predictions. This metric can be misleading when one class is much more common than the others. We might reach ninety-five percent accuracy by always predicting the majority class, but such a model provides no useful information. **Precision**, **recall** and **F1** score help us see how the model handles specific classes to give us a honest assessment of performance.
 

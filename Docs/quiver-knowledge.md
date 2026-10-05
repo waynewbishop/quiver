@@ -1291,7 +1291,7 @@ See the Activation section above for signatures. When to use: SoftMax for "which
 
 ### Installation
 
-Add via SPM: `.package(url: "https://github.com/waynewbishop/quiver", from: "1.0.0")`. Or use Xcode → File → Add Package Dependencies. Zero external dependencies. Verify with `[1.0, 2.0, 3.0].dot([4.0, 5.0, 6.0])` → 32.0.
+Add via SPM: `.package(url: "https://github.com/waynewbishop/quiver", from: "1.6.0")`. Or use Xcode → File → Add Package Dependencies. Zero external dependencies. Verify with `[1.0, 2.0, 3.0].dot([4.0, 5.0, 6.0])` → 32.0.
 
 ### Usage (Xcode Playground Macro)
 
