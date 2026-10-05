@@ -4,7 +4,7 @@ Interpret Quiver models by analyzing their coefficients and geometric structures
 
 ## Overview
 
-A trained model gives us much more than a simple prediction. It reveals the internal logic it used to reach a result. We can learn to read these values to ensure our models make sound decisions.
+A trained model gives us much more than a simple prediction. It reveals the internal logic it used to reach a result. Reading these values keeps our models honest.
 
 ### Coefficients as sensitivity sliders
 
@@ -12,7 +12,7 @@ A linear model predicts by multiplying each feature by its fitted weight and sum
 
 `ŷ = θ₀ + θ₁x₁ + θ₂x₂ + … + θₙxₙ`
 
-Each coefficient `θᵢ` represents the slope of the target along one feature axis: the amount the prediction moves when that one feature increases by a unit while others hold still. This last part assumes the others *can* hold still, which only holds true when features are nearly independent. A large weight means the prediction reacts sharply to that input; a near-zero weight means the prediction barely moves, suggesting the feature is either irrelevant or redundant.
+Each coefficient `θᵢ` represents the slope of the target along one feature axis: the amount the prediction moves when that one feature increases by a unit while others hold still. This last part assumes the others *can* hold still, which is only realistic when features are nearly independent. A large weight means the prediction reacts sharply to that input; a near-zero weight means the prediction barely moves, suggesting the feature is either irrelevant or redundant.
 
 ```swift
 import Quiver
@@ -27,7 +27,7 @@ model.coefficients   // [38000.0, 110.0] — intercept first, then one slope per
 model.equation()     // "y = 38000.00 + 110.00x" — the same fit, read as algebra
 ```
 
-This layout is worth holding onto. When `hasIntercept` is `true`, the first element is the bias term and the remaining elements are the feature weights in input order, so `coefficients[0]` is the intercept, not the first feature's slope. When `hasIntercept` is `false`, the array shifts down, and `coefficients[0]` becomes the first feature's slope. ``GradientDescent`` and ``Ridge`` use the same layout, making them interchangeable when we read their output. The ``Coefficients/equation()`` method renders any of them as the intercept-first formula above, the same numbers in the form `ŷ = θ₀ + θ₁x₁ + …`.
+This layout is worth holding onto. When `hasIntercept` is `true`, `coefficients[0]` is the intercept, not the first feature's slope, and the remaining elements are the feature weights in input order. When `hasIntercept` is `false`, the array shifts down, and `coefficients[0]` becomes the first feature's slope. ``GradientDescent`` and ``Ridge`` use the same layout, making them interchangeable when we read their output, and ``Coefficients/equation()`` renders any of them as the intercept-first formula above.
 
 A near-zero weight does not necessarily mean the feature is unimportant. On raw units, a tiny weight can sit on a feature measured in large numbers. Under collinearity, a feature's weight can collapse toward zero simply because a correlated twin absorbed its share. Read coefficient magnitudes only after scaling, and only once collinearity has been ruled out. Comparing weights provides a ranking, not a measurement of absolute importance; the next sections show how to make that ranking honest.
 
@@ -36,21 +36,21 @@ A near-zero weight does not necessarily mean the feature is unimportant. On raw 
 A coefficient's unit depends entirely on whether we scaled the feature before fitting.
 
 *   **Unscaled coefficients** are expressed in the feature's raw units. A weight of `110.0` on square footage means each additional square foot adds 110 to the predicted price: real units in, real units out.
-*   **Scaled coefficients** (after ``StandardScaler``) report the change in target per **one standard deviation** of that feature, because the transform converts each feature to a z-score. This makes weights comparable in scale: a high-magnitude heart-rate signal and a low-magnitude cadence signal, which start on completely different scales, become directly comparable once both are standardized.
+*   **Scaled coefficients** (after ``StandardScaler``) report the change in target per one standard deviation of that feature, because the transform converts each feature to a z-score. This makes weights comparable in scale: a high-magnitude heart-rate signal and a low-magnitude cadence signal, which start on completely different scales, become directly comparable once both are standardized.
 
-Comparing standardized weights gives a useful first pass at how strongly each feature drives the prediction, and standardizing is our sensible default whenever that comparison is the goal. Treat the comparison as a starting point rather than a verdict; standardized magnitudes still ignore feature correlation, and they discard the effect's sign, so two correlated inputs can split a single underlying influence.
+Standardizing is our sensible default whenever we want to compare how strongly each feature drives the prediction, but that comparison is a first pass rather than a verdict: magnitudes discard the effect's sign, and they ignore correlation, so two correlated inputs can split a single underlying influence between them.
 
 > Note: ``StandardScaler`` centers each feature at zero with unit variance; ``FeatureScaler`` maps to a bounded [0, 1] range instead. Both expose the same `fit` / `transform` workflow.
 
 ### Diagnosing the collinearity tug-of-war
 
-When two features carry nearly identical information (like a runner's pace and running power), the model cannot separate their contributions. This breaks our clean interpretation from the previous section: features no longer "hold still" individually, so no single coefficient describes a realizable change. How this ambiguity manifests depends on the solver and how identical the columns are.
+When two features carry nearly identical information (like a runner's pace and running power), the model cannot separate their contributions. This breaks our clean interpretation from earlier: features no longer "hold still" individually, so no single coefficient describes a realizable change. How this ambiguity manifests depends on the solver and how identical the columns are.
 
 The mechanics and cure belong to the <doc:Regularization-Primer>; here we focus on the diagnosis: how to spot the failure signature directly off the console.
 
 ### Measuring instability before the fit
 
-Before evaluating how the solver behaves, check the matrix. The closed-form solver inverts `XᵀX`, so its conditioning determines stability. The `conditionNumber` of `XᵀX` measures proximity to singularity: the exact instability that wrecks coefficient interpretation:
+Before evaluating how the solver behaves, check the matrix. The closed-form solver inverts `XᵀX`, so its conditioning determines stability. The `conditionNumber` of `XᵀX` measures proximity to singularity, the exact instability that wrecks coefficient interpretation:
 
 ```swift
 import Quiver
@@ -66,11 +66,11 @@ let scaled = StandardScaler.fit(features: collinear).transform(collinear)
 scaled.transposed().multiplyMatrix(scaled).conditionNumber   // 402610 — near-singular
 ```
 
-A condition number in the low tens is healthy. A condition number in the thousands is alarming here because this is `XᵀX` — already the square of the feature matrix's own condition number — so it corresponds to only mild conditioning in the raw data, and the bands in the <doc:Determinants-Primer> read the same standard before that squaring. Forming `XᵀX` roughly squares the condition number, which is why the matrix the solver actually inverts degrades so much faster than the data alone suggests.
+A condition number in the low tens is healthy. Here the solver inverts `XᵀX`, which roughly squares the data's own condition number, so 402,610 reflects raw columns near 634, already well past healthy. The bands in the <doc:Determinants-Primer> describe a matrix we invert directly; for `XᵀX`, the bar is stricter.
 
 ### Reading the failure in the coefficients
 
-For near-identical columns, ``LinearRegression`` still returns an answer—a pathological one. The closed-form solver pushes one weight up and its mirror hard the other way, producing a large, opposing pair that predicts accurately while meaning nothing individually:
+For near-identical columns, ``LinearRegression`` still returns an answer, but a pathological one. The closed-form solver pushes one weight up and its mirror hard the other way, producing a large, opposing pair that predicts accurately while meaning nothing individually:
 
 ```swift
 let prices = [205000.0, 245000, 279000, 311000, 360000, 405000, 455000, 498000]
@@ -79,7 +79,7 @@ let ols = try LinearRegression.fit(features: scaled, targets: prices)
 ols.coefficients   // a lopsided pair — roughly 608719 against -512315
 ```
 
-These two numbers are not findings about floor area. They are the solver chasing quirks across two columns that should have been one. A different sample would swing them just as violently. The general signature is not "one positive, one negative," but two large weights that nearly cancel and which a different sample would throw just as hard.
+These two numbers are not findings about floor area. They are the solver chasing quirks across two columns that should have been one. The general signature is not "one positive, one negative," but two large weights that nearly cancel and which a different sample would throw just as hard.
 
 By contrast, ``GradientDescent`` meets near-collinear data and converges quietly. It avoids matrix inversion, so it reports `.converged` with sound predictions. Collinearity creates a flat valley of near-equal solutions, and the walk settles somewhere along it. Predictions are reliable because every point in that valley predicts about equally well, but individual weights are not because the valley has no single bottom. Quiet success is not the same as a trustworthy coefficient. See <doc:Optimization-Primer>.
 
@@ -110,7 +110,7 @@ The penalty's mechanism, how it shrinks weights and how to choose its strength, 
 
 ### Verifying non-parametric structure
 
-``KMeans`` and ``KNearestNeighbors`` compute no equation and expose **no coefficients**: there is no weight vector to print. They operate entirely on spatial proximity, so we validate them with geometry.
+``KMeans`` and ``KNearestNeighbors`` compute no equation and expose no coefficients: there is no weight vector to print. They operate entirely on spatial proximity, so we validate them with geometry.
 
 ``KMeans`` reports `inertia`: the total squared distance from every point to its assigned centroid (within-cluster sum of squares). Lower inertia means tighter clusters. Inertia is not comparable across different feature sets, so we use it to choose `k` within one feature set, not to evaluate feature importance.
 
@@ -147,7 +147,7 @@ let groupA = [[0.8, 0.3, 0.9], [0.7, 0.4, 0.8], [0.9, 0.2, 0.9]]
 groupA.clusterCohesion()   // ~0.98 — a tight, coherent group
 ```
 
-> Important: `clusterCohesion()` measures angular agreement, while ``KMeans`` groups by Euclidean distance. They answer related but different questions—two vectors can point the same way yet sit far apart. Cohesion is most meaningful when features are scaled and direction is what matters. Quiver does not expose a silhouette metric; use `inertia` for Euclidean tightness and `elbowMethod` to compare whole clusterings.
+> Important: `clusterCohesion()` measures angular agreement, while ``KMeans`` groups by Euclidean distance. They answer related but different questions. Two vectors can point the same way yet sit far apart. Cohesion is most meaningful when features are scaled and direction is what matters. Quiver does not expose a silhouette metric; use `inertia` for Euclidean tightness and `elbowMethod` to compare whole clusterings.
 
 ### Evaluating a classifier by prediction
 
@@ -167,4 +167,4 @@ A scaled feature set that produces clean, well-separated classes shows high accu
 
 Reading coefficients and geometry is the first move; trusting them is the second. The <doc:Regularization-Primer> takes the collinearity signature diagnosed here and supplies the cure: the penalty that turns a flat valley of equally-good answers into a single defensible one. The <doc:Optimization-Primer> explains why ``GradientDescent`` converges quietly onto an arbitrary point in that valley and what its loss history reveals about the walk. For the broader arc, <doc:Machine-Learning-Primer> is our map, <doc:Linear-Regression> provides our foundation, and <doc:Feature-Scaling> ensures our readings remain honest. Reading coefficients is one half of inspecting a fit; reading what the fit leaves behind is the other. <doc:Residual-Model> wraps a fitted regressor to surface the observed value minus the predicted one. <doc:True-Effort-Score> puts these readings together: a Ridge baseline read through its coefficients and a nearest-neighbors classifier judged by geometry.
 
-> Experiment: **The Quiver Notebook** is the right place to watch a coefficient lose its meaning. Take the two near-identical floor-area columns, standardize them, and fit ``LinearRegression``—then print `conditionNumber` and the coefficients side by side. Now swap in ``Ridge`` and sweep `lambda` upward until the opposing weights collapse into a small, balanced pair. Seeing the same data go from pathological to stable is the fastest way to feel why a coefficient is only as trustworthy as the matrix behind it. See <doc:Quiver-Notebook>.
+> Experiment: **The Quiver Notebook** is the right place to watch a coefficient lose its meaning. Take the two near-identical floor-area columns, standardize them, and fit ``LinearRegression``, then print `conditionNumber` and the coefficients side by side. Now swap in ``Ridge`` and sweep `lambda` upward until the opposing weights collapse into a small, balanced pair. Seeing the same data go from pathological to stable is the fastest way to feel why a coefficient is only as trustworthy as the matrix behind it. See <doc:Quiver-Notebook>.
