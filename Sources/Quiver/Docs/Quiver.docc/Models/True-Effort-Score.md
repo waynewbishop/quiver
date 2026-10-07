@@ -344,6 +344,7 @@ TESResult:
 
 ```swift
 let shares = result.effortDistribution   // [EffortClass: Double], share of active time per category
+let easy = result.time(in: .easy)        // seconds spent in Easy, 0 if the run never entered it
 let trace = result.loadCurve             // cumulative weighted load at each sample
 let scoredBy = result.baseline           // the baseline that scored this run, nil on a first run
 ```

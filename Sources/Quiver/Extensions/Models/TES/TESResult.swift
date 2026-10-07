@@ -65,3 +65,12 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
         """
     }
 }
+
+extension TESResult {
+
+    /// Returns the active time spent in a category, in seconds, or 0 if the run never entered it.
+    /// The times across all categories sum to `timerTime`.
+    public func time(in category: EffortClass) -> TimeInterval {
+        (effortDistribution[category] ?? 0) * timerTime
+    }
+}

@@ -898,6 +898,26 @@ final class TrueEffortScoreTests: XCTestCase {
         XCTAssertEqual(result.adjusted, 17.3720, accuracy: 1e-4)
     }
 
+    // Time per category is the share of active time in seconds, and the parts sum to the whole
+    func testTimeInCategorySumsToTimerTime() throws {
+        var tes = TrueEffortScore()
+        var blocks: [(seconds: Int, heartRate: Double, pace: Double, cadence: Double,
+                      grade: Double, verticalOscillation: Double)] = []
+        for _ in 0..<17 {
+            blocks += [(40, 125, 7.2, 154, 0, 8.5), (160, 112, 12.8, 104, 0, 4.5)]
+        }
+        recordBlocks(&tes, blocks)
+        let result = try XCTUnwrap(tes.finalize())
+
+        XCTAssertEqual(result.time(in: .recovery), 0.8015 * result.timerTime, accuracy: 0.5)
+        XCTAssertEqual(result.time(in: .hard), 0)
+        var total = 0.0
+        for category in EffortClass.allCases {
+            total += result.time(in: category)
+        }
+        XCTAssertEqual(total, result.timerTime, accuracy: 1e-9)
+    }
+
     // A climb takes the higher of its vertical-speed band and its heart-rate band
     func testWalkingClimbTakesTheHigherBand() {
         // 15% at 14.3 min/km is about 629 m/h: Threshold whatever the heart rate says below 165
