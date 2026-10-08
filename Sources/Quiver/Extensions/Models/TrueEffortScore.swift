@@ -489,9 +489,9 @@ extension TrueEffortScore {
         return denominator > 0 ? numerator / denominator : nil
     }
 
-    /// Σ(hrTrust·Δt·residual) / Σ(hrTrust·Δt). Zero without a fitted baseline.
-    private func weightedMeanResidual(moments: [Workout.Moment]) -> Double {
-        guard let baseline else { return 0 }
+    /// Σ(hrTrust·Δt·residual) / Σ(hrTrust·Δt). nil without a fitted baseline.
+    private func weightedMeanResidual(moments: [Workout.Moment]) -> Double? {
+        guard let baseline else { return nil }
         var numerator = 0.0, denominator = 0.0
         for moment in moments {
             let scaled = baseline.scaler.transform([moment.regressionFeatures])[0]
@@ -501,7 +501,7 @@ extension TrueEffortScore {
             numerator += weight * residual
             denominator += weight
         }
-        return denominator > 0 ? numerator / denominator : 0
+        return denominator > 0 ? numerator / denominator : nil
     }
 
     /// Scores a band timeline: the raw load against the fixed anchor, the three session terms,

@@ -11,7 +11,7 @@ The whole lifecycle is three calls:
 ```swift
 import Quiver
 
-// 1. Start a runner.
+// 1. A new runner.
 var tes = TrueEffortScore()
 
 // 2. Record once per sensor sample.
@@ -85,7 +85,7 @@ if let baseline = tes.baseline {
 }
 ```
 
-This baseline was learned from a synthetic 12-run history. The first number, 142.7, is this runner's average heart rate: the heart rate expected when every signal sits at its usual value. Each coefficient then adds or subtracts beats per minute as its signal moves one standard deviation, a typical swing for this runner, above its average. Because every signal is put on the same scale, their sizes compare directly. For this runner, grade counts about nine times more than altitude. Pace is negative because it is measured in minutes per kilometer, so a larger number means slower running and a lower heart rate.
+This baseline was learned from a synthetic 12-run history. The first number, 142.69, is this runner's average heart rate: the heart rate expected when every signal sits at its usual value. Each coefficient then adds or subtracts beats per minute as its signal moves one standard deviation, a typical swing for this runner, above its average. Because every signal is put on the same scale, their sizes compare directly. For this runner, grade counts about nine times more than altitude. Pace is negative because it is measured in minutes per kilometer, so a larger number means slower running and a lower heart rate.
 
 > Important: The coefficients describe standardized signals. Substituting a raw workload, such as an altitude of 300 meters, into the printed equation gives a meaningless result. The model applies its own scaler before predicting.
 
@@ -116,7 +116,7 @@ The classifier is a nearest-neighbor model that compares each moment with a set 
 | Category | Meaning | Weight |
 |---|---|---|
 | Recovery | Walking, assigned only by the walking gate | 0.10 |
-| Easy | Recovery running and aerobic base | 0.25 |
+| Easy | Aerobic base | 0.25 |
 | Tempo | Sustained sub-threshold, roughly marathon to half-marathon pace | 0.50 |
 | Threshold | At lactate threshold | 0.75 |
 | Hard | Above threshold, or a heavy biomechanical load heart rate doesn't show | 1.00 |
@@ -158,9 +158,9 @@ Some costs exist only across a whole run, and ``TESResult`` reports each one sep
 
 ```swift
 let swings = result.varianceMultiplier   // 1 + min(0.35, 0.25 × variance of the per-sample category level, Recovery −1 to Hard 3)
-let fatigue = result.durationFactor      // 1.0 up to 45 minutes, then 1 + 0.1 × ln(minutes / 45)
+let timeOnFeet = result.durationFactor   // 1.0 up to 45 minutes, then 1 + 0.1 × ln(minutes / 45)
 let surges = result.transitionLoad       // total size of jumps of two categories or more
-let headline = result.adjusted           // raw × swings × fatigue + 0.1 × surges
+let headline = result.adjusted           // raw × swings × timeOnFeet + 0.1 × surges
 ```
 
 Intervals cost more than steady running of the same average effort, so a session that swings between categories raises the variance term; the first five minutes are left out so a warm-up doesn't count as a swing. Abrupt jumps of two or more categories, such as Easy straight to Hard, raise the transition term. Only categories held for at least ten seconds count, so a single misread sample at a boundary never registers as a surge.

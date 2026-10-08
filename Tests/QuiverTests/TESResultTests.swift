@@ -47,6 +47,16 @@ final class TESResultTests: XCTestCase {
         XCTAssertNil(result.expectedHeartRate)
     }
 
+    // A first run has no baseline, so there is no mean residual rather than a zero
+    func testMeanResidualIsNilOnFirstRun() throws {
+        var tes = TrueEffortScore()
+        recordRun(&tes, start: Date(timeIntervalSince1970: 1_000_000), lift: 0)
+        let result = try XCTUnwrap(tes.finalize())
+
+        XCTAssertNil(result.meanResidual)
+        XCTAssertTrue(result.description.contains("meanResidual:    n/a"))
+    }
+
     // Expected heart rate plus the mean residual is the run's weighted average heart rate
     func testExpectedHeartRatePlusResidualIsAverageHeartRate() throws {
         var tes = TrueEffortScore()
@@ -56,6 +66,7 @@ final class TESResultTests: XCTestCase {
         let trusts = recordRun(&tes, start: Date(timeIntervalSince1970: 1_086_400), lift: 4)
         let result = try XCTUnwrap(tes.finalize())
         let expected = try XCTUnwrap(result.expectedHeartRate)
+        let residual = try XCTUnwrap(result.meanResidual)
 
         let run = try XCTUnwrap(tes.history.last)
         var numerator = 0.0, denominator = 0.0
@@ -65,6 +76,6 @@ final class TESResultTests: XCTestCase {
             denominator += weight
         }
 
-        XCTAssertEqual(expected + result.meanResidual, numerator / denominator, accuracy: 1e-9)
+        XCTAssertEqual(expected + residual, numerator / denominator, accuracy: 1e-9)
     }
 }

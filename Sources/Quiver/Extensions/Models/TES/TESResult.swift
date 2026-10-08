@@ -24,8 +24,9 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
 
     /// Observed minus expected heart rate, the session mean and the core effort signal. Trust- and
     /// time-weighted, so a doubted optical stretch cannot swamp a few-bpm signal. It detects
-    /// cardiac decoupling but does not diagnose its cause.
-    public let meanResidual: Double
+    /// cardiac decoupling but does not diagnose its cause. nil on a first run, when no baseline
+    /// exists to compare against.
+    public let meanResidual: Double?
 
     /// The heart rate the baseline expected for this run's workload, the session mean in beats per
     /// minute. Weighted like `meanResidual`, so the two add up to the run's average heart rate.
@@ -55,7 +56,7 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
         TESResult:
           adjusted:        \(String(format: "%.1f", adjusted))
           raw:             \(String(format: "%.1f", raw))
-          meanResidual:    \(String(format: "%.1f", meanResidual)) bpm
+          meanResidual:    \(meanResidual.map { String(format: "%.1f bpm", $0) } ?? "n/a")
           expected HR:     \(expectedHeartRate.map { String(format: "%.1f bpm", $0) } ?? "n/a")
           variance ×:      \(String(format: "%.3f", varianceMultiplier))
           duration ×:      \(String(format: "%.3f", durationFactor))
