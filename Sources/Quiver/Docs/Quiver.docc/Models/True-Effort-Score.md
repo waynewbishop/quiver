@@ -101,11 +101,12 @@ TES reports the residual live and as an average across the run:
 
 ```swift
 let liveGap = tes.currentResidual        // observed − expected bpm; nil until a baseline exists
-let sessionGap = result.meanResidual     // trust- and time-weighted; 0 without a baseline
+let sessionGap = result.meanResidual     // trust- and time-weighted; nil on a first run
 let expected = result.expectedHeartRate  // mean expected bpm; nil on a first run
+let measured = result.averageHeartRate   // mean recorded bpm over active time, every run
 ```
 
-The residual is reported beside the score rather than added to it, because the model cannot tell heat from caffeine or fatigue. A high score driven by real work and a high score driven by heat must remain distinguishable. Because `meanResidual` reads 0 on a first run, an app checks `expectedHeartRate` for `nil` to tell a first run from an established one. On an established run the mean can also sit near 0 when gaps above and below prediction cancel, such as a hot climb followed by a shaded descent, so a near-zero mean does not by itself show that the heart tracked the workload all run. A positive session residual means the heart ran above prediction, the signature of heat or drift; a negative one means it ran cooler, as on a fast descent. Interpreting the cause is the app's job.
+The residual is reported beside the score rather than added to it, because the model cannot tell heat from caffeine or fatigue. A high score driven by real work and a high score driven by heat must remain distinguishable. Both `meanResidual` and `expectedHeartRate` are `nil` on a first run, when no baseline exists to compare against, while `averageHeartRate` is reported on every run. On an established run the mean residual can sit near 0 when gaps above and below prediction cancel, such as a hot climb followed by a shaded descent, so a near-zero mean does not by itself show that the heart tracked the workload all run. A positive session residual means the heart ran above prediction, the signature of heat or drift; a negative one means it ran cooler, as on a fast descent. Interpreting the cause is the app's job.
 
 Heart rate never enters the score directly; it only helps decide which category a moment belongs to. Once a baseline exists, the residual also protects the effort label through a heart-rate cap. The classifier reads heart rate no higher than the baseline expects for the moment's workload, so heat and drift cannot lift a moment into a harder category; the excess stays visible in the residual instead. The cap is one-sided by design: a reading below expected passes through unchanged, so heart rate suppressed by cold or fatigue can still lower a label. A steady Tempo workload (5.6 min/km, 171 steps per minute, +0.5% grade) that reads Threshold at 162 bpm on a first run stays Tempo at 166 and even 180 bpm once a baseline exists.
 
@@ -204,7 +205,7 @@ Four constructed runs show how these design choices behave. Each notes whether i
 
 **Hill repeats against steady Tempo (first run): 76.4 against 52.4.** Both 47-minute sessions build nearly the same raw load, 52.8 against 52.2. The repeats, eight two-minute Hard efforts each followed by two minutes Easy, earn a variance multiplier of 1.350 and a transition load of 48. The session terms account for the whole difference.
 
-**A hot day against a cool day (established runner): 62.4 against 62.3.** Both 60-minute runs hold 45 minutes at the same steady pace between a 10-minute warm-up and a 5-minute cool-down, both easy at 131 bpm. Cardiac drift on the hot day takes heart rate from 150 to 166 bpm across those 45 minutes. Because the work is the same, the extra heart rate can't raise the category, and the score barely changes. The extra beats appear in the residual instead: +3.1 bpm on the hot day against −2.8 bpm on the cool day.
+**A hot day against a cool day (established runner): 62.4 against 62.3.** Both 60-minute runs hold 45 minutes at the same steady pace between a 10-minute warm-up and a 5-minute cool-down, both easy at 131 bpm. Cardiac drift on the hot day takes heart rate from 150 to 166 bpm across those 45 minutes. Because the work is the same, the extra heart rate can't raise the category, and the score barely changes. The extra beats appear in the residual instead: +3.1 bpm on the hot day against −2.8 bpm on the cool day. Both runs carry the same expected heart rate, 148.0 bpm, so the residual accounts for the whole 6 bpm gap in average heart rate, 151.1 against 145.1.
 
 **Returning from injury (established runner): 10.9 to 15.6, Light.** A runner recovering from a knee sprain follows a walk-run program. As running time grows from 5 to 28 minutes over six weeks, the score rises gradually from 10.9 to 15.6, with the walking read as Recovery. Adding an 8-minute descent to the same 28-minute run lifts the score to 39.6, Moderate, because grade and vertical oscillation label the downhill Hard while heart rate stays calm. Here TES acts as a load advisor: steady scores show a safe progression, and the spike flags stress heart rate alone would miss.
 
@@ -327,8 +328,9 @@ Printing a result always shows the breakdown, never a bare number. For the hot-d
 TESResult:
   adjusted:        62.4
   raw:             58.4
-  meanResidual:    3.1 bpm
+  average HR:      151.1 bpm
   expected HR:     148.0 bpm
+  meanResidual:    3.1 bpm
   variance ×:      1.038
   duration ×:      1.029
   transitionLoad:  0.00
@@ -336,7 +338,19 @@ TESResult:
   baseline:        expected HR = 142.69 - 4.62·pace + 2.87·cadence + 4.85·grade - 3.95·verticalOscillation + 0.54·altitude
 ```
 
-``TESResult`` has no bare score accessor, because the headline is one of several readouts a run earns. Beyond `adjusted` and `raw`, two readouts suit charts:
+The three heart-rate readouts form a basic equation: the recorded average, the expected workload response, and the residual difference. The recorded average is a standard time-weighted figure that matches a typical fitness app, available even on a first run. Because the expected heart rate and the residual incorporate trust weights, the expected baseline and the residual sum perfectly to the average only when the watch trusts every reading.
+
+```swift
+// The hot-day run, with every reading trusted
+let average = result.averageHeartRate            // Σ(Δt·HR) / Σ(Δt) = 151.1 bpm
+
+if let expected = result.expectedHeartRate,      // Σ(trust·Δt·expected) / Σ(trust·Δt) = 148.0 bpm
+   let residual = result.meanResidual {          // Σ(trust·Δt·residual) / Σ(trust·Δt) = 3.1 bpm
+    print(expected + residual)                   // 148.0 + 3.1 = 151.1 bpm, the average
+}
+```
+
+A completed run provides several granular readouts beyond the headline scores. Apps can use the effort distribution and load curve to build visual charts, query the exact time spent in any effort zone, and inspect the specific baseline used to score the run:
 
 ```swift
 let shares = result.effortDistribution   // [EffortClass: Double], share of active time per category
@@ -345,7 +359,7 @@ let trace = result.loadCurve             // cumulative weighted load at each sam
 let scoredBy = result.baseline           // the baseline that scored this run, nil on a first run
 ```
 
-The shares are a fraction of active time, not of samples, and sum to about 1. The `baseline` on a result is captured before the refit, so it can differ from `tes.baseline`, which has already learned from this run.
+The distribution `shares` reflect a fraction of active time rather than raw samples, and sum to about 1. The `baseline` stored on the result is captured before the model refits, meaning it will differ from `tes.baseline`, which has already updated itself to learn from this newly finished run.
 
 ## How the model learns a runner
 

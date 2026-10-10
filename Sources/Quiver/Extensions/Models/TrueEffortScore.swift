@@ -465,6 +465,7 @@ extension TrueEffortScore {
         return TESResult(
             adjusted: score.adjusted,
             raw: score.raw,
+            averageHeartRate: timeWeightedMeanHeartRate(moments: moments, totalTime: totalTime),
             meanResidual: weightedMeanResidual(moments: moments),
             expectedHeartRate: weightedMeanExpectedHeartRate(moments: moments),
             effortDistribution: distribution,
@@ -475,6 +476,16 @@ extension TrueEffortScore {
             timerTime: accumulatedTimer,
             elapsedTime: accumulatedElapsed,
             baseline: baseline)
+    }
+
+    /// Σ(Δt·heartRate) / Σ(Δt), the recorded heart rate averaged over active time. `finalize()`
+    /// only builds a result from at least 60 active seconds, so `totalTime` is always positive.
+    private func timeWeightedMeanHeartRate(moments: [Workout.Moment], totalTime: TimeInterval) -> Double {
+        var numerator = 0.0
+        for moment in moments {
+            numerator += moment.deltaTime * moment.heartRate
+        }
+        return numerator / totalTime
     }
 
     /// Σ(hrTrust·Δt·expected) / Σ(hrTrust·Δt). nil without a fitted baseline.

@@ -22,6 +22,11 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
     public let adjusted: Double   // headline; the raw anchor is 100 for one hour at threshold
     public let raw: Double        // pre-adjustment score, 100 × Σ(weight·Δt) / (0.75 × 3600)
 
+    /// The recorded heart rate averaged over active time, in beats per minute. Weighted by time
+    /// alone, not by trust, so it matches the average a watch shows for the run. Present on every
+    /// run, including a first run.
+    public let averageHeartRate: Double
+
     /// Observed minus expected heart rate, the session mean and the core effort signal. Trust- and
     /// time-weighted, so a doubted optical stretch cannot swamp a few-bpm signal. It detects
     /// cardiac decoupling but does not diagnose its cause. nil on a first run, when no baseline
@@ -29,8 +34,8 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
     public let meanResidual: Double?
 
     /// The heart rate the baseline expected for this run's workload, the session mean in beats per
-    /// minute. Weighted like `meanResidual`, so the two add up to the run's average heart rate.
-    /// nil on a first run.
+    /// minute. Weighted like `meanResidual`, so the two add up to the trust-weighted average heart
+    /// rate, which equals `averageHeartRate` when no reading was doubted. nil on a first run.
     public let expectedHeartRate: Double?
 
     public let effortDistribution: [EffortClass: Double]  // share of time per category
@@ -56,8 +61,9 @@ public struct TESResult: Codable, Equatable, CustomStringConvertible, Sendable {
         TESResult:
           adjusted:        \(String(format: "%.1f", adjusted))
           raw:             \(String(format: "%.1f", raw))
-          meanResidual:    \(meanResidual.map { String(format: "%.1f bpm", $0) } ?? "n/a")
+          average HR:      \(String(format: "%.1f bpm", averageHeartRate))
           expected HR:     \(expectedHeartRate.map { String(format: "%.1f bpm", $0) } ?? "n/a")
+          meanResidual:    \(meanResidual.map { String(format: "%.1f bpm", $0) } ?? "n/a")
           variance ×:      \(String(format: "%.3f", varianceMultiplier))
           duration ×:      \(String(format: "%.3f", durationFactor))
           transitionLoad:  \(String(format: "%.2f", transitionLoad))
