@@ -108,7 +108,7 @@ let measured = result.averageHeartRate   // mean recorded bpm over active time, 
 
 The residual is reported beside the score rather than added to it, because the model cannot tell heat from caffeine or fatigue. A high score driven by real work and a high score driven by heat must remain distinguishable. Both `meanResidual` and `expectedHeartRate` are `nil` on a first run, when no baseline exists to compare against, while `averageHeartRate` is reported on every run. On an established run the mean residual can sit near 0 when gaps above and below prediction cancel, such as a hot climb followed by a shaded descent, so a near-zero mean does not by itself show that the heart tracked the workload all run. A positive session residual means the heart ran above prediction, the signature of heat or drift; a negative one means it ran cooler, as on a fast descent. Interpreting the cause is the app's job.
 
-Heart rate never enters the score directly; it only helps decide which category a moment belongs to. Once a baseline exists, the residual also protects the effort label through a heart-rate cap. The classifier reads heart rate no higher than the baseline expects for the moment's workload, so heat and drift cannot lift a moment into a harder category; the excess stays visible in the residual instead. The cap is one-sided by design: a reading below expected passes through unchanged, so heart rate suppressed by cold or fatigue can still lower a label. A steady Tempo workload (5.6 min/km, 171 steps per minute, +0.5% grade) that reads Threshold at 162 bpm on a first run stays Tempo at 166 and even 180 bpm once a baseline exists.
+Heart rate never enters the score directly; it only helps decide which category a moment belongs to. Once a baseline exists, the residual also protects the effort label through a heart-rate cap. The classifier reads heart rate no higher than the baseline expects for the moment's workload, so heat and drift cannot lift a moment into a harder category; the excess stays visible in the residual instead. The cap is one-sided by design: a reading below expected passes through unchanged, so heart rate suppressed by cold or fatigue can still lower a label. A steady Tempo workload (5.6 min/km, 171 steps per minute, +0.5% grade, 8 cm of vertical oscillation) that reads Threshold at 162 bpm on a first run stays Tempo at 166 and even 180 bpm once a baseline exists.
 
 ## Effort categories
 
@@ -151,7 +151,7 @@ Time in each category adds up to a score, and harder categories count more. A mo
 
 One hour at threshold reads 100, following the convention of power-based training stress scores. By convention, Threshold is a real, repeatable effort a runner can hold for about an hour, rather than an abstract maximum. Threshold efforts are fast running on flat to gently sloping ground. The score rises with both intensity and time and has no ceiling.
 
-Values for easy running are low by design. An hour at Easy counts a third as much as an hour at Threshold. TES exists to price the work other scores miss, such as descents and surges, so its scale climbs most steeply at the hard end.
+Values for easy running are low by design. An hour at Easy counts a third as much as an hour at Threshold, and each step up adds another third, so the scale climbs evenly. TES prices the work other scores miss, such as descents and surges, by labeling those moments Hard rather than by stretching the scale.
 
 ## Session costs
 
@@ -201,11 +201,18 @@ Because surges and abrupt changes compound the score, mixed-intensity sessions o
 
 Four constructed runs show how these design choices behave. Each notes whether it was scored as a *first run*, with no personal history, or by an *established runner* with a learned baseline. They illustrate intended model behavior rather than physiological accuracy. The downhill, hot-day and injury runs sample every five seconds, and the hill repeats every second.
 
-**A downhill trail run (first run): 117.9, Heavy.** A 55-minute run with four extended −6% descents. Heart rate stays calm, but the movement data labels 58 percent of the run Hard. A heart-rate score would log an easy day; TES prices the eccentric load.
+**A downhill trail run (first run): 117.9, Heavy.** A 55-minute run with four extended −6% descents. Heart rate stays calm, but the movement data labels 58 percent of the run Hard. The label needs no personal history: the classifier matches each moment against the bundled known efforts from the first sample. A heart-rate score would log an easy day; TES prices the eccentric load.
 
-**Hill repeats against steady Tempo (first run): 76.4 against 52.4.** Both 47-minute sessions build nearly the same raw load, 52.8 against 52.2. The repeats, eight two-minute Hard efforts each followed by two minutes Easy, earn a variance multiplier of 1.350 and a transition load of 48. The session terms account for the whole difference.
+**Hill repeats against steady Tempo (first run): 76.4 against 52.4.** Both 47-minute sessions start from nearly the same raw score. The repeats, eight two-minute Hard efforts each followed by two minutes Easy, differ only in the session terms, which ``TESResult`` reports separately:
 
-**A hot day against a cool day (established runner): 62.4 against 62.3.** Both 60-minute runs hold 45 minutes at the same steady pace between a 10-minute warm-up and a 5-minute cool-down, both easy at 131 bpm. Cardiac drift on the hot day takes heart rate from 150 to 166 bpm across those 45 minutes. Because the work is the same, the extra heart rate can't raise the category, and the score barely changes. The extra beats appear in the residual instead: +3.1 bpm on the hot day against −2.8 bpm on the cool day. Both runs carry the same expected heart rate, 148.0 bpm, so the residual accounts for the whole 6 bpm gap in average heart rate, 151.1 against 145.1.
+| Session | raw | varianceMultiplier | durationFactor | transitionLoad | adjusted |
+|---|---|---|---|---|---|
+| Hill repeats | 52.8 | 1.350 | 1.004 | 48 | 76.4 |
+| Steady Tempo | 52.2 | 1.000 | 1.004 | 0 | 52.4 |
+
+The surges reach the variance maximum of 1.35, and 16 jumps between Easy and Hard give a `transitionLoad` of 48, which adds 0.1 × 48 = 4.8 to the score. The steady run earns neither.
+
+**A hot day against a cool day (established runner): 62.4 against 62.3.** Both 60-minute runs hold 45 minutes at the same steady pace between a 10-minute warm-up and a 5-minute cool-down, both easy at 131 bpm. Cardiac drift on the hot day takes heart rate from 150 to 166 bpm across those 45 minutes. Because the work is the same, the extra heart rate can't raise the category, and the score barely changes. The extra beats appear in the residual instead: +3.1 bpm on the hot day against −2.8 bpm on the cool day. Both runs carry the same expected heart rate, 148.0 bpm, so together the two residuals account for the whole 6 bpm gap in average heart rate, 151.1 against 145.1.
 
 **Returning from injury (established runner): 10.9 to 15.6, Light.** A runner recovering from a knee sprain follows a walk-run program. As running time grows from 5 to 28 minutes over six weeks, the score rises gradually from 10.9 to 15.6, with the walking read as Recovery. Adding an 8-minute descent to the same 28-minute run lifts the score to 39.6, Moderate, because grade and vertical oscillation label the downhill Hard while heart rate stays calm. Here TES acts as a load advisor: steady scores show a safe progression, and the spike flags stress heart rate alone would miss.
 
@@ -360,6 +367,16 @@ let scoredBy = result.baseline           // the baseline that scored this run, n
 ```
 
 The distribution `shares` reflect a fraction of active time rather than raw samples, and sum to about 1. The `baseline` stored on the result is captured before the model refits, meaning it will differ from `tes.baseline`, which has already updated itself to learn from this newly finished run.
+
+To read the time in every category in a fixed order, iterate `EffortClass.allCases`:
+
+```swift
+// Prints minutes per effort category in order, Recovery through Hard.
+for category in EffortClass.allCases {
+    let minutes = result.time(in: category) / 60
+    print(category.label, minutes)
+}
+```
 
 ## How the model learns a runner
 
