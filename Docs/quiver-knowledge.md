@@ -188,6 +188,23 @@ A.solve(b)   // [1.0, 3.0]?
 
 `solve(_:)` returns `x` such that `A · x = b`, computed by inverting `A` and applying the inverse to `b`. Returns `nil` if `A` is not square, has inconsistent row lengths, the row count disagrees with `b.count`, or `A` is singular. Near-singular matrices (condition number above roughly `10¹⁰`) return a non-nil value that may be numerically unreliable — check `A.conditionNumber` before trusting the result.
 
+## Numerical Jacobian (1.6.0)
+
+```swift
+// f(length, width) = [area, perimeter]
+func plotMetrics(_ v: [Double]) -> [Double] {
+    let length = v[0]
+    let width = v[1]
+    return [length * width, 2 * (length + width)]
+}
+
+let j = jacobian(of: plotMetrics, at: [3.0, 2.0])   // [[Double]] — m × n
+// ≈ [[2.0, 3.0],   ∂area/∂length = width,  ∂area/∂width = length
+//    [2.0, 2.0]]   ∂perimeter/∂length = 2, ∂perimeter/∂width = 2
+```
+
+`jacobian(of:at:step:)` is a free function that approximates the m × n matrix of first-order partial derivatives of a function mapping an n-vector to an m-vector, where `J[i][j]` is the rate at which output `i` changes as input `j` changes. Each column comes from perturbing one input a step `h` in both directions (central differences), so the cost is `2n` evaluations of `f`. The default step (`6e-6`) suits inputs of order one; scale it up for larger inputs. Results are approximations, so compare with a tolerance rather than exact equality. Use it to ask which inputs a model's outputs are most sensitive to near a given point.
+
 ## Array Generation
 
 All called on `[Double]` (not `[[Double]]`), even for 2D:
@@ -935,6 +952,51 @@ Dimensionality reduction by projection onto the directions of largest variance: 
 
 The `Transformer` protocol (1.6.0) names the fitted-preprocessing-stage capability — single requirement `transform(_:) -> [[Double]]` — and `StandardScaler` and `PCA` both conform. `Pipeline` carries an optional `reducer: PCA?` stage between scaler and model: `Pipeline.fit(features:labels:componentCount:k:metric:weight:)` fits scaler → PCA → KNN in one call, and predict runs scaler → reducer → model on raw inputs. Archives written before the reducer existed decode unchanged with `reducer = nil`; decoding validates that reducer and scaler agree on feature width.
 
+## True Effort Score (1.6.0)
+
+```swift
+// Cold start — no history yet. Non-throwing.
+var tes = TrueEffortScore()        // lambda: 0.01, k: 3, 28-day history window, 8-run floor, 60-run cap
+tes.location = .outdoor            // WorkoutLocation: .outdoor / .indoor
+
+// Returning runner — throws TESError
+var seeded = try TrueEffortScore(
+    history: savedWorkouts,        // [Workout] from earlier finalized runs
+    labeledSamples: labeledRows,   // optional [[heartRate, pace, cadence, grade, verticalOscillation]]
+    labels: rowLabels)             // [EffortClass], one per row
+
+// Once per sensor sample: bpm, min/km, steps/min, percent (negative is downhill), cm, meters
+tes.record(heartRate: 152, pace: 5.4, cadence: 174, grade: 1.2,
+           verticalOscillation: 7.9, altitude: 100, at: sampleDate)
+// hrTrust: 0...1 (default 1.0) — a doubted optical reading leans on the kinematic signals
+
+tes.pause(); tes.resume(); tes.discardRun()
+
+tes.currentScore      // Double — live score
+tes.currentEffort     // EffortClass? — nil before the first sample
+tes.currentResidual   // Double? — observed − expected heart rate; nil before a baseline exists
+tes.currentSignals    // EffortSignals? — latest sample as z-scores
+
+// Close the run — nil under 60 seconds of active time
+if let result = tes.finalize() {
+    result.adjusted             // Double — headline score; 100 = one hour at threshold
+    result.raw                  // Double — before session adjustments
+    result.averageHeartRate     // Double
+    result.meanResidual         // Double? — nil on a first run
+    result.expectedHeartRate    // Double? — nil on a first run
+    result.effortDistribution   // [EffortClass: Double] — share of active time
+    result.time(in: .tempo)     // TimeInterval — active time in one category
+    result.loadCurve            // [Double] — cumulative weighted load
+    result.timerTime            // TimeInterval — active time
+    result.elapsedTime          // TimeInterval — wall clock, including pauses
+    result.baseline?.equation() // String — expected HR as a named formula
+}
+```
+
+`TrueEffortScore` scores a run against the runner's own heart-rate baseline. It composes three existing models: a `Ridge` baseline predicts heart rate from workload (pace, cadence, grade, vertical oscillation, altitude), a `ResidualModel` measures the gap between observed and expected heart rate, and a `Pipeline<KNearestNeighbors>` classifies each moment into one of five `EffortClass` categories (`recovery`, `easy`, `tempo`, `threshold`, `hard`, weighted 0.10 to 1.00). Heart rate is the baseline's target and never one of its inputs. Once a baseline exists, heart rate above the expected value cannot lift the effort category, so heat, cardiac drift, and altitude surface in `meanResidual` instead of inflating the score.
+
+`finalize()` returns a `TESResult`, folds the run into history, and re-fits the baseline from runs inside the history window; the classifier stays frozen. An indoor run is scored as level ground (`indoorGrade`, 0.5%) and leaves history and the baseline untouched. The headline `adjusted` never stands alone: `meanResidual` and the session terms (`varianceMultiplier`, `durationFactor`, `transitionLoad`) sit beside it, and there is deliberately no single `score()` accessor. `TrueEffortScore`, `TESResult`, `TESBaseline`, `Workout`, and `EffortSignals` all conform to `Codable`, `Equatable`, and `Sendable`, so a runner's model persists with `JSONEncoder` and resumes at the next launch. Personal labels must come from ground truth (the runner, a coach, a calibration session), never from the model's own `currentEffort` readings.
+
 ## K-Means Clustering
 
 ```swift
@@ -977,6 +1039,8 @@ for group in knn.classify(testX) {
     for point in group { print(point) }
 }
 ```
+
+A tied vote goes to the label of the nearest neighbor (1.6.0); neighbors sort by distance, then training index, so the same model returns the same prediction on every launch.
 
 ## Gaussian Naive Bayes
 
@@ -1276,6 +1340,10 @@ See the Logistic Regression section above for signatures. When to use: binary cl
 ### Residual Model
 
 See the Residual Model section above for signatures. When to use: to surface what a fitted regressor could not explain (`observed − predicted`). Wrap any fitted `Regressor`, then residualize a *later* sample — residualizing the training data understates the true error. The `Coefficients` protocol is documented there too: `LinearRegression`, `Ridge`, and `GradientDescent` conform, exposing a uniform `coefficients: [Double]`; `LogisticRegression` does not, because a residual is undefined for a classifier. See the Residual-Model documentation page.
+
+### True Effort Score
+
+See the True Effort Score section above for signatures. When to use: scoring a run's effort against the runner's own heart-rate baseline on device, with live readings during the run and a full breakdown at `finalize()`. Hold the model in a `var`, call `record` once per sensor sample, and persist it with `JSONEncoder` between runs. See the True-Effort-Score documentation page.
 
 ### Embedding Sources
 
