@@ -283,7 +283,9 @@ public struct TrueEffortScore: Codable, Equatable, CustomStringConvertible, Send
     /// Closes the run: returns the breakdown, folds the run into history, and re-fits the baseline
     /// from the accumulated history (the classifier stays frozen). An indoor run returns its
     /// breakdown but leaves history and the baseline untouched. Returns nil when active
-    /// `timerTime` is below the floor, in which case the run is cleared and not kept.
+    /// `timerTime` is under 60 seconds, in which case the run is cleared and not kept. The first
+    /// sample of a run only marks its start, so a scorable run needs samples spanning at least
+    /// 60 seconds of active time.
     public mutating func finalize() -> TESResult? {
         guard timerTime >= Self.minimumTimerSeconds else {
             clearLiveRun()

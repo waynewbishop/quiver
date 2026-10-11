@@ -18,7 +18,7 @@ var tes = TrueEffortScore()
 tes.record(heartRate: 152, pace: 5.4, cadence: 174, grade: 1.2,
            verticalOscillation: 7.9, altitude: 100, at: sampleDate)
 
-// 3. Close the run.
+// 3. Close the run. Returns nil under 60 seconds of active time.
 if let result = tes.finalize() {
     print(result.adjusted)
 }
