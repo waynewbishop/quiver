@@ -30,7 +30,7 @@ Quiver extends Swift's `Array` type with numerical computing methods. There are 
 
 Internal logic lives in `_Vector` types that are not part of the public API. The public surface is clean Array extensions constrained by `Numeric`, `FloatingPoint`, `Comparable`, or `BinaryFloatingPoint`.
 
-ML models are immutable value types created via static `fit()` methods. There is no unfitted state — you cannot call `predict()` on a model that hasn't been trained.
+ML models are immutable value types created via static `fit()` methods. There is no unfitted state — you cannot call `predict()` on a model that hasn't been trained. Two types work differently. `ResidualModel` has no `fit()` of its own: it wraps a regressor that is already fitted, through `init(model:)`. `TrueEffortScore` is a mutable model held in a `var`: it starts empty or seeded from saved history, takes sensor samples through `record(...)` during a run, and re-fits its baseline each time `finalize()` closes one.
 
 All models and result types conform to `Codable`, enabling JSON serialization for persistence, network transfer, and cross-device deployment. The Swift compiler auto-synthesizes encoding/decoding since all stored properties are basic Swift types (`[Double]`, `Int`, `Bool`, etc.). Train once, encode to JSON, decode on any platform — identical predictions guaranteed.
 
@@ -57,7 +57,7 @@ let run2 = KMeans.fit(data: points, k: 3, seed: 42)
 run1 == run2  // true
 ```
 
-Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`.
+Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`, `ResidualModel`, `PCA`, `TrueEffortScore`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`, `TESResult`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`, `TESError`.
 
 ---
 
@@ -1340,6 +1340,10 @@ See the Logistic Regression section above for signatures. When to use: binary cl
 ### Residual Model
 
 See the Residual Model section above for signatures. When to use: to surface what a fitted regressor could not explain (`observed − predicted`). Wrap any fitted `Regressor`, then residualize a *later* sample — residualizing the training data understates the true error. The `Coefficients` protocol is documented there too: `LinearRegression`, `Ridge`, and `GradientDescent` conform, exposing a uniform `coefficients: [Double]`; `LogisticRegression` does not, because a residual is undefined for a classifier. See the Residual-Model documentation page.
+
+### Principal Component Analysis
+
+See the Principal Component Analysis section above for signatures. When to use: to reduce many correlated features to a few directions that keep most of the variance, for plotting, faster nearest-neighbor search, or a smaller model input. Standardize mixed-unit features first, then read `explainedVarianceRatios` to choose `componentCount`. Inside a `Pipeline`, `Pipeline.fit(features:labels:componentCount:k:metric:weight:)` runs scaler → PCA → KNN in one call. See the Principal-Component-Analysis documentation page.
 
 ### True Effort Score
 
