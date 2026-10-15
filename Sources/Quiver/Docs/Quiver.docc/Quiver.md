@@ -16,7 +16,7 @@ A Swift package for statistics, linear algebra, and machine learning.
 
 ## Overview
 
-[Quiver](https://github.com/waynewbishop/quiver) is written entirely in Swift and extends the standard `Array` type, so its operations read as ordinary Swift and compose with the language a developer already knows. The mathematical surface (vectors, matrices, statistics, and models) works the same on iOS, macOS, watchOS, and the server.
+[Quiver](https://github.com/waynewbishop/quiver) is a pure Swift framework for statistics, linear algebra, and machine learning. It extends the standard `Array` type, so every operation reads as ordinary Swift code. With zero external dependencies, it covers the entire data workflow including analysis, transformation, and modeling in readable code that runs identically on iOS, macOS, watchOS, tvOS, visionOS, and the server.
 
 ### Data science in Swift
 
