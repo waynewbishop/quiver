@@ -6,6 +6,8 @@ A browser-based Swift IDE for testing and evaluating Quiver models.
 
 The [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) provides a fast, lightweight environment for learning Quiver and for prototyping. A standalone web-based IDE, it serves two audiences: students who want to learn statistics, linear algebra, and machine learning in Swift, and developers who want a quick iteration loop for testing and building their own models.
 
+![The Quiver Notebook in a browser, loading the bundled GloVe dataset and printing the first four word vectors as a table in the output pane](notebook-glove)
+
 ### Setting up locally
 
 The Notebook runs on the Swift command-line toolchain and requires macOS 15 (Sequoia) or newer with Swift 6.0 or newer.
