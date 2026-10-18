@@ -1,7 +1,7 @@
 # Quiver — Statistics, Linear Algebra & Machine Learning in Swift
 
-[![Swift](https://img.shields.io/badge/Swift-6-orange)](https://swift.org)
-[![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20visionOS%20%7C%20Linux-lightgrey)]()
+[![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange)](https://swift.org)
+[![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20visionOS%20%7C%20Linux-lightgrey)](https://waynewbishop.github.io/quiver/documentation/quiver/installation/)
 [![Release](https://img.shields.io/github/v/release/waynewbishop/quiver)](https://github.com/waynewbishop/quiver/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
@@ -13,7 +13,7 @@ Quiver is an open-source Swift package for statistics, linear algebra, and machi
 
 **Educators** preparing a lecture, unit, or full course get material that respects the academic calendar. The Notebook launches with all datasets pre-bundled — no environment drift, no per-student setup or CSV hunting. Fork it, drop your own examples in, distribute a URL to your class.
 
-**Apple-platform developers** who want something simple and practical get production-ready numerical code with zero dependencies and no runtime to manage. Prototype in the Notebook, then drop the same code into an iOS, watchOS, or visionOS target unchanged — models are `Codable` value types, so what you trained is what you ship. True Effort Score shows the pattern end to end: train, encode to JSON, score on the watch.
+**Apple-platform developers** who want something simple and practical get production-ready numerical code with zero dependencies and no runtime to manage. Prototype in the Notebook, then drop the same code into an iOS, watchOS, or visionOS target unchanged — models are `Codable` value types, so what you trained is what you ship. True Effort Score shows the pattern end to end: learn on the watch, save between runs, score the next one.
 
 ## Installation
 
@@ -101,7 +101,7 @@ let outliers = sales.outlierMask(threshold: 1.2).trueIndices
 
 **True Effort Score (TES)** is a transparent training-load model for Apple Watch, built entirely with Quiver. Traditional scores reduce a run to one signal — heart rate or estimated power. TES reads six signals per moment (heart rate, pace, cadence, grade, vertical oscillation, altitude), classifies each moment from **Recovery** to **Hard**, and prices the efforts single-signal systems miss: steep descents, intervals, technical terrain, power-hikes. A personal baseline learns the heart rate your workload should produce, so heat and cardiac drift surface as a residual instead of inflating your score.
 
-→ [How TES works](https://waynewbishop.github.io/quiver/documentation/quiver/true-effort-score/) · [Research whitepaper (PDF)](https://waynewbishop.github.io/quiver/papers/true-effort-score.pdf) · [API reference](https://waynewbishop.github.io/quiver/documentation/quiver/trueeffortscore)
+→ [How TES works](https://waynewbishop.github.io/quiver/documentation/quiver/true-effort-score/) · [Research whitepaper (PDF)](https://waynewbishop.github.io/quiver/papers/true-effort-score.pdf) · [API reference](https://waynewbishop.github.io/quiver/documentation/quiver/trueeffortscore/)
 
 ## Capabilities
 
