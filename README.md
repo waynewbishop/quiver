@@ -9,7 +9,7 @@ Quiver is an open-source Swift package for statistics, linear algebra, and machi
 
 ## Who Quiver is for
 
-**Students** working through a course, textbook, or self-study. Quiver extends the standard `Array` type, so there's no custom container to learn before the math starts — and every model exposes its learned parameters, so you can always see what the algorithm actually did. Start with the [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) or the [75-recipe Cookbook](https://github.com/waynewbishop/quiver-cookbook).
+**Students** working through a course, textbook, or self-study. Quiver extends the standard `Array` type, so there's no custom container to learn before the math starts — and every model exposes its learned parameters, so you can always see what the algorithm actually did. Start with the [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) or the [73-recipe Cookbook](https://github.com/waynewbishop/quiver-cookbook).
 
 **Educators** preparing a lecture, unit, or full course get material that respects the academic calendar. The Notebook launches with all datasets pre-bundled — no environment drift, no per-student setup or CSV hunting. Fork it, drop your own examples in, distribute a URL to your class.
 
@@ -123,7 +123,7 @@ Full details live in the [documentation](https://waynewbishop.github.io/quiver/d
 Quiver is a teaching platform as much as a framework. Start wherever you are:
 
 - **[Quiver Notebook](https://github.com/waynewbishop/quiver-notebook)** — browser-based Swift editor with teaching datasets pre-loaded.
-- **[Cookbook](https://github.com/waynewbishop/quiver-cookbook)** — 75 interactive recipes, each a single `.swift` file for the Xcode `#Playground` macro.
+- **[Cookbook](https://github.com/waynewbishop/quiver-cookbook)** — 73 interactive recipes, each a single `.swift` file for the Xcode `#Playground` macro.
 - **[Documentation & primers](https://waynewbishop.github.io/quiver/documentation/quiver/)** — the concepts behind the code, plus full API reference.
 - **[Swift Algorithms & Data Structures](https://waynewbishop.github.io/swift-algorithms/)** — the free companion book for deeper foundations.
 
