@@ -191,7 +191,7 @@ The `Pipeline.fit` call takes it from there: it fits a `StandardScaler` on the r
 
 ### Charting Panel data with Swift Charts
 
-Swift Charts iterates data and emits one mark per row, and the columns of a Panel slot in directly. The chart-side code asks for two things: an iterable collection and a stable identifier per element. Panel provides both. The row count is known, and each column reads as a parallel `[Double]`:
+Swift Charts iterates data and emits one mark per row, and the columns of a Panel slot in directly. A chart's `ForEach` needs a random-access collection with a stable identifier for each element, so we chart a panel by its row positions: the range `0..<rowCount` supplies both, and each column reads as a parallel `[Double]` at that position. The panel's `Sequence` conformance (see <doc:Working-With-Panels>) is for code that runs once per record, such as feeding samples to a model. Charts index by position:
 
 ```swift
 import Charts

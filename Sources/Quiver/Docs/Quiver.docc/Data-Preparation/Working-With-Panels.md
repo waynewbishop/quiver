@@ -6,7 +6,7 @@ A Quiver type that organizes named columns of numeric data into a single contain
 
 A Panel is a table of named columns. Each column holds an array of numbers. Naming the columns means the data can be read, split, and filtered by name instead of by position, the way a spreadsheet or a database table works.
 
-> Note: This page covers Panel as a data structure: how to construct one, access columns, convert to the shapes models need, and filter rows. For applied workflows such as train/test splits, summaries, classification pipelines, and charting, see <doc:Panel-Workflows>.
+> Note: This page covers Panel as a data structure: how to construct one, access columns, convert to the shapes models need, filter rows, and iterate rows. For applied workflows such as train/test splits, summaries, classification pipelines, and charting, see <doc:Panel-Workflows>.
 
 ### Creating a panel
 
@@ -164,13 +164,83 @@ let filtered = samples.filtered(where: mask)
 
 When a filter matches no rows, the resulting panel keeps its column schema but reports a row count of zero. The columns still exist, just empty. See <doc:Panel-Workflows> for how `summary()` and downstream operations behave on a zero-row panel.
 
+### Iterating rows
+
+A panel is organized by column, which is the shape statistics and models want. Some work happens one record at a time instead: feeding sensor samples to a scoring model, finding the moment a signal crosses a threshold, or filling a gap from the previous reading. A panel conforms to Swift's `Sequence` protocol, so a `for`-`in` loop walks it one row at a time:
+
+```swift
+import Quiver
+
+let run = Panel([
+    ("time", [0.0, 5.0, 10.0, 15.0]),
+    ("heartRate", [142.0, 151.0, 158.0, 163.0]),
+    ("grade", [0.0, 2.5, 6.0, 5.5])
+])
+
+for moment in run {
+    print(moment["time"], moment["heartRate"])
+}
+// 0.0 142.0
+// 5.0 151.0
+// 10.0 158.0
+// 15.0 163.0
+```
+
+Each step yields a `Panel.Row`. Its subscript takes a column name and returns a `Double`, the same way the panel's column subscript returns a `[Double]`, so a row reads with no unwrapping. A column name the panel doesn't have stops with a message naming the column. Printing a row lists its values in column order:
+
+```swift
+for moment in run where moment["grade"] > 5.0 {
+    print(moment)
+    break
+}
+// Row: time 10.0, heartRate 158.0, grade 6.0
+```
+
+When the position matters, `enumerated()` pairs each row with its index:
+
+```swift
+for (index, moment) in run.enumerated() where moment["heartRate"] > 160.0 {
+    print("row \(index) crosses 160 bpm")
+}
+// row 3 crosses 160 bpm
+```
+
+#### How the conformance works
+
+`Sequence` asks a type for one thing: an iterator that hands back the next element until there are none left. A `for`-`in` loop is shorthand for that exchange. The loop over `run` above is the same as asking the panel for its iterator and calling `next()` until it returns `nil`:
+
+```swift
+var iterator = run.makeIterator()
+while let moment = iterator.next() {
+    print(moment["time"])
+}
+// 0.0
+// 5.0
+// 10.0
+// 15.0
+```
+
+The panel's iterator reads each column once when the loop starts, then builds one `Panel.Row` per step from those columns, in row order. A panel with zero rows, such as the result of a filter that matched nothing, ends the loop before the first step.
+
+Because the conformance is the standard one, everything Swift provides for sequences works on a panel. Collecting the rows into an array gives indexed access to individual records:
+
+```swift
+let rows = Array(run)
+print(rows.count)       // 4
+print(rows[2]["grade"]) // 6.0
+```
+
+The panel reports its row count as its `underestimatedCount`, so building that array allocates storage once rather than growing it row by row.
+
+Rows are read-only snapshots. Changing data still means building a new panel from its columns, and keeping a subset of rows still goes through `filtered(where:)`, which returns a `Panel`. The stdlib `filter` also works on a panel, but it returns an array of rows rather than a panel, so `filtered(where:)` remains the way to narrow a panel for the next step.
+
 ### Design
 
 The `Panel` type is a value type with a fixed schema: columns are defined at creation and all values are `Double`. The schema is set once at construction and never mutates, which is what lets every downstream operation rely on column alignment without defensive checks.
 
-Panels conform to Swift's `Equatable` protocol. Two panels are equal when they have the same column names in the same order and the same data in every column. This is useful for verifying that a filtering or splitting operation produced the expected result.
+Panels conform to Swift's `Equatable` and `Sequence` protocols. Two panels are equal when they have the same column names in the same order and the same data in every column. This is useful for verifying that a filtering or splitting operation produced the expected result. Iterating a panel yields its rows in order, from the first row to the last.
 
-Column order is preserved. Swift dictionaries are unordered, so a panel stores its columns under both a name-keyed map for constant-time lookup and an ordered array for canonical iteration. The order columns were declared in is the order `head` and `summary` render, the order `toMatrix` extracts, and the order any reproducible report should follow. When code needs to walk every column deterministically, it walks the declaration order rather than iterating the underlying dictionary.
+Column order is preserved. Swift dictionaries are unordered, so a panel stores its columns under both a name-keyed map for constant-time lookup and an ordered array for canonical iteration. The order columns were declared in is the order `head` and `summary` render, the order `toMatrix` extracts, the order a printed row lists its values, and the order any reproducible report should follow. When code needs to walk every column deterministically, it walks the declaration order rather than iterating the underlying dictionary.
 
 ### Next steps
 

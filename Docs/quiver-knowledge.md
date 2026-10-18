@@ -57,7 +57,7 @@ let run2 = KMeans.fit(data: points, k: 3, seed: 42)
 run1 == run2  // true
 ```
 
-Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`, `ResidualModel`, `PCA`, `TrueEffortScore`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`, `TESResult`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`, `TESError`.
+Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`, `ResidualModel`, `PCA`, `TrueEffortScore`. Data: `Panel`, `Panel.Row`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`, `TESResult`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`, `TESError`.
 
 ---
 
@@ -1087,7 +1087,16 @@ let (train, test) = panel.trainTestSplit(testRatio: 0.2, seed: 42)
 panel.head()       // Tabular output showing first 10 rows
 panel.head(n: 3)   // First 3 rows in tabular format
 panel.summary()    // Per-column statistics (count, mean, std, min, max)
+
+// Iterate rows (1.7.0) — Panel conforms to Sequence; each element is a Panel.Row
+for row in panel {
+    row["age"]        // Double — non-optional; an unknown column stops with a precondition
+}
+for (index, row) in panel.enumerated() where row["salary"] > 55000.0 { }
+print(Array(panel)[0])   // Row: age 25.0, salary 50000.0
 ```
+
+`Panel.Row` (1.7.0) is a read-only snapshot of one record: `columnNames` (`[String]`), `values` (`[Double]`, same order), and `subscript(column: String) -> Double`. Conforms to `CustomStringConvertible`, `Equatable`, and `Sendable`. Rows come only from iterating a panel (no public initializer). `underestimatedCount` returns `rowCount`, and a zero-row panel yields no rows. The stdlib `filter` on a panel returns `[Panel.Row]`; use `filtered(where:)` to get a `Panel` back.
 
 ---
 
@@ -1363,7 +1372,7 @@ See the Activation section above for signatures. When to use: SoftMax for "which
 
 ### Installation
 
-Add via SPM: `.package(url: "https://github.com/waynewbishop/quiver", from: "1.6.0")`. Or use Xcode → File → Add Package Dependencies. Zero external dependencies. Verify with `[1.0, 2.0, 3.0].dot([4.0, 5.0, 6.0])` → 32.0.
+Add via SPM: `.package(url: "https://github.com/waynewbishop/quiver", from: "1.7.0")`. Or use Xcode → File → Add Package Dependencies. Zero external dependencies. Verify with `[1.0, 2.0, 3.0].dot([4.0, 5.0, 6.0])` → 32.0.
 
 ### Usage (Xcode Playground Macro)
 
