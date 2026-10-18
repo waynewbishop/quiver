@@ -7,11 +7,13 @@
 
 Quiver is an open-source Swift package for statistics, linear algebra, and machine learning — zero external dependencies, running on every Apple platform, server-side Swift, and Linux. It extends the standard `Array` type, so mathematical operations feel natural to Swift developers, and every model exposes its learned parameters: nothing is a black box. Quiver is built to teach and built to ship — the same code that explains a concept deploys to iPhone, Apple Watch, or a Linux server.
 
-## Featured: True Effort Score (new in 1.6.0)
+## Who Quiver is for
 
-**True Effort Score (TES)** is a transparent training-load model for Apple Watch, built entirely with Quiver. Traditional scores reduce a run to one signal — heart rate or estimated power. TES reads six signals per moment (heart rate, pace, cadence, grade, vertical oscillation, altitude), classifies each moment from **Recovery** to **Hard**, and prices the efforts single-signal systems miss: steep descents, intervals, technical terrain, power-hikes. A personal baseline learns the heart rate your workload should produce, so heat and cardiac drift surface as a residual instead of inflating your score.
+**Students** working through a course, textbook, or self-study. Quiver extends the standard `Array` type, so there's no custom container to learn before the math starts — and every model exposes its learned parameters, so you can always see what the algorithm actually did. Start with the [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) or the [75-recipe Cookbook](https://github.com/waynewbishop/quiver-cookbook).
 
-→ [How TES works](https://waynewbishop.github.io/quiver/documentation/quiver/true-effort-score/) · [Research whitepaper (PDF)](https://waynewbishop.github.io/quiver/papers/true-effort-score.pdf) · [API reference](https://waynewbishop.github.io/quiver/documentation/quiver/trueeffortscore)
+**Educators** preparing a lecture, unit, or full course get material that respects the academic calendar. The Notebook launches with all datasets pre-bundled — no environment drift, no per-student setup or CSV hunting. Fork it, drop your own examples in, distribute a URL to your class.
+
+**Apple-platform developers** who want something simple and practical get production-ready numerical code with zero dependencies and no runtime to manage. Prototype in the Notebook, then drop the same code into an iOS, watchOS, or visionOS target unchanged — models are `Codable` value types, so what you trained is what you ship. True Effort Score shows the pattern end to end: train, encode to JSON, score on the watch.
 
 ## Installation
 
@@ -95,13 +97,11 @@ let smoothed = sales.rollingMean(window: 3)
 let outliers = sales.outlierMask(threshold: 1.2).trueIndices
 ```
 
-## Who Quiver is for
+## Featured: True Effort Score (new in 1.6.0)
 
-**Students** working through a course, textbook, or self-study. Quiver extends the standard `Array` type, so there's no custom container to learn before the math starts — and every model exposes its learned parameters, so you can always see what the algorithm actually did. Start with the [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) or the [75-recipe Cookbook](https://github.com/waynewbishop/quiver-cookbook).
+**True Effort Score (TES)** is a transparent training-load model for Apple Watch, built entirely with Quiver. Traditional scores reduce a run to one signal — heart rate or estimated power. TES reads six signals per moment (heart rate, pace, cadence, grade, vertical oscillation, altitude), classifies each moment from **Recovery** to **Hard**, and prices the efforts single-signal systems miss: steep descents, intervals, technical terrain, power-hikes. A personal baseline learns the heart rate your workload should produce, so heat and cardiac drift surface as a residual instead of inflating your score.
 
-**Educators** preparing a lecture, unit, or full course get material that respects the academic calendar. The Notebook launches with all datasets pre-bundled — no environment drift, no per-student setup, no CSV hunting. Fork it, drop your own examples in, distribute a URL to your class. The [15-week syllabus](COURSE-SYLLABUS-URL) covers the full arc from programming fundamentals to evaluated models; the documentation primers serve as the course text; individual weeks stand alone as units inside existing courses.
-
-**Apple-platform developers** who want something simple and practical get production-ready numerical code with zero dependencies and no runtime to manage. Prototype in the Notebook, then drop the same code into an iOS, watchOS, or visionOS target unchanged — models are `Codable` value types, so what you trained is what you ship. True Effort Score shows the pattern end to end: train, encode to JSON, score on the watch.
+→ [How TES works](https://waynewbishop.github.io/quiver/documentation/quiver/true-effort-score/) · [Research whitepaper (PDF)](https://waynewbishop.github.io/quiver/papers/true-effort-score.pdf) · [API reference](https://waynewbishop.github.io/quiver/documentation/quiver/trueeffortscore)
 
 ## Capabilities
 
