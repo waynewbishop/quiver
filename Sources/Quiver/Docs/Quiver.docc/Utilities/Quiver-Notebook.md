@@ -97,7 +97,7 @@ Open the URL in any browser to start writing snippets. Press `Ctrl+C` in the ter
 
 ### Writing and running snippets
 
-The editor opens with `Quiver` and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter or Shift+Enter to compile and run, and output appears in the pane below the editor. Cmd+Shift+Enter clears the output before running, and Cmd+K clears it on its own. The editor auto-saves to the browser's local storage, so refreshing the page does not lose code. A `.swift` file dragged onto the editor opens in place of the current snippet.
+The editor opens with `Quiver` and `Foundation` already imported, so a working snippet can begin with the first line of real work. Press Cmd+Enter or Shift+Enter to compile and run, and output appears in the pane below the editor. Cmd+Shift+Enter clears the output before running, and Cmd+K clears it on its own. The editor auto-saves to the browser's local storage, so refreshing the page does not lose code. Swift code that uses Foundation can be pasted into the editor from Xcode or any other source and run as-is.
 
 Hovering over a Quiver symbol shows its signature and a short description pulled directly from Quiver's documentation. Option-clicking a symbol opens a larger reference popup with the full doc comment. Autocomplete suggests Quiver methods as we type, and signature help shows each parameter while we fill in a call. The same documentation that lives in the DocC catalog is available inline as snippets are written.
 
