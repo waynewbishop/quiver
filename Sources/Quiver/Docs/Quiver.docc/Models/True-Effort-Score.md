@@ -93,9 +93,9 @@ A weight near zero can mean a signal carries little information, or that it bare
 
 ## The residual
 
-Comparing expected heart rate against measured heart rate reveals the effect of everything the workload doesn't explain. A moment one standard deviation steeper than usual, with every other signal at its average, is expected to read 142.69 + 4.85 ≈ 147.5 bpm. If the watch reads 155 bpm at that moment, the gap of +7.5 bpm is the **residual**:
+Comparing expected heart rate against measured heart rate reveals the effect of everything the workload doesn't explain. A moment one standard deviation steeper than usual, with every other signal at its average, is expected to read 142.69 + 4.85 (the grade coefficient) ≈ 147.5 bpm. If the watch reads 155 bpm at that moment, the gap of +7.5 bpm is the **residual**:
 
-![A flat expected heart-rate line with the observed heart rate drifting above it over a run, the widening gap between them shaded as the residual](diagram-residual-modeling)
+![The baseline's expected heart-rate line rising on a climb and falling on a descent, with observed heart rate drifting above it and the gap between them shaded as the residual, marked at minute 16 as 147.5 bpm expected and 155 bpm observed](diagram-residual-modeling)
 
 TES reports the residual live and as an average across the run:
 
@@ -112,7 +112,7 @@ Heart rate never enters the score directly; it only helps decide which category 
 
 ## Effort categories
 
-The classifier is a nearest-neighbor model that compares each moment with a set of known efforts and gives it the label of the closest ones. Each ``EffortClass`` carries a weight that sets how much a second of it counts:
+The classifier is a nearest-neighbor model that compares each moment with a set of known efforts and gives it the label of the ones whose vectors sit closest to it. Each ``EffortClass`` carries a weight that sets how much a second of it counts:
 
 | Category | Meaning | Weight |
 |---|---|---|
