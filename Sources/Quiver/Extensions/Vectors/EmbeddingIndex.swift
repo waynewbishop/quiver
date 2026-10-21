@@ -375,3 +375,14 @@ public struct EmbeddingIndex<Label: Codable & Equatable>: Sequence, CustomString
         "EmbeddingIndex(\(count) \(count == 1 ? "entry" : "entries"))"
     }
 }
+
+// MARK: - Sendable
+
+// Every stored property is a plain value or a Sendable embedder, so each
+// retrieval type can cross task boundaries whenever its label can. The
+// conformance is conditional so a non-Sendable label type still compiles.
+extension RetrievedHit: Sendable where Label: Sendable {}
+extension RetrievalResult: Sendable where Label: Sendable {}
+extension EmbeddingIndex: Sendable where Label: Sendable {}
+extension EmbeddingIndex.Entry: Sendable where Label: Sendable {}
+extension EmbeddingIndex.Snapshot: Sendable where Label: Sendable {}

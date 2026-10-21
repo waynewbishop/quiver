@@ -46,4 +46,51 @@ final class SendableTests: XCTestCase {
         XCTAssertEqual(result.1, 3)
         XCTAssertGreaterThan(result.2, 0)
     }
+
+    func testRetrievalTypesSendableAcrossTaskBoundary() async {
+        var index = EmbeddingIndex<String>(embedder: SendableTestEmbedder())
+        index.add("fast race", label: "racer")
+        index.add("soft cushion", label: "trainer")
+        let snapshot = index.snapshot
+        let retrieval = index.retrieve("fast", k: 1)
+
+        // The index, its snapshot and a retrieval result all cross into the task.
+        let result = await Task {
+            let restored = EmbeddingIndex(snapshot, embedder: SendableTestEmbedder())
+            return (index.retrieve("soft", k: 1).hits.first?.label,
+                    restored.count,
+                    retrieval.hits.first?.label)
+        }.value
+
+        XCTAssertEqual(result.0, "trainer")
+        XCTAssertEqual(result.1, 2)
+        XCTAssertEqual(result.2, "racer")
+    }
+
+    func testGeneratorAndIteratorSendableAcrossTaskBoundary() async {
+        let rng = SeededRandomNumberGenerator(seed: 42)
+        var reference = SeededRandomNumberGenerator(seed: 42)
+        let expected = reference.next()
+        let iterator = Panel([("col", [1.0, 2.0, 3.0])]).makeIterator()
+
+        // A seeded generator and a row iterator are values that cross into the task.
+        let result = await Task {
+            var generator = rng
+            var rows = iterator
+            return (generator.next(), rows.next()?["col"])
+        }.value
+
+        XCTAssertEqual(result.0, expected)
+        XCTAssertEqual(result.1, 1.0)
+    }
+}
+
+/// A two-dimensional embedder that maps the words "fast" and "soft" to separate axes.
+private struct SendableTestEmbedder: Embedder {
+    func embed(_ text: String) -> [Double]? {
+        let words = text.split(separator: " ")
+        let fast = words.contains("fast") ? 1.0 : 0.0
+        let soft = words.contains("soft") ? 1.0 : 0.0
+        return fast + soft == 0 ? nil : [fast, soft]
+    }
 }

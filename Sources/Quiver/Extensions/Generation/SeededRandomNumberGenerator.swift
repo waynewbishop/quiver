@@ -40,7 +40,7 @@ import Foundation
 /// - Note: The xorshift64 algorithm is suitable for simulations, teaching, and reproducible
 ///   examples. It is **not** a cryptographic generator. For security-sensitive randomness,
 ///   use Swift's `SystemRandomNumberGenerator`.
-public struct SeededRandomNumberGenerator: RandomNumberGenerator {
+public struct SeededRandomNumberGenerator: RandomNumberGenerator, Sendable {
     private var state: UInt64
 
     /// The seed originally supplied to the generator.

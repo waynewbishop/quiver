@@ -108,7 +108,7 @@ extension SkewnessReport: Codable {
     }
 }
 
-public extension Array where Element: BinaryFloatingPoint {
+public extension Array where Element: BinaryFloatingPoint & Sendable {
 
     /// Returns the Bowley quartile coefficient of skewness — a robust measure built only from
     /// the quartiles, so a few extreme values cannot distort it.

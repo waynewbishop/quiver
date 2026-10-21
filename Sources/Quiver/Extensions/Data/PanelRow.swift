@@ -91,7 +91,7 @@ extension Panel {
 extension Panel: Sequence {
 
     /// Steps through a panel one row at a time, from the first row to the last.
-    public struct Iterator: IteratorProtocol {
+    public struct Iterator: IteratorProtocol, Sendable {
 
         private let columnNames: [String]
         private let columns: [[Double]]

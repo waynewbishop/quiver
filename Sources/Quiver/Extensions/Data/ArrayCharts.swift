@@ -328,7 +328,7 @@ public extension Array where Element: FloatingPoint {
     /// - Returns: Array of tuples containing the midpoint and count for each bin.
     /// - Complexity: O(*n* log *n*) for `.freedmanDiaconis` (sorts for the IQR);
     ///   O(*n*) for the other two rules.
-    func histogram(rule: BinRule) -> [(midpoint: Element, count: Int)] where Element: BinaryFloatingPoint {
+    func histogram(rule: BinRule) -> [(midpoint: Element, count: Int)] where Element: BinaryFloatingPoint & Sendable {
         guard !isEmpty else { return [] }
         let n = Double(count)
 
@@ -388,7 +388,7 @@ public extension Array where Element: FloatingPoint {
     ///
     /// - Complexity: O(*n* log *n*) where *n* is the number of elements.
     /// - Returns: A `Quartiles` value containing the five-number summary and IQR, or nil if the array is empty.
-    func quartiles() -> Quartiles<Element>? where Element: BinaryFloatingPoint {
+    func quartiles() -> Quartiles<Element>? where Element: BinaryFloatingPoint & Sendable {
         guard !isEmpty else { return nil }
         // A non-finite element corrupts the sort, so min/max and every quartile
         // would be unreliable. Reject the input loudly rather than report them.
