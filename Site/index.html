@@ -12,6 +12,8 @@
 <meta property="og:description" content="Quiver is a Swift package for statistics, linear algebra and machine learning, with a browser-based Notebook for learning and prototyping.">
 <meta property="og:url" content="https://waynewbishop.github.io/quiver/">
 <meta name="twitter:card" content="summary">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f5f5f7">
 <style>
 body { margin: 0; }
 img { max-width: 100%; }
@@ -20,7 +22,7 @@ img { max-width: 100%; }
 /* Layout: an Apple product-page scroll of full-bleed bands, alternating ink and paper, with the Notebook window as the centerpiece.
    Deliberate single look (bands keep their own colors in either host theme). Fonts and accents mirror quiver-notebook/Public/css/app.css. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   --ink: #000000; --ink-2: #111116; --ink-line: #26262e; --ink-text: #f5f5f7; --ink-muted: #a1a1aa;
   --paper: #f5f5f7; --paper-2: #ffffff; --paper-line: #e5e7eb; --paper-text: #1d1d1f; --paper-muted: #6e6e73;
   --accent-ink: #8d8cf0; --accent-paper: #2563eb; --success: #7ac79a; --danger: #e88680;
@@ -34,9 +36,9 @@ img { max-width: 100%; }
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; background: var(--paper); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body { background: var(--ink); color: var(--ink-text); font-family: var(--ui); font-size: 17px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { background: var(--paper); color: var(--ink-text); font-family: var(--ui); font-size: 17px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: rgba(0,0,0,.8); }
 a { color: inherit; }
 code { font-family: var(--mono); }
