@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quiver: Statistics, Linear Algebra and Machine Learning in Swift</title>
+<meta name="description" content="Quiver is a Swift package for statistics, linear algebra and machine learning, with a browser-based Notebook for learning and prototyping.">
+<link rel="canonical" href="https://waynewbishop.github.io/quiver/">
+<link rel="icon" href="favicon.ico">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Quiver">
+<meta property="og:description" content="Quiver is a Swift package for statistics, linear algebra and machine learning, with a browser-based Notebook for learning and prototyping.">
+<meta property="og:url" content="https://waynewbishop.github.io/quiver/">
+<meta name="twitter:card" content="summary">
+<style>
+body { margin: 0; }
+img { max-width: 100%; }
+</style>
+<style>
+/* Layout: an Apple product-page scroll of full-bleed bands, alternating ink and paper, with the Notebook window as the centerpiece.
+   Deliberate single look (bands keep their own colors in either host theme). Fonts and accents mirror quiver-notebook/Public/css/app.css. */
+:root {
+  color-scheme: dark;
+  --ink: #000000; --ink-2: #111116; --ink-line: #26262e; --ink-text: #f5f5f7; --ink-muted: #a1a1aa;
+  --paper: #f5f5f7; --paper-2: #ffffff; --paper-line: #e5e7eb; --paper-text: #1d1d1f; --paper-muted: #6e6e73;
+  --accent-ink: #8d8cf0; --accent-paper: #2563eb; --success: #7ac79a; --danger: #e88680;
+  /* Notebook editor tokens (quiver-dark Monaco theme) */
+  --nb-surface: #1d1d24; --nb-editor: #23232b; --nb-chrome: #0e0e12; --nb-pill: #26262e; --nb-border: #2f2f38; --nb-soft: #26262e;
+  --nb-text: #e8e8ec; --nb-muted: #a0a0ac; --nb-subtle: #6d6d78;
+  --k-keyword: #d16fd0; --k-text: #e6e6e6; --k-string: #ff7d6a; --k-comment: #8a96a6; --k-number: #c6c9cf;
+  --b1: #ffd700; --b2: #da70d6; --b3: #179fff;
+  --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--ink); color: var(--ink-text); font-family: var(--ui); font-size: 17px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: rgba(0,0,0,.8); }
+a { color: inherit; }
+code { font-family: var(--mono); }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.band { padding-block: clamp(72px, 11vw, 140px); }
+.band.ink { background: var(--ink); color: var(--ink-text); }
+.band.ink2 { background: var(--ink-2); color: var(--ink-text); }
+.band.paper { background: var(--paper); color: var(--paper-text); }
+.band.paper2 { background: var(--paper-2); color: var(--paper-text); }
+
+/* ---------- local nav ---------- */
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(0,0,0,.72); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid rgba(255,255,255,.08); }
+.nav .wrap { height: 52px; display: flex; align-items: center; gap: 28px; }
+.nav .name { font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: -.01em; text-decoration: none; margin-right: auto; }
+.nav .links { display: flex; gap: 24px; font-size: 12.5px; color: var(--ink-muted); }
+.nav .links a { text-decoration: none; }
+.nav .links a:hover { color: var(--ink-text); }
+.pillbtn { font: 500 12.5px var(--ui); background: var(--accent-paper); color: #fff; border-radius: 999px; padding: 5px 13px; text-decoration: none; white-space: nowrap; }
+@media (max-width: 720px) { .nav .links { display: none; } }
+
+/* ---------- type scale ---------- */
+.eyebrow { font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+.ink .eyebrow, .ink2 .eyebrow { color: var(--accent-ink); }
+.paper .eyebrow, .paper2 .eyebrow { color: var(--accent-paper); }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h2 { font-size: clamp(40px, 6.4vw, 80px); line-height: 1.04; letter-spacing: -.035em; font-weight: 700; }
+h3 { font-size: 21px; line-height: 1.25; letter-spacing: -.01em; font-weight: 600; }
+.lede { font-size: clamp(19px, 2.1vw, 24px); line-height: 1.38; letter-spacing: -.01em; font-weight: 500; max-width: 34em; margin: 0; }
+.ink .lede, .ink2 .lede { color: var(--ink-muted); }
+.paper .lede, .paper2 .lede { color: var(--paper-muted); }
+.lede b { font-weight: 600; }
+.ink .lede b, .ink2 .lede b { color: var(--ink-text); }
+.paper .lede b, .paper2 .lede b { color: var(--paper-text); }
+.head { display: grid; gap: 18px; margin-bottom: clamp(44px, 6vw, 72px); }
+.center { text-align: center; justify-items: center; }
+.center .lede { margin-inline: auto; }
+
+/* ---------- hero ---------- */
+.hero { padding-block: clamp(64px, 10vw, 128px) clamp(56px, 8vw, 104px); text-align: center; overflow: hidden; }
+.hero .version { font-size: 14px; color: var(--ink-muted); display: inline-flex; gap: 8px; align-items: center; }
+.hero .version i { width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: block; }
+.hero h1 { font-size: clamp(76px, 15vw, 184px); line-height: .92; letter-spacing: -.05em; font-weight: 700; margin-top: 18px;
+  background: linear-gradient(180deg, #ffffff 30%, #9b9bf3 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .tag { font-size: clamp(21px, 2.8vw, 32px); line-height: 1.22; letter-spacing: -.02em; font-weight: 600; max-width: 22em; margin: 22px auto 0; color: var(--ink-text); }
+.ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
+.btn { font: 500 17px var(--ui); border-radius: 999px; padding: 12px 24px; text-decoration: none; display: inline-block; }
+.btn.solid { background: var(--accent-paper); color: #fff; }
+.btn.ghost { border: 1px solid var(--accent-ink); color: var(--accent-ink); }
+.btn:focus-visible, .pillbtn:focus-visible, .tab:focus-visible, .copy:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+
+.oneliner { margin: clamp(56px, 8vw, 96px) auto 0; display: inline-grid; text-align: left; font-family: var(--mono); font-size: clamp(17px, 3.6vw, 44px); line-height: 1.4; letter-spacing: -.02em; max-width: 100%; overflow-x: auto; }
+.oneliner .c { color: var(--k-comment); }
+.oneliner .kw { color: var(--k-keyword); }
+.oneliner .n { color: var(--k-number); }
+.oneliner .res { color: var(--success); }
+.oneliner .b1 { color: var(--b1); }
+.hero .caption { font-size: 14px; color: var(--ink-muted); margin-top: 22px; }
+
+/* ---------- array section ---------- */
+.split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 4vw, 56px); align-items: start; }
+.split > * { min-width: 0; }
+.copyblock { display: grid; gap: 14px; }
+.copyblock p { margin: 0; color: var(--paper-muted); font-size: 17px; max-width: 34em; }
+.copyblock p b { color: var(--paper-text); font-weight: 600; }
+.codecard { background: var(--nb-editor); color: var(--k-text); border-radius: 18px; padding: 22px 24px; font: 14px/1.65 var(--mono); white-space: pre; overflow-x: auto; }
+.codecard .err { color: var(--danger); }
+.codecard .ok { color: var(--success); }
+@media (max-width: 820px) { .split { grid-template-columns: 1fr; } }
+
+/* ---------- notebook window ---------- */
+.win { background: var(--nb-surface); color: var(--nb-text); border-radius: 16px; overflow: hidden; box-shadow: 0 40px 90px -30px rgba(141,140,240,.35), 0 0 0 1px rgba(255,255,255,.07); }
+.browser { height: 42px; background: var(--nb-chrome); display: flex; align-items: center; gap: 14px; padding: 0 14px; }
+.lights { display: flex; gap: 7px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: var(--nb-pill); display: block; }
+.url { flex: 1; max-width: 420px; margin: 0 auto; height: 26px; border-radius: 8px; background: var(--nb-pill); color: var(--nb-muted); font-size: 12px; display: grid; place-items: center; }
+.sp { width: 47px; }
+.appbar { height: 48px; display: flex; align-items: center; gap: 16px; padding: 0 16px; border-bottom: 1px solid var(--nb-soft); font-size: 12px; }
+.brand { font-weight: 650; font-size: 15px; } .brand small { font-weight: 400; color: var(--nb-muted); font-size: 13px; margin-left: 6px; }
+.status { color: var(--nb-muted); margin-left: auto; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.status i { width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: block; }
+.status.busy i { background: #e0b35c; animation: pulse .8s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+.run { background: var(--accent-ink); color: #14141a; border-radius: 7px; height: 28px; padding: 0 12px; display: grid; place-items: center; font-weight: 600; white-space: nowrap; transition: transform .12s; }
+.run.pressed { transform: scale(.93); }
+.crumb { height: 28px; display: flex; align-items: center; padding: 0 16px; font-size: 11.5px; color: var(--nb-muted); border-bottom: 1px solid var(--nb-soft); }
+.crumb b { color: var(--nb-text); font-weight: 500; margin-left: 6px; }
+.editor { background: var(--nb-editor); height: 300px; overflow: auto; font: 13px/1.6 var(--mono); }
+.code { display: grid; grid-template-columns: 44px max-content; padding-block: 10px; min-width: 100%; }
+.gutter { text-align: right; padding-right: 14px; color: var(--nb-subtle); white-space: pre; user-select: none; }
+.src { white-space: pre; color: var(--k-text); padding-right: 16px; }
+.tk-kw, .tk-mem { color: var(--k-keyword); } .tk-str { color: var(--k-string); } .tk-com { color: var(--k-comment); } .tk-num { color: var(--k-number); }
+.br1 { color: var(--b1); } .br2 { color: var(--b2); } .br3 { color: var(--b3); }
+.caret { display: inline-block; width: 2px; height: 1.15em; background: var(--accent-ink); vertical-align: -.2em; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.outbar { height: 32px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-top: 1px solid var(--nb-border); border-bottom: 1px solid var(--nb-soft); font-size: 11px; }
+.outbar .lbl { letter-spacing: .1em; color: var(--nb-muted); font-weight: 600; }
+.outbar .res { margin-left: auto; color: var(--success); font-size: 12px; font-variant-numeric: tabular-nums; }
+.outbar .res.err { color: var(--danger); }
+.out { height: 220px; overflow: auto; padding: 12px 16px; font: 13px/1.6 var(--mono); white-space: pre; color: var(--nb-text); }
+.out .stderr { color: var(--danger); }
+.foot { height: 30px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 16px; font-size: 11px; color: var(--nb-muted); border-top: 1px solid var(--nb-soft); white-space: nowrap; overflow: hidden; }
+@media (max-width: 560px) { .foot span:last-child, .crumb { display: none; } .editor { height: 260px; } }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 28px; }
+.tab { font: 500 14px var(--ui); color: var(--ink-muted); background: transparent; border: 1px solid var(--ink-line); border-radius: 999px; padding: 8px 16px; cursor: pointer; position: relative; overflow: hidden; }
+.tab:hover { color: var(--ink-text); }
+.tab[aria-selected="true"] { color: var(--ink-text); border-color: var(--accent-ink); }
+.tab .bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--accent-ink); }
+.scenecap { text-align: center; color: var(--ink-muted); font-size: 15px; margin: 18px auto 0; max-width: 46em; min-height: 3em; }
+.scenecap b { color: var(--ink-text); font-weight: 600; }
+
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); margin-top: clamp(56px, 7vw, 88px); border-top: 1px solid var(--ink-line); padding-top: 32px; }
+.trio > div { display: grid; gap: 8px; align-content: start; }
+.trio p { margin: 0; color: var(--ink-muted); font-size: 15px; }
+.trio code { color: var(--ink-text); font-size: 13.5px; }
+@media (max-width: 820px) { .trio { grid-template-columns: 1fr; } }
+
+/* ---------- models tiles ---------- */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.tile { background: var(--paper-2); border-radius: 24px; padding: clamp(24px, 3vw, 36px); display: grid; gap: 12px; align-content: start; min-width: 0; }
+.tile .k { font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--accent-paper); }
+.tile p { margin: 0; color: var(--paper-muted); font-size: 16px; }
+.tile pre { margin: 6px 0 0; background: var(--paper); border-radius: 12px; padding: 14px 16px; font: 12.5px/1.6 var(--mono); color: var(--paper-text); overflow-x: auto; }
+.tile pre .c { color: #6c7986; } .tile pre .kw { color: #ad3da4; }
+@media (max-width: 820px) { .tiles { grid-template-columns: 1fr; } }
+
+/* ---------- printed output gallery ---------- */
+.prints { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.print { grid-column: span 2; background: var(--ink-2); border: 1px solid var(--ink-line); border-radius: 20px; padding: 22px; display: grid; gap: 14px; align-content: space-between; min-width: 0; }
+.print.wide { grid-column: span 3; }
+.print .call { font: 13px var(--mono); color: var(--k-comment); }
+.print .shown { font: 600 clamp(15px, 1.7vw, 19px)/1.5 var(--mono); color: var(--ink-text); white-space: pre; overflow-x: auto; }
+.print .shown.big { font-size: clamp(30px, 4vw, 48px); letter-spacing: -.02em; line-height: 1.1; }
+@media (max-width: 900px) { .prints { grid-template-columns: 1fr; } .print, .print.wide { grid-column: auto; } }
+
+/* ---------- analogy ---------- */
+.analogy { font-family: var(--display); font-weight: 700; font-size: clamp(40px, 8vw, 104px); letter-spacing: -.045em; line-height: 1; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: .1em .3em; }
+.analogy .op { color: #c7c7cc; font-weight: 500; }
+.analogy .ans { color: var(--accent-paper); }
+.scorebar { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; margin-top: 26px; font: 14px var(--mono); color: var(--paper-muted); font-variant-numeric: tabular-nums; }
+.scorebar b { color: var(--paper-text); font-weight: 600; }
+.feeds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); margin-top: clamp(56px, 7vw, 88px); }
+.feeds > div { display: grid; gap: 8px; align-content: start; }
+.feeds p { margin: 0; color: var(--paper-muted); font-size: 15px; }
+@media (max-width: 820px) { .feeds { grid-template-columns: 1fr; } }
+
+/* ---------- facts band ---------- */
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; text-align: center; }
+.fact { display: grid; gap: 6px; }
+.fact .num { font-family: var(--display); font-size: clamp(52px, 7vw, 88px); font-weight: 700; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #ffffff 20%, #9b9bf3 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.fact .lbl { color: var(--ink-muted); font-size: 15px; }
+@media (max-width: 820px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 44px; } }
+
+/* ---------- audiences ---------- */
+.who { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.who > div { background: var(--paper); border-radius: 24px; padding: 30px; display: grid; gap: 10px; align-content: start; }
+.who p { margin: 0; color: var(--paper-muted); font-size: 16px; }
+.who code { font-size: 14px; color: var(--paper-text); }
+@media (max-width: 820px) { .who { grid-template-columns: 1fr; } }
+
+/* ---------- get started ---------- */
+.starts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.start { background: var(--ink-2); border: 1px solid var(--ink-line); border-radius: 24px; padding: 28px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.start p { margin: 0; color: var(--ink-muted); font-size: 15px; }
+.term { position: relative; background: var(--nb-editor); border-radius: 12px; padding: 16px 18px; font: 13.5px/1.65 var(--mono); color: var(--k-text); white-space: pre; overflow-x: auto; }
+.term .c { color: var(--k-comment); } .term .s { color: var(--k-string); }
+.copy { position: absolute; top: 10px; right: 10px; font: 500 12px var(--ui); color: var(--nb-muted); background: var(--nb-pill); border: 1px solid var(--nb-border); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+.morelinks { display: flex; gap: 12px 28px; flex-wrap: wrap; justify-content: center; margin-top: 44px; font-size: 17px; }
+.morelinks a { color: var(--accent-ink); text-decoration: none; }
+.morelinks a:hover { text-decoration: underline; }
+@media (max-width: 820px) { .starts { grid-template-columns: 1fr; } }
+
+/* ---------- notebook to xcode (text only) ---------- */
+.why { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(28px, 4vw, 48px) clamp(28px, 5vw, 72px); }
+.why > div { display: grid; gap: 8px; align-content: start; }
+.why p { margin: 0; color: var(--paper-muted); font-size: 16.5px; max-width: 34em; }
+.why code { color: var(--paper-text); font-size: 14.5px; }
+.whylink { margin-top: 40px; font-size: 17px; }
+.whylink a { color: var(--accent-paper); text-decoration: none; }
+.whylink a:hover { text-decoration: underline; }
+@media (max-width: 820px) { .why { grid-template-columns: 1fr; } }
+
+/* ---------- model catalog ---------- */
+.catalog { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-top: clamp(56px, 7vw, 88px); }
+.family { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.family h3 { font-size: 17px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--paper-line); }
+.family h3 code { font-size: 12px; font-weight: 500; color: var(--accent-paper); }
+.family dl { margin: 0; display: grid; gap: 14px; }
+.family dt { font: 600 14.5px var(--mono); color: var(--paper-text); }
+.family dd { margin: 2px 0 0; font-size: 14.5px; color: var(--paper-muted); line-height: 1.45; }
+.protonote { margin: 28px 0 0; font-size: 15px; color: var(--paper-muted); max-width: 52em; }
+.protonote code { color: var(--paper-text); }
+@media (max-width: 900px) { .catalog { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .catalog { grid-template-columns: 1fr; } }
+
+/* ---------- concurrency ---------- */
+.points { display: grid; gap: 22px; }
+.points div { display: grid; gap: 4px; }
+.points p { margin: 0; color: var(--paper-muted); font-size: 16px; }
+.points code { color: var(--paper-text); font-size: 14px; }
+
+/* ---------- worked examples ---------- */
+.ink .analogy .op { color: #55555e; }
+.ink .analogy .ans { color: var(--accent-ink); }
+.ink .scorebar { color: var(--ink-muted); }
+.ink .scorebar b { color: var(--ink-text); }
+.pipeline { margin-top: clamp(64px, 8vw, 104px); display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(20px, 3vw, 40px); align-items: start; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; counter-reset: step; }
+.steps button { width: 100%; text-align: left; font: inherit; color: var(--ink-muted); background: transparent; border: 0; border-radius: 14px; padding: 14px 16px; cursor: pointer; display: grid; grid-template-columns: 28px 1fr; gap: 2px 12px; }
+.steps button::before { counter-increment: step; content: counter(step); grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--ink-line); display: grid; place-items: center; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.steps button strong { color: var(--ink-text); font-weight: 600; font-size: 17px; }
+.steps button span { font-size: 14.5px; line-height: 1.45; display: none; }
+.steps button:hover { background: var(--ink-2); }
+.steps button[aria-selected="true"] { background: var(--ink-2); }
+.steps button[aria-selected="true"]::before { background: var(--accent-ink); border-color: var(--accent-ink); color: #14141a; }
+.steps button[aria-selected="true"] span { display: block; }
+.steps button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.stepcode { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); background: var(--nb-editor); border-radius: 18px; overflow: hidden; min-width: 0; box-shadow: 0 0 0 1px rgba(255,255,255,.06); }
+.stepcode .bar { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: var(--nb-chrome); font-size: 12px; color: var(--nb-muted); }
+.stepcode .bar b { color: var(--nb-text); font-weight: 500; }
+.stepcode pre { margin: 0; padding: 18px 20px; font: 13px/1.65 var(--mono); color: var(--k-text); white-space: pre; overflow-x: auto; min-height: 300px; }
+.boundary { margin-top: 28px; text-align: center; color: var(--ink-muted); font-size: 16px; max-width: 46em; margin-inline: auto; }
+.boundary b { color: var(--ink-text); font-weight: 600; }
+.examples { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-top: clamp(56px, 7vw, 88px); }
+.example { background: var(--ink-2); border: 1px solid var(--ink-line); border-radius: 18px; padding: 20px; display: grid; gap: 8px; align-content: start; text-decoration: none; min-width: 0; transition: border-color .2s; }
+.example:hover { border-color: var(--accent-ink); }
+.example:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.example small { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--accent-ink); font-weight: 600; }
+.example strong { font-size: 16px; font-weight: 600; color: var(--ink-text); }
+.example span { font-size: 14px; color: var(--ink-muted); line-height: 1.45; }
+@media (max-width: 1000px) { .examples { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 820px) { .pipeline { grid-template-columns: 1fr; } .stepcode { position: static; } }
+@media (max-width: 520px) { .examples { grid-template-columns: 1fr; } }
+
+/* ---------- server ---------- */
+.server { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 20px; align-items: start; }
+.server > * { min-width: 0; }
+.server .codecard, .server .term { font-size: 12.5px; border-radius: 16px; padding: 20px 22px; }
+.server .stack { display: grid; gap: 14px; }
+.server .label { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; font-weight: 600; color: var(--paper-muted); }
+.term .p { color: var(--success); } .term .k { color: var(--b3); } .term .n { color: var(--k-number); }
+.serverpoints { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); margin-top: clamp(48px, 6vw, 72px); }
+.serverpoints > div { display: grid; gap: 8px; align-content: start; }
+.serverpoints p { margin: 0; color: var(--paper-muted); font-size: 15px; }
+.serverpoints code { color: var(--paper-text); font-size: 13.5px; }
+.serverlink { margin-top: 36px; font-size: 17px; }
+.serverlink a { color: var(--accent-paper); text-decoration: none; }
+.serverlink a:hover { text-decoration: underline; }
+.server.one { grid-template-columns: 1fr; gap: 14px; }
+.server.one .codecard { margin: 0; font-size: 13.5px; padding: 24px 26px; }
+.server.one .note { margin: 0; color: var(--paper-muted); font-size: 16px; }
+@media (max-width: 900px) { .server, .serverpoints { grid-template-columns: 1fr; } }
+
+/* ---------- learn ---------- */
+.lesson { background: var(--paper); border-radius: 28px; padding: clamp(24px, 4vw, 48px); display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(24px, 4vw, 56px); margin-bottom: clamp(56px, 7vw, 88px); }
+.lesson > div { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.lesson .crumbline { font-size: 12.5px; color: var(--paper-muted); }
+.lesson .crumbline b { color: var(--paper-text); font-weight: 500; }
+.lesson h3 { font-size: clamp(24px, 3vw, 32px); letter-spacing: -.02em; }
+.lesson p { margin: 0; color: var(--paper-muted); font-size: 16px; }
+.lesson p b { color: var(--paper-text); font-weight: 600; }
+.lesson .codecard { font-size: 13px; padding: 18px 20px; border-radius: 14px; }
+.hist { display: grid; gap: 8px; }
+.hist h4 { margin: 0; font-size: 14px; font-weight: 600; color: var(--paper-text); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.hist h4 span { font: 500 12.5px var(--mono); color: var(--paper-muted); font-variant-numeric: tabular-nums; }
+.hist ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.hist li { display: grid; grid-template-columns: 44px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font: 12.5px var(--mono); color: var(--paper-muted); font-variant-numeric: tabular-nums; }
+.hist li i { display: block; height: 16px; border-radius: 4px; background: #c7c7cc; min-width: 2px; }
+.hist.bell li i { background: var(--accent-paper); }
+.hist li em { font-style: normal; text-align: right; color: var(--paper-text); }
+.hist + .hist { margin-top: 18px; }
+.subhead { font-family: var(--display); font-size: clamp(28px, 3.6vw, 40px); font-weight: 700; letter-spacing: -.03em; margin: 0 0 28px; }
+@media (max-width: 820px) { .lesson { grid-template-columns: 1fr; } }
+
+footer { background: var(--paper); color: var(--paper-muted); font-size: 12px; padding-block: 24px 32px; }
+footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+footer a { color: var(--paper-text); }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Quiver">
+  <div class="wrap">
+    <a class="name" href="#overview">Quiver</a>
+    <div class="links"><a href="#overview">Overview</a><a href="#notebook">Notebook</a><a href="#xcode">Xcode</a><a href="#models">Models</a><a href="#concurrency">Concurrency</a><a href="#examples">Worked examples</a><a href="#server">Server</a><a href="#learn">Learn</a><a href="#start">Get started</a></div>
+    <a class="pillbtn" href="#start">Install</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="band ink hero" id="overview">
+  <div class="wrap">
+    <div class="version"><i></i>Quiver 1.6.0 · Apache 2.0</div>
+    <h1>Quiver</h1>
+    <p class="tag">A Swift package for statistics, linear algebra and machine learning.</p>
+    <div class="ctas">
+      <a class="btn solid" href="#start">Get started</a>
+      <a class="btn ghost" href="#notebook">See the Notebook</a>
+    </div>
+    <div class="oneliner" aria-label="Swift code: let position equals 3.0, 4.0; position.magnitude returns 5.0"><span><span class="kw">let</span> position = <span class="b1">[</span><span class="n">3.0</span>, <span class="n">4.0</span><span class="b1">]</span></span><span>position.<span class="kw">magnitude</span>  <span class="res">// 5.0</span></span></div>
+  </div>
+</header>
+
+<!-- It's just an Array -->
+<section class="band paper">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">How it works</div>
+      <h2>It’s just an Array.</h2>
+      <p class="lede">Quiver adds numerical methods directly to Swift’s standard <b>Array</b> through extensions. A plain <code>[Double]</code> gains the math <b>without becoming a different type</b>, so it still flows straight into SwiftUI, Swift Charts and SwiftData.</p>
+    </div>
+    <div class="split">
+      <div class="copyblock">
+        <h3>The compiler knows what fits.</h3>
+        <p>Swift’s type system validates math at compile time. Constrained extensions expose operations only on compatible types, while <code>[Double]</code> and <code>[[Double]]</code> define vectors and matrices as plain arrays, with dimensions checked when the code runs.</p>
+      </div>
+      <div class="codecard" role="img" aria-label="Code: a Swift array v holding 3.0 and 4.0; v.normalized returns 0.6, 0.8, and v.normalized.asFractions() returns 3/5, 4/5"><span style="color:var(--k-keyword)">import</span> Quiver
+
+<span style="color:var(--k-keyword)">let</span> v = [<span style="color:var(--k-number)">3.0</span>, <span style="color:var(--k-number)">4.0</span>]
+
+<span style="color:var(--k-comment)">// Direction: a unit vector (length of 1) pointing the same way</span>
+v.<span style="color:var(--k-keyword)">normalized</span>  <span class="ok">// [0.6, 0.8]</span>
+
+<span style="color:var(--k-comment)">// See the rational form</span>
+v.<span style="color:var(--k-keyword)">normalized</span>.<span style="color:var(--k-keyword)">asFractions</span>()  <span class="ok">// [3/5, 4/5]</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Notebook -->
+<section class="band ink" id="notebook">
+  <div class="wrap">
+    <div class="head center">
+      <div class="eyebrow">Quiver Notebook</div>
+      <h2>Write it. Run it.<br>Ship it.</h2>
+      <p class="lede">A browser-based Swift IDE for testing and evaluating Quiver models before they move into an app. <b>Quiver and Foundation are already imported</b>, teaching datasets are bundled, and documentation appears inline for every symbol.</p>
+    </div>
+
+    <div class="win" aria-label="Animated recreation of the Quiver Notebook window">
+      <div class="browser"><div class="lights"><i></i><i></i><i></i></div><div class="url">localhost:8080</div><div class="sp"></div></div>
+      <div class="appbar">
+        <div class="brand">Quiver<small>Notebook</small></div>
+        <div class="status" id="status"><i></i><span id="stext">Swift · Ready</span></div>
+        <div class="run" id="runbtn">▶&nbsp; Run</div>
+      </div>
+      <div class="crumb">Examples ›<b id="crumb">Cosine Similarity</b></div>
+      <div class="editor" id="editor"><div class="code"><div class="gutter" id="gutter"></div><div class="src" id="src"></div></div></div>
+      <div class="outbar"><span class="lbl">OUTPUT</span><span class="res" id="res"></span></div>
+      <div class="out" id="out"></div>
+      <div class="foot"><span>Running locally on Quiver 1.6.0. No code is sent to the cloud.</span><span id="pos">Line 1, Col 1</span></div>
+    </div>
+
+    <div class="tabs" role="tablist" id="tabs" aria-label="Notebook examples"></div>
+    <p class="scenecap" id="scenecap"></p>
+
+    <div class="trio">
+      <div><h3>Bundled datasets</h3><p>Iris, Titanic, California housing, GloVe word vectors and more, each loading by name in one line. <code>toPanel()</code> hands back a table of named columns.</p></div>
+      <div><h3>Documentation inline</h3><p>Hover any Quiver symbol for its signature and summary, pulled from the same documentation that ships with the package. Autocomplete and signature help fill in the rest.</p></div>
+      <div><h3>Stays on the Mac</h3><p>The server answers on <code>127.0.0.1</code> with a per-launch key. No accounts, no telemetry, no analytics.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Notebook to Xcode -->
+<section class="band paper2" id="xcode">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">From the Notebook to Xcode</div>
+      <h2>Prototype here.<br>Ship it there.</h2>
+      <p class="lede">Code written in the Notebook is <b>ordinary Swift</b>. Copy it into an Xcode project, add Quiver as a package dependency, and it compiles unchanged for iPhone, Apple Watch, Vision Pro or the Mac.</p>
+    </div>
+    <div class="why">
+      <div><h3>Same package, same release.</h3><p>The Notebook builds every snippet against the published Quiver package, pinned to the release shown in its footer. Code that compiles in the Notebook compiles in Xcode against that same release.</p></div>
+      <div><h3>The datasets stay in the Notebook.</h3><p>The teaching datasets are part of the Notebook, not the Quiver package, so the package an app ships stays small with zero dependencies. <code>toPanel()</code> hands back a Quiver <code>Panel</code>, so every line after the load is plain Quiver.</p></div>
+      <div><h3>Learning on device.</h3><p>Beyond CSV files, training data can also come from the device itself. This includes motion, location, HealthKit samples and activity from Apple Watch. The <a href="documentation/quiver/true-effort-score" style="color:var(--accent-paper);text-decoration:none">True Effort Score</a> model is a good example. This solution measures heart rate, pace, cadence, and grade during a run and scores the effort on Apple Watch.</p></div>
+    </div>
+    <p class="whylink"><a href="documentation/quiver/notebook-datasets">Read about Notebook Datasets ›</a></p>
+  </div>
+</section>
+
+<!-- Models -->
+<section class="band paper" id="models">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Models</div>
+      <h2>Models are always ready.</h2>
+      <p class="lede">There is no empty or unfitted state. <b>The <code>fit</code> method returns a trained model</b>, so calling <code>predict</code> on something untrained cannot compile.</p>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="k">Trained on creation</div><h3>fit is the only way in.</h3><p>No runtime error for “model not fitted”. The situation cannot arise.</p>
+<pre><span class="kw">let</span> model = KNearestNeighbors.fit(
+    features: trainingData, labels: labels, k: <span class="kw">3</span>)
+<span class="kw">let</span> predictions = model.predict(newData)</pre></div>
+      <div class="tile"><div class="k">Immutable</div><h3>Learned parameters never drift.</h3><p>Coefficients, centroids and learned parameters cannot change once the model exists. A whole category of accidental-retraining bugs disappears.</p></div>
+      <div class="tile"><div class="k">Codable</div><h3>Train once, ship it.</h3><p>Every stored property is a basic Swift type, so models encode to JSON with no extra code. Save one to disk and load it on the next launch without retraining.</p></div>
+      <div class="tile"><div class="k">Failure in the return type</div><h3>The signature says how much care a fit needs.</h3>
+<pre><span class="kw">try</span> LinearRegression.fit(...)    <span class="c">// can fail</span>
+KNearestNeighbors.fit(...)       <span class="c">// cannot fail</span>
+[Double].polyfit(...)            <span class="c">// nil on failure</span></pre></div>
+    </div>
+
+    <div class="catalog">
+      <div class="family"><h3>Regression <code>Regressor</code></h3><dl>
+        <div><dt>LinearRegression</dt><dd>Ordinary least squares, with a full summary of coefficients, standard errors and confidence intervals.</dd></div>
+        <div><dt>Ridge</dt><dd>Linear regression with an L2 penalty that keeps correlated features in check.</dd></div>
+        <div><dt>GradientDescent</dt><dd>Fits a linear model iteratively, one step down the loss at a time.</dd></div>
+        <div><dt>Polynomial</dt><dd>Curve fitting with <code>polyfit</code>, plus analytic derivatives.</dd></div>
+      </dl></div>
+      <div class="family"><h3>Classification <code>Classifier</code></h3><dl>
+        <div><dt>LogisticRegression</dt><dd>Predicts class probabilities through the logistic function.</dd></div>
+        <div><dt>GaussianNaiveBayes</dt><dd>A probabilistic classifier built on per-class feature statistics.</dd></div>
+        <div><dt>KNearestNeighbors</dt><dd>Labels a point by the vote of its closest training examples.</dd></div>
+      </dl></div>
+      <div class="family"><h3>Unsupervised</h3><dl>
+        <div><dt>KMeans</dt><dd>Groups unlabeled points into <i>k</i> clusters, reproducible with a seed.</dd></div>
+        <div><dt>PCA</dt><dd>Reduces dimensions along the directions of greatest variance.</dd></div>
+      </dl></div>
+      <div class="family"><h3>Workflow</h3><dl>
+        <div><dt>StandardScaler · Pipeline</dt><dd>Standardize features and chain preprocessing with a model.</dd></div>
+        <div><dt>ResidualModel</dt><dd>Wraps any regressor and reports the gap between prediction and observation.</dd></div>
+        <div><dt>ConfusionMatrix · ClassificationReport</dt><dd>Evaluation that prints as a readable report.</dd></div>
+      </dl></div>
+    </div>
+    <p class="protonote">Models share their prediction interface through two protocols. Code written against <code>Regressor</code> accepts <code>LinearRegression</code>, <code>Ridge</code> and <code>GradientDescent</code> interchangeably, and code written against <code>Classifier</code> does the same for every classifier.</p>
+  </div>
+</section>
+
+<!-- Output -->
+<section class="band ink" id="output">
+  <div class="wrap">
+    <div class="head center">
+      <div class="eyebrow">Clean output by default</div>
+      <h2>Print anything.<br>Read it at a glance.</h2>
+      <p class="lede">Every model and result type prints a readable summary. Vectors and matrices <b>render in textbook form</b>, and the underlying values are never touched.</p>
+    </div>
+    <div class="prints">
+      <div class="print wide"><div class="call">print(v.asFractions().asExpression())</div><div class="shown">⎡ 3/5 ⎤
+⎢ 3/4 ⎥
+⎣ 1/2 ⎦</div></div>
+      <div class="print wide"><div class="call">print(features.asExpression())</div><div class="shown">⎡ 720  15000 ⎤
+⎢ 650  78000 ⎥
+⎢ 580  42000 ⎥
+⎣ 710   8000 ⎦</div></div>
+      <div class="print"><div class="call">print(p)</div><div class="shown big">2x² + 3x + 1</div></div>
+      <div class="print"><div class="call">print(f)</div><div class="shown big">3/5</div></div>
+      <div class="print"><div class="call">print(cm)</div><div class="shown">TP: 3  FP: 1
+TN: 3  FN: 1
+(accuracy: 75.0%)</div></div>
+      <div class="print wide"><div class="call">print(model)</div><div class="shown">KNearestNeighbors: k=3, euclidean,
+6 training points, 2 features</div></div>
+      <div class="print wide"><div class="call">print(results)</div><div class="shown">KMeans: 2 clusters, 4 points,
+converged in 2 iterations (inertia: 0.77)</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Concurrency -->
+<section class="band paper" id="concurrency">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Concurrency</div>
+      <h2>Train off the main thread.</h2>
+      <p class="lede">Fitted models in Quiver are <b>Sendable</b>. A fitted model is an immutable value, so it crosses task boundaries with nothing to lock and nothing to coordinate.</p>
+    </div>
+    <div class="split">
+      <div class="codecard" role="img" aria-label="Code: a main-actor observable view model that fits KMeans in a detached task and stores the result for the view"><span style="color:var(--k-keyword)">@Observable</span>
+<span style="color:var(--k-keyword)">@MainActor</span>
+<span style="color:var(--k-keyword)">final class</span> WorkoutAnalysisViewModel {
+    <span style="color:var(--k-keyword)">var</span> model: KMeans?
+
+    <span style="color:var(--k-comment)">// Fits off the main thread and stores the result for the view.</span>
+    <span style="color:var(--k-keyword)">func</span> train(from sessions: [[Double]]) <span style="color:var(--k-keyword)">async</span> {
+        model = <span style="color:var(--k-keyword)">await</span> Task.<span style="color:var(--k-keyword)">detached</span> {
+            KMeans.<span style="color:var(--k-keyword)">fit</span>(data: sessions, k: <span style="color:var(--k-number)">3</span>, seed: <span style="color:var(--k-number)">42</span>)
+        }.value
+    }
+}</div>
+      <div class="points">
+        <div><h3>Long fits stay off the interface.</h3><p>Run a fit on a detached task and await the trained model back. The interface keeps drawing while training runs.</p></div>
+        <div><h3>Predict from many tasks at once.</h3><p>Prediction is a pure read against immutable parameters, so any number of concurrent tasks can call <code>predict</code> without serialization.</p></div>
+        <div><h3>Divide the work across cores.</h3><p>Pairwise comparisons and other heavy operations split cleanly with <code>withTaskGroup</code>, and the results update SwiftUI when training completes.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Worked examples -->
+<section class="band ink" id="examples">
+  <div class="wrap">
+    <div class="head center">
+      <div class="eyebrow">Worked examples</div>
+      <h2>From a document to an answer.</h2>
+      <p class="lede">Retrieval-augmented context, commonly known as RAG, in six steps. Quiver handles the search so the app can decide what to do with what it finds.</p>
+    </div>
+    <div class="pipeline" style="margin-top:0">
+      <ol class="steps" id="steps" role="tablist" aria-label="Retrieval steps"></ol>
+      <div class="stepcode"><div class="bar"><b id="stepfile">Retrieving Context for Generation</b></div><pre id="stepcode"></pre></div>
+    </div>
+    <p class="boundary"><b>Quiver returns a String and stops.</b> The same context block feeds an on-device model on a phone, a hosted model behind an API, or a model running on a server.</p>
+
+    <div class="examples">
+      <a class="example" href="documentation/quiver/panel-workflows"><small>Workflow</small><strong>Panel Workflows</strong><span>Split, summarize, scale, fit, predict and chart, one method call per step.</span></a>
+      <a class="example" href="documentation/quiver/semantic-search"><small>Search</small><strong>Semantic Search</strong><span>Tokenization, embeddings and cosine similarity compare meaning, not keywords.</span></a>
+      <a class="example" href="documentation/quiver/embedding-sources"><small>Search</small><strong>Embedding Sources</strong><span>One protocol, text in and vector out, makes any embedding source swappable.</span></a>
+      <a class="example" href="documentation/quiver/retrieving-context-for-generation"><small>RAG</small><strong>Retrieving Context for Generation</strong><span>Chunk, embed once, rank, gate and assemble a cited context block.</span></a>
+      <a class="example" href="documentation/quiver/true-effort-score"><small>watchOS</small><strong>True Effort Score</strong><span>Ridge regression plus nearest neighbors, learning a runner's effort on the device.</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- Audiences -->
+<!-- Server -->
+<section class="band paper" id="server">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Server-side Swift</div>
+      <h2>On the server, too.</h2>
+      <p class="lede">Quiver has zero dependencies, so the search code that runs on an iPhone runs inside a <b>Vapor</b> app unchanged. The <code>[Double]</code> Vapor decodes from JSON is the same <code>[Double]</code> Quiver computes on, with no subprocess and no second runtime.</p>
+    </div>
+    <div class="server one">
+      <div class="label">Vapor + Quiver · a complete semantic search server</div>
+      <pre class="codecard" id="vaporcode" role="img" aria-label="A complete Vapor app: three shoes and four words as vectors in a shared cushion and speed space, and a search route that turns a query into a vector and ranks the shoes by direction"></pre>
+    </div>
+    <div class="serverpoints">
+      <div><h3>The logic for a Swift vector database</h3><p>This example ranks a small dictionary. For a catalog that grows, <code>EmbeddingIndex</code> stores each vector beside its label, ranks a query against all of them by cosine similarity, and saves as a <code>Codable</code> snapshot. Those are the core operations of a vector store, written in Swift.</p></div>
+      <div><h3>Swap the vectors, keep the ranking</h3><p>Here both tables are made by hand. A sentence model, plugged in through Quiver’s <code>Embedder</code> protocol, would produce the vectors instead, and the ranking with <code>nearest(to:k:)</code> stays the same.</p></div>
+      <div><h3>The retrieval half of RAG</h3><p>A <code>/search</code> route is retrieval. Feed its results to a language model as context and the server has a full RAG pipeline, with Quiver handling the search.</p></div>
+      <div><h3>Built on the CPU</h3><p>Quiver runs on the CPU with plain Swift arrays and no dependencies, so the same code runs unchanged on Apple Watch, iPhone and the Mac. Heavy work spreads across every core with Swift concurrency.</p></div>
+    </div>
+    <p class="serverlink"><a href="https://github.com/waynewbishop/quiver-demo-vapor" target="_blank" rel="noopener">See the Vapor demo on GitHub ›</a></p>
+  </div>
+</section>
+
+<section class="band paper2" id="learn">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Learn</div>
+      <h2>Learn machine learning in Swift.</h2>
+      <p class="lede">One of Quiver’s goals is to <b>grow machine learning education on Swift</b>. The math stays visible at every step, models expose what they learned, and a classroom needs nothing more than a Mac and the Notebook.</p>
+    </div>
+    <div class="lesson">
+      <div>
+        <div class="crumbline">Notebook › Examples › <b>The Central Limit Theorem in Action</b></div>
+        <h3>See the theorem in action.</h3>
+        <p>Start with a skewed population, draw a thousand small samples from it, and bin their means. The underlying data is nowhere near normal, but the sample means assemble into a classic bell curve. With a fixed seed, every student in the room produces the exact same histogram on their first run.</p>
+        <div class="codecard" role="img" aria-label="Code: seeded exponential population of 10,000 values, then 1,000 sample means of size 50, then a 5-bin histogram"><span style="color:var(--k-comment)">// Seeded so the histogram comes out identically on every run.</span>
+<span style="color:var(--k-keyword)">var</span> rng = SeededRandomNumberGenerator(seed: <span style="color:var(--k-number)">42</span>)
+
+<span style="color:var(--k-comment)">// A skewed population: rate = 0.5, so the population mean is 2.0.</span>
+<span style="color:var(--k-keyword)">let</span> population = [Double].<span style="color:var(--k-keyword)">randomExponential</span>(
+    <span style="color:var(--k-number)">10_000</span>, rate: <span style="color:var(--k-number)">0.5</span>, using: &amp;rng)
+
+<span style="color:var(--k-comment)">// Draw 1,000 samples of size 50 and record the mean of each.</span>
+<span style="color:var(--k-keyword)">let</span> sampleMeans = population.<span style="color:var(--k-keyword)">samplingDistributionOfMean</span>(
+    sampleSize: <span style="color:var(--k-number)">50</span>, iterations: <span style="color:var(--k-number)">1000</span>, seed: <span style="color:var(--k-number)">42</span>)
+
+<span style="color:var(--k-keyword)">for</span> bin <span style="color:var(--k-keyword)">in</span> sampleMeans.<span style="color:var(--k-keyword)">histogram</span>(bins: <span style="color:var(--k-number)">5</span>) {
+    print(bin.midpoint, bin.count)
+}</div>
+      </div>
+      <div>
+        <div class="hist" aria-label="Population histogram, 5 bins">
+          <h4>Population, 10,000 values <span>mean 2.030 · std 2.050</span></h4>
+          <ol>
+            <li>2.07<i style="width:100%"></i><em>8732</em></li>
+            <li>6.20<i style="width:12.3%"></i><em>1073</em></li>
+            <li>10.34<i style="width:2%"></i><em>171</em></li>
+            <li>14.48<i style="width:.3%"></i><em>22</em></li>
+            <li>18.61<i style="width:0"></i><em>2</em></li>
+          </ol>
+        </div>
+        <div class="hist bell" aria-label="Histogram of 1,000 sample means, 5 bins">
+          <h4>1,000 sample means, n = 50 <span>mean 2.045 · std 0.294</span></h4>
+          <ol>
+            <li>1.34<i style="width:7.7%"></i><em>36</em></li>
+            <li>1.76<i style="width:78.5%"></i><em>369</em></li>
+            <li>2.18<i style="width:100%"></i><em>470</em></li>
+            <li>2.60<i style="width:25.5%"></i><em>120</em></li>
+            <li>3.02<i style="width:1.1%"></i><em>5</em></li>
+          </ol>
+        </div>
+        <p>The sample means center on the population mean, and their spread of 0.294 is the standard error.</p>
+      </div>
+    </div>
+    <p class="subhead">Built to teach. Built to ship.</p>
+    <div class="who">
+      <div><h3>Students</h3><p>The math runs on Swift arrays and every model exposes its learned parameters so the models are never a black box.</p></div>
+      <div><h3>Educators</h3><p>Fork the Notebook, drop examples into <code>examples-custom/</code> and switch to Presenter mode. Each clone is pinned to one Quiver release for the whole semester.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Get started -->
+<section class="band ink" id="start">
+  <div class="wrap">
+    <div class="head center">
+      <div class="eyebrow">Get started</div>
+      <h2>Create something new.</h2>
+      <p class="lede">The documentation includes <b>nearly 70 articles</b> covering concepts, data preparation, training and implementation.</p>
+    </div>
+    <div class="starts">
+      <div class="start"><h3>Add the package</h3><p>Swift Package Manager.</p>
+        <div class="term" id="t1"><button class="copy" type="button" data-copy="t1">Copy</button>dependencies: [
+    .package(url: <span class="s">"https://github.com/waynewbishop/quiver"</span>,
+             from: <span class="s">"1.6.0"</span>)
+]</div></div>
+      <div class="start"><h3>Run the Notebook</h3><p>macOS 15 or newer with Swift 6. Then open <code>localhost:8080</code>.</p>
+        <div class="term" id="t2"><button class="copy" type="button" data-copy="t2">Copy</button>git clone https://github.com/waynewbishop/quiver-notebook
+cd quiver-notebook
+swift run</div></div>
+    </div>
+    <div class="morelinks">
+      <a href="documentation/quiver/">Documentation ›</a>
+      <a href="https://github.com/waynewbishop/quiver-cookbook" target="_blank" rel="noopener">Cookbook ›</a>
+      <a href="https://waynewbishop.github.io/swift-algorithms/" target="_blank" rel="noopener">The companion book ›</a>
+      <a href="https://github.com/waynewbishop/quiver" target="_blank" rel="noopener">GitHub ›</a>
+      <a href="https://github.com/waynewbishop/quiver/pulls" target="_blank" rel="noopener">Contribute ›</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap"><span>Quiver is open source under the Apache 2.0 license. <a href="https://github.com/waynewbishop/quiver/pulls" target="_blank" rel="noopener">Contributions welcome</a>.</span></div>
+</footer>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Code and outputs captured from real Notebook runs on Quiver 1.6.0.
+  const COSINE = `// Cosine similarity measures the angle between two vectors.
+// Near 1.0: aligned. Near 0: orthogonal. Near −1: opposite.
+
+let a = [1.0, 2.0, 3.0]
+let b = [2.0, 4.0, 6.0]   // parallel to a
+let c = [1.0, 0.0, 0.0]   // a very different direction
+
+print("a vs b:", String(format: "%.4f", a.cosineOfAngle(with: b)))
+print("a vs c:", String(format: "%.4f", a.cosineOfAngle(with: c)))`;
+
+  const SCENES = [
+    { name: "Cosine similarity", crumb: "Cosine Similarity", code: COSINE, ms: 1220,
+      out: "a vs b: 1.0000\na vs c: 0.2673",
+      cap: "<b>Vectors are arrays.</b> <code>cosineOfAngle(with:)</code> is a method on <code>[Double]</code>, and hovering it in the Notebook shows its documentation." },
+    { name: "Compiler errors", crumb: "Cosine Similarity", ms: 1432, failed: true,
+      code: COSINE + `\nprint("a vs d:", String(format: "%.4f", a.cosineOfAngle(with: d)))`,
+      out: "line 10:63: error: cannot find 'd' in scope\n10 | print(\"a vs d:\", String(format: \"%.4f\", a.cosineOfAngle(with: d)))\n   |                                                               `- error: cannot find 'd' in scope",
+      cap: "<b>Each run compiles the whole editor as one program.</b> Compiler errors carry line numbers that match the editor, so line 10 in the error is line 10 in the code." },
+    { name: "Panels", crumb: "Untitled", ms: 1278,
+      code: `// A Panel is a table of named columns.
+let applications = Panel([
+    ("creditScore", [720.0, 650.0, 580.0, 710.0]),
+    ("balance",     [15000.0, 78000.0, 42000.0, 8000.0]),
+    ("approved",    [1.0, 0.0, 0.0, 1.0])
+])
+print(applications.head())
+
+// Hand models the shapes they expect.
+let labels = applications.labels("approved")
+let features = applications.toMatrix(columns: ["creditScore", "balance"])
+print("labels:", labels)
+print(features.asExpression())`,
+      out: `   creditScore  balance  approved
+0        720.0  15000.0       1.0
+1        650.0  78000.0       0.0
+2        580.0  42000.0       0.0
+3        710.0   8000.0       1.0
+labels: [1, 0, 0, 1]
+⎡ 720  15000 ⎤
+⎢ 650  78000 ⎥
+⎢ 580  42000 ⎥
+⎣ 710   8000 ⎦`,
+      cap: "<b>A Panel is a table of named columns.</b> In a plain <code>[[Double]]</code>, columns are known only by position, so keeping features and labels lined up through every split and filter is bookkeeping done by hand. A Panel reads data by name and moves every column together, so rows stay aligned. Models still take arrays: <code>labels()</code> and <code>toMatrix(columns:)</code> hand them the exact shapes they expect." },
+    { name: "Datasets", crumb: "Load and Summarize a Bundled Dataset", ms: 1310,
+      code: `guard let iris = Dataset.iris else {
+    print("Couldn't load Dataset.iris.")
+    exit(1)
+}
+
+let panel = iris.toPanel()
+print("shape:", panel.shape)
+print(panel.head(n: 3))
+print(panel.summary())`,
+      out: `shape: (rows: 150, columns: 5)
+   sepal_length  sepal_width  petal_length  petal_width  species
+0           5.1          3.5           1.4          0.2      0.0
+1           4.9          3.0           1.4          0.2      0.0
+2           4.7          3.2           1.3          0.2      0.0
+column        count    mean     std     min     max
+---------------------------------------------------
+sepal_length    150  5.8433  0.8281  4.3000  7.9000
+sepal_width     150  3.0573  0.4359     2.0  4.4000
+petal_length    150  3.7580  1.7653     1.0  6.9000
+petal_width     150  1.1993  0.7622  0.1000  2.5000
+species         150     1.0  0.8192     0.0     2.0`,
+      cap: "<b>Every bundled dataset loads by name.</b> <code>toPanel()</code> returns named columns, and <code>summary()</code> returns a typed <code>PanelSummary</code> that prints as a table." },
+    { name: "Regression", crumb: "Train Test and Score a Regression", ms: 1904,
+      code: `guard let housing = Dataset.californiaHousing else { exit(1) }
+let data = housing.toPanel()
+
+let (train, test) = data.trainTestSplit(testRatio: 0.3, seed: 42)
+print("train rows:", train.shape.rows, " test rows:", test.shape.rows)
+
+let trainFeatures = train.toMatrix(columns: ["median_income"])
+let trainTargets  = train["median_house_value"]
+let testFeatures  = test.toMatrix(columns: ["median_income"])
+let testTargets   = test["median_house_value"]
+
+let model = try LinearRegression.fit(features: trainFeatures, targets: trainTargets)
+print("fitted model:", model.equation())
+
+let predictions = model.predict(testFeatures)
+let r2 = predictions.rSquared(actual: testTargets)
+print("R² on held-out test set:", String(format: "%.3f", r2))`,
+      out: `train rows: 14448  test rows: 6192
+fitted model: y = 43720.45 + 42097.35x
+R² on held-out test set: 0.486`,
+      cap: "<b>Load, split, fit and score</b> on 20,640 rows of California housing data, with a seeded split so every student sees the same numbers." },
+    { name: "Word embeddings", crumb: "Explore Word Embeddings", ms: 1650,
+      code: `// Search by meaning with 50-dimension GloVe word vectors.
+guard let glove = Dataset.glove50d else { exit(1) }
+
+print("closest to paris:")
+for hit in glove.nearest(to: "paris", k: 3) {
+    print("  \\(hit.rank). \\(hit.word)  \\(String(format: "%.2f", hit.score))")
+}
+
+print("king − man + woman:")
+for hit in glove.analogy("king", "man", "woman", k: 3) {
+    print("  \\(hit.rank). \\(hit.word)  \\(String(format: "%.2f", hit.score))")
+}`,
+      out: `closest to paris:
+  1. france  0.80
+  2. brussels  0.78
+  3. amsterdam  0.78
+king − man + woman:
+  1. queen  0.86
+  2. daughter  0.77
+  3. prince  0.76`,
+      cap: "<b>Embeddings are arrays too.</b> Nearest neighbours and analogies run on the same vector methods as everything else." },
+    { name: "Concurrency", crumb: "K-Means Clustering with a Fixed Seed", ms: 1380,
+      code: `// Train off the calling context on a detached task.
+func trainClusters(from data: [[Double]]) async -> KMeans {
+    return await Task.detached {
+        KMeans.fit(data: data, k: 2, seed: 42)
+    }.value
+}
+
+let examples = [[1.0, 2.0], [1.5, 1.8], [8.0, 8.0], [9.0, 8.5]]
+let results = await trainClusters(from: examples)
+print(results)`,
+      out: "KMeans: 2 clusters, 4 points, converged in 2 iterations (inertia: 0.77)",
+      cap: "<b>Models are Sendable values.</b> A fit crosses task boundaries with no special handling, and <code>async</code>/<code>await</code> runs in the Notebook as-is." },
+  ];
+
+  // Swift highlighter: keywords, members, strings, numbers, comments, rainbow brackets.
+  const KW = new Set("nonisolated guard let var else func return await async import if for in try throws struct class enum true false nil".split(" "));
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  function highlight(code) {
+    let html = "", depth = 0, prev = "", m;
+    const re = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"?)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)|([\[\](){}])|(\n)|([^\w\n"\/\[\](){}]+|\/)/g;
+    while ((m = re.exec(code))) {
+      const [t, com, str, num, id, br, nl] = m;
+      if (com) html += `<span class="tk-com">${esc(com)}</span>`;
+      else if (str) html += `<span class="tk-str">${esc(str)}</span>`;
+      else if (num) html += `<span class="tk-num">${num}</span>`;
+      else if (id) { const cls = KW.has(id) ? "tk-kw" : prev === "." ? "tk-mem" : ""; html += cls ? `<span class="${cls}">${id}</span>` : id; }
+      else if (br) {
+        if ("[({".includes(br)) { html += `<span class="br${depth % 3 + 1}">${br}</span>`; depth++; }
+        else { depth = Math.max(0, depth - 1); html += `<span class="br${depth % 3 + 1}">${br}</span>`; }
+      } else html += esc(t);
+      if (!nl) prev = t.slice(-1);
+    }
+    return html;
+  }
+
+  let code = "";
+  function render(caret) {
+    $("src").innerHTML = highlight(code) + (caret ? '<span class="caret"></span>' : "");
+    const lines = code.split("\n");
+    $("gutter").textContent = lines.map((_, i) => i + 1).join("\n");
+    $("pos").textContent = `Line ${lines.length}, Col ${lines[lines.length - 1].length + 1}`;
+    const ed = $("editor"); ed.scrollTop = ed.scrollHeight;
+  }
+  function showOutput(s) {
+    const out = $("out");
+    out.textContent = "";
+    if (s.failed) { const e = document.createElement("span"); e.className = "stderr"; e.textContent = s.out; out.appendChild(e); }
+    else out.textContent = s.out;
+    $("res").textContent = s.failed ? `Exit 1 · Wall time: ${s.ms} ms` : `Wall time: ${s.ms} ms`;
+    $("res").classList.toggle("err", !!s.failed);
+  }
+
+  // Tabs
+  const tabs = SCENES.map((s, i) => {
+    const b = document.createElement("button");
+    b.className = "tab"; b.type = "button"; b.setAttribute("role", "tab"); b.id = "tab-" + i;
+    b.innerHTML = `${s.name}<span class="bar"></span>`;
+    b.addEventListener("click", () => { auto = false; play(i); });
+    $("tabs").appendChild(b);
+    return b;
+  });
+  function select(i) {
+    tabs.forEach((t, j) => { t.setAttribute("aria-selected", j === i ? "true" : "false"); t.querySelector(".bar").style.cssText = "width:0;transition:none"; });
+    $("crumb").textContent = SCENES[i].crumb;
+    $("scenecap").innerHTML = SCENES[i].cap;
+  }
+
+  // Complete at rest: the first scene is fully rendered before any animation.
+  select(0); code = SCENES[0].code; render(false); showOutput(SCENES[0]);
+
+  let token = 0, auto = true, current = 0;
+  const sleep = (ms, tk) => new Promise((ok, no) => setTimeout(() => tk === token ? ok() : no("cancel"), ms));
+  async function type(text, tk) {
+    let owed = 0;
+    for (const ch of text) {
+      code += ch;
+      const line = code.slice(code.lastIndexOf("\n") + 1);
+      owed += (line.trimStart().startsWith("//") ? 4 : /\s/.test(ch) ? 7 : 14) + Math.random() * 6;
+      if (owed >= 30) { render(true); await sleep(owed, tk); owed = 0; }
+    }
+    render(true);
+  }
+  async function play(i) {
+    const tk = ++token; current = i;
+    const s = SCENES[i];
+    select(i);
+    try {
+      const prevCode = code;
+      $("out").textContent = ""; $("res").textContent = "";
+      if (reduce) { code = s.code; render(false); }
+      else if (s.code.startsWith(prevCode) && prevCode) { await type(s.code.slice(prevCode.length), tk); }
+      else { code = ""; render(true); await sleep(250, tk); await type(s.code, tk); }
+      await sleep(reduce ? 0 : 350, tk);
+      $("runbtn").classList.add("pressed"); setTimeout(() => $("runbtn").classList.remove("pressed"), 150);
+      $("status").classList.add("busy"); $("stext").textContent = "Swift · Compiling…";
+      await sleep(reduce ? 0 : s.ms, tk);
+      $("status").classList.remove("busy"); $("stext").textContent = "Swift · Ready";
+      render(false); showOutput(s);
+      if (auto && !reduce) {
+        const bar = tabs[i].querySelector(".bar");
+        void bar.offsetWidth; bar.style.cssText = "width:100%;transition:width 6s linear";
+        await sleep(6000, tk);
+        play((i + 1) % SCENES.length);
+      }
+    } catch (e) { /* superseded by a newer scene */ }
+  }
+
+  // Start the tour the first time the Notebook scrolls into view; scene one is already on screen.
+  let started = false;
+  const io = new IntersectionObserver(es => {
+    if (started || !es.some(e => e.isIntersecting)) return;
+    started = true;
+    if (!reduce) setTimeout(() => { if (auto && token === 0) play(1); }, 5000);
+  }, { threshold: .4 });
+  io.observe(document.querySelector(".win"));
+
+  // RAG pipeline stepper. Code from the Retrieving Context for Generation article.
+  const STEPS = [
+    { t: "Chunk the document", d: "Split each document into fragments small enough to retrieve precisely and large enough to carry a thought. Quiver ships the Chunker protocol; the strategy is ours.",
+      c: `// A Chunker that splits a document on paragraph boundaries.
+struct ParagraphChunker: Chunker {
+    func chunk(_ text: String) -> [Chunk] {
+        text.components(separatedBy: "\\n\\n").asChunks()
+    }
+}` },
+    { t: "Embed once", d: "Retrieval is write once, read many. Each chunk is embedded a single time through any Embedder and stored beside its label in an EmbeddingIndex.",
+      c: `// Our own label type, carrying provenance to the model.
+struct SourcedChunk: Codable, Equatable {
+    let chunk: Chunk
+    let sourceID: String
+
+    var citedForm: String { "[\\(sourceID)#\\(chunk.index)] \\(chunk.text)" }
+}
+
+var index = EmbeddingIndex<SourcedChunk>(embedder: embedder)
+for chunk in document.chunked(using: ParagraphChunker()) {
+    index.add(chunk.text, label: SourcedChunk(chunk: chunk, sourceID: "bread-guide"))
+}` },
+    { t: "Rank by meaning", d: "Only the question is embedded at search time. Each hit carries its label, so text, position and source survive the ranking.",
+      c: `let result = index.retrieve("how long should the dough rise", k: 2)
+
+for hit in result.hits {
+    print(hit.rank, hit.score, hit.label.chunk.text)
+}
+// rank 1   0.9939   Let the dough rise slowly. A slow proof develops flavor…
+// rank 2   0.8046   Knead the dough until smooth. Good kneading builds…` },
+    { t: "Decide what counts", d: "The top match always exists, even for a question the corpus doesn't cover. The gate turns a ranking into a decision, with thresholds the caller supplies.",
+      c: `if result.isAboveGate(floor: 0.30, outlierZ: 3.0) {
+    // the corpus covers this question, so assemble a context block
+} else {
+    // nothing stands out, so the corpus does not cover this question
+}` },
+    { t: "Assemble the context", d: "Join each hit's cited form into one block of text, sized by k and the chunk length, ready for whatever model the app runs.",
+      c: `// Build the context block from the ranked hits.
+var block = ""
+for hit in result.hits {
+    let separator = block.isEmpty ? "" : "\\n\\n"
+    block += separator + hit.label.citedForm
+}
+// [bread-guide#0] Let the dough rise slowly. A slow proof develops flavor…
+//
+// [bread-guide#1] Knead the dough until smooth. Good kneading builds…` },
+    { t: "Persist the index", d: "The index saves the same way a trained model does, so a document is embedded once in its lifetime and searched for free after that.",
+      c: `// Save: encode the snapshot, the same call a model uses.
+let data = try JSONEncoder().encode(index.snapshot)
+try data.write(to: url)
+
+// Restore: decode the snapshot, then pair it with an embedder.
+let saved = try Data(contentsOf: url)
+let snapshot = try JSONDecoder().decode(
+    EmbeddingIndex<SourcedChunk>.Snapshot.self, from: saved)
+let index = EmbeddingIndex(snapshot, embedder: embedder)` },
+  ];
+  const stepButtons = STEPS.map((s, i) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.type = "button"; b.id = "step-" + i; b.setAttribute("role", "tab");
+    b.innerHTML = `<strong>${s.t}</strong><span>${s.d}</span>`;
+    b.addEventListener("click", () => showStep(i));
+    li.appendChild(b); $("steps").appendChild(li);
+    return b;
+  });
+  function showStep(i) {
+    stepButtons.forEach((b, j) => b.setAttribute("aria-selected", j === i ? "true" : "false"));
+    $("stepcode").innerHTML = highlight(STEPS[i].c);
+  }
+  showStep(0);
+
+  // Complete Vapor + Quiver app, compiled and run against Quiver 1.6.0.
+  $("vaporcode").innerHTML = highlight(`import Vapor
+import Quiver
+
+// Each shoe is a point in a two-dimensional space: [cushion, speed].
+// Words live in the same space, so a query lands near the shoes it
+// describes. Both tables are immutable Sendable values, so Vapor route
+// closures capture them across task boundaries with nothing to lock
+// and nothing to coordinate.
+
+let shoes: [String: [Double]] = [
+    "Hoka Bondi 9":    [0.9, 0.2],
+    "Nike Vaporfly 3": [0.2, 0.9],
+    "Brooks Ghost 16": [0.6, 0.5]
+]
+
+let words: [String: [Double]] = [
+    "soft":  [0.9, 0.1],
+    "plush": [0.8, 0.2],
+    "fast":  [0.1, 0.9],
+    "race":  [0.2, 0.8]
+]
+
+let app = try await Application.make(.detect())
+
+app.get("search") { request throws -> [String] in
+    let query = try request.query.get(String.self, at: "q")
+    guard let vector = query.tokenize().embed(using: words).meanVector() else {
+        throw Abort(.badRequest, reason: "No known words in the query")
+    }
+    return shoes.nearest(to: vector, k: 3).map(\\.word)
+}
+
+try await app.execute()`);
+
+  // Copy buttons
+  document.querySelectorAll(".copy").forEach(btn => btn.addEventListener("click", async () => {
+    const box = $(btn.dataset.copy), text = box.textContent.replace(/^Copy/, "");
+    try { await navigator.clipboard.writeText(text); btn.textContent = "Copied"; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents(box); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = "Selected"; }
+    setTimeout(() => btn.textContent = "Copy", 1600);
+  }));
+})();
+</script>
+
+</body>
+</html>

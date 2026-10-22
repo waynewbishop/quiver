@@ -84,6 +84,10 @@ jobs:
           mkdir -p ./docs/papers
           git show HEAD:Docs/pdf/true-effort-score.pdf > ./docs/papers/true-effort-score.pdf
 
+          # Publish the splash page at the site root, replacing DocC's root index.html.
+          # Copied last, after the custom.css injection, so that step leaves it untouched.
+          cp -R Site/. ./docs/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
