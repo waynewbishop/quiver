@@ -1,11 +1,11 @@
 # Quiver — Statistics, Linear Algebra & Machine Learning in Swift
 
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange)](https://swift.org)
-[![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20visionOS%20%7C%20Linux-lightgrey)](https://waynewbishop.github.io/quiver/documentation/quiver/installation/)
+[![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20visionOS-lightgrey)](https://waynewbishop.github.io/quiver/documentation/quiver/installation/)
 [![Release](https://img.shields.io/github/v/release/waynewbishop/quiver)](https://github.com/waynewbishop/quiver/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
-Quiver is an open-source Swift package for statistics, linear algebra, and machine learning — zero external dependencies, running on every Apple platform, server-side Swift, and Linux. It extends the standard `Array` type, so mathematical operations feel natural to Swift developers, and every model exposes its learned parameters: nothing is a black box. Quiver is built to teach and built to ship — the same code that explains a concept deploys to iPhone, Apple Watch, or a Linux server.
+Quiver is an open-source Swift package for statistics, linear algebra, and machine learning — zero external dependencies, running on every Apple platform and server-side Swift. It extends the standard `Array` type, so mathematical operations feel natural to Swift developers, and every model exposes its learned parameters: nothing is a black box. Quiver is built to teach and built to ship — the same code that explains a concept deploys to iPhone, Apple Watch, or a server.
 
 ## Who Quiver is for
 
