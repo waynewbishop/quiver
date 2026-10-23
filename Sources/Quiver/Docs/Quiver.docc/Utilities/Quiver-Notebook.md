@@ -78,7 +78,7 @@ cd quiver-notebook
 swift run
 ```
 
-The first launch takes a minute or two while Swift compiles the Notebook and pre-warms the snippet sandbox. The sandbox is a separate Swift package that depends on Quiver, so the first launch downloads and compiles Quiver from GitHub. Subsequent runs use the cached build and start in seconds. When the server is ready, the terminal prints a banner:
+The first launch compiles the Notebook. When the server is ready, the terminal prints a banner:
 
 ```
 ==========================================================
@@ -90,6 +90,8 @@ The first launch takes a minute or two while Swift compiles the Notebook and pre
   If port 8080 is in use, restart with: PORT=8090 swift run
 ==========================================================
 ```
+
+On the first launch, the snippet sandbox keeps compiling in the background after the banner appears. The sandbox is a separate Swift package that depends on Quiver, so it downloads and compiles Quiver from GitHub, which takes a minute or two. The editor shows **Warming up** until the terminal prints "Sandbox pre-warm complete. Notebook is ready." Subsequent runs use the cached build and start in seconds.
 
 Open the URL in any browser to start writing snippets. Press `Ctrl+C` in the terminal to stop the server.
 
