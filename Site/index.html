@@ -414,9 +414,10 @@ v.<span style="color:var(--k-keyword)">normalized</span>.<span style="color:var(
       <p class="lede">Code written in the Notebook is <b>ordinary Swift</b>. Copy it into an Xcode project, add Quiver as a package dependency, and it compiles unchanged for iPhone, Apple Watch, Vision Pro or the Mac.</p>
     </div>
     <div class="why">
+      <div><h3>Models we can read, trained where the data lives.</h3><p>A model fits inside the app from data the device already collects, such as motion, location, HealthKit samples and workouts. Every model exposes what it learned as plain Swift values: coefficients with standard errors and p-values, cluster centroids, principal components. The same code runs on Apple Watch, iPhone, the Mac and the server.</p></div>
       <div><h3>Same package, same release.</h3><p>The Notebook builds every snippet against the published Quiver package, pinned to the release shown in its footer. Code that compiles in the Notebook compiles in Xcode against that same release.</p></div>
       <div><h3>The datasets stay in the Notebook.</h3><p>The teaching datasets are part of the Notebook, not the Quiver package, so the package an app ships stays small with zero dependencies. <code>toPanel()</code> hands back a Quiver <code>Panel</code>, so every line after the load is plain Quiver.</p></div>
-      <div><h3>Learning on device.</h3><p>Beyond CSV files, training data can also come from the device itself. This includes motion, location, HealthKit samples and activity from Apple Watch. The <a href="documentation/quiver/true-effort-score" style="color:var(--accent-paper);text-decoration:none">True Effort Score</a> model is a good example. This solution measures heart rate, pace, cadence, grade, altitude and vertical oscillation during a run and scores the effort on Apple Watch.</p></div>
+      <div><h3>One model, end to end.</h3><p>The <a href="documentation/quiver/true-effort-score" style="color:var(--accent-paper);text-decoration:none">True Effort Score</a> model learns each runner's baseline from their own recent runs. It measures heart rate, pace, cadence, grade, altitude and vertical oscillation during a run and scores the effort on Apple Watch.</p></div>
     </div>
     <p class="whylink"><a href="documentation/quiver/notebook-datasets">Read about Notebook Datasets ›</a></p>
   </div>
@@ -640,7 +641,7 @@ converged in 2 iterations (inertia: 0.77)</div></div>
     <div class="head center">
       <div class="eyebrow">Get started</div>
       <h2>Create something new.</h2>
-      <p class="lede">The documentation includes <b>nearly 70 articles</b> covering concepts, data preparation, training and implementation.</p>
+      <p class="lede">The documentation includes <b>nearly 70 articles</b> covering concepts, data preparation, training and implementation. Results are tested against established reference implementations.</p>
     </div>
     <div class="starts">
       <div class="start"><h3>Add the package</h3><p>Swift Package Manager.</p>
