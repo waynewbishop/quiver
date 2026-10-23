@@ -12,6 +12,7 @@
 // permissions and limitations under the License.
 
 import XCTest
+import Dispatch
 @testable import Quiver
 
 /// Stress tests for Quiver's performance-critical code paths.
@@ -28,9 +29,9 @@ final class QuiverStressTests: XCTestCase {
     /// Measures execution time and peak memory, printing results to console.
     private func benchmark(_ label: String, _ block: () -> Void) {
         let startMemory = currentMemoryMB()
-        let start = CFAbsoluteTimeGetCurrent()
+        let start = DispatchTime.now().uptimeNanoseconds
         block()
-        let elapsed = CFAbsoluteTimeGetCurrent() - start
+        let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000_000
         let endMemory = currentMemoryMB()
         let memoryDelta = endMemory - startMemory
 
@@ -44,6 +45,7 @@ final class QuiverStressTests: XCTestCase {
 
     /// Returns current memory usage in megabytes.
     private func currentMemoryMB() -> Double {
+        #if canImport(Darwin)
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
         let result = withUnsafeMutablePointer(to: &info) {
@@ -52,6 +54,13 @@ final class QuiverStressTests: XCTestCase {
             }
         }
         return result == KERN_SUCCESS ? Double(info.resident_size) / 1_048_576.0 : 0
+        #else
+        // Linux reports resident pages as the second field of /proc/self/statm.
+        guard let statm = try? String(contentsOfFile: "/proc/self/statm", encoding: .utf8) else { return 0 }
+        let fields = statm.split(separator: " ")
+        guard fields.count > 1, let pages = Double(fields[1]) else { return 0 }
+        return pages * Double(sysconf(Int32(_SC_PAGESIZE))) / 1_048_576.0
+        #endif
     }
 
     // MARK: - Matrix Operations (O(n³))
