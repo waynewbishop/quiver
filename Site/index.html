@@ -163,6 +163,8 @@ h3 { font-size: 21px; line-height: 1.25; letter-spacing: -.01em; font-weight: 60
 .tile p { margin: 0; color: var(--paper-muted); font-size: 16px; }
 .tile pre { margin: 6px 0 0; background: var(--paper); border-radius: 12px; padding: 14px 16px; font: 12.5px/1.6 var(--mono); color: var(--paper-text); overflow-x: auto; }
 .tile pre .c { color: #6c7986; } .tile pre .kw { color: #ad3da4; }
+.tile .tilelink a { color: var(--accent-paper); text-decoration: none; }
+.tile .tilelink a:hover { text-decoration: underline; }
 @media (max-width: 820px) { .tiles { grid-template-columns: 1fr; } }
 
 /* ---------- printed output gallery ---------- */
@@ -434,7 +436,7 @@ v.<span style="color:var(--k-keyword)">normalized</span>.<span style="color:var(
     features: trainingData, labels: labels, k: <span class="kw">3</span>)
 <span class="kw">let</span> predictions = model.predict(newData)</pre></div>
       <div class="tile"><div class="k">Immutable</div><h3>Learned parameters never drift.</h3><p>Coefficients, centroids and learned parameters cannot change once the model exists. A whole category of accidental-retraining bugs disappears.</p></div>
-      <div class="tile"><div class="k">Codable</div><h3>Train once, ship it.</h3><p>Every stored property is a basic Swift type, so models encode to JSON with no extra code. Save one to disk and load it on the next launch without retraining.</p></div>
+      <div class="tile"><div class="k">Codable</div><h3>Train once, ship it.</h3><p>Every stored property is a basic Swift type, so models encode to JSON with no extra code. Save one to disk and load it on the next launch without retraining.</p><p class="tilelink"><a href="documentation/quiver/model-persistence">Read about Model Persistence ›</a></p></div>
       <div class="tile"><div class="k">Failure in the return type</div><h3>The signature says how much care a fit needs.</h3>
 <pre><span class="kw">try</span> LinearRegression.fit(...)    <span class="c">// can fail</span>
 KNearestNeighbors.fit(...)       <span class="c">// cannot fail</span>
