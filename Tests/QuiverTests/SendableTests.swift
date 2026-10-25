@@ -55,7 +55,7 @@ final class SendableTests: XCTestCase {
         let retrieval = index.retrieve("fast", k: 1)
 
         // The index, its snapshot and a retrieval result all cross into the task.
-        let result = await Task {
+        let result = await Task { [index] in
             let restored = EmbeddingIndex(snapshot, embedder: SendableTestEmbedder())
             return (index.retrieve("soft", k: 1).hits.first?.label,
                     restored.count,
