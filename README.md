@@ -1,7 +1,7 @@
 # Quiver — Statistics, Linear Algebra & Machine Learning in Swift
 
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange)](https://swift.org)
-[![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20visionOS-lightgrey)](https://waynewbishop.github.io/quiver/documentation/quiver/installation/)
+[![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20visionOS%20%7C%20Linux-lightgrey)](https://waynewbishop.github.io/quiver/documentation/quiver/installation/)
 [![Release](https://img.shields.io/github/v/release/waynewbishop/quiver)](https://github.com/waynewbishop/quiver/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 
@@ -9,7 +9,7 @@ Quiver is an open-source Swift package for statistics, linear algebra, and machi
 
 ## Who Quiver is for
 
-**Students** working through a course, textbook, or self-study. Quiver extends the standard `Array` type, so there's no custom container to learn before the math starts — and every model exposes its learned parameters, so you can always see what the algorithm actually did. Start with the [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) or the [73-recipe Cookbook](https://github.com/waynewbishop/quiver-cookbook).
+**Students** working through a course, textbook, or self-study. Quiver extends the standard `Array` type, so there's no custom container to learn before the math starts — and every model exposes its learned parameters, so you can always see what the algorithm actually did. Start with the [Quiver Notebook](https://github.com/waynewbishop/quiver-notebook) or the [73-recipe Cookbook](https://github.com/waynewbishop/quiver-cookbook). Quiver runs on Linux; the Notebook is Mac-only.
 
 **Educators** preparing a lecture, unit, or full course get material that respects the academic calendar. The Notebook launches with all datasets pre-bundled — no environment drift, no per-student setup or CSV hunting. Fork it, drop your own examples in, distribute a URL to your class.
 

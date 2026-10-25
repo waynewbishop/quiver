@@ -16,11 +16,11 @@ Complete reference for the Quiver Swift package. Upload this file to a Claude Pr
 
 Quiver fills the gap between Swift's standard library and trained-model inference. Swift gives you `Array` with basic operations. Between basic arrays and a finished model sits a wide space of real-time numerical computing — statistics, vector math, matrix operations, similarity search, clustering, regression — that the standard library does not address. Quiver fills that gap with 350+ APIs, zero dependencies, and a footprint small enough for watchOS.
 
-**Built for Swift developers.** Quiver serves developers who need numerical computing in the language they already use — on iOS, watchOS, visionOS, server-side Swift, and in Xcode Playgrounds. No context switching, no model files, no Accelerate wrappers.
+**Built for Swift developers.** Quiver serves developers who need numerical computing in the language they already use — on iOS, watchOS, visionOS, server-side Swift, and in Xcode Playgrounds. No context switching, no model files.
 
 Quiver provides the computational building blocks for working with data directly: `mean()`, `percentile()`, `cosineOfAngle(with:)`, `trainTestSplit()`, `KMeans.fit()`, `LinearRegression.fit()`. It offers ad-hoc statistical queries, pairwise semantic comparison, and transparent ML model training on raw arrays.
 
-**Validated against industry-standard implementations.** Quiver has 312 unit tests plus a separate cross-validation suite (44 checks + 29 tests, all passing). Quiver produces identical results for identical inputs.
+**Validated against industry-standard implementations.** Quiver has more than 950 tests, and its results are cross-checked against widely used reference implementations.
 
 ---
 
