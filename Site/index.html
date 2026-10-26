@@ -11,7 +11,12 @@
 <meta property="og:title" content="Quiver">
 <meta property="og:description" content="Quiver is a Swift package for statistics, linear algebra and machine learning, with a browser-based Notebook for learning and prototyping.">
 <meta property="og:url" content="https://waynewbishop.github.io/quiver/">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://waynewbishop.github.io/quiver/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Quiver: a Swift package for statistics, linear algebra and machine learning.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://waynewbishop.github.io/quiver/og-image.png">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#f5f5f7">
 <style>
@@ -429,14 +434,14 @@ v.<span style="color:var(--k-keyword)">normalized</span>.<span style="color:var(
     <div class="head">
       <div class="eyebrow">Models</div>
       <h2>Models are always ready.</h2>
-      <p class="lede">There is no empty or unfitted state. <b>The <code>fit</code> method returns a trained model</b>, so calling <code>predict</code> on something untrained cannot compile.</p>
+      <p class="lede">For models created with <code>fit</code>, there is no empty or unfitted state. <b>The <code>fit</code> method returns a trained model</b>, so calling <code>predict</code> on an untrained model cannot compile.</p>
     </div>
     <div class="tiles">
-      <div class="tile"><div class="k">Trained on creation</div><h3>fit is the only way in.</h3><p>No runtime error for “model not fitted”. The situation cannot arise.</p>
+      <div class="tile"><div class="k">Trained on creation</div><h3>fit returns a trained model.</h3><p>No runtime error for “model not fitted”. The situation cannot arise.</p>
 <pre><span class="kw">let</span> model = KNearestNeighbors.fit(
     features: trainingData, labels: labels, k: <span class="kw">3</span>)
 <span class="kw">let</span> predictions = model.predict(newData)</pre></div>
-      <div class="tile"><div class="k">Immutable</div><h3>Learned parameters never drift.</h3><p>Coefficients, centroids and learned parameters cannot change once the model exists. A whole category of accidental-retraining bugs disappears.</p></div>
+      <div class="tile"><div class="k">Immutable</div><h3>Learned parameters never drift.</h3><p>Coefficients, centroids and learned parameters cannot change once a fitted model exists. A whole category of accidental-retraining bugs disappears.</p></div>
       <div class="tile"><div class="k">Codable</div><h3>Train once, ship it.</h3><p>Every stored property is a basic Swift type, so models encode to JSON with no extra code. Save one to disk and load it on the next launch without retraining.</p><p class="tilelink"><a href="documentation/quiver/model-persistence">Read about Model Persistence ›</a></p></div>
       <div class="tile"><div class="k">Failure in the return type</div><h3>The signature says how much care a fit needs.</h3>
 <pre><span class="kw">try</span> LinearRegression.fit(...)    <span class="c">// can fail</span>
@@ -570,7 +575,7 @@ converged in 2 iterations (inertia: 0.77)</div></div>
       <div><h3>Vector search in Swift</h3><p>This example ranks a small dictionary. For a catalog that grows, <code>EmbeddingIndex</code> stores each vector beside its label, ranks a query against all of them by cosine similarity, and saves as a <code>Codable</code> snapshot. Those are the core operations behind vector search, written in Swift.</p></div>
       <div><h3>Swap the vectors, keep the ranking</h3><p>Here both tables are made by hand. A sentence model, plugged in through Quiver’s <code>Embedder</code> protocol, would produce the vectors instead, and the ranking with <code>nearest(to:k:)</code> stays the same.</p></div>
       <div><h3>The retrieval half of RAG</h3><p>A <code>/search</code> route is retrieval. Feed its results to a language model as context and the server has a full RAG pipeline, with Quiver handling the search.</p></div>
-      <div><h3>Built on the CPU</h3><p>Quiver runs on the CPU with plain Swift arrays and no dependencies, so the same code runs unchanged on Apple Watch, iPhone and the Mac. Heavy work spreads across every core with Swift concurrency.</p></div>
+      <div><h3>Built on the CPU</h3><p>Quiver runs on the CPU with plain Swift arrays and no dependencies, so the same code runs unchanged on Apple Watch, iPhone and the Mac. Swift concurrency lets us move heavy work off the main thread and divide it across cores.</p></div>
     </div>
     <p class="serverlink"><a href="https://github.com/waynewbishop/quiver-demo-vapor" target="_blank" rel="noopener">See the Vapor demo on GitHub ›</a></p>
   </div>
