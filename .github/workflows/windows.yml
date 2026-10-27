@@ -1,0 +1,28 @@
+name: Windows Tests
+
+on:
+  push:
+    branches: [main, 'release/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # Pinned to the commit that ran Quiver's first green Windows build (2026-10-27)
+    uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@97417aa755e848b518c33042d254bb5e5fd6f0bb
+    with:
+      enable_linux_checks: false
+      enable_windows_checks: true
+      # The oldest Windows toolchain the shared workflow offers and a current release
+      windows_swift_versions: '["6.1", "6.4"]'
+      # No --skip or --filter: SwiftPM expands either into one argument naming
+      # every test, which passes Windows' 32,767-character command-line limit.
+      # The stress tests have no assertions and finish in about two seconds.
+      windows_build_command: Invoke-Program swift test
