@@ -54,12 +54,15 @@ final class QuiverStressTests: XCTestCase {
             }
         }
         return result == KERN_SUCCESS ? Double(info.resident_size) / 1_048_576.0 : 0
-        #else
+        #elseif os(Linux)
         // Linux reports resident pages as the second field of /proc/self/statm.
         guard let statm = try? String(contentsOfFile: "/proc/self/statm", encoding: .utf8) else { return 0 }
         let fields = statm.split(separator: " ")
         guard fields.count > 1, let pages = Double(fields[1]) else { return 0 }
         return pages * Double(sysconf(Int32(_SC_PAGESIZE))) / 1_048_576.0
+        #else
+        // Other platforms, such as Windows, don't report memory here.
+        return 0
         #endif
     }
 
