@@ -79,7 +79,7 @@ for probability in probs {
 // flagged is [0, 0]
 ```
 
-To inspect the model in log-odds space (for plotting boundaries, margin analysis, or custom thresholding), `decisionFunction(_:)` returns the raw score `Xθ` before the sigmoid. Zero is the boundary, positive favors class 1, and negative favors class 0:
+To inspect the model in log-odds space (for plotting boundaries, margin analysis, or custom thresholding), `decisionFunction(_:)` returns the raw score `Xθ`, called a **logit**, before the sigmoid. Zero is the boundary, positive favors class 1, and negative favors class 0:
 
 ```swift
 import Quiver
@@ -89,6 +89,34 @@ let scores = model.decisionFunction(query)
 ```
 
 The label, probability, and log-odds are three views of the same quantity: `predict` is the sign of `decisionFunction`, and `predictProbabilities` is its sigmoid. On a single-feature model, `predict` and `decisionFunction` also accept a bare value; `predictProbabilities` takes the array form, so wrap a lone query in a row to read its probability.
+
+### Coefficients, logits, and probabilities
+
+Coefficients and logits are related but not interchangeable. **Coefficients** are the parameters learned during fitting and stored in `model.coefficients`; they remain fixed when the model makes predictions. A **logit** is the per-sample score calculated from those coefficients and the sample's features:
+
+`z = θ₀ + θ₁x₁ + θ₂x₂ + … + θₙxₙ`
+
+The intercept `θ₀` is the logit when every feature is zero. For logistic regression, each logit is an estimated log-odds score, which sigmoid converts into a probability estimate for class 1: `P(class = 1) = σ(z)`.
+
+Suppose an unscaled one-feature model has an intercept of `-4` and a feature coefficient of `2`. For a feature value of `3`:
+
+```text
+z = -4 + 2 × 3 = 2
+σ(z) = σ(2) ≈ 0.881
+```
+
+The coefficient `2` means each one-unit increase in the feature adds `2` to the logit, holding other features constant. It does not add a fixed amount to the probability; that change depends on the starting logit. The coefficients remain fixed, while each new sample produces its own logit and probability.
+
+In Quiver, the same relationship connects `coefficients`, `decisionFunction`, and `predictProbabilities`:
+
+```swift
+model.coefficients
+let logits = model.decisionFunction(query)
+let probabilities = logits.sigmoid()
+// probabilities matches model.predictProbabilities(query)
+```
+
+Because the model fitted above uses standardized features, its actual feature coefficient describes a one-standard-deviation increase, not one additional raw hour. See <doc:Feature-Scaling> for how scaling affects coefficient interpretation.
 
 > Experiment: **The Quiver Notebook** is the right place to watch the sigmoid turn a line into a probability. Fit a one-feature model, sweep the input across its range, and print `decisionFunction` next to `predictProbabilities`: watching the unbounded log-odds compress into (0, 1) makes the squashing concrete. See <doc:Quiver-Notebook>.
 

@@ -29,6 +29,8 @@ model.equation()     // "y = 38000.00 + 110.00x" — the same fit, read as algeb
 
 This layout is worth holding onto. When `hasIntercept` is `true`, `coefficients[0]` is the intercept, not the first feature's slope, and the remaining elements are the feature weights in input order. When `hasIntercept` is `false`, the array shifts down, and `coefficients[0]` becomes the first feature's slope. ``GradientDescent`` and ``Ridge`` use the same layout, making them interchangeable when we read their output, and ``Coefficients/equation()`` renders any of them as the intercept-first formula above.
 
+For logistic regression, the coefficients have the same intercept-first layout, but their weighted sum is a logit—a log-odds score—rather than the final prediction. A sigmoid converts that score into a class-1 probability estimate. See <doc:Logistic-Regression> for a worked comparison of coefficients, logits, and probabilities.
+
 A near-zero weight does not necessarily mean the feature is unimportant. On raw units, a tiny weight can sit on a feature measured in large numbers. Under collinearity, a feature's weight can collapse toward zero simply because a correlated twin absorbed its share. Read coefficient magnitudes only after scaling, and only once collinearity has been ruled out. Comparing weights provides a ranking, not a measurement of absolute importance; the next sections show how to make that ranking honest.
 
 ### What scaling does to the units
