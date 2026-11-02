@@ -179,14 +179,15 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
         }
     }
 
-    /// Returns calibrated class probabilities for each sample.
+    /// Returns normalized posterior class probability estimates for each sample.
     ///
     /// Applies the softmax transform to the unnormalized log-probabilities from
     /// ``predictLogProbabilities(_:)``, producing a probability distribution
-    /// across classes that sums to 1.0 for each row. Use this when the caller
-    /// needs calibrated probabilities — for cost-sensitive decisions, threshold
-    /// tuning, or downstream probabilistic reasoning — rather than just the
-    /// argmax label produced by ``predict(_:)``.
+    /// across classes that sums to 1.0 for each row. Normalization does not make
+    /// the values calibrated; Naive Bayes is often overconfident. Use this when
+    /// the caller needs per-class probability estimates — for cost-sensitive
+    /// decisions, threshold tuning, or downstream probabilistic reasoning —
+    /// rather than just the argmax label produced by ``predict(_:)``.
     ///
     /// The output ordering matches the ``classes`` array. For row `i` and class
     /// index `c`, `result[i][c]` is the model's estimated `P(class = classes[c] | features[i])`.

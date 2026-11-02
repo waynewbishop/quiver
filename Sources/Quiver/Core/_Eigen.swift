@@ -41,8 +41,8 @@ internal enum _Eigen {
     /// norm is invariant under orthogonal similarity, so the fixed value is
     /// exact. The solver stops at 50 sweeps if the test never passes; the
     /// iterates remain exactly orthogonal-similar to the input, so an
-    /// unconverged result is still a valid decomposition and is returned with
-    /// `converged` set to `false` rather than thrown away.
+    /// unconverged result is returned as an approximation with `converged` set
+    /// to `false` rather than thrown away.
     ///
     /// Eigenvalues are returned sorted descending with eigenvectors permuted
     /// to match, and each eigenvector is sign-fixed so its largest-magnitude
