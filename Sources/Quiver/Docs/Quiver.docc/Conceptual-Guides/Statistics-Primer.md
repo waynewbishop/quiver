@@ -39,7 +39,7 @@ let ratings = [4, 5, 4, 3, 5, 4, 5]
 ratings.mode()                       // [4, 5] — bimodal
 ```
 
-Quiver’s `mode()` returns an array, correctly handling bimodal distributions where two values share the highest frequency.
+Quiver’s `mode()` returns an array, correctly handling bimodal distributions where two values share the highest frequency. Tied values come back in the order they first appear, so the result is the same on every run.
 
 ### Describing the spread
 

@@ -119,12 +119,34 @@ final class ArrayStatisticsTests: XCTestCase {
 
     func testModeBimodalReturnsAllTies() {
         let ratings = [4, 5, 4, 3, 5, 4, 5]
-        XCTAssertEqual(Set(ratings.mode()), Set([4, 5]))
+        XCTAssertEqual(ratings.mode(), [4, 5])
     }
 
     func testModeAllUniqueReturnsAll() {
         let unique = [1, 2, 3, 4, 5]
-        XCTAssertEqual(Set(unique.mode()), Set([1, 2, 3, 4, 5]))
+        XCTAssertEqual(unique.mode(), [1, 2, 3, 4, 5])
+    }
+
+    func testModeTiesKeepFirstAppearanceOrder() {
+        // First appearance, not sorted order: 5 appears before 4.
+        let ratings = [5, 4, 5, 4, 3]
+        XCTAssertEqual(ratings.mode(), [5, 4])
+
+        let responses = ["no", "yes", "yes", "no", "maybe"]
+        XCTAssertEqual(responses.mode(), ["no", "yes"])
+    }
+
+    func testModeAllTiedWithRepeatsReturnsDistinctValues() {
+        let pairs = [2, 2, 1, 1, 3, 3]
+        XCTAssertEqual(pairs.mode(), [2, 1, 3])
+    }
+
+    func testModeTieOrderIsStableAcrossCalls() {
+        let ratings = [4, 5, 4, 3, 5, 4, 5]
+        let first = ratings.mode()
+        for _ in 0..<100 {
+            XCTAssertEqual(ratings.mode(), first)
+        }
     }
 
     func testModeEmptyReturnsEmpty() {
