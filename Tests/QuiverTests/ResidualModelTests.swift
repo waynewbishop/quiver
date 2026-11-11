@@ -350,4 +350,79 @@ final class ResidualModelTests: XCTestCase {
 
         XCTAssertEqual(residualModel.equation(), model.equation())
     }
+
+    // MARK: - equation() without an intercept
+
+    // A stand-in whose coefficients are all feature weights.
+    private struct FakeNoIntercept: Coefficients {
+        let coefficients: [Double]
+        let hasIntercept = false
+    }
+
+    // A conformer that doesn't declare hasIntercept keeps the intercept-first layout.
+    func testHasInterceptDefaultsToTrue() {
+        XCTAssertTrue(FakeCoefficients(coefficients: [1.0, 2.0]).hasIntercept)
+    }
+
+    // One weight and no intercept renders as a single term.
+    func testEquationNoInterceptSingleFeature() {
+        let model = FakeNoIntercept(coefficients: [2.0])
+        XCTAssertEqual(model.equation(), "y = 2.00x")
+    }
+
+    // A negative leading term carries its sign without a space; later terms keep " + ".
+    func testEquationNoInterceptNegativeLeadingTerm() {
+        let model = FakeNoIntercept(coefficients: [-2.5, 3.0])
+        XCTAssertEqual(model.equation(), "y = -2.50x₁ + 3.00x₂")
+    }
+
+    // A zero leading weight drops, and the next term leads without a "+".
+    func testEquationNoInterceptZeroLeadingWeight() {
+        let model = FakeNoIntercept(coefficients: [0.0, -1.0, 4.0])
+        XCTAssertEqual(model.equation(), "y = -x₂ + 4.00x₃")
+    }
+
+    // Named variables pair with every element when there is no intercept.
+    func testEquationNoInterceptNamed() {
+        let model = FakeNoIntercept(coefficients: [1.0, -1.0])
+        XCTAssertEqual(model.equation(variables: ["a", "b"], response: "z"), "z = a - b")
+    }
+
+    // Every weight zero and no intercept leaves nothing but zero.
+    func testEquationNoInterceptAllZero() {
+        let model = FakeNoIntercept(coefficients: [0.0, 0.0])
+        XCTAssertEqual(model.equation(), "y = 0")
+    }
+
+    // An intercept that rounds to zero prints as 0.00, never -0.00.
+    func testEquationNegativeZeroInterceptPrintsZero() {
+        let model = FakeCoefficients(coefficients: [-1e-18, 2.0])
+        XCTAssertEqual(model.equation(), "y = 0.00 + 2.00x")
+    }
+
+    // A real fit with intercept: false prints its slope as a term, not an intercept.
+    func testEquationNoInterceptRealFits() throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let targets = [2.0, 4.0, 6.0, 8.0]
+
+        let linear = try LinearRegression.fit(features: features, targets: targets, intercept: false)
+        XCTAssertFalse(linear.hasIntercept)
+        XCTAssertEqual(linear.equation(), "y = 2.00x")
+
+        let gd = try GradientDescent.fit(features: features, targets: targets, intercept: false)
+        let eq = gd.equation()
+        XCTAssertTrue(eq.hasPrefix("y = ") && eq.hasSuffix("x"), "got \(eq)")
+        XCTAssertFalse(eq.contains(" + "), "a no-intercept fit has one term, got \(eq)")
+    }
+
+    // ResidualModel forwards hasIntercept, so its equation matches the wrapped model.
+    func testResidualModelForwardsHasIntercept() throws {
+        let features: [[Double]] = [[1.0], [2.0], [3.0], [4.0]]
+        let targets = [2.0, 4.0, 6.0, 8.0]
+        let model = try LinearRegression.fit(features: features, targets: targets, intercept: false)
+        let residualModel = ResidualModel(model: model)
+
+        XCTAssertFalse(residualModel.hasIntercept)
+        XCTAssertEqual(residualModel.equation(), "y = 2.00x")
+    }
 }

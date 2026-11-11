@@ -900,6 +900,10 @@ let one = lr.predict(2.5)                        // Double → Int (single sampl
 let probs = lr.predictProbabilities(scaledTest)  // [[Double]] → [Double] — P(class = 1) per sample
 let scores = lr.decisionFunction(scaledTest)     // [[Double]] → [Double] — raw log-odds Xθ
 let groups = lr.classify(scaledTest)             // [Classification], grouped by predicted label
+
+lr.equation()                                    // String — "log-odds = 0.00 + 0.77x"
+lr.equation(form: .probability)                  // String — "p = σ(0.00 + 0.77x)"
+lr.equation(variables: ["hours"])                // String — "log-odds = 0.00 + 0.77·hours"
 ```
 
 Binary classifier trained by gradient descent on cross-entropy loss: the linear score `Xθ` is squashed through `sigmoid` into a probability, and the gradient `(1/n)Xᵀ(σ(Xθ) − y)` shares its shape with the squared-error gradient — the same descent loop behind `GradientDescent`, applied to a different loss. Conforms to `Classifier`, so `predict(_:)` returns `[Int]` and `classify(_:)` is provided for free. `predictProbabilities(_:)` returns a single probability per sample — P(class = 1) — not a per-class row that sums to 1.0 (that is the `GaussianNaiveBayes` shape). `decisionFunction(_:)` exposes the raw log-odds before the sigmoid for threshold tuning and margin inspection. Labels must be `0` or `1`; multinomial is out of scope. On linearly separable data the maximum-likelihood fit has no finite minimum, so the run reaches `maxIterationsReached` by design while still predicting correctly — confirm a `.converged` outcome on overlapping data before relying on the coefficient magnitudes.
@@ -919,7 +923,7 @@ residualModel.model                                                    // the wr
 
 `ResidualModel<Model: Regressor>` wraps any fitted regressor and reports what the model could not explain: the residual `observed − predicted`. It composes like `Pipeline` — the caller fits the regressor, then wraps it — and forwards `expected(_:)` straight to the wrapped model's `predict`. Computing a residual needs both the features and the observed target (there is no `observed − predicted` without the observed). Fit the baseline on one period and residualize a *later* sample: residualizing the training data understates the true error.
 
-The `Coefficients` protocol travels with this type. It exposes a uniform `coefficients: [Double]` (intercept first), and `LinearRegression`, `Ridge`, and `GradientDescent` conform; a `ResidualModel` forwards its wrapped model's coefficients when that model conforms. `LogisticRegression` deliberately does not conform — it is a classifier, and a residual is undefined for a probability or a 0/1 label. Distance- and tree-based models do not conform either, which is why the capability is its own protocol rather than a requirement on every regressor.
+The `Coefficients` protocol travels with this type. It exposes a uniform `coefficients: [Double]` (intercept first), and `LinearRegression`, `Ridge`, and `GradientDescent` conform; a `ResidualModel` forwards its wrapped model's coefficients when that model conforms. `LogisticRegression` deliberately does not conform — it is a classifier, and a residual is undefined for a probability or a 0/1 label — so it has its own `equation(form:)` that writes `log-odds = …` or `p = σ(…)`. `Coefficients` also carries `hasIntercept` (default `true`), and `equation()` reads it, so a fit with `intercept: false` prints its first weight as a term, not an intercept. Distance- and tree-based models do not conform either, which is why the capability is its own protocol rather than a requirement on every regressor.
 
 ## Principal Component Analysis (1.6.0)
 

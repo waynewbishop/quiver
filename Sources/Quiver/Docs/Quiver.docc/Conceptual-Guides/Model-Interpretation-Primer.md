@@ -27,7 +27,7 @@ model.coefficients   // [38000.0, 110.0] — intercept first, then one slope per
 model.equation()     // "y = 38000.00 + 110.00x" — the same fit, read as algebra
 ```
 
-This layout is worth holding onto. When `hasIntercept` is `true`, `coefficients[0]` is the intercept, not the first feature's slope, and the remaining elements are the feature weights in input order. When `hasIntercept` is `false`, the array shifts down, and `coefficients[0]` becomes the first feature's slope. ``GradientDescent`` and ``Ridge`` use the same layout, making them interchangeable when we read their output, and ``Coefficients/equation()`` renders any of them as the intercept-first formula above.
+This layout is worth holding onto. When `hasIntercept` is `true`, `coefficients[0]` is the intercept, not the first feature's slope, and the remaining elements are the feature weights in input order. When `hasIntercept` is `false`, the array shifts down, and `coefficients[0]` becomes the first feature's slope. ``GradientDescent`` and ``Ridge`` use the same layout, making them interchangeable when we read their output, and ``Coefficients/equation()`` renders any of them as the formula above. It reads `hasIntercept` too, so a model fit without an intercept prints its first slope as a term, such as `y = 2.00x`, rather than as a constant.
 
 For logistic regression, the coefficients have the same intercept-first layout, but their weighted sum is a logit—a log-odds score—rather than the final prediction. A sigmoid converts that score into a class-1 probability estimate. See <doc:Logistic-Regression> for a worked comparison of coefficients, logits, and probabilities.
 

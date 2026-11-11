@@ -199,6 +199,7 @@ This is useful for unit tests, debugging, and verifying that a pipeline produces
 
 ### Reading the fit
 - ``Coefficients``
+- ``Coefficients/hasIntercept``
 - ``Coefficients/equation()``
 - ``Coefficients/equation(variables:response:)``
 

@@ -116,6 +116,18 @@ let probabilities = logits.sigmoid()
 // probabilities matches model.predictProbabilities(query)
 ```
 
+To read the fit as a formula, `equation(form:)` writes the coefficients out as log-odds, and the `.probability` form wraps the same score in the sigmoid. Named variables replace `x` when we pass one name per feature:
+
+```swift
+import Quiver
+
+model.equation()                        // log-odds = 0.00 + 0.77x
+model.equation(form: .probability)      // p = σ(0.00 + 0.77x)
+model.equation(variables: ["hours"])    // log-odds = 0.00 + 0.77·hours
+```
+
+The left-hand side reads `log-odds` rather than `y` because each weight adds to the log-odds, not to the probability. Here one standard deviation of study time adds `0.77` to the log-odds of passing. A model fit with `intercept: false` has no constant term, so its first weight prints as a term.
+
 Because the model fitted above uses standardized features, its actual feature coefficient describes a one-standard-deviation increase, not one additional raw hour. See <doc:Feature-Scaling> for how scaling affects coefficient interpretation.
 
 > Experiment: **The Quiver Notebook** is the right place to watch the sigmoid turn a line into a probability. Fit a one-feature model, sweep the input across its range, and print `decisionFunction` next to `predictProbabilities`: watching the unbounded log-odds compress into (0, 1) makes the squashing concrete. See <doc:Quiver-Notebook>.
@@ -231,6 +243,11 @@ Two constraints define its scope. Labels must be binary; more than two classes r
 - ``LogisticRegression/lossHistory``
 - ``LogisticRegression/iterations``
 - ``LogisticRegression/outcome``
+
+### Equation
+- ``LogisticRegression/equation(form:)``
+- ``LogisticRegression/equation(variables:form:)``
+- ``LogisticRegression/EquationForm``
 
 ### Classification result
 - ``Classification``

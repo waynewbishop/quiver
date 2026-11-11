@@ -344,4 +344,69 @@ final class LogisticRegressionTests: XCTestCase {
         let model = try LogisticRegression.fit(features: standardize(features), labels: labels, maxIterations: 100)
         XCTAssertEqual(model.featureCount, 1)
     }
+
+    // MARK: - equation()
+
+    // The documented example: spend scores, standardized, fit at a 0.5 rate.
+    private func spendModel() throws -> LogisticRegression {
+        let rawFeatures: [[Double]] = [
+            [2.0], [3.0], [4.0], [5.0], [6.0], [7.0], [3.5], [5.5]
+        ]
+        let labels = [0, 0, 1, 0, 1, 1, 1, 0]
+        let scaler = StandardScaler.fit(features: rawFeatures)
+        return try LogisticRegression.fit(
+            features: scaler.transform(rawFeatures), labels: labels, learningRate: 0.5)
+    }
+
+    // The log-odds form matches the doc comment, and a near-zero intercept prints as 0.00.
+    func testEquationLogOddsMatchesDocExample() throws {
+        XCTAssertEqual(try spendModel().equation(), "log-odds = 0.00 + 0.89x")
+    }
+
+    // The probability form wraps the same score in the sigmoid.
+    func testEquationProbabilityForm() throws {
+        XCTAssertEqual(try spendModel().equation(form: .probability), "p = σ(0.00 + 0.89x)")
+    }
+
+    // Named variables replace x and join with a middle dot, in either form.
+    func testEquationNamedVariables() throws {
+        let model = try spendModel()
+        XCTAssertEqual(model.equation(variables: ["spend"]), "log-odds = 0.00 + 0.89·spend")
+        XCTAssertEqual(model.equation(variables: ["spend"], form: .probability),
+                       "p = σ(0.00 + 0.89·spend)")
+    }
+
+    // Two features take subscripts in the plain form and names in the named form.
+    func testEquationMultiFeature() throws {
+        let features: [[Double]] = [
+            [1.0, 5.0], [2.0, 4.0], [3.0, 6.0], [4.0, 2.0],
+            [5.0, 3.0], [6.0, 1.0], [2.5, 3.5], [4.5, 4.5]
+        ]
+        let labels = [0, 0, 1, 0, 1, 1, 0, 1]
+        let model = try LogisticRegression.fit(
+            features: standardize(features), labels: labels, learningRate: 0.5)
+
+        let plain = model.equation()
+        XCTAssertTrue(plain.hasPrefix("log-odds = "), "got \(plain)")
+        XCTAssertTrue(plain.contains("x₁") && plain.contains("x₂"), "got \(plain)")
+
+        let named = model.equation(variables: ["tion", "ment"])
+        XCTAssertTrue(named.contains("·tion") && named.contains("·ment"), "got \(named)")
+        XCTAssertFalse(named.contains("x₁"), "got \(named)")
+    }
+
+    // Without an intercept, the first weight is a term, never a constant.
+    func testEquationWithoutIntercept() throws {
+        let features: [[Double]] = [[-2.0], [-1.0], [-0.5], [0.5], [1.0], [2.0], [-1.5], [1.5]]
+        let labels = [0, 0, 1, 0, 1, 1, 0, 1]
+        let model = try LogisticRegression.fit(
+            features: features, labels: labels, learningRate: 0.5, intercept: false)
+
+        XCTAssertEqual(model.coefficients.count, 1)
+        let weight = model.coefficients[0]
+        XCTAssertGreaterThan(weight, 0)
+        XCTAssertEqual(model.equation(), "log-odds = " + String(format: "%.2f", weight) + "x")
+        XCTAssertEqual(model.equation(variables: ["score"]),
+                       "log-odds = " + String(format: "%.2f", weight) + "·score")
+    }
 }

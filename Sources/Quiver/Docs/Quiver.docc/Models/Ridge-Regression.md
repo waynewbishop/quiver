@@ -238,6 +238,7 @@ run1 == run2  // true
 
 ### Reading the fit
 - ``Coefficients``
+- ``Coefficients/hasIntercept``
 - ``Coefficients/equation()``
 - ``Coefficients/equation(variables:response:)``
 

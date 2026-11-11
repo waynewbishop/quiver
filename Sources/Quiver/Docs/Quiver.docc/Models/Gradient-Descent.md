@@ -191,6 +191,7 @@ Gradient descent on squared error is the simplest case: the loss is convex, the 
 
 ### Reading the fit
 - ``Coefficients``
+- ``Coefficients/hasIntercept``
 - ``Coefficients/equation()``
 - ``Coefficients/equation(variables:response:)``
 
