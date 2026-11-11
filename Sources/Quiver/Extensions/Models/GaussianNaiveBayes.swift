@@ -43,7 +43,9 @@ import Foundation
 public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, Equatable, Sendable {
 
     public var description: String {
-        "GaussianNaiveBayes: \(classes.count) classes, \(featureCount) features"
+        let classLabel = classes.count == 1 ? "class" : "classes"
+        let featureLabel = featureCount == 1 ? "feature" : "features"
+        return "GaussianNaiveBayes: \(classes.count) \(classLabel), \(featureCount) \(featureLabel)"
     }
 
     /// Statistics learned from the training data for a single class.
