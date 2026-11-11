@@ -33,6 +33,16 @@ final class SendableTests: XCTestCase {
         XCTAssertEqual(result.4, 1)
     }
 
+    func testBernoulliNaiveBayesSendableAcrossTaskBoundary() async {
+        let model = BernoulliNaiveBayes.fit(features: [[1.0, 0.0], [0.0, 1.0]], labels: [0, 1])
+
+        let predictions = await Task {
+            return model.predict([[1.0, 0.0]])
+        }.value
+
+        XCTAssertEqual(predictions, [0])
+    }
+
     func testValueTypesSendableAcrossTaskBoundary() async {
         let cm = [0, 1, 1].confusionMatrix(actual: [0, 1, 0])
         let panel = Panel([("col", [1.0, 2.0, 3.0])])

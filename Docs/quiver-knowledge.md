@@ -57,7 +57,7 @@ let run2 = KMeans.fit(data: points, k: 3, seed: 42)
 run1 == run2  // true
 ```
 
-Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`, `ResidualModel`, `PCA`, `TrueEffortScore`. Data: `Panel`, `Panel.Row`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`, `TESResult`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`, `TESError`.
+Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `BernoulliNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`, `ResidualModel`, `PCA`, `TrueEffortScore`. Data: `Panel`, `Panel.Row`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`, `TESResult`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`, `TESError`.
 
 ---
 
@@ -1062,6 +1062,34 @@ for stats in gnb.classes {
 }
 ```
 
+## Bernoulli Naive Bayes (1.7.0)
+
+```swift
+// [ends in "-tion", ends in "-age"]; 0 = masculine, 1 = feminine
+let endings: [[Double]] = [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
+let genders = [1, 1, 1, 0, 0]
+
+let bnb = BernoulliNaiveBayes.fit(features: endings, labels: genders)              // alpha defaults to 1.0
+let lightSmoothing = BernoulliNaiveBayes.fit(features: endings, labels: genders, alpha: 0.5)
+print(bnb)  // BernoulliNaiveBayes: 2 classes, 2 features, alpha: 1
+
+bnb.predict([[1.0, 0.0]])                  // [1]
+bnb.predictProbabilities([[1.0, 0.0]])     // [[≈ 0.104, ≈ 0.896]] — each row sums to 1.0
+bnb.predictLogProbabilities([[1.0, 0.0]])  // [[Double]] — unnormalized log-probabilities
+bnb.classify([[1.0, 0.0]])                 // [Classification] — grouped by predicted label
+bnb.alpha                                  // 1.0
+bnb.classes                                // [BernoulliNaiveBayes.ClassStats]
+
+// featureProbabilities[f] is P(feature f = 1 | class), Laplace-smoothed
+for stats in bnb.classes {
+    print(stats)
+}
+// Class 0: prior 40.0%, feature probabilities [0.25, 0.75], 2 samples
+// Class 1: prior 60.0%, feature probabilities [0.60, 0.40], 3 samples
+```
+
+Naive Bayes for yes/no features. Each feature is `1.0` (present) or `0.0` (absent); any other value traps with a precondition at fit and predict time. Fitting counts how often each feature is present per class and smooths the count: P(feature = 1 | class) = (presentCount + alpha) / (classCount + 2·alpha). The smoothing keeps every probability strictly between 0 and 1, so a feature never seen in a class lowers that class's score without ruling it out. `GaussianNaiveBayes` handles the same case poorly: a binary feature that is constant within a class gets its variance floored at `1e-9`, and the prediction becomes near-certain (`[[0.0, 1.0]]` on the data above). Absent features count as evidence: a feature usually present in a class lowers that class's score when missing. Supports any number of classes, so a three-gender language works without one-vs-rest. `alpha` must be positive and finite. Do not scale the features; `StandardScaler` would turn the `0.0` and `1.0` values into other numbers. `fit` does not throw. Conforms to `Classifier`, `Codable`, `CustomStringConvertible`, `Equatable`, and `Sendable`. Limits: presence only, so a word that appears three times counts the same as once; and strongly correlated features (such as endings "-ion" and "-tion") count the same evidence twice, pushing probabilities toward overconfidence.
+
 ## Panel (Columnar Data)
 
 ```swift
@@ -1232,8 +1260,8 @@ Quiver's ML models follow a consistent pattern: `fit()` → `predict()` → eval
 - **Classification vs regression.** Classification predicts discrete categories (`[Int]` labels). Regression predicts continuous values (`[Double]` targets).
 - **Features and labels.** Features are the input measurements (`[[Double]]` matrix, rows = samples, columns = measurements). Labels are what we predict (`[Int]` for classification, `[Double]` for regression).
 - **Train/test split.** Never evaluate on training data. Use `trainTestSplit(testRatio:seed:)` or `stratifiedSplit(labels:testRatio:seed:)` to hold out evaluation data.
-- **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) and iterative optimizers (`GradientDescent`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling.
-- **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent, Ridge, LogisticRegression, PCA. All use static `fit()` methods — no unfitted state exists.
+- **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) and iterative optimizers (`GradientDescent`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling. `BernoulliNaiveBayes` must not be scaled — its features are `0.0`/`1.0` flags.
+- **Models available:** GaussianNaiveBayes, BernoulliNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent, Ridge, LogisticRegression, PCA. All use static `fit()` methods — no unfitted state exists.
 - **Built with `init`, not `fit()`:** `ResidualModel(model:)` wraps an already-fitted regressor and scores how far each observation sits from its prediction. `TrueEffortScore` is created either fresh for a new runner or seeded from a runner's past workouts, then records a live run with `record(...)` and returns a `TESResult` from `finalize()`.
 - **Scalar prediction.** Single-feature models accept a scalar in place of a one-row matrix: `model.predict(3500.0)` returns one value — `Double` for regressors, `Int` for classifiers. The convenience is protocol-provided on every `Regressor` and `Classifier`; it applies only when the model was trained on a single feature.
 - **Model persistence.** All models conform to `Codable`. Train once, encode to JSON with `JSONEncoder`, decode on any platform with `JSONDecoder` — identical predictions guaranteed by `Equatable`. When scaling is used, persist both the scaler and model together. See the Model-Persistence documentation page for platform-specific guidance (iOS, watchOS, Vapor, SwiftData).
@@ -1330,6 +1358,10 @@ See the Data Visualization section above for signatures. ML-specific mappings: c
 ### Gaussian Naive Bayes
 
 See the Gaussian Naive Bayes section above for signatures. When to use: a fast baseline classifier that works well on small datasets — a good first model before trying more complex approaches. Prefer `predictProbabilities` over the argmax `predict` label when decisions are cost-sensitive or need threshold tuning.
+
+### Bernoulli Naive Bayes
+
+See the Bernoulli Naive Bayes section above for signatures. When to use: features that are checked rather than measured — word endings, keywords, on/off settings — recorded as `0.0` or `1.0`. Choose it over `GaussianNaiveBayes` whenever the features are binary; the Gaussian model's variance floor makes it overconfident on a flag that never fires in one class. Read `classes[c].featureProbabilities[f]` to see P(feature = 1 | class) directly. Lower `alpha` to trust the observed counts more closely.
 
 ### K-Nearest Neighbors
 

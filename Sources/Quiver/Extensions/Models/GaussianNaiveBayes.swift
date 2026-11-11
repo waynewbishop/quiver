@@ -95,14 +95,8 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
         let featureCount = features[0].count
         let totalSamples = Double(features.count)
 
-        // Group sample indices by class label
-        var classIndices: [Int: [Int]] = [:]
-        for (i, label) in labels.enumerated() {
-            classIndices[label, default: []].append(i)
-        }
-
-        // Compute per-class statistics
-        let classStats = classIndices.map { (label, indices) -> ClassStats in
+        // Compute per-class statistics, one entry per label in ascending order
+        let classStats = _NaiveBayes.sampleIndicesGroupedByLabel(labels).map { (label, indices) -> ClassStats in
             let count = indices.count
             let prior = Double(count) / totalSamples
 
@@ -135,7 +129,7 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
 
             return ClassStats(label: label, prior: prior, means: means,
                               variances: variances, count: count)
-        }.sorted { $0.label < $1.label }
+        }
 
         return GaussianNaiveBayes(classes: classStats, featureCount: featureCount)
     }
@@ -223,18 +217,13 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
 
     /// Predicts the most likely class for a single sample.
     private func _predictSingle(_ sample: [Double]) -> Int {
-        var bestLabel = classes[0].label
-        var bestLogProb = -Double.infinity
-
-        for classStats in classes {
-            let logProb = _logProbability(sample: sample, classStats: classStats)
-            if logProb > bestLogProb {
-                bestLogProb = logProb
-                bestLabel = classStats.label
-            }
+        let logJointProbabilities = classes.map { classStats in
+            _logProbability(sample: sample, classStats: classStats)
         }
-
-        return bestLabel
+        return _NaiveBayes.mostProbableLabel(
+            logJointProbabilities: logJointProbabilities,
+            labels: classes.map { $0.label }
+        )
     }
 
     /// Computes log P(class) + Σ log P(x_i | class) for a sample and class.
