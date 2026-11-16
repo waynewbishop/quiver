@@ -90,24 +90,24 @@ As `lambda` rises, two things happen. First, weights shrink; the pair that range
 
 ### The same penalty that steadies the math
 
-There is a second reason the penalty helps, and it is the same idea seen from the math side. Solving for the coefficients means inverting a matrix built from the features. When two features carry nearly the same information, that matrix is almost impossible to invert cleanly: the same instability that gave us those wild opposite-signed weights. The <doc:Determinants-Primer> measures how close a matrix is to that edge with its `conditionNumber`: a small value is healthy, a huge value is trouble.
+There is a second reason the penalty helps, and it is the same idea seen from the math side. Solving for the coefficients means solving a system built from a matrix of the features. When two features carry nearly the same information, that matrix is badly conditioned: small relative changes in the data can be amplified by up to its condition number in the coefficients, the same instability that gave us those wild opposite-signed weights. The <doc:Determinants-Primer> measures how close a matrix is to that edge with its `conditionNumber`: a small value is healthy, a huge value is trouble.
 
 Adding the penalty to that matrix nudges it back to safe ground. The effect is direct: for the floor-area data above, the condition number falls from the hundreds of thousands to a handful once the penalty is on the diagonal:
 
 ```swift
 // Continuing with the scaled floor-area features from above.
-// The feature matrix that least squares inverts, before and after the penalty.
+// The feature matrix least squares solves against, before and after the penalty.
 let gram = scaled.transposed().multiplyMatrix(scaled)
-gram.conditionNumber  // 402610 — almost impossible to invert
+gram.conditionNumber  // 402610 — badly conditioned
 
-// Adding the penalty to the diagonal is what stabilizes the inversion.
+// Adding the penalty to the diagonal is what stabilizes the solve.
 var penalized = gram
 penalized[0][0] += 1
 penalized[1][1] += 1
 penalized.conditionNumber  // 17 — the same matrix, made stable
 ```
 
-The penalty that shrinks coefficients is the same penalty that makes the arithmetic tractable. Quiver's `Ridge` reaches the same minimum using gradient descent on the penalized objective, rather than inverting this matrix directly, but the stabilizing effect remains identical. Both routes arrive at the same minimum; our choice is a tradeoff between closed-form exactness and descent's scalability for larger problems.
+The penalty that shrinks coefficients is the same penalty that makes the arithmetic tractable. Quiver's `Ridge` reaches the same minimum using gradient descent on the penalized objective, rather than solving with this matrix directly, but the stabilizing effect remains identical. Both routes arrive at the same minimum; our choice is a tradeoff between closed-form exactness and descent's scalability for larger problems.
 
 > Tip: The Determinants Primer introduces `conditionNumber` as the diagnostic that flags a near-singular matrix. Regularization is the response that diagnostic points toward.
 

@@ -255,4 +255,16 @@ final class LinearRegressionTests: XCTestCase {
         let model2 = try LinearRegression.fit(features: features, targets: targets)
         XCTAssertEqual(model1, model2)
     }
+
+    // Redundant features in different units throw rather than returning meaningless coefficients.
+    func testRedundantLargeMagnitudeFeaturesThrow() {
+        let sqft: [Double] = [1200, 1800, 2400, 1600, 2000, 2800, 1400, 2200, 1000, 3000]
+        let features = sqft.map { [$0, $0 * 0.092903] }
+        let price: [Double] = [180000, 260000, 350000, 230000, 290000,
+                               420000, 195000, 320000, 160000, 450000]
+        XCTAssertThrowsError(try LinearRegression.fit(features: features, targets: price)) { error in
+            XCTAssertEqual(error as? MatrixError, .singular)
+        }
+    }
+
 }

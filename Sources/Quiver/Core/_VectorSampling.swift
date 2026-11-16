@@ -96,7 +96,8 @@ internal enum _Sampling {
     ///
     /// Groups elements by their label, shuffles each group independently using the
     /// seeded generator, then takes the specified ratio from each group for the test set.
-    /// This guarantees that rare classes appear in both partitions proportionally.
+    /// Every class with two or more samples appears in both partitions, in roughly
+    /// the original proportions; a class with a single sample stays in training.
     ///
     /// - Parameters:
     ///   - features: The feature array to split (rows of data).

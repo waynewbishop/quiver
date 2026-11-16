@@ -59,7 +59,7 @@ let (trainX, testX, trainY, testY) = features.stratifiedSplit(
 
 ### Data leakage
 
-**Data leakage** occurs when test set information influences the training process. The most common form is fitting a preprocessor, such as a scaler, on the entire dataset before splitting. If the scaler learns the minimum and maximum from all rows, including the test rows, the training process indirectly "sees" the test data, making evaluation results overly optimistic.
+**Data leakage** occurs when test set information influences the training process. The most common form is fitting a preprocessor, such as a scaler, on the entire dataset before splitting. If the scaler learns the mean and standard deviation from all rows, including the test rows, the training process indirectly "sees" the test data, making evaluation results overly optimistic.
 
 Fit on training data only, then transform both sets using the same statistics:
 
@@ -69,7 +69,7 @@ import Quiver
 // Correct: fit on training data, transform both
 let scaler = StandardScaler.fit(features: trainFeatures)
 let scaledTrain = scaler.transform(trainFeatures)
-let scaledTest = scaler.transform(scaledTestFeatures)
+let scaledTest = scaler.transform(testFeatures)
 ```
 
 This pattern (fit once on training data, apply everywhere) prevents leakage and ensures honest evaluation. The Pipeline type enforces this automatically by bundling the scaler and model, so raw inputs are scaled internally and the forgotten-scaling mistake becomes impossible.

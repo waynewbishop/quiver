@@ -38,7 +38,7 @@ The `frequencyDistribution()` returns a dictionary mapping distinct outcomes to 
 
 ### The normal distribution
 
-The normal distribution models phenomena that cluster around an average with symmetric falloff, such as measurement error, test scores, and adult heights. The Central Limit Theorem guarantees that sample means of large enough populations are approximately normal, making this distribution central to inferential statistics.
+The normal distribution models phenomena that cluster around an average with symmetric falloff, such as measurement error, test scores, and adult heights. The Central Limit Theorem guarantees that the means of large enough samples are approximately normal, whatever the shape of the population they come from (provided its variance is finite), making this distribution central to inferential statistics.
 
 Quiver provides `pdf` (density), `logPDF` (log-density), `cdf` (cumulative probability), and `quantile` (inverse CDF) for the normal distribution at `Distributions.normal`.
 

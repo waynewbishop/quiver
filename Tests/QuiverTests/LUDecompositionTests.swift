@@ -180,4 +180,62 @@ final class LUDecompositionTests: XCTestCase {
             XCTAssertEqual(error as? MatrixError, .notSquare)
         }
     }
+
+    // MARK: - Scale-aware singular cutoff
+
+    // Rank-deficient matrix with large entries throws even when rounding leaves a nonzero pivot.
+    func testLargeMagnitudeRankDeficientThrows() {
+        let sqft: [Double] = [1200, 1800, 2400, 1600, 2000, 2800, 1400, 2200, 1000, 3000]
+        let design = sqft.map { [1.0, $0, $0 * 0.092903] }   // sqm column = sqft × 0.092903
+        let gram = design.transposed().multiplyMatrix(design)
+        XCTAssertThrowsError(try gram.luDecomposed()) { error in
+            XCTAssertEqual(error as? MatrixError, .singular)
+        }
+        XCTAssertEqual(gram.determinant, 0.0)
+    }
+
+    // Well-conditioned matrix with tiny entries factors instead of tripping the cutoff.
+    func testTinyMagnitudeIdentityIsNotSingular() throws {
+        let tiny: [[Double]] = [[1e-20, 0, 0], [0, 1e-20, 0], [0, 0, 1e-20]]
+        XCTAssertNoThrow(try tiny.luDecomposed())
+        XCTAssertNotEqual(tiny.determinant, 0.0)
+        XCTAssertEqual(tiny.conditionNumber, 1.0, accuracy: 1e-12)
+    }
+
+    // Closed-form 2×2 determinant classifies singular matrices the same way LU does.
+    func testTwoByTwoDeterminantAgreesWithLU() {
+        // Second column = 1.8 × first; the raw formula leaves a 1.86e-9 rounding residue.
+        let nearlyDependent: [[Double]] = [[1234.5, 1234.5 * 1.8], [6789.1, 6789.1 * 1.8]]
+        XCTAssertThrowsError(try nearlyDependent.luDecomposed())
+        XCTAssertEqual(nearlyDependent.determinant, 0.0)
+        XCTAssertEqual(nearlyDependent.logDeterminant.sign, 0)
+    }
+
+    // 2×2 singularity test stays correct where the raw products a·d and b·c underflow or overflow.
+    func testTwoByTwoExtremeScalesAreNotSingular() throws {
+        let tiny: [[Double]] = [[1e-200, 0], [0, 1e-200]]
+        XCTAssertNoThrow(try tiny.luDecomposed())
+        XCTAssertEqual(tiny.logDeterminant.sign, 1)
+        XCTAssertEqual(tiny.logDeterminant.logAbsValue, 2 * Foundation.log(1e-200), accuracy: 1e-9)
+        // Nonsingular, yet the determinant value itself underflows to zero.
+        XCTAssertEqual(tiny.determinant, 0.0)
+
+        let huge: [[Double]] = [[1e200, 0], [0, 1e200]]
+        XCTAssertNoThrow(try huge.luDecomposed())
+        XCTAssertEqual(huge.determinant, .infinity)
+        XCTAssertEqual(huge.logDeterminant.sign, 1)
+        XCTAssertEqual(huge.logDeterminant.logAbsValue, 2 * Foundation.log(1e200), accuracy: 1e-9)
+    }
+
+    // 2×2 log determinant carries the sign through a row swap and negative pivots.
+    func testTwoByTwoLogDeterminantSign() {
+        let swapped: [[Double]] = [[1, 2], [3, 4]]   // det = -2, elimination swaps rows
+        XCTAssertEqual(swapped.logDeterminant.sign, -1)
+        XCTAssertEqual(swapped.logDeterminant.logAbsValue, Foundation.log(2.0), accuracy: 1e-12)
+
+        let negativePivots: [[Double]] = [[-3, 1], [1, -2]]   // det = 5, both pivots negative
+        XCTAssertEqual(negativePivots.logDeterminant.sign, 1)
+        XCTAssertEqual(negativePivots.logDeterminant.logAbsValue, Foundation.log(5.0), accuracy: 1e-12)
+    }
+
 }

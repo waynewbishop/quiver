@@ -96,7 +96,7 @@ public extension Array where Element == [Double] {
         var a = self
         var p = [Int](0..<n)
         var sign = 1.0
-        let epsilon = Double.ulpOfOne * 1000
+        let cutoff = _MatrixTolerance.pivotCutoff(for: self)
 
         for i in 0..<n {
             // Partial pivot: find the largest magnitude entry in this column.
@@ -105,7 +105,7 @@ public extension Array where Element == [Double] {
                 maxRow = k
             }
 
-            if abs(a[maxRow][i]) < epsilon {
+            if abs(a[maxRow][i]) <= cutoff {
                 throw MatrixError.singular
             }
 

@@ -101,23 +101,40 @@ Reach for `LinearRegression.fit` when standard errors and confidence intervals m
 
 ### When the normal equation fails
 
-The normal equation requires solving `XᵀX·θ = Xᵀy`. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), `XᵀX` is [singular](<doc:Determinants-Primer>) and the system has no unique solution. In this case `fit` throws `MatrixError.singular`, and we must remove redundant features before fitting. The determinant tells us in advance whether the fit will succeed:
+The normal equation requires solving `XᵀX·θ = Xᵀy`. If the features are linearly dependent (for example, including both temperature in Celsius and Fahrenheit), `XᵀX` is [singular](<doc:Determinants-Primer>) and the system has no unique solution. In this case `fit` throws `MatrixError.singular` rather than returning coefficients, and we must remove the redundant feature before fitting:
 
 ```swift
 import Quiver
 
-let healthy: [[Double]] = [[1, 3], [2, 5]]
-healthy.determinant     // -1.0 — independent columns, fit will succeed
+// Temperature recorded twice: Celsius, then Fahrenheit
+let features: [[Double]] = [[0, 32], [10, 50], [20, 68], [30, 86], [40, 104]]
+let demand = [120.0, 135.0, 150.0, 170.0, 190.0]
 
-let redundant: [[Double]] = [[1, 2], [1, 2]]
-redundant.determinant   //  0.0 — duplicate rows, fit will throw
+do {
+    let model = try LinearRegression.fit(features: features, targets: demand)
+    print(model)
+} catch MatrixError.singular {
+    print("Fahrenheit duplicates Celsius; drop one column")
+}
+// Fahrenheit duplicates Celsius; drop one column
 ```
 
-This prevents `summary` from returning a corrupted variance-covariance matrix, ensuring we acknowledge that inference is not available rather than reading meaningless errors.
+The intercept matters here. Fahrenheit is not a plain multiple of Celsius (`F = 1.8·C + 32`), but once the intercept adds its column of ones to the design matrix, the Fahrenheit column is an exact combination of the other two. To check in advance, we take the determinant of `XᵀX` built from that full design matrix, ones column included, rather than of the raw features:
+
+```swift
+import Quiver
+
+// Design matrix: ones column for the intercept, then Celsius, then Fahrenheit
+let design: [[Double]] = [[1, 0, 32], [1, 10, 50], [1, 20, 68], [1, 30, 86], [1, 40, 104]]
+let gram = design.transposed().multiplyMatrix(design)
+gram.determinant  // 0.0, so fit will throw
+```
+
+Dropping the Fahrenheit column leaves a healthy system: the same check returns `5000.0`, and the fit recovers an intercept of `118` and a slope of `1.75` per degree. The same guard protects `summary(features:targets:level:)`, which throws on redundant features rather than reporting standard errors from a corrupted variance-covariance matrix.
 
 ### The full pipeline
 
-A typical workflow combines holding out test data, fitting on the training portion, and evaluating on the held-out portion. The R² computed on the training rows always flatters the fit; the honest measure is performance on rows the model has never seen:
+A typical workflow combines holding out test data, fitting on the training portion, and evaluating on the held-out portion. The R² computed on the training rows typically flatters the fit; the honest measure is performance on rows the model has never seen:
 
 ```swift
 import Quiver
@@ -163,14 +180,14 @@ The `Panel` type is entirely optional. The regression model accepts arrays direc
 
 ### When to use linear regression
 
-Linear regression is our tool of choice when relationships are roughly linear, features are not heavily collinear, and errors are roughly normal and constant across the target range. The normal equation is exact and one-pass: no learning rate tuning or convergence checks required.
+Linear regression is our tool of choice when relationships are roughly linear and features are not heavily collinear. The normal equation is exact and one-pass: no learning rate tuning or convergence checks required. The shape of the errors matters for a different reason. Errors with a constant spread across the target range are what make the standard errors from `summary` trustworthy, and roughly normal errors matter for its p-values and confidence intervals on small samples.
 
-We should reach for other models when:
-*   Relationships are strongly non-linear (try polynomial regression or input transformations first).
+We should reach for other approaches when:
+*   Relationships are strongly non-linear. Polynomial regression or input transformations come first, since they keep the linear fit and change the features it sees.
 *   Feature counts are very high, making the O(*f*³) factorization expensive.
-*   Data is categorical or sparse, violating the linearity assumption.
+*   The target is a category rather than a quantity, such as spam or not spam. ``LogisticRegression`` models that directly.
 
-For these cases, `GradientDescent` scales better, as it avoids the O(*f*³) factorization of `XᵀX` and uses a per-iteration cost linear in the number of features. For inferential questions (standard errors, p-values, confidence intervals), we pair `LinearRegression.fit` with `summary`. For reading coefficients, understanding slope units, and recognizing when collinearity makes weights untrustworthy, see the Model Interpretation Primer.
+For the high-feature-count case, `GradientDescent` scales better: it fits the same linear model while avoiding the O(*f*³) factorization of `XᵀX`, at a per-iteration cost linear in the number of features. Changing the optimizer does not change what the model can represent, so it is no remedy for non-linearity. Categorical features, by contrast, are no obstacle. Encoded as 0/1 indicator columns, with one category left out so the indicators do not duplicate the intercept, they enter the normal equation like any other column. For inferential questions (standard errors, p-values, confidence intervals), we pair `LinearRegression.fit` with `summary`. For reading coefficients, understanding slope units, and recognizing when collinearity makes weights untrustworthy, see the Model Interpretation Primer.
 
 ### Safe by design
 

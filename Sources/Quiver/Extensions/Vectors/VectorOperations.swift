@@ -310,10 +310,12 @@ public extension Array where Element: Collection, Element.Element: FloatingPoint
             return matrix[0][0]
         }
         if n == 2 {
+            if _MatrixTolerance.isSingular2x2(matrix) { return 0 }
             return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]
         }
 
         // LU decomposition for larger matrices
+        let cutoff = _MatrixTolerance.pivotCutoff(for: matrix)
         var A = matrix
         var det = Element.Element(1)
 
@@ -327,8 +329,7 @@ public extension Array where Element: Collection, Element.Element: FloatingPoint
             }
 
             // Check for singular matrix (nearly zero pivot)
-            let epsilon = Element.Element.ulpOfOne * 1000
-            if abs(A[maxRow][i]) < epsilon {
+            if abs(A[maxRow][i]) <= cutoff {
                 return 0
             }
 
@@ -377,6 +378,7 @@ public extension Array where Element: Collection, Element.Element: FloatingPoint
         }
 
         let n = matrix.count
+        let cutoff = _MatrixTolerance.pivotCutoff(for: matrix)
         var A = matrix
         var inv = [[Element.Element]](repeating: [Element.Element](repeating: 0, count: n), count: n)
 
@@ -396,8 +398,7 @@ public extension Array where Element: Collection, Element.Element: FloatingPoint
             }
 
             // Check for singular matrix (nearly zero pivot)
-            let epsilon = Element.Element.ulpOfOne * 1000
-            if abs(A[maxRow][i]) < epsilon {
+            if abs(A[maxRow][i]) <= cutoff {
                 throw MatrixError.singular
             }
 
@@ -460,10 +461,12 @@ public extension Array where Element == [Double] {
             return self[0][0]
         }
         if n == 2 {
+            if _MatrixTolerance.isSingular2x2(self) { return 0 }
             return self[0][0] * self[1][1] - self[0][1] * self[1][0]
         }
 
         // LU decomposition for larger matrices
+        let cutoff = _MatrixTolerance.pivotCutoff(for: self)
         var A = self
         var det = 1.0
 
@@ -477,8 +480,7 @@ public extension Array where Element == [Double] {
             }
 
             // Check for singular matrix (nearly zero pivot)
-            let epsilon = Double.ulpOfOne * 1000
-            if abs(A[maxRow][i]) < epsilon {
+            if abs(A[maxRow][i]) <= cutoff {
                 return 0
             }
 
@@ -547,14 +549,16 @@ public extension Array where Element == [Double] {
             return LogDeterminant(sign: val < 0 ? -1.0 : 1.0, logAbsValue: Foundation.log(abs(val)))
         }
         if n == 2 {
-            let val = self[0][0] * self[1][1] - self[0][1] * self[1][0]
-            if val == 0 {
+            // Sum the logs of the pivots so extreme scales never form the raw product.
+            guard let pivots = _MatrixTolerance.pivots2x2(self) else {
                 return LogDeterminant(sign: 0, logAbsValue: -.infinity)
             }
-            return LogDeterminant(sign: val < 0 ? -1.0 : 1.0, logAbsValue: Foundation.log(abs(val)))
+            let logAbs = Foundation.log(abs(pivots.first)) + Foundation.log(abs(pivots.second))
+            return LogDeterminant(sign: pivots.sign, logAbsValue: logAbs)
         }
 
         // LU decomposition accumulating in log-space
+        let cutoff = _MatrixTolerance.pivotCutoff(for: self)
         var A = self
         var sign: Double = 1
         var logAbsDet: Double = 0
@@ -569,8 +573,7 @@ public extension Array where Element == [Double] {
             }
 
             // Check for singular matrix
-            let epsilon = Double.ulpOfOne * 1000
-            if abs(A[maxRow][i]) < epsilon {
+            if abs(A[maxRow][i]) <= cutoff {
                 return LogDeterminant(sign: 0, logAbsValue: -.infinity)
             }
 
@@ -661,6 +664,7 @@ public extension Array where Element == [Double] {
 
     // Non-fatal matrix inversion (returns nil for singular matrices)
     private func _tryInvert(_ matrix: [[Double]], size n: Int) -> [[Double]]? {
+        let cutoff = _MatrixTolerance.pivotCutoff(for: matrix)
         var A = matrix
         var inv = [[Double]](repeating: [Double](repeating: 0, count: n), count: n)
 
@@ -676,8 +680,7 @@ public extension Array where Element == [Double] {
                 }
             }
 
-            let epsilon = Double.ulpOfOne * 1000
-            if abs(A[maxRow][i]) < epsilon {
+            if abs(A[maxRow][i]) <= cutoff {
                 return nil
             }
 

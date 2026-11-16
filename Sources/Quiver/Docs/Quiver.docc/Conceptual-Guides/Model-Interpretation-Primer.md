@@ -83,7 +83,7 @@ ols.coefficients   // a lopsided pair — roughly 608719 against -512315
 
 These two numbers are not findings about floor area. They are the solver chasing quirks across two columns that should have been one. The general signature is not "one positive, one negative," but two large weights that nearly cancel and which a different sample would throw just as hard.
 
-By contrast, ``GradientDescent`` meets near-collinear data and converges quietly. It avoids matrix inversion, so it reports `.converged` with sound predictions. Collinearity creates a flat valley of near-equal solutions, and the walk settles somewhere along it. Predictions are reliable because every point in that valley predicts about equally well, but individual weights are not because the valley has no single bottom. Quiet success is not the same as a trustworthy coefficient. See <doc:Optimization-Primer>.
+By contrast, ``GradientDescent`` meets near-collinear data and converges quietly. It avoids matrix inversion, so it reports `.converged` with sound predictions. Collinearity creates a long, nearly flat valley in the loss. There is still a single lowest point, but the floor around it is so level that the walk stops wherever the convergence tolerance is met, and a different start or iteration cap stops it somewhere else. Predictions are reliable because every point along that floor predicts about equally well, but individual weights are not, because the data barely distinguishes one point on the floor from another. Quiet success is not the same as a trustworthy coefficient. See <doc:Optimization-Primer>.
 
 For perfectly collinear columns, where one is an exact multiple of the other, `XᵀX` becomes singular and there is no unique answer. ``LinearRegression`` throws `MatrixError.singular` rather than returning corrupted numbers:
 
@@ -92,7 +92,7 @@ For perfectly collinear columns, where one is an exact multiple of the other, `X
 // try LinearRegression.fit(features:targets:) throws MatrixError.singular
 ```
 
-This throw is honest: with no unique solution, the model provides none. Quiver's `determinant` reports `0.0` for any matrix singular to within its tolerance, and the solver throws on that same condition. A `0.0` here is a reliable advance warning that the fit will throw. See <doc:Determinants-Primer>.
+This throw is honest: with no unique solution, the model provides none. Quiver's `determinant` and the solver share one tolerance, scaled to the size of the matrix's entries, so a `0.0` determinant is a reliable advance warning that the fit will throw. The check belongs on `XᵀX` built from the full design matrix, including the intercept's column of ones, rather than on the raw feature columns. See <doc:Determinants-Primer>.
 
 ### Resolving the signature
 
