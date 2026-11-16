@@ -80,7 +80,7 @@ Raw data rarely arrives ready for models. **Feature engineering** transforms raw
 
 Interaction terms are one crucial move. A linear model is **additive**: it combines features by adding weighted contributions (`cost = a·length + b·width`). If the target depends on a product (e.g., tiling cost depends on area = length × width), no straight line through the original columns can capture it. Computing the product `area = lengths.multiply(widths)` and handing it to the model as a new feature captures this interaction linearly.
 
-**Feature scaling** makes inputs comparable. A credit score (300–850) and an account balance (0–250,000) are six orders of magnitude apart; scaling ensures one does not dominate the calculation.
+**Feature scaling** makes inputs comparable. A credit score (300–850) and an account balance (0–250,000) are nearly three orders of magnitude apart; scaling ensures one does not dominate the calculation.
 
 ```swift
 import Quiver

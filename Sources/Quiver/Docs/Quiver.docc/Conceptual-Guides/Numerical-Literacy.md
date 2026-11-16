@@ -79,7 +79,7 @@ let values = [1.0, 1e16, -1e16, 1.0]
 
 // Left-to-right summation
 values.reduce(0, +)
-// 2.0 in exact arithmetic, but may compute as 0.0 due to cancellation
+// 2.0 in exact arithmetic, but computes as 1.0 due to cancellation
 ```
 
 The notation `1e16` is Swift's shorthand for `1 × 10¹⁶`, ten quadrillion. It is the same scientific-notation pattern we met in the tolerance Tip earlier. When we add `1.0` to `1e16`, the `1.0` is so much smaller than `1e16` that it falls below the precision of the result. The `1.0` is effectively lost. Then we subtract `1e16`, leaving `0`, and add the final `1.0` to get `1.0`. The true answer in exact arithmetic is `2.0`.

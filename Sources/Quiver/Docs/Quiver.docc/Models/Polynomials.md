@@ -119,7 +119,7 @@ if let p = [Double].polyfit(x: x, y: y, degree: 2) {
 
 Because `polyfit` is built on <doc:Linear-Regression>, calling `polyfit(degree: 1)` returns the same line that `LinearRegression.fit(features: x, targets: y)` would. Two doors to the same math. Higher degrees fit curves that linear regression cannot. The function returns `nil` when the inputs are invalid (mismatched lengths, fewer points than `degree + 1`, negative degree) or when the underlying linear system is ill-conditioned.
 
-The equivalence generalizes to any degree. Building the same `[x, x²]` feature matrix by hand and passing it to `LinearRegression.fit` recovers identical coefficients, packaged as an intercept plus weight vector instead of a polynomial:
+The equivalence generalizes to any degree. Building the same `[x, x²]` feature matrix by hand and passing it to `LinearRegression.fit` recovers identical coefficients, with the intercept first, just as `polyfit` returns them:
 
 ```swift
 // Build the [x, x²] feature matrix. The intercept column is added by fit().
@@ -130,8 +130,7 @@ for value in x {
 
 let model = try LinearRegression.fit(features: features, targets: y)
 
-model.intercept           // 1.0          — matches polyfit's a₀
-model.coefficients        // [3.0, 2.0]   — matches polyfit's [a₁, a₂]
+model.coefficients        // [1.0, 3.0, 2.0]   — intercept first, matches polyfit's [a₀, a₁, a₂]
 model.predict([[6, 36]])  // [91.0]       — same prediction
 ```
 
