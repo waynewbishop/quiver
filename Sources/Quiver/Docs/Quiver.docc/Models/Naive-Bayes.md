@@ -162,7 +162,7 @@ Each `Classification` result conforms to `Sequence`, the same Swift protocol tha
 
 ### Safe by design
 
-The `GaussianNaiveBayes` model is a Swift struct, which means it cannot be accidentally changed after creation. This design prevents three common mistakes:
+The `GaussianNaiveBayes` model is a Swift struct, which means it cannot be accidentally changed after creation. This design prevents four common mistakes:
 
 **The model is always ready to use.** Calling `fit(features:labels:)` returns a fully trained model in one step. There is no way to create an empty model and forget to train it before making predictions.
 

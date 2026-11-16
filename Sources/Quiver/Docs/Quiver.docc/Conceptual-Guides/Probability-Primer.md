@@ -84,7 +84,7 @@ Bayes.posterior(
 )  // ≈ 0.3226
 ```
 
-Thirty-two percent. The phrase is a strong signal (seventy percent of phishing uses it) but the base rate of phishing is so low that even after the evidence arrives, the message is still more likely legitimate than phishing. This is the famous counterintuitive payoff of Bayesian reasoning: rare conditions stay rare unless the evidence is overwhelming, and "rare" beats "specific" more often than intuition expects. The same math is what makes a positive medical test for a 1-in-100 disease leave the patient with only a 32% probability of actually having the disease, even when the test is 95% accurate.
+Thirty-two percent. The phrase is a strong signal (seventy percent of phishing uses it) but the base rate of phishing is so low that even after the evidence arrives, the message is still more likely legitimate than phishing. This is the famous counterintuitive payoff of Bayesian reasoning: rare conditions stay rare unless the evidence is overwhelming, and "rare" beats "specific" more often than intuition expects. The same math is what makes a positive medical test for a 1-in-100 disease leave the patient with only about a 16% probability of actually having the disease, even when the test is 95% accurate.
 
 > Note: When `P(E) = 0` the calculation has no answer: division by zero. `Bayes.posterior` returns `nil` in that case, and a `nil` result should be read as "the evidence is impossible under the model," not as an error to catch. The same `nil` appears when any input falls outside `[0, 1]` or the implied marginal collapses to zero.
 

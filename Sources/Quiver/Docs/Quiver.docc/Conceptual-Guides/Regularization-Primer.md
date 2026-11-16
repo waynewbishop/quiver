@@ -6,7 +6,7 @@ Curbing overfitting by adding a penalty that shrinks coefficients toward zero.
 
 A model is **overfitted** when it memorizes the quirks of its training data instead of the underlying pattern. Overall, it scores well on training data but poorly on unseen data. Detecting this gap is a matter of comparing training and test scores; fixing it is the job of **regularization**. This adds a small penalty that discourages a model from leaning too hard on any one feature, ensuring it follows the real pattern rather than the noise. We trade a little accuracy on the training set for steadier, more generalized predictions.
 
-> Note: This primer builds on the overfitting and generalization concepts from the <doc:Machine-Learning-Primer>. For the diagnostic side (recognizing lopsided coefficients before reaching for a cure) see the Model Interpretation Primer.
+> Note: This primer builds on the overfitting and generalization concepts from the <doc:Machine-Learning-Primer>. For the diagnostic side (recognizing lopsided coefficients before reaching for a cure) see the <doc:Model-Interpretation-Primer>.
 
 ### When a fit is too good
 
@@ -81,18 +81,18 @@ for lambda in [1.0, 10.0] {
     let model = try Ridge.fit(features: scaled, targets: prices, lambda: lambda)
     print(model.coefficients)
 }
-// no penalty  → [344750, 608719, -512315]   lopsided, enormous
+// For comparison, ordinary least squares (no penalty) gave [344750, 608719, -512315]: lopsided, enormous.
 // lambda = 1  → [344480,  32137,   32132]   equal, far smaller
 // lambda = 10 → [344320,   8034,    8033]   equal, smaller still
 ```
 
-As `lambda` rises, two things happen. First, weights shrink; the pair that ranged over a million apart at no penalty drops to near `32000` at `lambda` of one, and near `8000` at `lambda` of ten. Second, the weights converge, the penalty spreading the load evenly across the near-identical columns rather than letting one swing wildly positive and the other negative. The intercept stays near `344500` throughout since it is never penalized. The lopsided fit becomes a modest, balanced one. See Ridge Regression for the model itself.
+As `lambda` rises, two things happen. First, weights shrink; the pair that ranged over a million apart at no penalty drops to near `32000` at `lambda` of one, and near `8000` at `lambda` of ten. Second, the weights converge, the penalty spreading the load evenly across the near-identical columns rather than letting one swing wildly positive and the other negative. The intercept stays near `344500` throughout since it is never penalized. The lopsided fit becomes a modest, balanced one. See <doc:Ridge-Regression> for the model itself.
 
 ### The same penalty that steadies the math
 
 There is a second reason the penalty helps, and it is the same idea seen from the math side. Solving for the coefficients means inverting a matrix built from the features. When two features carry nearly the same information, that matrix is almost impossible to invert cleanly: the same instability that gave us those wild opposite-signed weights. The <doc:Determinants-Primer> measures how close a matrix is to that edge with its `conditionNumber`: a small value is healthy, a huge value is trouble.
 
-Adding the penalty to that matrix nudges it back to safe ground. The effect is direct: for the floor-area data above, the condition number falls from the hundreds of thousands to a handful once the penalty is on the diagonal:
+Adding the penalty to that matrix nudges it back to safe ground. The effect is direct: for the floor-area data above, the condition number falls from the hundreds of thousands to under twenty once the penalty is on the diagonal:
 
 ```swift
 // Continuing with the scaled floor-area features from above.
@@ -109,7 +109,7 @@ penalized.conditionNumber  // 17 — the same matrix, made stable
 
 The penalty that shrinks coefficients is the same penalty that makes the arithmetic tractable. Quiver's `Ridge` reaches the same minimum using gradient descent on the penalized objective, rather than inverting this matrix directly, but the stabilizing effect remains identical. Both routes arrive at the same minimum; our choice is a tradeoff between closed-form exactness and descent's scalability for larger problems.
 
-> Tip: The Determinants Primer introduces `conditionNumber` as the diagnostic that flags a near-singular matrix. Regularization is the response that diagnostic points toward.
+> Tip: The <doc:Determinants-Primer> introduces `conditionNumber` as the diagnostic that flags a near-singular matrix. Regularization is the response that diagnostic points toward.
 
 ### Choosing the penalty strength
 

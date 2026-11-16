@@ -67,7 +67,7 @@ let regressorPipeline = Pipeline(scaler: scaler, model: regressionModel)
 let prices = regressorPipeline.predict(newFeatures)  // [245000, 378000]
 ```
 
-> Note: All four Quiver models work with `Pipeline`: `KNearestNeighbors`, `GaussianNaiveBayes`, `KMeans`, and `LinearRegression`. Classifier pipelines return integer labels. Regressor pipelines return continuous values.
+> Note: Every Quiver classifier and regressor works with `Pipeline`, as does `KMeans`. That includes `KNearestNeighbors`, `GaussianNaiveBayes`, `LogisticRegression`, `LinearRegression`, `Ridge`, and `GradientDescent`. Classifier pipelines return integer labels. Regressor pipelines return continuous values.
 
 ### Persisting a pipeline
 

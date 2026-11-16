@@ -122,7 +122,7 @@ let accelMagnitude: [Double] = [/* 3000 samples */]
 
 guard let psd = accelMagnitude.powerSpectralDensity(sampleRate: 50, windowed: true) else { return }
 
-let topHz = psd.dominantFrequency            // ≈ 2.83 Hz → 170 strides per minute
+let topHz = psd.dominantFrequency            // ≈ 2.83 Hz → 170 steps per minute
 let cadenceEnergy = psd.bandEnergy(in: 2.0...3.5)
 ```
 

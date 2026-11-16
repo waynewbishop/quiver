@@ -4,7 +4,7 @@ Assembling retrieved context blocks from chunked documents to ground a language 
 
 ## Overview
 
-Retrieval is often discussed only as a way to help language models. The math behind it serves many practical purposes beyond generating text. Finding a specific product in a large catalog or a citation in a long report uses the exact same ranking logic. We call this broader pattern **retrieval-augmented context** (commonly known as RAG).
+Retrieval is often discussed only as a way to help language models. The math behind it serves many practical purposes beyond generating text. Finding a specific product in a large catalog or a citation in a long report uses the exact same ranking logic. The standard name for the pattern is **retrieval-augmented generation** (RAG), but the retrieval step works the same whether or not a model generates anything afterward.
 
 The core operation is a choice of discovery. We use numeric vectors to identify the most relevant fragments from a larger dataset. This mathematical search uncovers relationships that keyword matching would miss entirely. For example, a search for a "fast shoe" can surface a "racing flat" because the two concepts occupy a similar position in vector space. The math understands the relationship even when the words do not match.
 
@@ -84,8 +84,8 @@ let result = index.retrieve("how long should the dough rise", k: 2)
 for hit in result.hits {
     print(hit.rank, hit.score, hit.label.chunk.text)
 }
-// rank 1   0.9939   Let the dough rise slowly. A slow proof develops flavor…
-// rank 2   0.8046   Knead the dough until smooth. Good kneading builds…
+// 1   0.9939   Let the dough rise slowly. A slow proof develops flavor…
+// 2   0.8046   Knead the dough until smooth. Good kneading builds…
 ```
 
 Each `RetrievedHit` carries its `SourcedChunk` as the label, so text, position, and source survive the ranking with no array to index back into. The raw cosine value arrives on `hit.score` untouched. It is the correct measure to retain rather than a percentage. Because it represents similarity, a retrieval system uses it as a threshold to determine relevance, not as a confidence score that the answer is correct.
