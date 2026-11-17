@@ -21,7 +21,7 @@ let sizes = revenues.scaled(to: 10.0...50.0)
 
 // Z-score standardization (mean=0, std=1) for comparing distributions
 let standardized = revenues.standardized()
-// [-1.29, -0.04, -0.75, 1.58, 0.50]
+// [-1.16, -0.03, -0.68, 1.41, 0.45]
 
 // Convert to percentages of total (for pie/donut charts)
 let shares = revenues.asPercentages()
@@ -81,7 +81,7 @@ if let stats = responseTimes.summary() {
     let mask = responseTimes.isGreaterThanOrEqual(lowerFence)
         .and(responseTimes.isLessThanOrEqual(upperFence))
     let inliers = responseTimes.masked(by: mask)
-    let outliers = responseTimes.masked(by: mask.not())
+    let outliers = responseTimes.masked(by: mask.not)
 
     // Whiskers reach to the most extreme inliers
     let whiskerLow = inliers.min() ?? stats.q1     // 120.0
@@ -107,9 +107,9 @@ let hotCocoa    = [150.0, 130.0, 100.0, 170.0, 120.0]
 
 // Compute the correlation matrix
 let matrix = [temperature, iceCream, hotCocoa].correlationMatrix()
-// [[1.0,   0.99, -0.99],
-//  [0.99,  1.0,  -0.98],
-//  [-0.99, -0.98, 1.0]]
+// [[1.0,   0.99, -1.0],
+//  [0.99,  1.0,  -0.99],
+//  [-1.0, -0.99,  1.0]]
 
 // Flatten to (x, y, value) tuples for heatmap rendering
 let labels = ["Temp", "Ice Cream", "Hot Cocoa"]
@@ -227,15 +227,13 @@ import Quiver
 let predictions = model.predict(scaler.transform(testX))
 let cm = predictions.confusionMatrix(actual: testY)
 
-// Build the 2×2 grid as a matrix
-let grid: [[Double]] = [
-    [Double(cm.trueNegatives), Double(cm.falsePositives)],
-    [Double(cm.falseNegatives), Double(cm.truePositives)]
+// One (x, y, value) tuple per cell for RectangleMark, holding the raw counts
+let heatmap: [(x: String, y: String, value: Double)] = [
+    ("Actual 0", "Predicted 0", Double(cm.trueNegatives)),
+    ("Actual 0", "Predicted 1", Double(cm.falsePositives)),
+    ("Actual 1", "Predicted 0", Double(cm.falseNegatives)),
+    ("Actual 1", "Predicted 1", Double(cm.truePositives))
 ]
-
-// Flatten to (x, y, value) tuples for RectangleMark
-let labels = ["Predicted 0", "Predicted 1"]
-let heatmap = grid.heatmapData(labels: labels)
 ```
 
 Each tuple in `heatmap` carries the row label, column label, and count, ready for a `RectangleMark` with color intensity driven by the value. This visualization makes it immediately clear where the model confuses one class for another.

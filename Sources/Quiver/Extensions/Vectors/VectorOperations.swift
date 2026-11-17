@@ -1142,13 +1142,13 @@ public extension Array where Element == [Double] {
     ///     [0.9, 0.6, 0.9]
     /// ]
     /// let cohesion = cluster.clusterCohesion()
-    /// // Returns value between 0.0 (unrelated) and 1.0 (identical)
+    /// // Returns value between -1.0 (opposing) and 1.0 (identical)
     /// ```
     ///
     /// - Complexity: O(*n*²) where *n* is the number of vectors. Performs well
     ///   for clusters up to low thousands. Use on individual cluster groups
     ///   rather than the full dataset.
-    /// - Returns: Average pairwise similarity (0.0 to 1.0), or 0.0 if fewer than 2 vectors
+    /// - Returns: Average pairwise similarity (-1.0 to 1.0), or 0.0 if fewer than 2 vectors
     func clusterCohesion() -> Double {
         let n = self.count
         guard n > 1 else { return 0.0 }

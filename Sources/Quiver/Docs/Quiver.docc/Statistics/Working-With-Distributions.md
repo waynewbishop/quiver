@@ -6,7 +6,7 @@ Evaluating probability densities, cumulative probabilities, and quantiles for th
 
 A **probability distribution** assigns a probability to each possible value of a random quantity. Whether the data represents test scores, sensor noise, or heights, we analyze these distributions using three functions: the probability density function (PDF), the cumulative distribution function (CDF), and the quantile function.
 
-The `Distributions` namespace organizes these functions. Quiver provides the normal distribution, the Student's t-distribution, the chi-squared distribution, the Poisson distribution, and the binomial distribution. Every distribution provides `pdf`, `cdf`, and `quantile` methods, ensuring a consistent API.
+The `Distributions` namespace organizes these functions. Quiver provides the normal distribution, the Student's t-distribution, the chi-squared distribution, the Poisson distribution, and the binomial distribution. Each distribution provides the functions that apply to it, under consistent names: the normal provides `pdf`, `cdf`, and `quantile`; the t-distribution provides `cdf` and `quantile`; the chi-squared provides `cdf`; and the discrete Poisson and binomial provide `pmf`, `cdf`, and `quantile`.
 
 ```swift
 import Quiver
@@ -136,7 +136,7 @@ Classifier evaluation uses the binomial to estimate confidence intervals for acc
 
 ### Numerical safety
 
-Every function in `Distributions` returns `Double?`. Invalid inputs—such as non-positive standard deviation, negative degrees of freedom, probabilities outside `(0, 1)`, or non-finite results—return `nil` rather than throwing or propagating `NaN`. This forces explicit handling at the call site. See <doc:Numerical-Literacy> for the handling of missing data (`nil`) versus undefined math (`NaN`).
+Every function in `Distributions` returns an optional: `Double?` for densities, probabilities, and continuous quantiles, and `Int?` for the discrete quantiles of the Poisson and binomial. Invalid inputs—such as non-positive standard deviation, negative degrees of freedom, probabilities outside `(0, 1)`, or non-finite results—return `nil` rather than throwing or propagating `NaN`. This forces explicit handling at the call site. See <doc:Numerical-Literacy> for the handling of missing data (`nil`) versus undefined math (`NaN`).
 
 ## Topics
 

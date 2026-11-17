@@ -142,7 +142,7 @@ The sharp drop from `k=2` to `k=3` and the subsequent flattening mark the natura
 
 ### An angular view of cohesion
 
-For a single group of vectors, `clusterCohesion()` returns the average pairwise cosine similarity (0.0 to 1.0); higher means members point in nearly the same direction:
+For a single group of vectors, `clusterCohesion()` returns the average pairwise cosine similarity (-1.0 to 1.0); higher means members point in nearly the same direction:
 
 ```swift
 let groupA = [[0.8, 0.3, 0.9], [0.7, 0.4, 0.8], [0.9, 0.2, 0.9]]

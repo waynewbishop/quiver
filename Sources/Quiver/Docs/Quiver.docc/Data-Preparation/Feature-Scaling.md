@@ -10,7 +10,7 @@ Quiver provides two column-wise scalers that solve this problem in different way
 
 ### When scaling matters
 
-Not every model requires scaling, but in practice it often makes the difference between a model that works and one that doesn't. Consider a Gaussian Naive Bayes classifier trained on customer data with credit scores (300–850), account balances (0–250,000), and loyalty ratios (0.0–0.56). Without scaling, the balance column overwhelms the probability calculations because its variance is orders of magnitude larger than the other features. The model may predict the same class for every sample, producing zero precision and zero recall.
+Not every model requires scaling, but in practice it often makes the difference between a model that works and one that doesn't. Consider a nearest-neighbors classifier trained on customer data with credit scores (300–850), account balances (0–250,000), and loyalty ratios (0.0–0.56). Without scaling, the balance column overwhelms the distance calculation: a gap of a few thousand dollars dwarfs the widest possible gap in credit score, and the loyalty ratio contributes almost nothing. The neighbors the model finds are simply the customers with the closest balances, and the other two features are ignored.
 
 ![Three raw features on mismatched scales — credit score, balance, and loyalty ratio — shown as bars before min-max scaling and again after, each remapped into the same 0 to 1 range](diagram-feature-scaler)
 
@@ -20,7 +20,7 @@ Scaling all features to a common range gives each one equal influence in the mod
 
 `StandardScaler` is the default choice for most machine learning workflows and is the scaler used by `Pipeline`. The scaler works well when features have different units or ranges, and it is less sensitive to outliers than min-max scaling. A single extreme value will not compress the rest of the data into a narrow band, because the formula uses mean and standard deviation rather than minimum and maximum. For the concept behind z-scores, see <doc:Statistics-Primer>.
 
-`FeatureScaler` applies min-max scaling, which is the right choice when the target range matters. Image pipelines that expect pixel intensities in 0...1, visualizations bounded to a fixed axis, and neural network layers that assume bounded inputs all benefit from a scaler that produces values in a known interval. The trade-off is that an outlier in the training data will compress the rest of the values toward one end of the range.
+`FeatureScaler` applies min-max scaling, which is the right choice when the target range matters. Image pipelines that expect pixel intensities in 0...1, visualizations bounded to a fixed axis, and neural network layers that assume bounded inputs all benefit from a scaler that produces values in a known interval. The trade-off is that an outlier in the training data will compress the rest of the values toward one end of the range. The bounds also hold only for the training data: a new value beyond the training minimum or maximum scales proportionally and lands outside the target range.
 
 A useful rule of thumb is to default to `StandardScaler` for distance-based and gradient-based learning, and reach for `FeatureScaler` when a downstream component requires bounded inputs.
 

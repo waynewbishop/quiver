@@ -88,7 +88,7 @@ let model = KNearestNeighbors.fit(
 let predictions = model.predict(scaler.transform(testX))
 ```
 
-> Note: When we only need the ranking of neighbors and not the distances themselves, `.squaredEuclidean` drops the final square root. It orders points exactly as `.euclidean` does, so the classification is identical, while saving one square root per comparison. Its values are not true distances, though, and should not be read as straight-line lengths or compared across differently scaled problems.
+> Note: When we only need the ranking of neighbors and not the distances themselves, `.squaredEuclidean` drops the final square root. It orders points exactly as `.euclidean` does, so with uniform voting the classification is identical, while saving one square root per comparison. With `VoteWeight/distance` the weights become `1 / d²` rather than `1 / d`, which can change the predicted class. Its values are not true distances, though, and should not be read as straight-line lengths or compared across differently scaled problems.
 
 **Cosine distance** measures the angle between vectors, ignoring their magnitude. Cosine distance is preferred for text embeddings and other cases where direction matters more than scale:
 

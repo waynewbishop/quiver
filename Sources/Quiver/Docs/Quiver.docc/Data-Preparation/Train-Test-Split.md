@@ -167,7 +167,7 @@ if let ratio = labels.imbalanceRatio(), ratio > 3.0 {
 
 ### Oversampling imbalanced data
 
-Stratified splitting preserves class ratios, but if the smaller class has very few samples, even a proportional split leaves the model with too little data to learn its pattern. `oversample(labels:)` addresses this by generating synthetic samples before splitting:
+Stratified splitting preserves class ratios, but if the smaller class has very few samples, even a proportional split leaves the model with too little data to learn its pattern. `oversample(labels:)` addresses this by generating synthetic samples for the training set after splitting:
 
 ```swift
 import Quiver
@@ -178,14 +178,14 @@ let features: [[Double]] = [
 ]
 let labels = [0, 0, 0, 0, 1, 1]
 
-// Balance first, then split
-let (balanced, balancedLabels) = features.oversample(labels: labels)
-let split = balanced.stratifiedSplit(
-    labels: balancedLabels, testRatio: 0.2, seed: 42
+// Split first, then balance the training set only
+let split = features.stratifiedSplit(
+    labels: labels, testRatio: 0.2, seed: 42
 )
+let (balanced, balancedLabels) = split.trainFeatures.oversample(labels: split.trainLabels)
 ```
 
-The method auto-detects which classes are smaller and generates new samples by interpolating between existing points in vector space. For multi-class data, every class below the largest count is oversampled independently. Call `oversample` before `stratifiedSplit` so that both the training and test sets contain enough examples from every class.
+The method auto-detects which classes are smaller and generates new samples by interpolating between existing points in vector space. For multi-class data, every class below the largest count is oversampled independently. Call `oversample` after `stratifiedSplit`, on the training set only. Synthetic samples are interpolated from real ones, so oversampling before the split would let near-copies of training rows land in the test set and inflate the evaluation. The test set keeps the original class distribution, because that is the distribution the model will meet in practice.
 
 > Experiment: **The Quiver Notebook** is the right place to feel why the `seed` parameter matters. Call `trainTestSplit` on the same array three times with three different seeds, then call it three more times with the same seed. The first three produce different partitions; the second three produce identical ones. A reproducible experiment is a re-runnable experiment — that property comes from the seed, not from the data. See <doc:Quiver-Notebook>.
 

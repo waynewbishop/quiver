@@ -85,7 +85,7 @@ model.predict(3500.0)      // one value in, one value out
 
 ### Failure is in the return type
 
-Every model's `fit` method states in its signature whether training can fail. A method that throws can fail and forces us to handle the failure, a method that returns a plain value cannot fail at all, and a method that returns an optional reports failure by handing back `nil`. The compiler reads that signature, so the obligation to handle a bad fit is checked before the program ever runs.
+Every model's `fit` method states in its signature whether training can fail. A method that throws can fail and forces us to handle the failure, a method that returns a plain value cannot fail on valid input, and a method that returns an optional reports failure by handing back `nil`. Invalid input, such as an empty feature array or mismatched feature and label counts, is a programming error rather than a training failure, and stops the program at a precondition. The compiler reads that signature, so the obligation to handle a bad fit is checked before the program ever runs.
 
 The three shapes sit side by side, and each one tells us at the call site exactly how much care the result demands:
 

@@ -19,7 +19,7 @@ import Quiver
 let sample: [Double] = [0.2, -0.1, 9.7]
 
 sample.magnitude                      // ≈ 9.70  — close to g (9.81 m/s²)
-sample.angle(with: [0, 0, 1])         // ≈ 0.024 rad — almost perfectly upright
+sample.angle(with: [0, 0, 1])         // ≈ 0.023 rad — almost perfectly upright
 ```
 
 The same `magnitude` we use for embedding vectors tells us the **strength** of an acceleration. The `angle(with:)` we use for document similarity indicates how tilted the device is. The operations are identical; only the physical units change their meaning.
@@ -58,7 +58,7 @@ We compute this using `trapezoidalIntegral(dt:)`, where `dt` is the time interva
 import Quiver
 
 // Cycling power, sampled once per second over a 60-second interval.
-let powerWatts: [Double] = [/* 60 power samples in W */]
+let powerWatts: [Double] = [/* 61 power samples in W: one per second, both ends included */]
 
 // Total work in joules: the area under the power-vs-time curve.
 let totalWorkJ = powerWatts.trapezoidalIntegral(dt: 1.0) ?? 0

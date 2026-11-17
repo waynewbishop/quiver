@@ -12,7 +12,7 @@ Despite the name, logistic regression is a **classification** model. The "regres
 
 We compute the linear score `Xθ`, a weighted sum of features, and pass it through the **sigmoid** function σ, which maps any real number into the open interval (0, 1). A large positive score yields a probability near 1, a large negative score near 0, and a score of exactly 0 yields 0.5, our decision boundary. The `sigmoid` function is covered on its own in <doc:Activation-Functions>.
 
-Fitting follows the same gradient descent loop as our other models: start from θ = 0 and step opposite the gradient of our objective. Here, our objective is **cross-entropy** (log loss). The gradient $\nabla L = (1/n)X^T(\sigma(X\theta) - y)$ shares the same shape as least squares, but uses the sigmoid-transformed residual. Cross-entropy is naturally convex for this model, ensuring our descent leads us to a single global minimum. The <doc:Optimization-Primer> covers why one descent algorithm serves several models at once.
+Fitting follows the same gradient descent loop as our other models: start from θ = 0 and step opposite the gradient of our objective. Here, our objective is **cross-entropy** (log loss). The gradient $\nabla L = (1/n)X^T(\sigma(X\theta) - y)$ shares the same shape as least squares, but uses the sigmoid-transformed residual. Cross-entropy is convex for this model, so descent has no local minima to get stuck in. When the classes overlap, the minimum is a single finite point; when they separate perfectly, no finite minimum exists, as *Watching the descent* explains. The <doc:Optimization-Primer> covers why one descent algorithm serves several models at once.
 
 ### Fitting a model
 
@@ -209,9 +209,9 @@ The coefficients follow the intercept-first layout: when we fit a bias term, `co
 
 ### When to use logistic regression
 
-Logistic regression is our tool of choice when we have a binary target and a boundary that separates classes reasonably well. It predicts a calibrated probability rather than a bare label, making it perfect for ranking, threshold tuning, and cost-sensitive decisions where confidence matters. Because the decision boundary is linear, the model excels when classes are nearly linearly separable; when the true boundary curves, a non-parametric classifier like <doc:Nearest-Neighbors-Classification> is a better choice.
+Logistic regression is our tool of choice when we have a binary target and a boundary that separates classes reasonably well. It predicts a probability estimate rather than a bare label, making it perfect for ranking, threshold tuning, and cost-sensitive decisions where confidence matters. Because the decision boundary is linear, the model excels when classes are nearly linearly separable; when the true boundary curves, a non-parametric classifier like <doc:Nearest-Neighbors-Classification> is a better choice.
 
-Two constraints define its scope. Labels must be binary; more than two classes require a multinomial model, which is out of scope here. Because fitting is iterative, we must standardize features first, or the default learning rate fails to descend. Within these constraints, it remains our workhorse binary classifier, with its calibrated probability being its defining advantage.
+Two constraints define its scope. Labels must be binary; more than two classes require a multinomial model, which is out of scope here. Because fitting is iterative, we must standardize features first, or the default learning rate fails to descend. Within these constraints, it remains our workhorse binary classifier, with its probability estimate being its defining advantage.
 
 ### Safe by design
 

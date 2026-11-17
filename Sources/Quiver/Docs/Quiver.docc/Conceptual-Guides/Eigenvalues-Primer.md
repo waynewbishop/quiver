@@ -85,7 +85,7 @@ Every vector in the plane turns the same quarter turn, so none stays on its star
 
 ### Why symmetric matrices behave
 
-The shear had a single eigenvector direction and the rotation had none, so a general matrix makes a shaky foundation for what comes next. Symmetric matrices — the ones equal to their own transpose — are the well-behaved case. A symmetric matrix always has a full set of real eigenvalues, and its eigenvectors are always perpendicular to each other:
+The shear had a single eigenvector direction and the rotation had none, so a general matrix makes a shaky foundation for what comes next. Symmetric matrices — the ones equal to their own transpose — are the well-behaved case. A symmetric matrix always has a full set of real eigenvalues, and its eigenvectors can always be chosen perpendicular to each other:
 
 ```swift
 import Quiver

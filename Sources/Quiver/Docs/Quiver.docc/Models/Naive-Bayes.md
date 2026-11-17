@@ -58,7 +58,7 @@ let predictions = model.predict(newSamples)
 
 For deeper inspection, `predictLogProbabilities(_:)` returns the raw log-probabilities for each class, which is useful for understanding how confident the model is in each prediction.
 
-When the caller needs **calibrated probabilities** rather than the raw log-space values (for cost-sensitive decisions, threshold tuning, or downstream probabilistic reasoning), `predictProbabilities(_:)` applies the softmax transform and returns probabilities that sum to `1.0` across classes for each row:
+When the caller needs **probability estimates** rather than the raw log-space values (for cost-sensitive decisions, threshold tuning, or downstream probabilistic reasoning), `predictProbabilities(_:)` applies the softmax transform and returns probabilities that sum to `1.0` across classes for each row:
 
 ```swift
 import Quiver
@@ -71,7 +71,7 @@ let probs = model.predictProbabilities([[2.0, 2.5], [5.5, 7.0]])
 
 > Experiment: **The Quiver Notebook** is the right place to watch a single feature steer a prediction. Hold every other feature fixed, sweep one through its range, and watch the class probability move. Naive Bayes treats each feature as independent evidence, and the snippet makes that visible. See <doc:Quiver-Notebook>.
 
-The output ordering matches the model's `classes` array. The argmax of each row is identical to what `predict(_:)` would return: `predictProbabilities` adds calibrated confidence on top of the same decision.
+The output ordering matches the model's `classes` array. The argmax of each row is identical to what `predict(_:)` would return: `predictProbabilities` adds a probability estimate on top of the same decision. Summing to `1.0` makes the values valid probabilities, but not necessarily calibrated ones: Naive Bayes is often overconfident, so check them against observed outcomes before treating `0.9` as a 90% chance.
 
 ### The full pipeline
 

@@ -194,7 +194,7 @@ let cluster = [
 ]
 
 // Calculate cluster cohesion
-let cohesion = cluster.clusterCohesion()  // 0.0 to 1.0
+let cohesion = cluster.clusterCohesion()  // -1.0 to 1.0; higher is tighter
 
 // Compare different clusters
 let technicalDocs = [[0.8, 0.3, 0.9], [0.7, 0.4, 0.8]]

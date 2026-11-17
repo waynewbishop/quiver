@@ -151,7 +151,7 @@ let model = GaussianNaiveBayes.fit(
 )
 
 let predictions = model.predict(test.toMatrix(columns: featureColumns))
-let accuracy = predictions.confusionMatrix(actual: test.labels("species")).accuracy
+let accuracy = predictions.classificationReport(actual: test.labels("species")).accuracy
 print("accuracy:", accuracy)
 ```
 
