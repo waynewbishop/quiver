@@ -94,7 +94,7 @@ The result keeps more than the ranked few. `result.scores` is every chunk's simi
 
 ## Deciding what counts as relevant
 
-A ranking is not yet a decision. The top match always exists, even for a question the corpus does not cover. It is simply the least-bad of a weak field. Turning a ranking into "worth answering" is a judgment, and `isAboveGate(floor:outlierZ:)` makes it once the caller supplies the bar:
+A ranking is not yet a decision. For any non-empty index and any query the embedder can vectorize, a top match exists, even for a question the corpus does not cover. It is simply the least-bad of a weak field. An empty index, or a query the embedder cannot vectorize, produces no hits at all. Turning a ranking into "worth answering" is a judgment, and `isAboveGate(floor:outlierZ:)` makes it once the caller supplies the bar:
 
 ```swift
 if result.isAboveGate(floor: 0.30, outlierZ: 3.0) {

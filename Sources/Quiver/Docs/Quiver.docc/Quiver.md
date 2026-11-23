@@ -117,6 +117,7 @@ Quiver provides developers the tools to work with data directly. This includes a
 - <doc:Quiver-Notebook-For-Classrooms>
 - <doc:Notebook-Datasets>
 - <doc:Xcode-Playground>
+- <doc:Quiver-On-Linux>
 - <doc:Quiver-Cookbook>
 - <doc:Quiver-Knowledge-File>
 - <doc:Working-With-Fractions>

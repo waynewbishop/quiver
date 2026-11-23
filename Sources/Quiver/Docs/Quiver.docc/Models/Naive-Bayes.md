@@ -243,7 +243,7 @@ gaussian.predictProbabilities([[1.0, 0.0]])  // [[0.0, 1.0]]
 model.predictProbabilities([[1.0, 0.0]])  // [[≈ 0.104, ≈ 0.896]]
 ```
 
-Both models choose feminine, but only the Bernoulli model keeps an honest measure of doubt. That matters whenever the probability drives a decision, such as flagging a word for review only when the model is unsure.
+Both models choose feminine, but only the Bernoulli model keeps the masculine class in play. Smoothing stops the unseen ending from assigning a likelihood of zero, so the masculine score stays small but nonzero instead of vanishing. The resulting probability can still be overconfident when features overlap, because the model treats each one as independent evidence. Keeping the masculine class in play matters whenever the probability drives a decision, such as flagging a word for review only when the model is unsure.
 
 The `alpha` parameter sets the smoothing strength. Smaller values trust the observed counts more closely. With `alpha: 0.5`, the masculine class gives "-tion" a probability of (0 + 0.5) / (2 + 1) ≈ 0.167, and the feminine probability for "information" rises to ≈ 0.955:
 

@@ -91,13 +91,13 @@ The diagonal holds the two variances — `2.5` for hours, `182.5` for score — 
 
 Two structural properties hold for every correlation matrix that Quiver returns, and they are useful as quick sanity checks when the rest of a pipeline is uncertain.
 
-The diagonal is always `1.0`. A column correlates perfectly with itself because the numerator and the denominator of the Pearson ratio reduce to the same sum of squared deviations. Glancing at the diagonal verifies that the matrix was built over the columns we expected and that none of them has been silently replaced by a different column.
+The diagonal is always `1.0`. A column correlates perfectly with itself because the numerator and the denominator of the Pearson ratio reduce to the same sum of squared deviations. Quiver fills the diagonal with `1.0` by convention, even for a constant column, so the diagonal cannot tell us whether a column is usable. Off-diagonal entries involving a constant column are `Double.nan`, because the correlation is undefined when one column has no variance.
 
 The matrix is symmetric: `matrix[i][j]` equals `matrix[j][i]`. Pearson correlation is symmetric in its two arguments, because the covariance and the two standard deviations all treat the pair the same way regardless of order. In practice this means we only need to read the upper or lower triangle of the matrix; the other half is the same numbers reflected across the diagonal.
 
 ### Constant columns and NaN
 
-A column whose values are all equal has zero variance, which places a zero in the denominator of the Pearson ratio. Quiver returns `Double.nan` for every entry in that column's row and column rather than substituting a zero or crashing. `0.0` would carry the meaning "no linear relationship", and that is not the same statement as "the correlation is undefined." NaN preserves the distinction and forces the caller to handle it explicitly. See <doc:Numerical-Literacy> for the contract between `nil` and `NaN` across Quiver.
+A column whose values are all equal has zero variance, which places a zero in the denominator of the Pearson ratio. Quiver returns `Double.nan` for every off-diagonal entry in that column's row and column rather than substituting a zero or crashing. `0.0` would carry the meaning "no linear relationship", and that is not the same statement as "the correlation is undefined." NaN preserves the distinction and forces the caller to handle it explicitly. See <doc:Numerical-Literacy> for the contract between `nil` and `NaN` across Quiver.
 
 ```swift
 let r = result.matrix[i][j]

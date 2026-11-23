@@ -125,9 +125,9 @@ let det = matrix.determinant  // -6.0
 ```
 
 The [determinant](<doc:Determinants-Primer>) provides important information about a matrix:
-- `det = 0`: the matrix is singular and has no inverse
+- `det = 0`: the matrix is singular and has no inverse (Quiver also reports `0.0` when a pivot falls below its scale-aware cutoff)
 - `det ≠ 0`: the matrix is invertible in exact arithmetic
-- A tiny but non-zero determinant marks a near-singular matrix, whose inverse is numerically unreliable — the condition number, not the determinant, is what measures that risk
+- A tiny determinant alone says little about conditioning: multiplying a 2×2 identity by `1e-8` gives a determinant of `1e-16`, yet it inverts cleanly with a condition number of `1`. What matters is how the entries compare in scale, which the condition number measures and Quiver's singularity test applies relative to the largest entry
 - Magnitude indicates volume scaling in geometric transformations
 
 See <doc:Determinants-Primer> for the condition number and for what singularity means when solving a system.

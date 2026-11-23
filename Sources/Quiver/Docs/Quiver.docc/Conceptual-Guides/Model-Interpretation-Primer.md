@@ -52,7 +52,7 @@ The mechanics and cure belong to the <doc:Regularization-Primer>; here we focus 
 
 ### Measuring instability before the fit
 
-Before evaluating how the solver behaves, check the matrix. The closed-form solver inverts `XᵀX`, so its conditioning determines stability. The `conditionNumber` of `XᵀX` measures proximity to singularity, the exact instability that wrecks coefficient interpretation:
+Before evaluating how the solver behaves, check the matrix. The closed-form solver solves `XᵀX·θ = Xᵀy` through an LU factorization, so the conditioning of `XᵀX` governs how much rounding error reaches the coefficients. The `conditionNumber` of `XᵀX` measures proximity to singularity, the exact instability that wrecks coefficient interpretation:
 
 ```swift
 import Quiver
@@ -68,7 +68,7 @@ let scaled = StandardScaler.fit(features: collinear).transform(collinear)
 scaled.transposed().multiplyMatrix(scaled).conditionNumber   // 402610 — near-singular
 ```
 
-A condition number in the low tens is healthy. Here the solver inverts `XᵀX`, which roughly squares the data's own condition number, so 402,610 reflects raw columns near 634, already well past healthy. The bands in the <doc:Determinants-Primer> describe a matrix we invert directly; for `XᵀX`, the bar is stricter.
+A condition number in the low tens is healthy. Forming `XᵀX` squares the conditioning of the data matrix in the 2-norm, so near-identical columns push this value up quickly. 402,610 is far past healthy. The bands in the <doc:Determinants-Primer> describe a matrix we invert directly; for `XᵀX`, the bar is stricter.
 
 ### Reading the failure in the coefficients
 
