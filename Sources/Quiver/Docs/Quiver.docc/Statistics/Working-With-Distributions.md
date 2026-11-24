@@ -6,7 +6,7 @@ Evaluating probability densities, cumulative probabilities, and quantiles for th
 
 A **probability distribution** assigns a probability to each possible value of a random quantity. Whether the data represents test scores, sensor noise, or heights, we analyze these distributions using three functions: the probability density function (PDF), the cumulative distribution function (CDF), and the quantile function.
 
-The `Distributions` namespace organizes these functions. Quiver provides the normal distribution, the Student's t-distribution, the chi-squared distribution, the Poisson distribution, and the binomial distribution. Every distribution provides `pdf`, `cdf`, and `quantile` methods, ensuring a consistent API.
+The `Distributions` namespace organizes these functions. Quiver provides the normal distribution, the Student's t-distribution, the chi-squared distribution, the Poisson distribution, and the binomial distribution. Each distribution provides the functions that apply to it, under consistent names: the normal provides `pdf`, `cdf`, and `quantile`; the t-distribution provides `cdf` and `quantile`; the chi-squared provides `cdf`; and the discrete Poisson and binomial provide `pmf`, `cdf`, and `quantile`.
 
 ```swift
 import Quiver
@@ -38,7 +38,7 @@ The `frequencyDistribution()` returns a dictionary mapping distinct outcomes to 
 
 ### The normal distribution
 
-The normal distribution models phenomena that cluster around an average with symmetric falloff, such as measurement error, test scores, and adult heights. The Central Limit Theorem guarantees that sample means of large enough populations are approximately normal, making this distribution central to inferential statistics.
+The normal distribution models phenomena that cluster around an average with symmetric falloff, such as measurement error, test scores, and adult heights. The Central Limit Theorem guarantees that the means of large enough samples are approximately normal, whatever the shape of the population they come from (provided its variance is finite), making this distribution central to inferential statistics.
 
 Quiver provides `pdf` (density), `logPDF` (log-density), `cdf` (cumulative probability), and `quantile` (inverse CDF) for the normal distribution at `Distributions.normal`.
 
@@ -70,7 +70,7 @@ let cutoff = Distributions.normal.quantile(p: 0.90, mean: 75, standardDeviation:
 
 The t-distribution models the distribution of sample means when the population standard deviation is unknown and the sample size is small. It features heavier tails than the normal distribution to account for the added uncertainty of estimating parameters from small samples. As degrees of freedom (`df`) increase, the t-distribution converges to the standard normal.
 
-Use `Distributions.t` for `cdf(x:df:)` and `quantile(p:df:)` to compute confidence intervals and perform hypothesis tests.
+Use `Distributions.t` for `pdf(x:df:)`, `cdf(x:df:)` and `quantile(p:df:)`. The density draws the curve, while the cumulative and quantile functions compute confidence intervals and perform hypothesis tests.
 
 ```swift
 import Quiver
@@ -85,7 +85,7 @@ let zCrit = Distributions.normal.quantile(p: 0.975, mean: 0,
 
 The chi-squared distribution models the sum of squared independent standard-normal values. It is primarily used for variance inference and goodness-of-fit testing. The mean equals the degrees of freedom (`df`).
 
-Use `Distributions.chiSquared.cdf(x:df:)` to perform these tests. For a fair-die test (observed `[12, 8, 11, 9, 13, 7]`, expected `10`), the chi-squared statistic compares the observed frequency to the expected frequency across six categories.
+Use `Distributions.chiSquared.pdf(x:df:)` to draw the curve and `Distributions.chiSquared.cdf(x:df:)` to perform these tests. For a fair-die test (observed `[12, 8, 11, 9, 13, 7]`, expected `10`), the chi-squared statistic compares the observed frequency to the expected frequency across six categories.
 
 ```swift
 import Quiver
@@ -136,7 +136,7 @@ Classifier evaluation uses the binomial to estimate confidence intervals for acc
 
 ### Numerical safety
 
-Every function in `Distributions` returns `Double?`. Invalid inputs—such as non-positive standard deviation, negative degrees of freedom, probabilities outside `(0, 1)`, or non-finite results—return `nil` rather than throwing or propagating `NaN`. This forces explicit handling at the call site. See <doc:Numerical-Literacy> for the handling of missing data (`nil`) versus undefined math (`NaN`).
+Every function in `Distributions` returns an optional: `Double?` for densities, probabilities, and continuous quantiles, and `Int?` for the discrete quantiles of the Poisson and binomial. Invalid inputs—such as non-positive standard deviation, negative degrees of freedom, probabilities outside `(0, 1)`, or non-finite results—return `nil` rather than throwing or propagating `NaN`. This forces explicit handling at the call site. See <doc:Numerical-Literacy> for the handling of missing data (`nil`) versus undefined math (`NaN`).
 
 ## Topics
 
@@ -151,6 +151,8 @@ Every function in `Distributions` returns `Double?`. Invalid inputs—such as no
 ### Density and mass
 - ``Distributions/normal/pdf(x:mean:standardDeviation:)``
 - ``Distributions/normal/logPDF(x:mean:standardDeviation:)``
+- ``Distributions/t/pdf(x:df:)``
+- ``Distributions/chiSquared/pdf(x:df:)``
 - ``Distributions/poisson/pmf(k:lambda:)``
 - ``Distributions/poisson/logPMF(k:lambda:)``
 - ``Distributions/binomial/pmf(k:n:p:)``

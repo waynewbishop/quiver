@@ -20,7 +20,7 @@ let b1 = [1.0, 3.0]
 // [2.0, 6.0], [0.5, 1.5], [-1.0, -3.0] ...
 ```
 
-The set of points a collection of vectors can reach through linear combinations is its **span**. The span of one non-zero vector is a single line. One vector alone cannot be dependent — there is nothing yet for it to depend on.
+The set of points a collection of vectors can reach through linear combinations is its **span**. The span of one non-zero vector is a single line. One non-zero vector alone cannot be dependent — there is nothing yet for it to depend on. The zero vector is the exception: it counts as dependent even on its own.
 
 #### A second direction, or the same one again
 

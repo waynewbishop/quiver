@@ -43,7 +43,9 @@ import Foundation
 public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, Equatable, Sendable {
 
     public var description: String {
-        "GaussianNaiveBayes: \(classes.count) classes, \(featureCount) features"
+        let classLabel = classes.count == 1 ? "class" : "classes"
+        let featureLabel = featureCount == 1 ? "feature" : "features"
+        return "GaussianNaiveBayes: \(classes.count) \(classLabel), \(featureCount) \(featureLabel)"
     }
 
     /// Statistics learned from the training data for a single class.
@@ -95,14 +97,8 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
         let featureCount = features[0].count
         let totalSamples = Double(features.count)
 
-        // Group sample indices by class label
-        var classIndices: [Int: [Int]] = [:]
-        for (i, label) in labels.enumerated() {
-            classIndices[label, default: []].append(i)
-        }
-
-        // Compute per-class statistics
-        let classStats = classIndices.map { (label, indices) -> ClassStats in
+        // Compute per-class statistics, one entry per label in ascending order
+        let classStats = _NaiveBayes.sampleIndicesGroupedByLabel(labels).map { (label, indices) -> ClassStats in
             let count = indices.count
             let prior = Double(count) / totalSamples
 
@@ -135,7 +131,7 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
 
             return ClassStats(label: label, prior: prior, means: means,
                               variances: variances, count: count)
-        }.sorted { $0.label < $1.label }
+        }
 
         return GaussianNaiveBayes(classes: classStats, featureCount: featureCount)
     }
@@ -179,14 +175,15 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
         }
     }
 
-    /// Returns calibrated class probabilities for each sample.
+    /// Returns normalized posterior class probability estimates for each sample.
     ///
     /// Applies the softmax transform to the unnormalized log-probabilities from
     /// ``predictLogProbabilities(_:)``, producing a probability distribution
-    /// across classes that sums to 1.0 for each row. Use this when the caller
-    /// needs calibrated probabilities — for cost-sensitive decisions, threshold
-    /// tuning, or downstream probabilistic reasoning — rather than just the
-    /// argmax label produced by ``predict(_:)``.
+    /// across classes that sums to 1.0 for each row. Normalization does not make
+    /// the values calibrated; Naive Bayes is often overconfident. Use this when
+    /// the caller needs per-class probability estimates — for cost-sensitive
+    /// decisions, threshold tuning, or downstream probabilistic reasoning —
+    /// rather than just the argmax label produced by ``predict(_:)``.
     ///
     /// The output ordering matches the ``classes`` array. For row `i` and class
     /// index `c`, `result[i][c]` is the model's estimated `P(class = classes[c] | features[i])`.
@@ -222,18 +219,13 @@ public struct GaussianNaiveBayes: Classifier, Codable, CustomStringConvertible, 
 
     /// Predicts the most likely class for a single sample.
     private func _predictSingle(_ sample: [Double]) -> Int {
-        var bestLabel = classes[0].label
-        var bestLogProb = -Double.infinity
-
-        for classStats in classes {
-            let logProb = _logProbability(sample: sample, classStats: classStats)
-            if logProb > bestLogProb {
-                bestLogProb = logProb
-                bestLabel = classStats.label
-            }
+        let logJointProbabilities = classes.map { classStats in
+            _logProbability(sample: sample, classStats: classStats)
         }
-
-        return bestLabel
+        return _NaiveBayes.mostProbableLabel(
+            logJointProbabilities: logJointProbabilities,
+            labels: classes.map { $0.label }
+        )
     }
 
     /// Computes log P(class) + Σ log P(x_i | class) for a sample and class.

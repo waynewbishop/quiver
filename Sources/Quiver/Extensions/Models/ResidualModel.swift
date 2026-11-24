@@ -147,4 +147,7 @@ public struct ResidualModel<Model: Regressor & Codable & Equatable & Sendable>:
 /// The `Coefficients` protocol itself lives in `Coefficients.swift`.
 extension ResidualModel: Coefficients where Model: Coefficients {
     public var coefficients: [Double] { model.coefficients }
+
+    /// Forwards the wrapped model's intercept layout.
+    public var hasIntercept: Bool { model.hasIntercept }
 }

@@ -60,8 +60,11 @@ final class ArrayElementwiseTests: XCTestCase {
 
     // Covers natural log, log10, and exp at canonical values
     func testLogarithmsAndExp() {
+        // Euler's number, written out because M_E isn't available on Windows
+        let e = 2.718281828459045
+
         // ln(1) = 0, ln(e) = 1
-        let lnResult = [1.0, M_E].log()
+        let lnResult = [1.0, e].log()
         XCTAssertEqual(lnResult[0], 0.0, accuracy: tolerance)
         XCTAssertEqual(lnResult[1], 1.0, accuracy: tolerance)
 
@@ -73,7 +76,7 @@ final class ArrayElementwiseTests: XCTestCase {
         // exp(0) = 1, exp(1) = e
         let expResult = [0.0, 1.0].exp()
         XCTAssertEqual(expResult[0], 1.0, accuracy: tolerance)
-        XCTAssertEqual(expResult[1], M_E, accuracy: tolerance)
+        XCTAssertEqual(expResult[1], e, accuracy: tolerance)
     }
 
     // MARK: - Square Root and Square

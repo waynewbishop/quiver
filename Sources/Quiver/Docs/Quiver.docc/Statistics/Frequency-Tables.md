@@ -59,7 +59,7 @@ let strings = ["yes", "no", "yes", "maybe"]
 strings.mode()               // ["yes"]
 ```
 
-Returning an array rather than a single value is deliberate. A bimodal distribution (two categories tied for the highest frequency) is a real fact about the data, and Quiver surfaces it rather than picking one tie-breaker silently. When every value appears the same number of times, every value is a mode and the full array comes back unchanged. The mode pairs naturally with `distinctCounts()`: counts answer "how often does each value appear," and mode answers "which appears the most."
+Returning an array rather than a single value is deliberate. A bimodal distribution (two categories tied for the highest frequency) is a real fact about the data, and Quiver surfaces it rather than picking one tie-breaker silently. Tied values come back in the order they first appear in the array, so the same data produces the same result on every run. When every value appears the same number of times, every distinct value is a mode. The mode pairs naturally with `distinctCounts()`: counts answer "how often does each value appear," and mode answers "which appears the most."
 
 ### From counts to probabilities
 

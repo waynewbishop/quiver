@@ -125,12 +125,15 @@ import Quiver
 // A doubling ladder from no penalty up into the tens.
 let grid = [0.0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24]
 
-var best: (lambda: Double, error: Double)? = nil
+// validationHouses and validationPrices are a held-out slice kept apart from the final test set.
+var bestLambda = 0.0
+var bestError = Double.infinity
 for lambda in grid {
     let model = try Ridge.fit(features: scaled, targets: prices, lambda: lambda)
-    let error = model.predict(scaler.transform(testHouses)).meanSquaredError(actual: testPrices)
-    if best == nil || error < best!.error {
-        best = (lambda, error)   // keep the lambda with the lowest held-out error
+    let error = model.predict(scaler.transform(validationHouses)).meanSquaredError(actual: validationPrices)
+    if error < bestError {
+        bestLambda = lambda   // keep the lambda with the lowest held-out error
+        bestError = error
     }
 }
 ```
@@ -238,6 +241,7 @@ run1 == run2  // true
 
 ### Reading the fit
 - ``Coefficients``
+- ``Coefficients/hasIntercept``
 - ``Coefficients/equation()``
 - ``Coefficients/equation(variables:response:)``
 

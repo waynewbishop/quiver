@@ -34,8 +34,9 @@ import Foundation
 /// let predictions = pipeline.predict(newWorkouts)
 /// ```
 ///
-/// Pipeline uses `StandardScaler` (z-score normalization) because it is
-/// robust to outliers and is the default choice in most ML curricula.
+/// Pipeline uses `StandardScaler` (z-score normalization) because it is the
+/// default choice in most ML curricula and, unlike min-max scaling, a single
+/// extreme value does not compress the remaining data into a narrow range.
 /// Users who need bounded-range scaling (for example, image pixels in
 /// 0...1) can use `FeatureScaler` directly without Pipeline.
 ///

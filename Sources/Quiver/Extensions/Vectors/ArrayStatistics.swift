@@ -638,9 +638,10 @@ public extension Array where Element: Hashable {
     /// Unlike those measures, mode works on any `Hashable` type — integers, strings, booleans,
     /// or doubles — making it useful for categorical data where averaging is undefined.
     ///
-    /// When multiple values tie for the highest frequency, all tied values are returned.
-    /// When every value occurs exactly once, the entire array is returned (every value is
-    /// tied for first). An empty input returns an empty array.
+    /// When multiple values tie for the highest frequency, all tied values are returned
+    /// in the order they first appear in the array, so the result is the same on every run.
+    /// When every value occurs exactly once, the entire array is returned in its original
+    /// order (every value is tied for first). An empty input returns an empty array.
     ///
     /// Example:
     /// ```swift
@@ -657,10 +658,21 @@ public extension Array where Element: Hashable {
     /// ```
     ///
     /// - Complexity: O(*n*) where *n* is the number of elements.
-    /// - Returns: An array of all values tied for highest frequency. Empty if input is empty.
+    /// - Returns: An array of all values tied for highest frequency, in order of first
+    ///   appearance. Empty if input is empty.
     func mode() -> [Element] {
-        let counts = Dictionary(grouping: self, by: { $0 }).mapValues(\.count)
+        var counts: [Element: Int] = [:]
+        for value in self {
+            counts[value, default: 0] += 1
+        }
         guard let maxCount = counts.values.max() else { return [] }
-        return counts.filter { $0.value == maxCount }.map(\.key)
+
+        // Walk the original array so tied values keep their first-appearance order.
+        var seen = Set<Element>()
+        var result: [Element] = []
+        for value in self where counts[value] == maxCount && seen.insert(value).inserted {
+            result.append(value)
+        }
+        return result
     }
 }

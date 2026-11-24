@@ -59,7 +59,7 @@ let (trainX, testX, trainY, testY) = features.stratifiedSplit(
 
 ### Data leakage
 
-**Data leakage** occurs when test set information influences the training process. The most common form is fitting a preprocessor, such as a scaler, on the entire dataset before splitting. If the scaler learns the minimum and maximum from all rows, including the test rows, the training process indirectly "sees" the test data, making evaluation results overly optimistic.
+**Data leakage** occurs when test set information influences the training process. The most common form is fitting a preprocessor, such as a scaler, on the entire dataset before splitting. If the scaler learns the mean and standard deviation from all rows, including the test rows, the training process indirectly "sees" the test data, making evaluation results overly optimistic.
 
 Fit on training data only, then transform both sets using the same statistics:
 

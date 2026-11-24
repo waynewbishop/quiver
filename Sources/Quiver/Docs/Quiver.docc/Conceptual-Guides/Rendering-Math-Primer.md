@@ -109,7 +109,7 @@ model.equation()     // "y = 38000.00 + 110.00x" — one feature, so a bare x
 model.equation(variables: ["sqft"], response: "price")  // "price = 38000.00 + 110.00·sqft"
 ```
 
-The same three conventions from the polynomial form carry over: a zero weight drops its term, a weight of exactly one renders as the bare variable (`x`, not `1.00x`), and a negative weight joins with ` - ` rather than ` + -`. The difference is direction — a model reads intercept-first and ascending, matching how a regression equation is written, where a polynomial reads highest-power-first. Because `equation()` lives on ``Coefficients``, ``LinearRegression``, ``Ridge``, and ``GradientDescent`` all render the same way.
+The same three conventions from the polynomial form carry over: a zero weight drops its term, a weight of exactly one renders as the bare variable (`x`, not `1.00x`), and a negative weight joins with ` - ` rather than ` + -`. The difference is direction — a model reads intercept-first and ascending, matching how a regression equation is written, where a polynomial reads highest-power-first. Because `equation()` lives on ``Coefficients``, ``LinearRegression``, ``Ridge``, and ``GradientDescent`` all render the same way. ``LogisticRegression`` follows the same conventions with its own ``LogisticRegression/equation(form:)``, which writes the left-hand side as `log-odds` because that is the quantity its weights predict.
 
 > Note: The rendered weights are in the units the model was fit in. When the features were standardized first, each is a per-standard-deviation slope rather than a raw-unit one — see <doc:Model-Interpretation-Primer> for what that means when reading the numbers.
 

@@ -8,7 +8,7 @@ Add Quiver to an Xcode project or Swift package.
 
 ## Overview
 
-Quiver is distributed as a Swift package with zero external dependencies. The package supports iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, and visionOS 1+, and requires Swift 5.9 or later. Quiver also runs on Linux, including server-side Swift environments like Vapor and containerized deployments.
+Quiver is distributed as a Swift package with zero external dependencies. The package supports iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, and visionOS 1+, and requires Swift 5.9 or later. Quiver also runs in server-side Swift environments like Vapor, Linux, and containerized deployments. See <doc:Quiver-On-Linux> for building and testing on Linux.
 
 ### Adding Quiver to an Xcode project
 
@@ -26,7 +26,7 @@ Add Quiver as a dependency in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/waynewbishop/quiver", from: "1.6.0")
+    .package(url: "https://github.com/waynewbishop/quiver", from: "1.7.0")
 ]
 ```
 

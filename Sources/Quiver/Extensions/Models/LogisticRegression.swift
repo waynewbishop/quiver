@@ -347,6 +347,95 @@ public struct LogisticRegression: Classifier, Codable, CustomStringConvertible, 
         return decisionFunction([[value]])[0]
     }
 
+    // MARK: - Equation
+
+    /// The two ways ``equation(form:)`` can write a logistic fit.
+    public enum EquationForm: String, Codable, Equatable, Sendable {
+        /// The linear score the model learns, such as `log-odds = -0.20 + 3.10x`.
+        case logOdds
+        /// The same score passed through the sigmoid, such as `p = σ(-0.20 + 3.10x)`.
+        case probability
+    }
+
+    /// Renders the fit as a readable formula, such as `log-odds = -0.20 + 3.10x`.
+    ///
+    /// The formula is built from ``coefficients`` directly. When ``hasIntercept``
+    /// is `true`, `coefficients[0]` is the intercept and each remaining weight
+    /// pairs with a variable in input order; when it is `false`, every element is
+    /// a weight and no intercept term appears. A single-feature model uses a bare
+    /// `x`; a multi-feature model uses subscripts (`x₁`, `x₂`, …). Terms with a
+    /// zero weight are dropped, and a weight of exactly one renders as the bare
+    /// variable, the same rules ``Coefficients/equation()`` uses for regression.
+    ///
+    /// The left-hand side reads `log-odds` because that is what a logistic model
+    /// predicts linearly: each weight is how much one unit of its feature adds to
+    /// the log-odds of class 1, not to the probability. Pass `.probability` to
+    /// wrap the same score in the sigmoid, which is the value
+    /// ``predictProbabilities(_:)`` returns. When the features were standardized
+    /// first, each weight is per standard deviation of its feature.
+    ///
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let model = try LogisticRegression.fit(
+    ///     features: scaler.transform(rawFeatures), labels: labels, learningRate: 0.5)
+    ///
+    /// print(model.equation())                    // log-odds = 0.00 + 0.89x
+    /// print(model.equation(form: .probability))  // p = σ(0.00 + 0.89x)
+    /// ```
+    ///
+    /// - Parameter form: Whether to write the log-odds or the probability.
+    ///   Defaults to `.logOdds`.
+    /// - Returns: The fitted formula as a string.
+    public func equation(form: EquationForm = .logOdds) -> String {
+        let variables = _LinearEquation.subscriptVariables(
+            count: _LinearEquation.weightCount(coefficients, hasIntercept: hasIntercept))
+        return Self.write(_LinearEquation.render(coefficients, hasIntercept: hasIntercept,
+                                                 variables: variables, joiner: ""), form: form)
+    }
+
+    /// Renders the fit as a readable formula with each variable named, such as
+    /// `log-odds = -0.20 + 3.10·tion - 2.50·ment`.
+    ///
+    /// This is ``equation(form:)`` with names in place of `x₁`, `x₂`, …: each
+    /// name pairs with a weight in input order, joined by a middle dot. The
+    /// formatting rules and the `.probability` form are the same.
+    ///
+    /// ```swift
+    /// import Quiver
+    ///
+    /// let model = try LogisticRegression.fit(
+    ///     features: scaler.transform(rawFeatures), labels: labels, learningRate: 0.5)
+    ///
+    /// print(model.equation(variables: ["spend"]))
+    /// // log-odds = 0.00 + 0.89·spend
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - variables: One name per feature, in the order the inputs were given.
+    ///   - form: Whether to write the log-odds or the probability. Defaults to
+    ///     `.logOdds`.
+    /// - Returns: The fitted formula as a string.
+    /// - Precondition: `variables` holds exactly one name per feature, which is
+    ///   ``featureCount``.
+    public func equation(variables: [String], form: EquationForm = .logOdds) -> String {
+        let expected = _LinearEquation.weightCount(coefficients, hasIntercept: hasIntercept)
+        precondition(variables.count == expected,
+                     "equation(variables:) needs one name per feature: expected \(expected), got \(variables.count)")
+        return Self.write(_LinearEquation.render(coefficients, hasIntercept: hasIntercept,
+                                                 variables: variables, joiner: "·"), form: form)
+    }
+
+    /// Places a rendered linear score on the left-hand side the form asks for.
+    private static func write(_ score: String, form: EquationForm) -> String {
+        switch form {
+        case .logOdds:
+            return "log-odds = " + score
+        case .probability:
+            return "p = σ(" + score + ")"
+        }
+    }
+
     // MARK: - Private
 
     /// Computes the linear score Xθ for each sample, folding in the intercept when

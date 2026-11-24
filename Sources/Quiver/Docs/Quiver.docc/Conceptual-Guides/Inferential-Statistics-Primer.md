@@ -58,7 +58,7 @@ if let se = sessionSeconds.standardError() {
 
 With a small sample, we are being asked to estimate two things, the average and the spread, from the same few data points. The t-distribution is the math's way of admitting we are less certain than the normal distribution would suggest, and widening the interval accordingly.
 
-The Central Limit Theorem promises normality for the sample mean when `n ≥ 30`. Below that threshold the sampling distribution of the mean has heavier tails than the bell curve, because we are estimating both the population mean and the population standard deviation from the same small sample. The **t-distribution** corrects for that uncertainty by widening the reference distribution as the sample shrinks. Quiver gives us the building blocks to use it directly through `Distributions.t.quantile` and `Distributions.t.cdf`:
+The Central Limit Theorem makes the sample mean approximately normal as samples grow; `n ≥ 30` is a common rule of thumb, not a guarantee. When we standardize the mean with the sample's own standard deviation, the resulting statistic has heavier tails than the bell curve, because we are estimating the population standard deviation from the same small sample. The **t-distribution** corrects for that uncertainty by widening the reference distribution as the sample shrinks. Quiver gives us the building blocks to use it directly through `Distributions.t.quantile` and `Distributions.t.cdf`:
 
 ```swift
 import Quiver
@@ -82,7 +82,7 @@ A **hypothesis test** is a structured way to decide whether the data we observed
 
 For an A/B test on session times, the null hypothesis is "the variant's population mean equals the control baseline of 240 seconds." The alternative is "the variant's population mean differs from 240 seconds." Our sample mean is `250.0`. The question is whether a gap of 10 seconds is large enough, given the standard error, to be evidence that the populations actually differ, or whether a gap that size could plausibly arise by chance from random sampling alone.
 
-With only ten observations, the small-sample t-distribution is the appropriate reference, since the normal approximation rests on `n ≥ 30`. The t-statistic itself is computed the same way as a z-statistic: the difference is which distribution we compare it against:
+With only ten observations, the small-sample t-distribution is the appropriate reference, since the common rule of thumb for the normal approximation is `n ≥ 30`. The t-statistic itself is computed the same way as a z-statistic: the difference is which distribution we compare it against:
 
 ```swift
 import Quiver
@@ -178,7 +178,7 @@ The percentile interval is the simplest of the resampling-based interval methods
 
 ### The parametric t-interval
 
-The resampling interval makes no assumption about the population's shape; it reads coverage directly off the resampled distribution. The **parametric t-interval** is the classical alternative: assume the population is roughly normal and the sample mean follows the t-distribution, then build the interval as `mean ± t_critical × standardError`. The critical value comes from `Distributions.t.quantile` at the chosen confidence level, with degrees of freedom `n − 1`:
+The resampling interval makes no assumption about the population's shape; it reads coverage directly off the resampled distribution. The **parametric t-interval** is the classical alternative: assume the population is roughly normal, so the standardized mean `(mean − μ) / standardError` follows the t-distribution, then build the interval as `mean ± t_critical × standardError`. The critical value comes from `Distributions.t.quantile` at the chosen confidence level, with degrees of freedom `n − 1`:
 
 ```swift
 import Quiver

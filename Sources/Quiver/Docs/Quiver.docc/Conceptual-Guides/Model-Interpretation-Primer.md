@@ -27,7 +27,9 @@ model.coefficients   // [38000.0, 110.0] — intercept first, then one slope per
 model.equation()     // "y = 38000.00 + 110.00x" — the same fit, read as algebra
 ```
 
-This layout is worth holding onto. When `hasIntercept` is `true`, `coefficients[0]` is the intercept, not the first feature's slope, and the remaining elements are the feature weights in input order. When `hasIntercept` is `false`, the array shifts down, and `coefficients[0]` becomes the first feature's slope. ``GradientDescent`` and ``Ridge`` use the same layout, making them interchangeable when we read their output, and ``Coefficients/equation()`` renders any of them as the intercept-first formula above.
+This layout is worth holding onto. When `hasIntercept` is `true`, `coefficients[0]` is the intercept, not the first feature's slope, and the remaining elements are the feature weights in input order. When `hasIntercept` is `false`, the array shifts down, and `coefficients[0]` becomes the first feature's slope. ``GradientDescent`` and ``Ridge`` use the same layout, making them interchangeable when we read their output, and ``Coefficients/equation()`` renders any of them as the formula above. It reads `hasIntercept` too, so a model fit without an intercept prints its first slope as a term, such as `y = 2.00x`, rather than as a constant.
+
+For logistic regression, the coefficients have the same intercept-first layout, but their weighted sum is a logit—a log-odds score—rather than the final prediction. A sigmoid converts that score into a class-1 probability estimate. See <doc:Logistic-Regression> for a worked comparison of coefficients, logits, and probabilities.
 
 A near-zero weight does not necessarily mean the feature is unimportant. On raw units, a tiny weight can sit on a feature measured in large numbers. Under collinearity, a feature's weight can collapse toward zero simply because a correlated twin absorbed its share. Read coefficient magnitudes only after scaling, and only once collinearity has been ruled out. Comparing weights provides a ranking, not a measurement of absolute importance; the next sections show how to make that ranking honest.
 
@@ -50,7 +52,7 @@ The mechanics and cure belong to the <doc:Regularization-Primer>; here we focus 
 
 ### Measuring instability before the fit
 
-Before evaluating how the solver behaves, check the matrix. The closed-form solver inverts `XᵀX`, so its conditioning determines stability. The `conditionNumber` of `XᵀX` measures proximity to singularity, the exact instability that wrecks coefficient interpretation:
+Before evaluating how the solver behaves, check the matrix. The closed-form solver solves `XᵀX·θ = Xᵀy` through an LU factorization, so the conditioning of `XᵀX` governs how much rounding error reaches the coefficients. The `conditionNumber` of `XᵀX` measures proximity to singularity, the exact instability that wrecks coefficient interpretation:
 
 ```swift
 import Quiver
@@ -66,7 +68,7 @@ let scaled = StandardScaler.fit(features: collinear).transform(collinear)
 scaled.transposed().multiplyMatrix(scaled).conditionNumber   // 402610 — near-singular
 ```
 
-A condition number in the low tens is healthy. Here the solver inverts `XᵀX`, which roughly squares the data's own condition number, so 402,610 reflects raw columns near 634, already well past healthy. The bands in the <doc:Determinants-Primer> describe a matrix we invert directly; for `XᵀX`, the bar is stricter.
+A condition number in the low tens is healthy. Forming `XᵀX` squares the conditioning of the data matrix in the 2-norm, so near-identical columns push this value up quickly. 402,610 is far past healthy. The bands in the <doc:Determinants-Primer> describe a matrix we invert directly; for `XᵀX`, the bar is stricter.
 
 ### Reading the failure in the coefficients
 
@@ -81,7 +83,7 @@ ols.coefficients   // a lopsided pair — roughly 608719 against -512315
 
 These two numbers are not findings about floor area. They are the solver chasing quirks across two columns that should have been one. The general signature is not "one positive, one negative," but two large weights that nearly cancel and which a different sample would throw just as hard.
 
-By contrast, ``GradientDescent`` meets near-collinear data and converges quietly. It avoids matrix inversion, so it reports `.converged` with sound predictions. Collinearity creates a flat valley of near-equal solutions, and the walk settles somewhere along it. Predictions are reliable because every point in that valley predicts about equally well, but individual weights are not because the valley has no single bottom. Quiet success is not the same as a trustworthy coefficient. See <doc:Optimization-Primer>.
+By contrast, ``GradientDescent`` meets near-collinear data and converges quietly. It avoids matrix inversion, so it reports `.converged` with sound predictions. Collinearity creates a long, nearly flat valley in the loss. There is still a single lowest point, but the floor around it is so level that the walk stops wherever the convergence tolerance is met, and a different start or iteration cap stops it somewhere else. Predictions are reliable because every point along that floor predicts about equally well, but individual weights are not, because the data barely distinguishes one point on the floor from another. Quiet success is not the same as a trustworthy coefficient. See <doc:Optimization-Primer>.
 
 For perfectly collinear columns, where one is an exact multiple of the other, `XᵀX` becomes singular and there is no unique answer. ``LinearRegression`` throws `MatrixError.singular` rather than returning corrupted numbers:
 
@@ -90,7 +92,7 @@ For perfectly collinear columns, where one is an exact multiple of the other, `X
 // try LinearRegression.fit(features:targets:) throws MatrixError.singular
 ```
 
-This throw is honest: with no unique solution, the model provides none. Quiver's `determinant` reports `0.0` for any matrix singular to within its tolerance, and the solver throws on that same condition. A `0.0` here is a reliable advance warning that the fit will throw. See <doc:Determinants-Primer>.
+This throw is honest: with no unique solution, the model provides none. Quiver's `determinant` and the solver share one tolerance, scaled to the size of the matrix's entries, so a `0.0` determinant is a reliable advance warning that the fit will throw. The check belongs on `XᵀX` built from the full design matrix, including the intercept's column of ones, rather than on the raw feature columns. See <doc:Determinants-Primer>.
 
 ### Resolving the signature
 
@@ -140,7 +142,7 @@ The sharp drop from `k=2` to `k=3` and the subsequent flattening mark the natura
 
 ### An angular view of cohesion
 
-For a single group of vectors, `clusterCohesion()` returns the average pairwise cosine similarity (0.0 to 1.0); higher means members point in nearly the same direction:
+For a single group of vectors, `clusterCohesion()` returns the average pairwise cosine similarity (-1.0 to 1.0); higher means members point in nearly the same direction:
 
 ```swift
 let groupA = [[0.8, 0.3, 0.9], [0.7, 0.4, 0.8], [0.9, 0.2, 0.9]]

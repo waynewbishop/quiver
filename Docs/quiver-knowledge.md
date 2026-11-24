@@ -57,7 +57,7 @@ let run2 = KMeans.fit(data: points, k: 3, seed: 42)
 run1 == run2  // true
 ```
 
-Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`, `ResidualModel`, `PCA`, `TrueEffortScore`. Data: `Panel`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`, `TESResult`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`, `TESError`.
+Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `BernoulliNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`, `ResidualModel`, `PCA`, `TrueEffortScore`. Data: `Panel`, `Panel.Row`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`, `TESResult`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`, `TESError`.
 
 ---
 
@@ -356,6 +356,9 @@ The quantile uses the Beasley-Springer-Moro rational approximation — roughly 7
 ### Student's t-distribution
 
 ```swift
+// Density (curve height) at the center of a t with df = 1
+Distributions.t.pdf(x: 0, df: 1)            // ≈ 0.3183
+
 // Probability that a t-distributed value with df = 10 falls at or below 2.228
 Distributions.t.cdf(x: 2.228, df: 10)       // ≈ 0.975
 
@@ -368,11 +371,14 @@ Distributions.t.quantile(p: 0.95, df: 10)   // ≈ 1.812
 
 The t-distribution is centered at zero, symmetric, and has heavier tails than the standard normal. As `df` grows, it converges to the normal — at `df = 1000` the two are visually indistinguishable. Used for small-sample inference (`n < 30`) where we estimate both the mean and the standard deviation from the same sample. The classic recipe for a one-sample t-statistic uses `df = n - 1`.
 
-Implementation: regularized incomplete beta function with bisection for the quantile. Verified against the reference test grid in `Tests/QuiverTests/DistributionsTests.swift`.
+Implementation: regularized incomplete beta function with bisection for the quantile. The `pdf` is evaluated in log space; closed-form anchors are `df = 1` (`1 / (π (1 + x²))`). Verified against the reference test grid in `Tests/QuiverTests/DistributionsTests.swift`.
 
 ### Chi-squared distribution
 
 ```swift
+// Density (curve height) at x = 2 with df = 2
+Distributions.chiSquared.pdf(x: 2, df: 2)        // ≈ 0.1839
+
 // Cumulative probability for a chi-squared value at df = 5
 Distributions.chiSquared.cdf(x: 11.07, df: 5)    // ≈ 0.95
 
@@ -380,7 +386,7 @@ Distributions.chiSquared.cdf(x: 11.07, df: 5)    // ≈ 0.95
 Distributions.chiSquared.cdf(x: 18.307, df: 10)  // ≈ 0.95
 ```
 
-The chi-squared distribution has support on `[0, ∞)` (negative `x` returns `0.0`, not `nil`). Used for variance inference and goodness-of-fit testing — the test statistic for "do observed category counts match expected counts" follows a chi-squared distribution under the null hypothesis. Implementation: regularized lower incomplete gamma function. Closed-form anchor at `df = 2`: `cdf(x, df: 2) = 1 - exp(-x / 2)`.
+The chi-squared distribution has support on `[0, ∞)` (negative `x` returns `0.0`, not `nil`). `pdf(x: 0, df:)` returns `nil` for `df < 2` (the density is unbounded there), `0.5` at `df = 2`, and `0.0` above. Used for variance inference and goodness-of-fit testing — the test statistic for "do observed category counts match expected counts" follows a chi-squared distribution under the null hypothesis. Implementation: regularized lower incomplete gamma function. Closed-form anchor at `df = 2`: `cdf(x, df: 2) = 1 - exp(-x / 2)`.
 
 `GaussianNaiveBayes` uses `Distributions.normal.logPDF` internally; the public exposure lets other callers reuse the same well-tested implementation.
 
@@ -900,6 +906,10 @@ let one = lr.predict(2.5)                        // Double → Int (single sampl
 let probs = lr.predictProbabilities(scaledTest)  // [[Double]] → [Double] — P(class = 1) per sample
 let scores = lr.decisionFunction(scaledTest)     // [[Double]] → [Double] — raw log-odds Xθ
 let groups = lr.classify(scaledTest)             // [Classification], grouped by predicted label
+
+lr.equation()                                    // String — "log-odds = 0.00 + 0.77x"
+lr.equation(form: .probability)                  // String — "p = σ(0.00 + 0.77x)"
+lr.equation(variables: ["hours"])                // String — "log-odds = 0.00 + 0.77·hours"
 ```
 
 Binary classifier trained by gradient descent on cross-entropy loss: the linear score `Xθ` is squashed through `sigmoid` into a probability, and the gradient `(1/n)Xᵀ(σ(Xθ) − y)` shares its shape with the squared-error gradient — the same descent loop behind `GradientDescent`, applied to a different loss. Conforms to `Classifier`, so `predict(_:)` returns `[Int]` and `classify(_:)` is provided for free. `predictProbabilities(_:)` returns a single probability per sample — P(class = 1) — not a per-class row that sums to 1.0 (that is the `GaussianNaiveBayes` shape). `decisionFunction(_:)` exposes the raw log-odds before the sigmoid for threshold tuning and margin inspection. Labels must be `0` or `1`; multinomial is out of scope. On linearly separable data the maximum-likelihood fit has no finite minimum, so the run reaches `maxIterationsReached` by design while still predicting correctly — confirm a `.converged` outcome on overlapping data before relying on the coefficient magnitudes.
@@ -919,7 +929,7 @@ residualModel.model                                                    // the wr
 
 `ResidualModel<Model: Regressor>` wraps any fitted regressor and reports what the model could not explain: the residual `observed − predicted`. It composes like `Pipeline` — the caller fits the regressor, then wraps it — and forwards `expected(_:)` straight to the wrapped model's `predict`. Computing a residual needs both the features and the observed target (there is no `observed − predicted` without the observed). Fit the baseline on one period and residualize a *later* sample: residualizing the training data understates the true error.
 
-The `Coefficients` protocol travels with this type. It exposes a uniform `coefficients: [Double]` (intercept first), and `LinearRegression`, `Ridge`, and `GradientDescent` conform; a `ResidualModel` forwards its wrapped model's coefficients when that model conforms. `LogisticRegression` deliberately does not conform — it is a classifier, and a residual is undefined for a probability or a 0/1 label. Distance- and tree-based models do not conform either, which is why the capability is its own protocol rather than a requirement on every regressor.
+The `Coefficients` protocol travels with this type. It exposes a uniform `coefficients: [Double]` (intercept first), and `LinearRegression`, `Ridge`, and `GradientDescent` conform; a `ResidualModel` forwards its wrapped model's coefficients when that model conforms. `LogisticRegression` deliberately does not conform — it is a classifier, and a residual is undefined for a probability or a 0/1 label — so it has its own `equation(form:)` that writes `log-odds = …` or `p = σ(…)`. `Coefficients` also carries `hasIntercept` (default `true`), and `equation()` reads it, so a fit with `intercept: false` prints its first weight as a term, not an intercept. Distance- and tree-based models do not conform either, which is why the capability is its own protocol rather than a requirement on every regressor.
 
 ## Principal Component Analysis (1.6.0)
 
@@ -1062,6 +1072,34 @@ for stats in gnb.classes {
 }
 ```
 
+## Bernoulli Naive Bayes (1.7.0)
+
+```swift
+// [ends in "-tion", ends in "-age"]; 0 = masculine, 1 = feminine
+let endings: [[Double]] = [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
+let genders = [1, 1, 1, 0, 0]
+
+let bnb = BernoulliNaiveBayes.fit(features: endings, labels: genders)              // alpha defaults to 1.0
+let lightSmoothing = BernoulliNaiveBayes.fit(features: endings, labels: genders, alpha: 0.5)
+print(bnb)  // BernoulliNaiveBayes: 2 classes, 2 features, alpha: 1
+
+bnb.predict([[1.0, 0.0]])                  // [1]
+bnb.predictProbabilities([[1.0, 0.0]])     // [[≈ 0.104, ≈ 0.896]] — each row sums to 1.0
+bnb.predictLogProbabilities([[1.0, 0.0]])  // [[Double]] — unnormalized log-probabilities
+bnb.classify([[1.0, 0.0]])                 // [Classification] — grouped by predicted label
+bnb.alpha                                  // 1.0
+bnb.classes                                // [BernoulliNaiveBayes.ClassStats]
+
+// featureProbabilities[f] is P(feature f = 1 | class), Laplace-smoothed
+for stats in bnb.classes {
+    print(stats)
+}
+// Class 0: prior 40.0%, feature probabilities [0.25, 0.75], 2 samples
+// Class 1: prior 60.0%, feature probabilities [0.60, 0.40], 3 samples
+```
+
+Naive Bayes for yes/no features. Each feature is `1.0` (present) or `0.0` (absent); any other value traps with a precondition at fit and predict time. Fitting counts how often each feature is present per class and smooths the count: P(feature = 1 | class) = (presentCount + alpha) / (classCount + 2·alpha). The smoothing keeps every probability strictly between 0 and 1, so a feature never seen in a class lowers that class's score without ruling it out. `GaussianNaiveBayes` handles the same case poorly: a binary feature that is constant within a class gets its variance floored at `1e-9`, and the prediction becomes near-certain (`[[0.0, 1.0]]` on the data above). Absent features count as evidence: a feature usually present in a class lowers that class's score when missing. Supports any number of classes, so a three-gender language works without one-vs-rest. `alpha` must be positive and finite. Do not scale the features; `StandardScaler` would turn the `0.0` and `1.0` values into other numbers. `fit` does not throw. Conforms to `Classifier`, `Codable`, `CustomStringConvertible`, `Equatable`, and `Sendable`. Limits: presence only, so a word that appears three times counts the same as once; and strongly correlated features (such as endings "-ion" and "-tion") count the same evidence twice, pushing probabilities toward overconfidence.
+
 ## Panel (Columnar Data)
 
 ```swift
@@ -1087,7 +1125,16 @@ let (train, test) = panel.trainTestSplit(testRatio: 0.2, seed: 42)
 panel.head()       // Tabular output showing first 10 rows
 panel.head(n: 3)   // First 3 rows in tabular format
 panel.summary()    // Per-column statistics (count, mean, std, min, max)
+
+// Iterate rows (1.7.0) — Panel conforms to Sequence; each element is a Panel.Row
+for row in panel {
+    row["age"]        // Double — non-optional; an unknown column stops with a precondition
+}
+for (index, row) in panel.enumerated() where row["salary"] > 55000.0 { }
+print(Array(panel)[0])   // Row: age 25.0, salary 50000.0
 ```
+
+`Panel.Row` (1.7.0) is a read-only snapshot of one record: `columnNames` (`[String]`), `values` (`[Double]`, same order), and `subscript(column: String) -> Double`. Conforms to `CustomStringConvertible`, `Equatable`, and `Sendable`. Rows come only from iterating a panel (no public initializer). `underestimatedCount` returns `rowCount`, and a zero-row panel yields no rows. The stdlib `filter` on a panel returns `[Panel.Row]`; use `filtered(where:)` to get a `Panel` back.
 
 ---
 
@@ -1223,8 +1270,9 @@ Quiver's ML models follow a consistent pattern: `fit()` → `predict()` → eval
 - **Classification vs regression.** Classification predicts discrete categories (`[Int]` labels). Regression predicts continuous values (`[Double]` targets).
 - **Features and labels.** Features are the input measurements (`[[Double]]` matrix, rows = samples, columns = measurements). Labels are what we predict (`[Int]` for classification, `[Double]` for regression).
 - **Train/test split.** Never evaluate on training data. Use `trainTestSplit(testRatio:seed:)` or `stratifiedSplit(labels:testRatio:seed:)` to hold out evaluation data.
-- **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) and iterative optimizers (`GradientDescent`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling.
-- **Models available:** GaussianNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent, Ridge, LogisticRegression. All use static `fit()` methods — no unfitted state exists.
+- **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) and iterative optimizers (`GradientDescent`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling. `BernoulliNaiveBayes` must not be scaled — its features are `0.0`/`1.0` flags.
+- **Models available:** GaussianNaiveBayes, BernoulliNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent, Ridge, LogisticRegression, PCA. All use static `fit()` methods — no unfitted state exists.
+- **Built with `init`, not `fit()`:** `ResidualModel(model:)` wraps an already-fitted regressor and scores how far each observation sits from its prediction. `TrueEffortScore` is created either fresh for a new runner or seeded from a runner's past workouts, then records a live run with `record(...)` and returns a `TESResult` from `finalize()`.
 - **Scalar prediction.** Single-feature models accept a scalar in place of a one-row matrix: `model.predict(3500.0)` returns one value — `Double` for regressors, `Int` for classifiers. The convenience is protocol-provided on every `Regressor` and `Classifier`; it applies only when the model was trained on a single feature.
 - **Model persistence.** All models conform to `Codable`. Train once, encode to JSON with `JSONEncoder`, decode on any platform with `JSONDecoder` — identical predictions guaranteed by `Equatable`. When scaling is used, persist both the scaler and model together. See the Model-Persistence documentation page for platform-specific guidance (iOS, watchOS, Vapor, SwiftData).
 - **Naive Bayes variance.** The variance calculation uses population variance (dividing by n), which is the standard approach for Gaussian Naive Bayes classifiers. With small training sets (2-4 samples per class), this slightly underestimates the true spread, but the effect is negligible for typical dataset sizes.
@@ -1321,6 +1369,10 @@ See the Data Visualization section above for signatures. ML-specific mappings: c
 
 See the Gaussian Naive Bayes section above for signatures. When to use: a fast baseline classifier that works well on small datasets — a good first model before trying more complex approaches. Prefer `predictProbabilities` over the argmax `predict` label when decisions are cost-sensitive or need threshold tuning.
 
+### Bernoulli Naive Bayes
+
+See the Bernoulli Naive Bayes section above for signatures. When to use: features that are checked rather than measured — word endings, keywords, on/off settings — recorded as `0.0` or `1.0`. Choose it over `GaussianNaiveBayes` whenever the features are binary; the Gaussian model's variance floor makes it overconfident on a flag that never fires in one class. Read `classes[c].featureProbabilities[f]` to see P(feature = 1 | class) directly. Lower `alpha` to trust the observed counts more closely.
+
 ### K-Nearest Neighbors
 
 See the K-Nearest Neighbors section above for signatures. When to use: non-linear decision boundaries, or when similar items should be classified similarly. Feature scaling is recommended, and `.cosine` suits high-dimensional text/embeddings.
@@ -1363,7 +1415,7 @@ See the Activation section above for signatures. When to use: SoftMax for "which
 
 ### Installation
 
-Add via SPM: `.package(url: "https://github.com/waynewbishop/quiver", from: "1.6.0")`. Or use Xcode → File → Add Package Dependencies. Zero external dependencies. Verify with `[1.0, 2.0, 3.0].dot([4.0, 5.0, 6.0])` → 32.0.
+Add via SPM: `.package(url: "https://github.com/waynewbishop/quiver", from: "1.7.0")`. Or use Xcode → File → Add Package Dependencies. Zero external dependencies. Verify with `[1.0, 2.0, 3.0].dot([4.0, 5.0, 6.0])` → 32.0.
 
 ### Usage (Xcode Playground Macro)
 

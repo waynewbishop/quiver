@@ -94,7 +94,7 @@ The result keeps more than the ranked few. `result.scores` is every chunk's simi
 
 ## Deciding what counts as relevant
 
-A ranking is not yet a decision. The top match always exists, even for a question the corpus does not cover. It is simply the least-bad of a weak field. Turning a ranking into "worth answering" is a judgment, and `isAboveGate(floor:outlierZ:)` makes it once the caller supplies the bar:
+A ranking is not yet a decision. For any non-empty index and any query the embedder can vectorize, a top match exists, even for a question the corpus does not cover. It is simply the least-bad of a weak field. An empty index, or a query the embedder cannot vectorize, produces no hits at all. Turning a ranking into "worth answering" is a judgment, and `isAboveGate(floor:outlierZ:)` makes it once the caller supplies the bar:
 
 ```swift
 if result.isAboveGate(floor: 0.30, outlierZ: 3.0) {
@@ -106,11 +106,11 @@ if result.isAboveGate(floor: 0.30, outlierZ: 3.0) {
 
 The top match passes when its score clears the floor on its own, or when it stands out as an outlier above the field by the given number of standard deviations, and either path is enough, which keeps the gate permissive. The thresholds are required, with no defaults, on purpose: a cosine value carries no fixed meaning across embedders, so a cutoff that signals a strong match for one source is unremarkable for another. The gate supplies the composition; the cutoff stays with the caller, who alone knows the embedder and the corpus.
 
-The outlier path needs a field with enough spread to measure. When a corpus holds only one or two chunks, the standard deviation is undefined or near zero, so the z-score cannot be computed and the gate falls back entirely to the `floor`. A small corpus is decided on the absolute score alone, which is the safe behavior. The gate never errors on a thin field; it simply leans on the bar that always applies.
+The outlier path needs a field with enough spread to measure. When a corpus holds a single chunk, the standard deviation is undefined and the z-score cannot be computed. With only a few chunks, the top score cannot stand far above the field: with two distinct scores its z-score is always about `0.71`. Either way, a small corpus leaves the gate relying on the `floor`. A small corpus is decided on the absolute score alone, which is the safe behavior. The gate never errors on a thin field; it simply leans on the bar that always applies.
 
 ## Assembling the context block
 
-The retrieved chunks become a single **context block**: the formatted text handed to the model. Assembly is plain string work: walk the hits and join each chunk's `citedForm` (its text tagged with provenance) so the model can attribute what it reads. Because the citation format lives on the label, the loop never has to reconstruct the string. The block is bounded by `k` and by chunk size, the two ends of the chunking tradeoff, so it stays inside the model's input limit without a separate budget:
+The retrieved chunks become a single **context block**: the formatted text handed to the model. Assembly is plain string work: walk the hits and join each chunk's `citedForm` (its text tagged with provenance) so the model can attribute what it reads. Because the citation format lives on the label, the loop never has to reconstruct the string. The block's size is set by `k` and by chunk size, the two ends of the chunking tradeoff. Neither one counts tokens, so an app with a tight context window should still measure the finished block, since one long paragraph can push it past the limit. Building the block is a short loop:
 
 ```swift
 // Build the context block from the ranked hits — each carries its own label.

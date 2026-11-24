@@ -93,7 +93,8 @@ import Quiver
 let theoreticalAt3 = Distributions.normal.cdf(x: 3.0, mean: 3.16, standardDeviation: 0.25)
 
 // What fraction of the sample sits at or below 3.0?
-let empiricalAt3 = times.percentileRank(of: 3.0) / 100.0
+let atOrBelow = times.masked(by: times.isLessThanOrEqual(3.0))
+let empiricalAt3 = Double(atOrBelow.count) / Double(times.count)  // 0.30
 ```
 
 Small gaps support the candidate. Systematic divergence—visible in a quantile-quantile plot—points to a failure in fit.
@@ -122,7 +123,7 @@ Visual comparison suffices for exploratory work. When statistical confirmation i
 
 ### From identifying to modeling
 
-Identifying a distribution enables downstream modeling. Normal data feeds linear regression; Poisson data fits count-regression models; binomial data informs accuracy metrics and logistic evaluation. Recognizing that no standard family fits is equally valuable, as it signals the need for non-parametric approaches or mixture modeling.
+Identifying a distribution enables downstream modeling. Roughly normal residuals support the classical confidence intervals and p-values of linear regression; Poisson data fits count-regression models; binomial data informs accuracy metrics and logistic evaluation. Recognizing that no standard family fits is equally valuable, as it signals the need for non-parametric approaches or mixture modeling.
 
 Throughout this workflow, distribution functions return `Double?` rather than trapping on invalid input—see <doc:Numerical-Literacy> for the `nil` vs `NaN` contract.
 

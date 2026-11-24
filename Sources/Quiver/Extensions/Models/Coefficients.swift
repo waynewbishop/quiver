@@ -53,6 +53,11 @@ import Foundation
 /// before any input is counted, and the rest are how much each input pushes the
 /// prediction up or down.
 ///
+/// A model fit with `intercept: false` has no base value, so every element is a
+/// weight and `coefficients[0]` is the first input's weight. ``hasIntercept``
+/// reports which layout a model uses, and ``equation()`` reads it so the first
+/// weight is never printed as an intercept.
+///
 /// ## Which models conform
 ///
 /// The models whose fit *is* a list of numbers conform: ``LinearRegression``,
@@ -62,6 +67,10 @@ import Foundation
 /// conform. That is why this is its own protocol and not something every model
 /// is forced to provide.
 ///
+/// ``LogisticRegression`` also learns a list of weights, but they predict the
+/// log-odds of a class rather than `y`, so it prints its own formula with
+/// ``LogisticRegression/equation(form:)`` instead of conforming.
+///
 /// To go deeper — what a number really tells you, and when it can mislead you —
 /// see <doc:Model-Interpretation-Primer>. For more on printing models and
 /// matrices as readable math, see <doc:Rendering-Math-Primer>.
@@ -69,17 +78,25 @@ public protocol Coefficients {
     /// The model's learned numbers: the base value (intercept) first, then one
     /// weight per input, in the order the inputs were given.
     var coefficients: [Double] { get }
+
+    /// Whether ``coefficients`` begins with an intercept. When `false`, every
+    /// element is a feature weight. Defaults to `true`.
+    var hasIntercept: Bool { get }
 }
 
 extension Coefficients {
+
+    /// Models conform with an intercept-first layout unless they say otherwise.
+    public var hasIntercept: Bool { true }
 
     /// Renders the fit as a readable equation, such as `y = 38000.00 + 110.00x`.
     ///
     /// The formula is built from ``coefficients`` directly: `coefficients[0]` is
     /// the intercept and each remaining weight pairs with a variable in input
-    /// order. A single-feature model uses a bare `x`; a multi-feature model uses
-    /// subscripts (`x₁`, `x₂`, …) so the terms stay distinct. Terms with a zero
-    /// weight are dropped, and a weight of exactly one renders as the bare
+    /// order. When ``hasIntercept`` is `false` there is no intercept term, and
+    /// every element pairs with a variable, as in `y = 2.00x`. A single-feature
+    /// model uses a bare `x`; a multi-feature model uses subscripts (`x₁`, `x₂`,
+    /// …) so the terms stay distinct. Terms with a zero weight are dropped, and a weight of exactly one renders as the bare
     /// variable (`x`, not `1.00x`). The weights are rendered in the units the
     /// model was fit in — when the features were standardized first, each is a
     /// per-standard-deviation slope.
@@ -94,14 +111,10 @@ extension Coefficients {
     /// - Returns: The fitted formula as a string. An empty coefficient vector
     ///   renders as `y = 0`.
     public func equation() -> String {
-        // A lone feature uses a bare `x`; two or more take subscripts so the
-        // terms never collide.
-        let weightCount = Swift.max(coefficients.count - 1, 0)
-        var variables: [String] = []
-        for index in 0..<weightCount {
-            variables.append(weightCount == 1 ? "x" : "x" + Self.subscriptDigits(index + 1))
-        }
-        return Self.render(coefficients, variables: variables, response: "y", joiner: "")
+        let variables = _LinearEquation.subscriptVariables(
+            count: _LinearEquation.weightCount(coefficients, hasIntercept: hasIntercept))
+        return "y = " + _LinearEquation.render(coefficients, hasIntercept: hasIntercept,
+                                               variables: variables, joiner: "")
     }
 
     /// Renders the fit as a readable equation with each variable named, such as
@@ -127,33 +140,76 @@ extension Coefficients {
     /// - Returns: The fitted formula as a string. An empty coefficient vector
     ///   renders as `response = 0`.
     /// - Precondition: `variables` holds exactly one name per weight, which is
-    ///   `coefficients.count - 1`.
+    ///   `coefficients.count - 1` with an intercept and `coefficients.count`
+    ///   without one.
     public func equation(variables: [String], response: String = "y") -> String {
         let c = coefficients
         guard !c.isEmpty else { return response + " = 0" }
-        precondition(variables.count == c.count - 1,
-                     "equation(variables:) needs one name per weight: expected \(c.count - 1), got \(variables.count)")
-        return Self.render(c, variables: variables, response: response, joiner: "·")
+        let expected = _LinearEquation.weightCount(c, hasIntercept: hasIntercept)
+        precondition(variables.count == expected,
+                     "equation(variables:) needs one name per weight: expected \(expected), got \(variables.count)")
+        return response + " = " + _LinearEquation.render(c, hasIntercept: hasIntercept,
+                                                         variables: variables, joiner: "·")
+    }
+}
+
+// MARK: - Shared rendering
+
+/// Renders a linear combination of weights and variables for every model that
+/// prints its fit, so the coefficient-based models and ``LogisticRegression``
+/// format their formulas identically.
+enum _LinearEquation {
+
+    /// Returns the number of feature weights in a coefficient vector.
+    static func weightCount(_ c: [Double], hasIntercept: Bool) -> Int {
+        hasIntercept ? Swift.max(c.count - 1, 0) : c.count
     }
 
-    /// Joins the intercept and each named, signed weight into `response = …`.
-    private static func render(_ c: [Double], variables: [String], response: String,
-                               joiner: String) -> String {
-        guard !c.isEmpty else { return response + " = 0" }
+    /// Returns `x` for a single weight, otherwise `x₁`, `x₂`, … so terms never collide.
+    static func subscriptVariables(count: Int) -> [String] {
+        var variables: [String] = []
+        for index in 0..<count {
+            variables.append(count == 1 ? "x" : "x" + subscriptDigits(index + 1))
+        }
+        return variables
+    }
 
-        // coefficients[0] is the intercept; the rest are the feature weights.
-        var pieces = [String(format: "%.2f", c[0])]
+    /// Joins the optional intercept and each signed, named weight into the
+    /// right-hand side of a formula, such as `-0.20 + 3.10·tion - 2.50·ment`.
+    static func render(_ c: [Double], hasIntercept: Bool, variables: [String],
+                       joiner: String) -> String {
+        guard !c.isEmpty else { return "0" }
 
-        for (offset, weight) in c.dropFirst().enumerated() where weight != 0 {
+        var pieces: [String] = []
+        // With an intercept, coefficients[0] is the base value and always prints.
+        if hasIntercept {
+            pieces.append(fixed(c[0]))
+        }
+        let weights = hasIntercept ? Array(c.dropFirst()) : c
+
+        for (offset, weight) in weights.enumerated() where weight != 0 {
             let magnitude = Swift.abs(weight)
             // A weight of exactly 1 renders as the bare variable (x, not 1.00x).
             let term = magnitude == 1
                 ? variables[offset]
-                : String(format: "%.2f", magnitude) + joiner + variables[offset]
-            pieces.append((weight < 0 ? "- " : "+ ") + term)
+                : fixed(magnitude) + joiner + variables[offset]
+            if pieces.isEmpty {
+                // The leading term carries its own sign: "-2.50x", never "- 2.50x".
+                pieces.append((weight < 0 ? "-" : "") + term)
+            } else {
+                pieces.append((weight < 0 ? "- " : "+ ") + term)
+            }
         }
 
-        return response + " = " + pieces.joined(separator: " ")
+        // No intercept and every weight zero leaves nothing to print.
+        return pieces.isEmpty ? "0" : pieces.joined(separator: " ")
+    }
+
+    /// Formats a value to two decimals, printing a value that rounds to zero as
+    /// `0.00` rather than `-0.00`.
+    private static func fixed(_ value: Double) -> String {
+        let text = String(format: "%.2f", value)
+        return text == "-0.00" ? "0.00" : text
     }
 
     /// Converts a positive integer into Unicode subscript digits (10 → "₁₀").

@@ -337,7 +337,7 @@ public extension Array where Element == Double {
     /// ```
     ///
     /// - Parameter actual: The ground truth target values, one per sample.
-    /// - Returns: R² as a value between 0 and 1 (can be negative for very poor models).
+    /// - Returns: R², at most 1. It is negative when the model fits worse than predicting the mean, and it has no lower bound.
     func rSquared(actual: [Double]) -> Double {
         precondition(count == actual.count,
             "Predicted and actual arrays must have the same length")

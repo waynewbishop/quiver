@@ -12,7 +12,7 @@ Despite the name, logistic regression is a **classification** model. The "regres
 
 We compute the linear score `Xθ`, a weighted sum of features, and pass it through the **sigmoid** function σ, which maps any real number into the open interval (0, 1). A large positive score yields a probability near 1, a large negative score near 0, and a score of exactly 0 yields 0.5, our decision boundary. The `sigmoid` function is covered on its own in <doc:Activation-Functions>.
 
-Fitting follows the same gradient descent loop as our other models: start from θ = 0 and step opposite the gradient of our objective. Here, our objective is **cross-entropy** (log loss). The gradient $\nabla L = (1/n)X^T(\sigma(X\theta) - y)$ shares the same shape as least squares, but uses the sigmoid-transformed residual. Cross-entropy is naturally convex for this model, ensuring our descent leads us to a single global minimum. The <doc:Optimization-Primer> covers why one descent algorithm serves several models at once.
+Fitting follows the same gradient descent loop as our other models: start from θ = 0 and step opposite the gradient of our objective. Here, our objective is **cross-entropy** (log loss). The gradient $\nabla L = (1/n)X^T(\sigma(X\theta) - y)$ shares the same shape as least squares, but uses the sigmoid-transformed residual. Cross-entropy is convex for this model, so descent has no local minima to get stuck in. When the classes overlap, the minimum is a single finite point; when they separate perfectly, no finite minimum exists, as *Watching the descent* explains. The <doc:Optimization-Primer> covers why one descent algorithm serves several models at once.
 
 ### Fitting a model
 
@@ -79,7 +79,7 @@ for probability in probs {
 // flagged is [0, 0]
 ```
 
-To inspect the model in log-odds space (for plotting boundaries, margin analysis, or custom thresholding), `decisionFunction(_:)` returns the raw score `Xθ` before the sigmoid. Zero is the boundary, positive favors class 1, and negative favors class 0:
+To inspect the model in log-odds space (for plotting boundaries, margin analysis, or custom thresholding), `decisionFunction(_:)` returns the raw score `Xθ`, called a **logit**, before the sigmoid. Zero is the boundary, positive favors class 1, and negative favors class 0:
 
 ```swift
 import Quiver
@@ -89,6 +89,46 @@ let scores = model.decisionFunction(query)
 ```
 
 The label, probability, and log-odds are three views of the same quantity: `predict` is the sign of `decisionFunction`, and `predictProbabilities` is its sigmoid. On a single-feature model, `predict` and `decisionFunction` also accept a bare value; `predictProbabilities` takes the array form, so wrap a lone query in a row to read its probability.
+
+### Coefficients, logits, and probabilities
+
+Coefficients and logits are related but not interchangeable. **Coefficients** are the parameters learned during fitting and stored in `model.coefficients`; they remain fixed when the model makes predictions. A **logit** is the per-sample score calculated from those coefficients and the sample's features:
+
+`z = θ₀ + θ₁x₁ + θ₂x₂ + … + θₙxₙ`
+
+The intercept `θ₀` is the logit when every feature is zero. For logistic regression, each logit is an estimated log-odds score, which sigmoid converts into a probability estimate for class 1: `P(class = 1) = σ(z)`.
+
+Suppose an unscaled one-feature model has an intercept of `-4` and a feature coefficient of `2`. For a feature value of `3`:
+
+```text
+z = -4 + 2 × 3 = 2
+σ(z) = σ(2) ≈ 0.881
+```
+
+The coefficient `2` means each one-unit increase in the feature adds `2` to the logit, holding other features constant. It does not add a fixed amount to the probability; that change depends on the starting logit. The coefficients remain fixed, while each new sample produces its own logit and probability.
+
+In Quiver, the same relationship connects `coefficients`, `decisionFunction`, and `predictProbabilities`:
+
+```swift
+model.coefficients
+let logits = model.decisionFunction(query)
+let probabilities = logits.sigmoid()
+// probabilities matches model.predictProbabilities(query)
+```
+
+To read the fit as a formula, `equation(form:)` writes the coefficients out as log-odds, and the `.probability` form wraps the same score in the sigmoid. Named variables replace `x` when we pass one name per feature:
+
+```swift
+import Quiver
+
+model.equation()                        // log-odds = 0.00 + 0.77x
+model.equation(form: .probability)      // p = σ(0.00 + 0.77x)
+model.equation(variables: ["hours"])    // log-odds = 0.00 + 0.77·hours
+```
+
+The left-hand side reads `log-odds` rather than `y` because each weight adds to the log-odds, not to the probability. Here one standard deviation of study time adds `0.77` to the log-odds of passing. A model fit with `intercept: false` has no constant term, so its first weight prints as a term.
+
+Because the model fitted above uses standardized features, its actual feature coefficient describes a one-standard-deviation increase, not one additional raw hour. See <doc:Feature-Scaling> for how scaling affects coefficient interpretation.
 
 > Experiment: **The Quiver Notebook** is the right place to watch the sigmoid turn a line into a probability. Fit a one-feature model, sweep the input across its range, and print `decisionFunction` next to `predictProbabilities`: watching the unbounded log-odds compress into (0, 1) makes the squashing concrete. See <doc:Quiver-Notebook>.
 
@@ -169,9 +209,9 @@ The coefficients follow the intercept-first layout: when we fit a bias term, `co
 
 ### When to use logistic regression
 
-Logistic regression is our tool of choice when we have a binary target and a boundary that separates classes reasonably well. It predicts a calibrated probability rather than a bare label, making it perfect for ranking, threshold tuning, and cost-sensitive decisions where confidence matters. Because the decision boundary is linear, the model excels when classes are nearly linearly separable; when the true boundary curves, a non-parametric classifier like <doc:Nearest-Neighbors-Classification> is a better choice.
+Logistic regression is our tool of choice when we have a binary target and a boundary that separates classes reasonably well. It predicts a probability estimate rather than a bare label, making it perfect for ranking, threshold tuning, and cost-sensitive decisions where confidence matters. Because the decision boundary is linear, the model excels when classes are nearly linearly separable; when the true boundary curves, a non-parametric classifier like <doc:Nearest-Neighbors-Classification> is a better choice.
 
-Two constraints define its scope. Labels must be binary; more than two classes require a multinomial model, which is out of scope here. Because fitting is iterative, we must standardize features first, or the default learning rate fails to descend. Within these constraints, it remains our workhorse binary classifier, with its calibrated probability being its defining advantage.
+Two constraints define its scope. Labels must be binary; more than two classes require a multinomial model, which is out of scope here. Because fitting is iterative, we must standardize features first, or the default learning rate fails to descend. Within these constraints, it remains our workhorse binary classifier, with its probability estimate being its defining advantage.
 
 ### Safe by design
 
@@ -203,6 +243,11 @@ Two constraints define its scope. Labels must be binary; more than two classes r
 - ``LogisticRegression/lossHistory``
 - ``LogisticRegression/iterations``
 - ``LogisticRegression/outcome``
+
+### Equation
+- ``LogisticRegression/equation(form:)``
+- ``LogisticRegression/equation(variables:form:)``
+- ``LogisticRegression/EquationForm``
 
 ### Classification result
 - ``Classification``

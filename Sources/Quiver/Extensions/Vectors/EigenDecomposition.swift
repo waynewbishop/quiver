@@ -62,9 +62,10 @@ public struct EigenDecomposition: Codable, CustomStringConvertible, Equatable, S
     public let sweepsUsed: Int
 
     /// Whether the off-diagonal norm reached the convergence tolerance within
-    /// the sweep limit. An unconverged result is still a valid decomposition —
-    /// the iterates remain exactly orthogonal-similar to the input — but its
-    /// off-diagonal residual is larger than the tolerance guarantees.
+    /// the sweep limit. An unconverged result is an approximation, not a finished
+    /// eigendecomposition: the iterates remain orthogonal-similar to the input,
+    /// but the off-diagonal residual exceeds the tolerance. Check `converged`
+    /// before trusting the eigenvalues and eigenvectors.
     public let converged: Bool
 }
 

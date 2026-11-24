@@ -140,6 +140,7 @@ a == b  // true — same closed-form coefficients
 
 ### Coefficients
 - ``Coefficients``
+- ``Coefficients/hasIntercept``
 - ``Coefficients/equation()``
 - ``Coefficients/equation(variables:response:)``
 - ``ResidualModel/coefficients``

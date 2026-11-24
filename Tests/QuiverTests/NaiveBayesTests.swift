@@ -273,4 +273,15 @@ final class NaiveBayesTests: XCTestCase {
         XCTAssertEqual(model.predict(1.0), 0)
         XCTAssertEqual(model.predict(8.0), 1)
     }
+
+    // MARK: - Description
+
+    // description uses singular and plural nouns to match the counts
+    func testDescription() {
+        let model = GaussianNaiveBayes.fit(features: [[1.0, 2.0], [5.0, 8.0]], labels: [0, 1])
+        XCTAssertEqual(model.description, "GaussianNaiveBayes: 2 classes, 2 features")
+
+        let singleFeature = GaussianNaiveBayes.fit(features: [[1.0]], labels: [0])
+        XCTAssertEqual(singleFeature.description, "GaussianNaiveBayes: 1 class, 1 feature")
+    }
 }

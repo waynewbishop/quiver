@@ -73,6 +73,32 @@ final class CodableTests: XCTestCase {
         XCTAssertEqual(stats, statsDecoded)
     }
 
+    // Round-trip preserves equality, alpha, predictions, and ClassStats
+    func testBernoulliNaiveBayesCodable() throws {
+        let features: [[Double]] = [
+            [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 1.0]
+        ]
+        let labels = [0, 0, 1, 1]
+        let model = BernoulliNaiveBayes.fit(features: features, labels: labels, alpha: 0.5)
+
+        let data = try JSONEncoder().encode(model)
+        let decoded = try JSONDecoder().decode(BernoulliNaiveBayes.self, from: data)
+        XCTAssertEqual(model, decoded)
+        XCTAssertEqual(decoded.alpha, 0.5)
+
+        // Predictions match after decode
+        let testInput: [[Double]] = [[1.0, 0.0], [0.0, 1.0]]
+        XCTAssertEqual(model.predict(testInput), decoded.predict(testInput))
+
+        // ClassStats round-trips independently
+        let stats = BernoulliNaiveBayes.ClassStats(
+            label: 0, prior: 0.5, featureProbabilities: [0.8333, 0.5], count: 2
+        )
+        let statsData = try JSONEncoder().encode(stats)
+        let statsDecoded = try JSONDecoder().decode(BernoulliNaiveBayes.ClassStats.self, from: statsData)
+        XCTAssertEqual(stats, statsDecoded)
+    }
+
     // MARK: - K-Means
 
     // Round-trip preserves equality, cluster assignments, and Cluster struct

@@ -21,7 +21,7 @@ import Foundation
 /// integer class labels. The protocol provides a default ``classify(_:)`` implementation
 /// that groups inputs by predicted label, returning structured ``Classification`` results.
 ///
-/// Both ``KNearestNeighbors`` and ``GaussianNaiveBayes`` conform to this protocol.
+/// ``KNearestNeighbors``, ``GaussianNaiveBayes``, and ``BernoulliNaiveBayes`` conform to this protocol.
 /// ``predict(_:)`` returns raw labels for evaluation pipelines and remains
 /// fully available — ``classify(_:)`` is an additional convenience, not a replacement.
 public protocol Classifier {

@@ -1,0 +1,37 @@
+name: Linux Tests
+
+on:
+  push:
+    branches: [main, 'release/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Swift ${{ matrix.swift }} on Linux
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The minimum supported toolchain (swift-tools-version 5.9) and a current release
+        swift: ["5.9", "6.4"]
+    container: swift:${{ matrix.swift }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Show toolchain
+        run: swift --version
+
+      - name: Build
+        run: swift build --build-tests
+
+      # Stress tests run on demand only, matching local development
+      - name: Test
+        run: swift test --skip-build --skip QuiverStressTests

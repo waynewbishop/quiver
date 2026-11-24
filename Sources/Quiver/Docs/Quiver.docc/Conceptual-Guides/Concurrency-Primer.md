@@ -119,7 +119,7 @@ func predict(_ batches: [[[Double]]], with model: LinearRegression) async -> [[D
 
 Each `predict` runs the same Quiver call we would make sequentially; the task group only decides which core runs which batch. The same shape applies to any independent work, such as a pairwise comparison like `clusterCohesion` or a batch handed to `KMeans.predict`.
 
-> Note: Running batches concurrently changes the order in which they finish, even though each is placed back in its original position. For most operations the recombined result is identical to the sequential one. Voting models such as ``KNearestNeighbors`` are the exception: when two classes tie within a neighborhood, the order in which votes are counted can settle the tie either way, so a concurrent split may differ from a single call on a few predictions. When exact reproducibility matters more than speed, predict in one call.
+> Note: Running batches concurrently changes the order in which they finish, since tasks can complete in any order. Each result is placed back in its original position, so the recombined output matches the sequential one. That holds for voting models such as ``KNearestNeighbors`` too: each query settles its own ties, in favor of the nearest neighbor carrying a tied label, so a split into batches returns the same labels as a single call.
 
 ### What stays sequential
 

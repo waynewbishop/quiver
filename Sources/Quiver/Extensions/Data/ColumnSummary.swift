@@ -118,7 +118,9 @@ public extension Array where Element == Double {
     /// existing `[Double]` extensions and stored as properties on the
     /// returned `ColumnSummary`. Subsequent reads are property accesses.
     ///
-    /// Returns `nil` for empty arrays, matching the contract of `mean()`.
+    /// Returns `nil` for an empty array or a single value. The standard
+    /// deviation uses the sample formula (`ddof: 1`), which needs at least
+    /// two values. For a single value, call `mean()` directly.
     ///
     /// Example:
     /// ```swift
