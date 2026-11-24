@@ -10,7 +10,11 @@ The **Cooley-Tukey** Fast Fourier Transform, published in 1965, is a pillar of c
 
 Until now, our work (linear regression, rolling means, and classification models) has operated in the time domain, measuring values at each point to relate them to their neighbors. The Fourier transform operates in the **frequency domain**, revealing the repeating patterns beneath the noise.
 
+![A wave made of two added tones in the time domain beside its spectrum, with a tall 3 Hz peak and a shorter 7 Hz peak](diagram-fourier-time-to-frequency)
+
 The underlying connection to Quiver is direct. The Discrete Fourier Transform is matrix multiplication: for a signal vector `x`, the output `X` is `F · x`, where `F` is a matrix of complex roots of unity. The FFT factors this matrix into sparse sub-matrices, reducing the computational cost from `O(n²)` to `O(n log n)`. The primitives we already use, transposition, element-wise arithmetic, and magnitude, are the building blocks of this algorithm.
+
+![A four by four matrix of roots of unity multiplying a signal vector to give a spectrum vector, with row 1 and its output highlighted](diagram-fourier-dft-matrix)
 
 ### On-device frequency analysis
 
@@ -26,11 +30,15 @@ The Fourier transform is not a machine learning model; it has no `fit`, no `pred
 
 Quiver uses the Cooley-Tukey radix-2 algorithm, a divide-and-conquer approach that computes the Discrete Fourier Transform in `O(n log n)` time. It splits the signal into even and odd samples, recurses on each half, and combines the results using complex sine and cosine "twiddle factors" to align them with the correct frequency bins. Like Quicksort, this produces the recurrence `T(n) = 2T(n/2) + O(n)`, though because the split is always exactly half, the `O(n log n)` performance is a guaranteed worst case.
 
+![Eight sample indices split into even and odd halves, then into pairs, then into single samples, with an arrow back up for combining](diagram-fourier-divide-and-conquer)
+
 > Note: For a full walkthrough of how this divide-and-conquer recurrence produces `O(n log n)` performance, see [Chapter 5 — Advanced Sorting](https://waynewbishop.github.io/swift-algorithms/05-advanced-sorting.html) in *Swift Algorithms & Data Structures*.
 
 ### Preparing the input
 
 The radix-2 algorithm requires a signal length that is a power of two (8, 16, 32, 64, and so on). Our `padded(toPowerOfTwo:)` method handles this by appending zeros to the next valid length:
+
+![Five sample bars with values 1.0, 0.5, negative 0.3, 0.8 and 0.2, followed by three zero-valued bars that bring the length to eight](diagram-fourier-padding)
 
 ```swift
 import Quiver
@@ -65,6 +73,8 @@ The <doc:Working-With-Panels> `summary()` readout provides descriptive statistic
 
 ### Positive-frequency half
 
+![A sixteen bin spectrum with peaks at bins 3 and 5 in the lower half and their mirror images at bins 11 and 13 in the upper half, divided at the Nyquist frequency](diagram-fourier-spectrum-halves)
+
 For real-valued signals, the upper half of the Fourier output mirrors the lower half and provides no additional information. `fourierMagnitudeHalf` and `fourierFrequenciesHalf(sampleRate:)` return only the positive-frequency half: the range from 0 Hz up to the Nyquist frequency. Use these methods for plotting spectra or extracting features.
 
 ### Dominant frequency
@@ -84,6 +94,8 @@ The convenience overload with `windowed: true` applies a Hann window and pads to
 ### Windowing
 
 Slicing a signal into a finite chunk creates abrupt edges, generating artificial high-frequency content known as spectral leakage. `hannWindowed` tapers the signal smoothly to zero at both ends to suppress this:
+
+![Two panels showing a cosine cut with hard edges, whose spectrum has many bars across all bins, and the same cosine under a Hann taper, whose spectrum is concentrated near the tone](diagram-fourier-windowing)
 
 ```swift
 let windowed = signal.hannWindowed()
@@ -114,6 +126,8 @@ let centered = rrSignal - signalMean
 let dominant = centered.fourierDominantFrequency(sampleRate: sampleRate, windowed: true)
 let breathsPerMinute = (dominant ?? 0) * 60.0  // 15.0
 ```
+
+![R-R intervals oscillating around 1000 milliseconds with a four second period, beside a spectrum with a single peak at 0.25 Hz inside the 0.15 to 0.40 Hz respiratory band](diagram-fourier-breathing-rate)
 
 ### Phase and inverse transform
 
