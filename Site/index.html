@@ -321,6 +321,16 @@ h3 { font-size: 21px; line-height: 1.25; letter-spacing: -.01em; font-weight: 60
 .subhead { font-family: var(--display); font-size: clamp(28px, 3.6vw, 40px); font-weight: 700; letter-spacing: -.03em; margin: 0 0 28px; }
 @media (max-width: 820px) { .lesson { grid-template-columns: 1fr; } }
 
+/* ---------- statistics band ---------- */
+.statcols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 4vw, 48px); align-items: start; }
+.statcols > div { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.statcols .k { font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--accent-paper); }
+.statcols p { margin: 0; color: var(--paper-muted); font-size: 16.5px; max-width: 34em; }
+.statcols .codecard { font-size: 13px; padding: 20px 22px; border-radius: 16px; }
+.beyond { margin: clamp(40px, 5vw, 56px) 0 0; color: var(--paper-muted); font-size: 17px; max-width: 46em; }
+.beyond b { color: var(--paper-text); font-weight: 600; }
+@media (max-width: 820px) { .statcols { grid-template-columns: 1fr; } }
+
 footer { background: var(--paper); color: var(--paper-muted); font-size: 12px; padding-block: 24px 32px; }
 footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 footer a { color: var(--paper-text); }
@@ -331,7 +341,7 @@ footer a { color: var(--paper-text); }
 <nav class="nav" aria-label="Quiver">
   <div class="wrap">
     <a class="name" href="#overview">Quiver</a>
-    <div class="links"><a href="#overview">Overview</a><a href="#notebook">Notebook</a><a href="#xcode">Xcode</a><a href="#models">Models</a><a href="#concurrency">Concurrency</a><a href="#examples">Worked examples</a><a href="#server">Server</a><a href="#learn">Learn</a><a href="#start">Get started</a></div>
+    <div class="links"><a href="#overview">Overview</a><a href="#notebook">Notebook</a><a href="#xcode">Xcode</a><a href="#models">Models</a><a href="#statistics">Statistics</a><a href="#concurrency">Concurrency</a><a href="#examples">Worked examples</a><a href="#server">Server</a><a href="#learn">Learn</a><a href="#start">Get started</a></div>
     <a class="pillbtn" href="#start">Install</a>
   </div>
 </nav>
@@ -472,6 +482,33 @@ KNearestNeighbors.fit(...)       <span class="c">// cannot fail</span>
       </dl></div>
     </div>
     <p class="protonote">Models share their prediction interface through two protocols. Code written against <code>Regressor</code> accepts <code>LinearRegression</code>, <code>Ridge</code> and <code>GradientDescent</code> interchangeably, and code written against <code>Classifier</code> does the same for every classifier.</p>
+  </div>
+</section>
+
+<!-- Statistics -->
+<section class="band paper2" id="statistics">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Statistics</div>
+      <h2>Describe and infer.</h2>
+      <p class="lede">Quiver’s statistics work on any <code>[Double]</code>. <b>The same calls serve</b> an educator teaching a course, an app presenting its own data, and a Quiver model trained on that data.</p>
+    </div>
+    <div class="statcols">
+      <div><div class="k">Describe</div><h3>Summarize the sessions we observed.</h3><p>Ten sessions averaged 250 seconds, with a sample standard deviation of about 6.91 seconds. Mean, variance and standard deviation are the measures every statistics course starts with, and each is one call on the array.</p>
+<div class="codecard" role="img" aria-label="Code: ten session times in seconds; mean returns 250.0, variance about 47.78, standard deviation about 6.91"><span style="color:var(--k-keyword)">let</span> sessionSeconds = [<span style="color:var(--k-number)">245.0</span>, <span style="color:var(--k-number)">252.0</span>, <span style="color:var(--k-number)">238.0</span>, <span style="color:var(--k-number)">261.0</span>, <span style="color:var(--k-number)">247.0</span>,
+                      <span style="color:var(--k-number)">255.0</span>, <span style="color:var(--k-number)">249.0</span>, <span style="color:var(--k-number)">258.0</span>, <span style="color:var(--k-number)">244.0</span>, <span style="color:var(--k-number)">251.0</span>]
+
+sessionSeconds.<span style="color:var(--k-keyword)">mean</span>()               <span class="ok">// 250.0</span>
+sessionSeconds.<span style="color:var(--k-keyword)">variance</span>()           <span class="ok">// ≈ 47.78</span>
+sessionSeconds.<span style="color:var(--k-keyword)">standardDeviation</span>()  <span class="ok">// ≈ 6.91</span></div><p class="tilelink"><a href="documentation/quiver/statistics-primer">Read the Statistics Primer ›</a></p></div>
+      <div><div class="k">Infer</div><h3>Estimate the average across all sessions.</h3><p>The standard error measures how much a sample mean varies from one sample to the next. With the t-distribution, it gives a 95% confidence interval for the population mean.</p>
+<div class="codecard" role="img" aria-label="Code: the standard error of the same ten session times is about 2.19, the t quantile for 9 degrees of freedom is about 2.262, giving a 95 percent confidence interval of about 245 to 255 seconds">sessionSeconds.<span style="color:var(--k-keyword)">standardError</span>()               <span class="ok">// ≈ 2.19</span>
+Distributions.t.<span style="color:var(--k-keyword)">quantile</span>(p: <span style="color:var(--k-number)">0.975</span>, df: <span style="color:var(--k-number)">9</span>)    <span class="ok">// ≈ 2.262</span>
+
+<span style="color:var(--k-comment)">// 250.0 ± 2.262 × 2.19</span>
+<span style="color:var(--k-comment)">// 95% confidence interval: about 245 to 255 seconds</span></div><p class="tilelink"><a href="documentation/quiver/inferential-statistics-primer">Read the Inferential Statistics Primer ›</a></p></div>
+    </div>
+    <p class="beyond"><b>Beyond the basics,</b> the same arrays reduce gene expression to its principal components, update a diagnosis with Bayes’ theorem, compare exposure and outcome in a contingency table, and build confidence intervals by resampling.</p>
   </div>
 </section>
 
