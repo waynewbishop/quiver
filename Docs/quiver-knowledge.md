@@ -356,6 +356,9 @@ The quantile uses the Beasley-Springer-Moro rational approximation — roughly 7
 ### Student's t-distribution
 
 ```swift
+// Density (curve height) at the center of a t with df = 1
+Distributions.t.pdf(x: 0, df: 1)            // ≈ 0.3183
+
 // Probability that a t-distributed value with df = 10 falls at or below 2.228
 Distributions.t.cdf(x: 2.228, df: 10)       // ≈ 0.975
 
@@ -368,11 +371,14 @@ Distributions.t.quantile(p: 0.95, df: 10)   // ≈ 1.812
 
 The t-distribution is centered at zero, symmetric, and has heavier tails than the standard normal. As `df` grows, it converges to the normal — at `df = 1000` the two are visually indistinguishable. Used for small-sample inference (`n < 30`) where we estimate both the mean and the standard deviation from the same sample. The classic recipe for a one-sample t-statistic uses `df = n - 1`.
 
-Implementation: regularized incomplete beta function with bisection for the quantile. Verified against the reference test grid in `Tests/QuiverTests/DistributionsTests.swift`.
+Implementation: regularized incomplete beta function with bisection for the quantile. The `pdf` is evaluated in log space; closed-form anchors are `df = 1` (`1 / (π (1 + x²))`). Verified against the reference test grid in `Tests/QuiverTests/DistributionsTests.swift`.
 
 ### Chi-squared distribution
 
 ```swift
+// Density (curve height) at x = 2 with df = 2
+Distributions.chiSquared.pdf(x: 2, df: 2)        // ≈ 0.1839
+
 // Cumulative probability for a chi-squared value at df = 5
 Distributions.chiSquared.cdf(x: 11.07, df: 5)    // ≈ 0.95
 
@@ -380,7 +386,7 @@ Distributions.chiSquared.cdf(x: 11.07, df: 5)    // ≈ 0.95
 Distributions.chiSquared.cdf(x: 18.307, df: 10)  // ≈ 0.95
 ```
 
-The chi-squared distribution has support on `[0, ∞)` (negative `x` returns `0.0`, not `nil`). Used for variance inference and goodness-of-fit testing — the test statistic for "do observed category counts match expected counts" follows a chi-squared distribution under the null hypothesis. Implementation: regularized lower incomplete gamma function. Closed-form anchor at `df = 2`: `cdf(x, df: 2) = 1 - exp(-x / 2)`.
+The chi-squared distribution has support on `[0, ∞)` (negative `x` returns `0.0`, not `nil`). `pdf(x: 0, df:)` returns `nil` for `df < 2` (the density is unbounded there), `0.5` at `df = 2`, and `0.0` above. Used for variance inference and goodness-of-fit testing — the test statistic for "do observed category counts match expected counts" follows a chi-squared distribution under the null hypothesis. Implementation: regularized lower incomplete gamma function. Closed-form anchor at `df = 2`: `cdf(x, df: 2) = 1 - exp(-x / 2)`.
 
 `GaussianNaiveBayes` uses `Distributions.normal.logPDF` internally; the public exposure lets other callers reuse the same well-tested implementation.
 

@@ -70,7 +70,7 @@ let cutoff = Distributions.normal.quantile(p: 0.90, mean: 75, standardDeviation:
 
 The t-distribution models the distribution of sample means when the population standard deviation is unknown and the sample size is small. It features heavier tails than the normal distribution to account for the added uncertainty of estimating parameters from small samples. As degrees of freedom (`df`) increase, the t-distribution converges to the standard normal.
 
-Use `Distributions.t` for `cdf(x:df:)` and `quantile(p:df:)` to compute confidence intervals and perform hypothesis tests.
+Use `Distributions.t` for `pdf(x:df:)`, `cdf(x:df:)` and `quantile(p:df:)`. The density draws the curve, while the cumulative and quantile functions compute confidence intervals and perform hypothesis tests.
 
 ```swift
 import Quiver
@@ -85,7 +85,7 @@ let zCrit = Distributions.normal.quantile(p: 0.975, mean: 0,
 
 The chi-squared distribution models the sum of squared independent standard-normal values. It is primarily used for variance inference and goodness-of-fit testing. The mean equals the degrees of freedom (`df`).
 
-Use `Distributions.chiSquared.cdf(x:df:)` to perform these tests. For a fair-die test (observed `[12, 8, 11, 9, 13, 7]`, expected `10`), the chi-squared statistic compares the observed frequency to the expected frequency across six categories.
+Use `Distributions.chiSquared.pdf(x:df:)` to draw the curve and `Distributions.chiSquared.cdf(x:df:)` to perform these tests. For a fair-die test (observed `[12, 8, 11, 9, 13, 7]`, expected `10`), the chi-squared statistic compares the observed frequency to the expected frequency across six categories.
 
 ```swift
 import Quiver
@@ -151,6 +151,8 @@ Every function in `Distributions` returns an optional: `Double?` for densities, 
 ### Density and mass
 - ``Distributions/normal/pdf(x:mean:standardDeviation:)``
 - ``Distributions/normal/logPDF(x:mean:standardDeviation:)``
+- ``Distributions/t/pdf(x:df:)``
+- ``Distributions/chiSquared/pdf(x:df:)``
 - ``Distributions/poisson/pmf(k:lambda:)``
 - ``Distributions/poisson/logPMF(k:lambda:)``
 - ``Distributions/binomial/pmf(k:n:p:)``

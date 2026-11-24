@@ -878,4 +878,91 @@ final class DistributionsTests: XCTestCase {
         XCTAssertNil(Distributions.binomial.mean(n: -1, p: 0.5))
         XCTAssertNil(Distributions.binomial.variance(n: 10, p: 1.5))
     }
+
+    // MARK: - t and chi-squared PDF
+
+    func testTPDFMatchesReferenceValues() {
+        // Reference values from scipy.stats.t.pdf, with df >= 1001 from 40-digit mpmath (SciPy drifts about 1e-12 there).
+        let cases: [(x: Double, df: Double, expected: Double)] = [
+            (0, 1, 0.31830988618379075),
+            (1.96, 30, 0.061119852876620695),
+            (-2, 5, 0.06509031032621647),
+            (0.5, 0.5, 0.19896392402617252),
+            (5, 1e6, 1.4869328706530248e-06),
+            (0, 1001, 0.39884265692484914),
+            (0, 1e4, 0.39893230696910769),
+            (1, 1e5, 0.2419695146705617),
+            (2, 5000, 0.054009852265400627),
+            (-3, 2e6, 0.004431882758784112)
+        ]
+        for c in cases {
+            guard let actual = Distributions.t.pdf(x: c.x, df: c.df) else {
+                XCTFail("t.pdf returned nil at x=\(c.x), df=\(c.df)"); continue
+            }
+            XCTAssertEqual(actual, c.expected, accuracy: c.expected * 1e-12, "x=\(c.x), df=\(c.df)")
+        }
+    }
+
+    func testTPDFCauchyClosedForm() {
+        // At df = 1 the density is 1 / (π (1 + x²)).
+        for x in [-3.0, -0.5, 0.0, 1.0, 2.5] {
+            guard let actual = Distributions.t.pdf(x: x, df: 1) else {
+                XCTFail("t.pdf returned nil"); return
+            }
+            XCTAssertEqual(actual, 1.0 / (Double.pi * (1.0 + x * x)), accuracy: 1e-14)
+        }
+    }
+
+    func testTPDFSymmetricAndFarTail() {
+        for df in [1.0, 5.0, 30.0] {
+            XCTAssertEqual(Distributions.t.pdf(x: 1.7, df: df)!, Distributions.t.pdf(x: -1.7, df: df)!, accuracy: 1e-15)
+        }
+        XCTAssertEqual(Distributions.t.pdf(x: 1e150, df: 3), 0.0)
+    }
+
+    func testTPDFInvalidDF() {
+        XCTAssertNil(Distributions.t.pdf(x: 0, df: 0))
+        XCTAssertNil(Distributions.t.pdf(x: 0, df: -1))
+    }
+
+    func testChiSquaredPDFMatchesReferenceValues() {
+        // Reference values from scipy.stats.chi2.pdf.
+        let cases: [(x: Double, df: Double, expected: Double)] = [
+            (1, 1, 0.24197072451914337),
+            (0.001, 1, 12.60935635549078),
+            (2, 2, 0.18393972058572114),
+            (11.07, 5, 0.019328149897682452),
+            (3, 0.5, 0.022702765440569903),
+            (1000, 5, 2.9960417395778535e-214)
+        ]
+        for c in cases {
+            guard let actual = Distributions.chiSquared.pdf(x: c.x, df: c.df) else {
+                XCTFail("chiSquared.pdf returned nil at x=\(c.x), df=\(c.df)"); continue
+            }
+            XCTAssertEqual(actual, c.expected, accuracy: c.expected * 1e-12, "x=\(c.x), df=\(c.df)")
+        }
+    }
+
+    func testChiSquaredPDFDf2ClosedForm() {
+        // At df = 2 the density is 0.5 · exp(-x / 2).
+        for x in [0.5, 1.0, 4.0, 10.0] {
+            guard let actual = Distributions.chiSquared.pdf(x: x, df: 2) else {
+                XCTFail("chiSquared.pdf returned nil"); return
+            }
+            XCTAssertEqual(actual, 0.5 * exp(-x / 2.0), accuracy: 1e-15)
+        }
+    }
+
+    func testChiSquaredPDFBoundaryAtZero() {
+        XCTAssertNil(Distributions.chiSquared.pdf(x: 0, df: 1))
+        XCTAssertNil(Distributions.chiSquared.pdf(x: 0, df: 1.5))
+        XCTAssertEqual(Distributions.chiSquared.pdf(x: 0, df: 2), 0.5)
+        XCTAssertEqual(Distributions.chiSquared.pdf(x: 0, df: 3), 0.0)
+        XCTAssertEqual(Distributions.chiSquared.pdf(x: -1, df: 5), 0.0)
+    }
+
+    func testChiSquaredPDFInvalidDF() {
+        XCTAssertNil(Distributions.chiSquared.pdf(x: 1, df: 0))
+        XCTAssertNil(Distributions.chiSquared.pdf(x: 1, df: -1))
+    }
 }

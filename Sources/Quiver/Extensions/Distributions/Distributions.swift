@@ -253,6 +253,48 @@ public enum Distributions: Sendable {
     /// input maps to `nil` rather than a runtime trap.
     public enum t: Sendable {
 
+        /// Returns the probability density of the t-distribution with `df` degrees of freedom at `x`.
+        ///
+        /// The density is a symmetric bell shape centered at zero with heavier tails
+        /// than the normal curve. As `df` grows the curve narrows toward the standard
+        /// normal. Evaluated in log space with `lgamma` and `log1p`, switching to an
+        /// asymptotic series for the gamma ratio when `df > 1000`, so large `df`
+        /// and far-tail `x` stay accurate and never overflow.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // Peak height of a t with df = 1 (the Cauchy curve) is 1 / π
+        /// let peak = Distributions.t.pdf(x: 0, df: 1)  // ≈ 0.3183
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - x: The point at which to evaluate the density.
+        ///   - df: The degrees of freedom. Must be positive.
+        /// - Returns: The probability density at `x`, or `nil` if `df <= 0`
+        ///   or the computation produces a non-finite result.
+        public static func pdf(x: Double, df: Double) -> Double? {
+            guard df > 0 else { return nil }
+            // log(Γ((df+1)/2) / Γ(df/2)). Subtracting two large lgamma values loses
+            // digits when df is large, so past df = 1000 the ratio uses its
+            // asymptotic series: Γ(z+½)/Γ(z) ≈ √z (1 − 1/8z + 1/128z² + 5/1024z³ − 21/32768z⁴).
+            let logGammaRatio: Double
+            if df > 1000.0 {
+                let z = 0.5 * df
+                let series = -1.0 / (8.0 * z) + 1.0 / (128.0 * z * z)
+                    + 5.0 / (1024.0 * z * z * z) - 21.0 / (32768.0 * z * z * z * z)
+                logGammaRatio = 0.5 * Foundation.log(z) + Foundation.log1p(series)
+            } else {
+                logGammaRatio = Foundation.lgamma(0.5 * (df + 1.0)) - Foundation.lgamma(0.5 * df)
+            }
+            let logValue = logGammaRatio
+                - 0.5 * Foundation.log(df * .pi)
+                - 0.5 * (df + 1.0) * Foundation.log1p(x * x / df)
+            let value = Foundation.exp(logValue)
+            return value.isFinite ? value : nil
+        }
+
         /// Returns the cumulative probability `P(T <= x)` under the t-distribution with `df` degrees of freedom.
         ///
         /// The cumulative distribution function (CDF) gives the probability that a
@@ -385,6 +427,43 @@ public enum Distributions: Sendable {
     /// convention established by ``Distributions/normal``, out-of-domain
     /// input maps to `nil` rather than a runtime trap.
     public enum chiSquared: Sendable {
+
+        /// Returns the probability density of the chi-squared distribution with `df` degrees of freedom at `x`.
+        ///
+        /// The distribution has support on `[0, ∞)`, so negative `x` returns 0. At
+        /// `x = 0` the density depends on `df`: it is unbounded for `df < 2`, exactly
+        /// 0.5 for `df = 2`, and 0 for `df > 2`. The unbounded case returns `nil`,
+        /// following the package convention that a non-finite result maps to `nil`.
+        /// Evaluated in log space with `lgamma`, so far-tail values stay accurate.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // At df = 2 the density is 0.5 · exp(-x / 2), so x = 2 gives ≈ 0.1839
+        /// let height = Distributions.chiSquared.pdf(x: 2, df: 2)  // ≈ 0.1839
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - x: The point at which to evaluate the density.
+        ///   - df: The degrees of freedom. Must be positive.
+        /// - Returns: The probability density at `x`, or `nil` if `df <= 0`,
+        ///   if `x = 0` with `df < 2`, or the computation produces a non-finite result.
+        public static func pdf(x: Double, df: Double) -> Double? {
+            guard df > 0 else { return nil }
+            if x < 0 { return 0.0 }
+            if x == 0 {
+                if df < 2.0 { return nil }
+                return df == 2.0 ? 0.5 : 0.0
+            }
+            let halfDf = 0.5 * df
+            let logValue = (halfDf - 1.0) * Foundation.log(x)
+                - 0.5 * x
+                - halfDf * Foundation.log(2.0)
+                - Foundation.lgamma(halfDf)
+            let value = Foundation.exp(logValue)
+            return value.isFinite ? value : nil
+        }
 
         /// Returns the cumulative probability `P(X² <= x)` under the chi-squared distribution with `df` degrees of freedom.
         ///
