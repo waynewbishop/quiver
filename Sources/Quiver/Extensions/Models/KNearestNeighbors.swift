@@ -125,19 +125,11 @@ public struct KNearestNeighbors: Classifier, Codable, CustomStringConvertible, E
     /// Predicts the label for a single sample.
     private func _predictSingle(_ sample: [Double]) -> Int {
 
-        // Compute distance from sample to every training point
-        var distances = [(index: Int, distance: Double)]()
-        distances.reserveCapacity(trainingFeatures.count)
-
-        for i in 0..<trainingFeatures.count {
-            let d = _distance(sample, trainingFeatures[i])
-            distances.append((index: i, distance: d))
-        }
-
         // Find the k nearest neighbors. Equal distances fall back to training order, so the
         // neighbor list, and every tie-break that reads it, is the same on every run.
-        distances.sort { ($0.distance, $0.index) < ($1.distance, $1.index) }
-        let neighbors = distances.prefix(k)
+        let neighbors = _NearestNeighbors.nearest(
+            to: sample, in: trainingFeatures, metric: metric, k: k
+        )
 
         // Vote among neighbors
         switch weight {
@@ -145,56 +137,6 @@ public struct KNearestNeighbors: Classifier, Codable, CustomStringConvertible, E
             return _majorityVote(neighbors)
         case .distance:
             return _distanceWeightedVote(neighbors)
-        }
-    }
-
-    /// Computes the distance between two samples using the configured metric.
-    private func _distance(_ a: [Double], _ b: [Double]) -> Double {
-        switch metric {
-        case .euclidean:
-            var sum = 0.0
-            for i in 0..<a.count {
-                let diff = a[i] - b[i]
-                sum += diff * diff
-            }
-            return Foundation.sqrt(sum)
-        case .cosine:
-            // Performance: Inlines cosine distance to avoid _Vector wrapper overhead
-            // per prediction. Same formula as 1.0 - cosineOfAngle(with:).
-            var dot = 0.0, magA = 0.0, magB = 0.0
-            for i in 0..<a.count {
-                dot += a[i] * b[i]
-                magA += a[i] * a[i]
-                magB += b[i] * b[i]
-            }
-            let denom = Foundation.sqrt(magA) * Foundation.sqrt(magB)
-            return denom > 0 ? 1.0 - dot / denom : 1.0
-        case .manhattan:
-            var sum = 0.0
-            for i in 0..<a.count {
-                sum += abs(a[i] - b[i])
-            }
-            return sum
-        case .chebyshev:
-            var maxDiff = 0.0
-            for i in 0..<a.count {
-                let diff = abs(a[i] - b[i])
-                if diff > maxDiff { maxDiff = diff }
-            }
-            return maxDiff
-        case .squaredEuclidean:
-            var sum = 0.0
-            for i in 0..<a.count {
-                let diff = a[i] - b[i]
-                sum += diff * diff
-            }
-            return sum
-        case .minkowski(let p):
-            var sum = 0.0
-            for i in 0..<a.count {
-                sum += Foundation.pow(abs(a[i] - b[i]), p)
-            }
-            return Foundation.pow(sum, 1.0 / p)
         }
     }
 

@@ -418,9 +418,10 @@ public enum Distributions: Sendable {
 
     /// Chi-squared distribution functions.
     ///
-    /// Provides cumulative density (``cdf(x:df:)``) for the chi-squared
-    /// distribution with `df` degrees of freedom. Computed via the regularized
-    /// lower incomplete gamma function `P(a, x)`.
+    /// Provides probability density (``pdf(x:df:)``), cumulative density
+    /// (``cdf(x:df:)``), and quantile (``quantile(p:df:)``) for the chi-squared
+    /// distribution with `df` degrees of freedom. The cumulative density is computed
+    /// via the regularized lower incomplete gamma function `P(a, x)`.
     ///
     /// All functions return `Double?` and produce `nil` when `df <= 0` or
     /// when the computation would produce a non-finite result. Following the
@@ -497,6 +498,214 @@ public enum Distributions: Sendable {
             }
             let clamped = Swift.max(0.0, Swift.min(1.0, p))
             return clamped.isFinite ? clamped : nil
+        }
+
+        /// Returns the quantile (inverse CDF) of the chi-squared distribution at probability `p`.
+        ///
+        /// The quantile answers "what value of `x` puts probability `p` below it under a
+        /// chi-squared distribution with `df` degrees of freedom?" The quantile at
+        /// `p = 0.95` is the critical value for a chi-squared test at the 5% level. For
+        /// example, with `df = 5` it is approximately `11.07`, so a test statistic above
+        /// `11.07` is rarer than one time in twenty when the null hypothesis holds.
+        ///
+        /// Implemented by bisection on ``cdf(x:df:)``, starting from a bracket that
+        /// widens until it contains `p`. Bisection is stable on the monotonic CDF and
+        /// converges to roughly 1e-12 in relative terms.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // 5% critical value with df = 5
+        /// let critical = Distributions.chiSquared.quantile(p: 0.95, df: 5)  // ≈ 11.0705
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - p: The cumulative probability, in `(0, 1)`.
+        ///   - df: The degrees of freedom. Must be positive.
+        /// - Returns: The quantile at `p`, or `nil` if `p` is outside `(0, 1)`,
+        ///   `df <= 0`, or the computation produces a non-finite result.
+        public static func quantile(p: Double, df: Double) -> Double? {
+            guard df > 0 else { return nil }
+            guard p > 0.0 && p < 1.0 else { return nil }
+
+            // Start above the mean (df) and widen until the CDF at the upper bound reaches p.
+            var lo = 0.0
+            var hi = df + 4.0 * Foundation.sqrt(2.0 * df) + 1.0
+            var expandIterations = 0
+            while expandIterations < 64 {
+                guard let cdfHi = cdf(x: hi, df: df) else { return nil }
+                if cdfHi >= p { break }
+                lo = hi
+                hi *= 2.0
+                expandIterations += 1
+            }
+            if expandIterations >= 64 { return nil }
+
+            let tolerance = 1e-12
+            for _ in 0..<200 {
+                let mid = 0.5 * (lo + hi)
+                if hi - lo < tolerance * Swift.max(1.0, abs(mid)) { break }
+                guard let cdfMid = cdf(x: mid, df: df) else { return nil }
+                if cdfMid < p {
+                    lo = mid
+                } else {
+                    hi = mid
+                }
+            }
+            let value = 0.5 * (lo + hi)
+            return value.isFinite ? value : nil
+        }
+    }
+
+    /// F-distribution functions.
+    ///
+    /// Provides probability density (``pdf(x:df1:df2:)``), cumulative density
+    /// (``cdf(x:df1:df2:)``), and quantile (``quantile(p:df1:df2:)``) for the
+    /// F-distribution with `df1` numerator and `df2` denominator degrees of freedom.
+    /// The F-distribution is the ratio of two independent chi-squared variables, each
+    /// divided by its degrees of freedom, which is why it appears wherever one variance
+    /// is compared with another, most often in the analysis of variance.
+    ///
+    /// All functions return `Double?` and produce `nil` when either degrees-of-freedom
+    /// value is not positive, when the input is otherwise out of domain, or when the
+    /// computation would produce a non-finite result. Following the convention
+    /// established by ``Distributions/normal``, out-of-domain input maps to `nil`
+    /// rather than a runtime trap.
+    public enum f: Sendable {
+
+        /// Returns the probability density of the F-distribution at `x`.
+        ///
+        /// The distribution has support on `[0, ∞)`, so negative `x` returns 0. At
+        /// `x = 0` the density depends on `df1`: it is unbounded for `df1 < 2`, exactly
+        /// 1 for `df1 = 2`, and 0 for `df1 > 2`. The unbounded case returns `nil`,
+        /// following the package convention that a non-finite result maps to `nil`.
+        /// Evaluated in log space with `lgamma`, so far-tail values stay accurate.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // With df1 = 2 and df2 = 2 the density is 1 / (1 + x)², so x = 0.5 gives ≈ 0.4444
+        /// let height = Distributions.f.pdf(x: 0.5, df1: 2, df2: 2)  // ≈ 0.4444
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - x: The point at which to evaluate the density.
+        ///   - df1: The numerator degrees of freedom. Must be positive.
+        ///   - df2: The denominator degrees of freedom. Must be positive.
+        /// - Returns: The probability density at `x`, or `nil` if either degrees-of-freedom
+        ///   value is not positive, if `x = 0` with `df1 < 2`, or the computation produces
+        ///   a non-finite result.
+        public static func pdf(x: Double, df1: Double, df2: Double) -> Double? {
+            guard df1 > 0, df2 > 0 else { return nil }
+            if x < 0 { return 0.0 }
+            if x == 0 {
+                if df1 < 2.0 { return nil }
+                return df1 == 2.0 ? 1.0 : 0.0
+            }
+            let halfDf1 = 0.5 * df1
+            let halfDf2 = 0.5 * df2
+            // log B(df1/2, df2/2), split into named terms for the type checker.
+            let logBeta: Double = Foundation.lgamma(halfDf1) + Foundation.lgamma(halfDf2)
+                - Foundation.lgamma(halfDf1 + halfDf2)
+            let logNumerator: Double = halfDf1 * Foundation.log(df1) + halfDf2 * Foundation.log(df2)
+                + (halfDf1 - 1.0) * Foundation.log(x)
+            let logDenominator: Double = (halfDf1 + halfDf2) * Foundation.log(df2 + df1 * x)
+            let value = Foundation.exp(logNumerator - logDenominator - logBeta)
+            return value.isFinite ? value : nil
+        }
+
+        /// Returns the cumulative probability `P(F <= x)` under the F-distribution.
+        ///
+        /// Negative or zero `x` returns 0 (the distribution has support on `[0, ∞)`).
+        /// Computed via the regularized incomplete beta function
+        /// `I(df1·x / (df1·x + df2); df1 / 2, df2 / 2)`, the same routine that powers
+        /// the t-distribution's CDF.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // Two samples of the same size have a median F ratio of exactly 1
+        /// let p = Distributions.f.cdf(x: 1.0, df1: 5, df2: 5)  // 0.5
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - x: The point at which to evaluate the CDF.
+        ///   - df1: The numerator degrees of freedom. Must be positive.
+        ///   - df2: The denominator degrees of freedom. Must be positive.
+        /// - Returns: The cumulative probability at `x`, or `nil` if either degrees-of-freedom
+        ///   value is not positive or the computation produces a non-finite result.
+        public static func cdf(x: Double, df1: Double, df2: Double) -> Double? {
+            guard df1 > 0, df2 > 0 else { return nil }
+            if x <= 0 { return 0.0 }
+            if x == Double.infinity { return 1.0 }
+            let scaled = df1 * x
+            guard scaled.isFinite else { return 1.0 }
+            guard let ibeta = _regularizedIncompleteBeta(
+                x: scaled / (scaled + df2), a: 0.5 * df1, b: 0.5 * df2
+            ) else {
+                return nil
+            }
+            let clamped = Swift.max(0.0, Swift.min(1.0, ibeta))
+            return clamped.isFinite ? clamped : nil
+        }
+
+        /// Returns the quantile (inverse CDF) of the F-distribution at probability `p`.
+        ///
+        /// The quantile at `p = 0.95` is the critical value for an F-test at the 5% level.
+        /// For example, with `df1 = 3` and `df2 = 20` it is approximately `3.098`, so an
+        /// F statistic above `3.098` is rarer than one time in twenty when the null
+        /// hypothesis holds.
+        ///
+        /// Implemented by bisection on ``cdf(x:df1:df2:)``, starting from a bracket that
+        /// widens until it contains `p`.
+        ///
+        /// Example:
+        /// ```swift
+        /// import Quiver
+        ///
+        /// // 5% critical value for three groups of 7 observations each: df1 = 2, df2 = 18
+        /// let critical = Distributions.f.quantile(p: 0.95, df1: 2, df2: 18)  // ≈ 3.5546
+        /// ```
+        ///
+        /// - Parameters:
+        ///   - p: The cumulative probability, in `(0, 1)`.
+        ///   - df1: The numerator degrees of freedom. Must be positive.
+        ///   - df2: The denominator degrees of freedom. Must be positive.
+        /// - Returns: The quantile at `p`, or `nil` if `p` is outside `(0, 1)`, either
+        ///   degrees-of-freedom value is not positive, or the computation produces a
+        ///   non-finite result.
+        public static func quantile(p: Double, df1: Double, df2: Double) -> Double? {
+            guard df1 > 0, df2 > 0 else { return nil }
+            guard p > 0.0 && p < 1.0 else { return nil }
+
+            var lo = 0.0
+            var hi = 1.0
+            var expandIterations = 0
+            while expandIterations < 200 {
+                guard let cdfHi = cdf(x: hi, df1: df1, df2: df2) else { return nil }
+                if cdfHi >= p { break }
+                lo = hi
+                hi *= 2.0
+                expandIterations += 1
+            }
+            if expandIterations >= 200 { return nil }
+
+            let tolerance = 1e-12
+            for _ in 0..<200 {
+                let mid = 0.5 * (lo + hi)
+                if hi - lo < tolerance * Swift.max(1.0, abs(mid)) { break }
+                guard let cdfMid = cdf(x: mid, df1: df1, df2: df2) else { return nil }
+                if cdfMid < p {
+                    lo = mid
+                } else {
+                    hi = mid
+                }
+            }
+            let value = 0.5 * (lo + hi)
+            return value.isFinite ? value : nil
         }
     }
 
@@ -1000,6 +1209,50 @@ public enum Distributions: Sendable {
     ///
     /// Converges rapidly when `x < a + 1`. Returns `nil` if the iteration
     /// fails to converge or produces a non-finite result.
+    /// Regularized upper incomplete gamma function `Q(a, x) = 1 - P(a, x)`, computed directly.
+    ///
+    /// Hypothesis-test p-values are upper-tail probabilities, and subtracting a lower-tail value
+    /// that is close to 1 from 1 discards the digits that matter. When `x >= a + 1` the
+    /// continued fraction already produces `Q`, so the far tail keeps its relative accuracy.
+    ///
+    /// - Parameters:
+    ///   - a: The shape parameter. Must be positive.
+    ///   - x: The point at which to evaluate. Values at or below zero return 1.
+    /// - Returns: The upper-tail probability in `[0, 1]`, or `nil` if the computation fails to converge.
+    internal static func _regularizedIncompleteGammaQ(a: Double, x: Double) -> Double? {
+        guard a > 0 else { return nil }
+        if x <= 0 { return 1.0 }
+        if x < a + 1.0 {
+            guard let p = _gammaSeries(a: a, x: x) else { return nil }
+            return 1.0 - p
+        }
+        return _gammaContinuedFraction(a: a, x: x)
+    }
+
+    /// Upper-tail probability `P(F > x)` of the F-distribution, computed without cancellation.
+    ///
+    /// Uses the complement identity `1 - I(z; a, b) = I(1 - z; b, a)` with the complementary
+    /// argument formed directly as `df2 / (df2 + df1·x)`, so a tiny p-value is not lost to
+    /// subtracting two numbers that are nearly equal.
+    ///
+    /// - Parameters:
+    ///   - x: The F statistic. Values at or below zero return 1.
+    ///   - df1: The numerator degrees of freedom. Must be positive.
+    ///   - df2: The denominator degrees of freedom. Must be positive.
+    /// - Returns: The upper-tail probability in `[0, 1]`, or `nil` for invalid input.
+    internal static func _fUpperTail(x: Double, df1: Double, df2: Double) -> Double? {
+        guard df1 > 0, df2 > 0 else { return nil }
+        if x <= 0 { return 1.0 }
+        let scaled = df1 * x
+        guard scaled.isFinite else { return 0.0 }
+        guard let tail = _regularizedIncompleteBeta(
+            x: df2 / (df2 + scaled), a: 0.5 * df2, b: 0.5 * df1
+        ) else {
+            return nil
+        }
+        return Swift.max(0.0, Swift.min(1.0, tail))
+    }
+
     private static func _gammaSeries(a: Double, x: Double) -> Double? {
         let maxIterations = 200
         let epsilon = 3.0e-16

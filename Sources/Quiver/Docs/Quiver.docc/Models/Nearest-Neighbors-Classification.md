@@ -243,6 +243,26 @@ Each `Classification` result conforms to `Sequence`, the same Swift protocol tha
 
 > Tip: Use `predict(_:)` when feeding results into evaluation methods like `accuracy`, `classificationReport`, or `confusionMatrix`.
 
+### Predicting numbers with the regressor
+
+The same neighbor search predicts a number instead of a label. `KNearestNeighborsRegressor` finds the `k` closest training samples and returns the average of their targets, so it takes `targets:` where the classifier takes `labels:`. The metric and the weighting work exactly as they do for classification.
+
+```swift
+import Quiver
+
+let sqft = [[1000.0], [1500.0], [2000.0], [2500.0], [3000.0]]
+let prices = [150000.0, 200000.0, 260000.0, 310000.0, 370000.0]
+
+let model = KNearestNeighborsRegressor.fit(features: sqft, targets: prices, k: 2)
+print(model)
+// KNearestNeighborsRegressor: k=2, euclidean, 5 training points, 1 features
+
+let sizes = [[1800.0]]
+model.predict(sizes)   // [230000.0]
+```
+
+The two nearest sizes to 1,800 square feet are 1,500 and 2,000, so the prediction is the average of their prices. Because every prediction is an average of training targets, the regressor follows curves a straight line cannot, and it never predicts beyond the range of the targets it was trained on. With `weight: .distance`, closer neighbors count for more, and the same query predicts `236000.0` because the 2,000 square foot house is nearer than the 1,500 square foot one.
+
 ### When to use Nearest Neighbors
 
 Nearest Neighbors works best when:
@@ -261,13 +281,16 @@ The `KNearestNeighbors` model follows the same immutable-struct pattern as `Gaus
 
 ### Model
 - ``KNearestNeighbors``
+- ``KNearestNeighborsRegressor``
 
 ### Training
 - ``KNearestNeighbors/fit(features:labels:k:metric:weight:)``
+- ``KNearestNeighborsRegressor/fit(features:targets:k:metric:weight:)``
 
 ### Prediction
 - ``KNearestNeighbors/predict(_:)``
 - ``KNearestNeighbors/classify(_:)``
+- ``KNearestNeighborsRegressor/predict(_:)``
 
 ### Classification result
 - ``Classification``

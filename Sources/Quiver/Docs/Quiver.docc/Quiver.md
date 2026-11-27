@@ -76,6 +76,7 @@ Quiver provides developers the tools to work with data directly. It works at the
 - <doc:Working-With-Distributions>
 - <doc:Identifying-A-Distribution>
 - <doc:Correlation>
+- <doc:Hypothesis-Testing>
 - <doc:Random-Sampling>
 
 ### Data Preparation

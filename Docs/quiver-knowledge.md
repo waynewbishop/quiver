@@ -57,7 +57,7 @@ let run2 = KMeans.fit(data: points, k: 3, seed: 42)
 run1 == run2  // true
 ```
 
-Models: `KMeans`, `KNearestNeighbors`, `GaussianNaiveBayes`, `BernoulliNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`, `ResidualModel`, `PCA`, `TrueEffortScore`. Data: `Panel`, `Panel.Row`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`, `TESResult`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`, `TESError`.
+Models: `KMeans`, `KNearestNeighbors`, `KNearestNeighborsRegressor`, `GaussianNaiveBayes`, `BernoulliNaiveBayes`, `LinearRegression`, `GradientDescent`, `Ridge`, `LogisticRegression`, `ResidualModel`, `PCA`, `TrueEffortScore`. Data: `Panel`, `Panel.Row`. Result types: `ConfusionMatrix`, `Classification`, `Cluster`, `FeatureScaler`, `ClassStats`, `TESResult`, `HypothesisTest`. Supporting types: `DistanceMetric`, `VoteWeight`, `Fraction`, `MatrixError`, `GradientDescentError`, `TESError`.
 
 ---
 
@@ -388,7 +388,107 @@ Distributions.chiSquared.cdf(x: 18.307, df: 10)  // ≈ 0.95
 
 The chi-squared distribution has support on `[0, ∞)` (negative `x` returns `0.0`, not `nil`). `pdf(x: 0, df:)` returns `nil` for `df < 2` (the density is unbounded there), `0.5` at `df = 2`, and `0.0` above. Used for variance inference and goodness-of-fit testing — the test statistic for "do observed category counts match expected counts" follows a chi-squared distribution under the null hypothesis. Implementation: regularized lower incomplete gamma function. Closed-form anchor at `df = 2`: `cdf(x, df: 2) = 1 - exp(-x / 2)`.
 
+```swift
+// Critical value at p = 0.95 for a chi-squared test with df = 5 (1.8.0)
+Distributions.chiSquared.quantile(p: 0.95, df: 5)   // ≈ 11.0705
+```
+
+`quantile(p:df:)` inverts the CDF by bisection and returns `nil` for `p` outside `(0, 1)` or `df <= 0`.
+
+### F-distribution (1.8.0)
+
+```swift
+// Density at x = 0.5 with df1 = 2, df2 = 2 (closed form 1 / (1 + x)²)
+Distributions.f.pdf(x: 0.5, df1: 2, df2: 2)          // ≈ 0.4444
+
+// Cumulative probability: two equal-sized samples give a median ratio of exactly 1
+Distributions.f.cdf(x: 1.0, df1: 5, df2: 5)          // 0.5
+
+// 5% critical value for three groups of 7 observations (df1 = 2, df2 = 18)
+Distributions.f.quantile(p: 0.95, df1: 2, df2: 18)   // ≈ 3.5546
+```
+
+The F-distribution is the ratio of two independent chi-squared variables, each divided by its degrees of freedom. It has support on `[0, ∞)`; negative `x` returns `0.0`, and `pdf(x: 0, ...)` returns `nil` for `df1 < 2`, `1.0` at `df1 = 2`, and `0.0` above. Used for comparing variances, most often in the analysis of variance (`oneWayANOVA()`). Implementation: regularized incomplete beta function, with bisection for the quantile. Functions return `nil` when either degrees-of-freedom value is not positive.
+
 `GaussianNaiveBayes` uses `Distributions.normal.logPDF` internally; the public exposure lets other callers reuse the same well-tested implementation.
+
+## Hypothesis Tests and Confidence Intervals (1.8.0)
+
+Every test returns a `HypothesisTest` (see Inferential Output Types) or `nil` when the data cannot support the test: too few observations, no variation, or a value that is not finite. Tests live on `[Double]`, `[Bool]`, `[Int]`, `[[Double]]` and `ContingencyTable`, and follow the same `alternative:` convention: `.twoSided` (default), `.greater`, `.less`.
+
+```swift
+import Quiver
+
+let sessionSeconds = [245.0, 252.0, 238.0, 261.0, 247.0,
+                      255.0, 249.0, 258.0, 244.0, 251.0]
+
+// One-sample t-test against a hypothesized mean
+sessionSeconds.tTest(against: 240.0)
+// HypothesisTest: one-sample t-test, t = 4.575, df = 9, p = 0.0013
+
+// One-sided: is the average session longer than 240?
+sessionSeconds.tTest(against: 240.0, alternative: .greater)?.pValue   // ≈ 0.00067
+
+// t-based confidence interval for the mean
+sessionSeconds.confidenceInterval(level: 0.95)   // lower ≈ 245.06, upper ≈ 254.94
+```
+
+```swift
+let oldRoute = [27.1, 22.4, 25.3, 24.8, 26.0, 23.9, 25.5, 24.1]
+let newRoute = [29.0, 31.2, 27.8, 30.5, 28.9, 32.1, 29.7]
+
+// Welch's t-test: two independent samples, no equal-variance assumption
+oldRoute.welchTTest(against: newRoute)
+// HypothesisTest: Welch t-test, t = -6.612, df = 12.62, p < 0.0001
+
+let before = [88.0, 72.0, 95.0, 81.0, 90.0, 76.0, 84.0, 91.0]
+let after  = [90.0, 75.0, 96.0, 85.0, 89.0, 80.0, 88.0, 94.0]
+
+// Paired t-test: matched measurements; the alternative describes `self` relative to `other`
+after.pairedTTest(against: before, alternative: .greater)
+// HypothesisTest: paired t-test, t = 3.989, df = 7, p = 0.0026
+
+// One-way ANOVA: one array per group
+let groups = [[23.0, 25.0, 21.0, 24.0, 26.0],
+              [30.0, 28.0, 31.0, 29.0, 27.0],
+              [22.0, 20.0, 24.0, 23.0, 21.0]]
+groups.oneWayANOVA()
+// HypothesisTest: one-way ANOVA, F = 22.782, df = (2, 12), p < 0.0001
+```
+
+```swift
+// Proportion tests on [Bool]: normal approximation, no continuity correction
+let clicks = [Bool](repeating: true, count: 14) + [Bool](repeating: false, count: 6)
+clicks.proportionTest(against: 0.5)
+// HypothesisTest: one-proportion z-test, z = 1.789, p = 0.0736
+
+let variantA = [Bool](repeating: true, count: 30) + [Bool](repeating: false, count: 70)
+let variantB = [Bool](repeating: true, count: 45) + [Bool](repeating: false, count: 55)
+variantA.proportionTest(against: variantB)       // two-sample, pooled
+// HypothesisTest: two-proportion z-test, z = -2.191, p = 0.0285
+
+// Chi-squared goodness of fit on [Int] counts (equal shares by default)
+let rolls = [18, 22, 16, 25, 19, 20]
+rolls.chiSquaredTest()
+// HypothesisTest: chi-squared goodness-of-fit test, χ² = 2.500, df = 5, p = 0.7765
+rolls.chiSquaredTest(expectedProportions: [0.2, 0.2, 0.15, 0.15, 0.15, 0.15])
+
+// Chi-squared test of independence on a ContingencyTable
+if let table = ContingencyTable(
+    rowLabels: ["Treatment", "Control"],
+    columnLabels: ["Improved", "No change"],
+    counts: [[30, 20], [18, 32]]
+) {
+    table.chiSquaredTest()
+    // HypothesisTest: chi-squared test of independence, χ² = 5.769, df = 1, p = 0.0163
+}
+```
+
+Direction: for `welchTTest`, `pairedTTest` and the two-sample `proportionTest`, the alternative describes `self` relative to `other`. `.greater` means `self` is larger. The chi-squared tests and `oneWayANOVA()` measure departure in one direction only, so their `alternative` is `nil`.
+
+Failure modes (all return `nil`, never trap): fewer than two observations; every value identical (no standard error, no within-group variance); a non-finite value; mismatched lengths for `pairedTTest`; a hypothesized proportion outside `(0, 1)`; a chi-squared table with fewer than two rows or columns or a zero margin; `expectedProportions` that do not match the counts or do not sum to 1. The chi-squared and proportion approximations are reliable when expected counts are at least about 5 (chi-squared) or both successes and failures reach about 10 (proportions); the library does not enforce that, so check it.
+
+P-values are read from the lower tail (`2·P(T ≤ -|t|)`), the chi-squared upper tail uses the regularized upper incomplete gamma function directly, and the F upper tail uses the complementary incomplete beta, so very small p-values keep their relative precision instead of rounding to zero. Verified against reference implementations to better than 1e-9 in `Tests/QuiverTests/HypothesisTestTests.swift` and `FDistributionTests.swift`.
 
 ## Inferential Output Types
 
@@ -423,6 +523,20 @@ Returned by `LinearRegression.summary(features:targets:confidenceLevel:)`. Throw
 - `confidenceLevel: Double` — the level used to build `confidenceIntervals`
 
 `ConfidenceInterval` is a small `(lower: Double, upper: Double)` value type, also conforming to the standard four protocols.
+
+### `HypothesisTest`
+
+Returned by every test in Hypothesis Tests and Confidence Intervals. Fields:
+
+- `kind: HypothesisTest.Kind` — `.oneSampleT`, `.welchT`, `.pairedT`, `.oneProportion`, `.twoProportion`, `.chiSquaredIndependence`, `.chiSquaredGoodnessOfFit`, `.oneWayANOVA`
+- `statistic: Double` — `t`, `z`, `χ²` or `F`, depending on `kind`
+- `degreesOfFreedom: Double?` — `nil` for the proportion tests; the numerator degrees of freedom for ANOVA; non-integer for Welch
+- `denominatorDegreesOfFreedom: Double?` — ANOVA only
+- `pValue: Double`
+- `alternative: HypothesisTest.Alternative?` — `.twoSided`, `.greater`, `.less`; `nil` for chi-squared and ANOVA
+- `rejectsNullHypothesis(at: 0.05)` — `true` when `pValue` is strictly below the significance level
+
+Conforms to `Codable`, `Sendable`, `Equatable`, and `CustomStringConvertible`.
 
 ### `ClassificationReport` and `ClassMetrics`
 
@@ -1052,6 +1166,27 @@ for group in knn.classify(testX) {
 
 A tied vote goes to the label of the nearest neighbor (1.6.0); neighbors sort by distance, then training index, so the same model returns the same prediction on every launch.
 
+### K-Nearest Neighbors regression (1.8.0)
+
+```swift
+let sqft   = [[1000.0], [1500.0], [2000.0], [2500.0], [3000.0]]
+let prices = [150000.0, 200000.0, 260000.0, 310000.0, 370000.0]
+
+let model = KNearestNeighborsRegressor.fit(
+    features: sqft, targets: prices,
+    k: 2, metric: .euclidean, weight: .uniform
+)
+print(model)   // KNearestNeighborsRegressor: k=2, euclidean, 5 training points, 1 features
+
+model.predict([[1800.0]])   // [230000.0] — average of the 1,500 and 2,000 sq ft targets
+model.predict(1800.0)       // 230000.0 — single-feature scalar overload (Regressor)
+
+let weighted = KNearestNeighborsRegressor.fit(features: sqft, targets: prices, k: 2, weight: .distance)
+weighted.predict([[1800.0]])   // [236000.0] — closer neighbors count for more
+```
+
+`KNearestNeighborsRegressor` conforms to `Regressor`, `Codable`, `Equatable`, `Sendable`, and `CustomStringConvertible`. It takes `targets:` (a regressor), shares `DistanceMetric` and `VoteWeight` with `KNearestNeighbors`, and breaks distance ties by training order so predictions are identical on every launch. With `weight: .distance`, a neighbor at distance 0 makes the prediction the average of the exact matches. Predictions are averages of training targets, so they never extrapolate beyond the training range. Standardize features first when they sit on different scales.
+
 ## Gaussian Naive Bayes
 
 ```swift
@@ -1271,7 +1406,7 @@ Quiver's ML models follow a consistent pattern: `fit()` → `predict()` → eval
 - **Features and labels.** Features are the input measurements (`[[Double]]` matrix, rows = samples, columns = measurements). Labels are what we predict (`[Int]` for classification, `[Double]` for regression).
 - **Train/test split.** Never evaluate on training data. Use `trainTestSplit(testRatio:seed:)` or `stratifiedSplit(labels:testRatio:seed:)` to hold out evaluation data.
 - **Feature scaling.** Use `FeatureScaler.fit(features:)` on training data only. Transform both train and test sets with the same scaler. Prevents features with large ranges from dominating. Distance-based models (`KNearestNeighbors`, `KMeans`) and iterative optimizers (`GradientDescent`) require scaling — the scaler and model must be persisted together. `LinearRegression` and `GaussianNaiveBayes` do not require scaling. `BernoulliNaiveBayes` must not be scaled — its features are `0.0`/`1.0` flags.
-- **Models available:** GaussianNaiveBayes, BernoulliNaiveBayes, KNearestNeighbors, KMeans, LinearRegression, GradientDescent, Ridge, LogisticRegression, PCA. All use static `fit()` methods — no unfitted state exists.
+- **Models available:** GaussianNaiveBayes, BernoulliNaiveBayes, KNearestNeighbors, KNearestNeighborsRegressor, KMeans, LinearRegression, GradientDescent, Ridge, LogisticRegression, PCA. All use static `fit()` methods — no unfitted state exists.
 - **Built with `init`, not `fit()`:** `ResidualModel(model:)` wraps an already-fitted regressor and scores how far each observation sits from its prediction. `TrueEffortScore` is created either fresh for a new runner or seeded from a runner's past workouts, then records a live run with `record(...)` and returns a `TESResult` from `finalize()`.
 - **Scalar prediction.** Single-feature models accept a scalar in place of a one-row matrix: `model.predict(3500.0)` returns one value — `Double` for regressors, `Int` for classifiers. The convenience is protocol-provided on every `Regressor` and `Classifier`; it applies only when the model was trained on a single feature.
 - **Model persistence.** All models conform to `Codable`. Train once, encode to JSON with `JSONEncoder`, decode on any platform with `JSONDecoder` — identical predictions guaranteed by `Equatable`. When scaling is used, persist both the scaler and model together. See the Model-Persistence documentation page for platform-specific guidance (iOS, watchOS, Vapor, SwiftData).

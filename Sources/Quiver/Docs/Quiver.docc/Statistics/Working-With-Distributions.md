@@ -6,7 +6,7 @@ Evaluating probability densities, cumulative probabilities, and quantiles for th
 
 A **probability distribution** assigns a probability to each possible value of a random quantity. Whether the data represents test scores, sensor noise, or heights, we analyze these distributions using three functions: the probability density function (PDF), the cumulative distribution function (CDF), and the quantile function.
 
-The `Distributions` namespace organizes these functions. Quiver provides the normal distribution, the Student's t-distribution, the chi-squared distribution, the Poisson distribution, and the binomial distribution. Each distribution provides the functions that apply to it, under consistent names: the normal provides `pdf`, `cdf`, and `quantile`; the t-distribution provides `cdf` and `quantile`; the chi-squared provides `cdf`; and the discrete Poisson and binomial provide `pmf`, `cdf`, and `quantile`.
+The `Distributions` namespace organizes these functions. Quiver provides the normal distribution, the Student's t-distribution, the chi-squared distribution, the F-distribution, the Poisson distribution, and the binomial distribution. Each distribution provides the functions that apply to it, under consistent names: the normal provides `pdf`, `cdf`, and `quantile`; the t-distribution and the chi-squared provide `pdf`, `cdf`, and `quantile`; the F-distribution provides `pdf`, `cdf`, and `quantile`; and the discrete Poisson and binomial provide `pmf`, `cdf`, and `quantile`.
 
 ```swift
 import Quiver
@@ -85,7 +85,7 @@ let zCrit = Distributions.normal.quantile(p: 0.975, mean: 0,
 
 The chi-squared distribution models the sum of squared independent standard-normal values. It is primarily used for variance inference and goodness-of-fit testing. The mean equals the degrees of freedom (`df`).
 
-Use `Distributions.chiSquared.pdf(x:df:)` to draw the curve and `Distributions.chiSquared.cdf(x:df:)` to perform these tests. For a fair-die test (observed `[12, 8, 11, 9, 13, 7]`, expected `10`), the chi-squared statistic compares the observed frequency to the expected frequency across six categories.
+Use `Distributions.chiSquared.pdf(x:df:)` to draw the curve, `Distributions.chiSquared.cdf(x:df:)` to find a probability, and `Distributions.chiSquared.quantile(p:df:)` to find the critical value for a test at a chosen level. For a fair-die test (observed `[12, 8, 11, 9, 13, 7]`, expected `10`), the chi-squared statistic compares the observed frequency to the expected frequency across six categories.
 
 ```swift
 import Quiver
@@ -102,6 +102,31 @@ for count in observed {
 // Six categories minus one estimated parameter (total) → df = 5
 let upperTailProbability = 1.0 - (Distributions.chiSquared.cdf(x: chiSquaredStat, df: 5) ?? 0)
 // upperTailProbability ≈ 0.73
+```
+
+A critical value answers the opposite question from a probability: which statistic marks the cutoff for rejecting the null hypothesis? With five degrees of freedom, a chi-squared statistic above about `11.07` is rarer than one time in twenty when the null hypothesis holds.
+
+```swift
+import Quiver
+
+let critical = Distributions.chiSquared.quantile(p: 0.95, df: 5)  // ≈ 11.0705
+```
+
+### The F-distribution
+
+The **F-distribution** is the ratio of two independent chi-squared values, each divided by its degrees of freedom, so it describes how two variances compare. It carries two degrees-of-freedom values: `df1` for the numerator and `df2` for the denominator. It is the reference distribution for the analysis of variance, where `oneWayANOVA()` compares the variation between group means with the variation inside the groups. See <doc:Hypothesis-Testing>.
+
+```swift
+import Quiver
+
+// With df1 = df2 = 2 the density is 1 / (1 + x)², so x = 0.5 gives 0.4444
+Distributions.f.pdf(x: 0.5, df1: 2, df2: 2)          // ≈ 0.4444
+
+// Two samples of the same size have a median F ratio of exactly 1
+Distributions.f.cdf(x: 1.0, df1: 5, df2: 5)          // 0.5
+
+// The 5% critical value for three groups of 7 observations each
+Distributions.f.quantile(p: 0.95, df1: 2, df2: 18)   // ≈ 3.5546
 ```
 
 ### The Poisson distribution
@@ -145,6 +170,7 @@ Every function in `Distributions` returns an optional: `Double?` for densities, 
 - ``Distributions/normal``
 - ``Distributions/t``
 - ``Distributions/chiSquared``
+- ``Distributions/f``
 - ``Distributions/poisson``
 - ``Distributions/binomial``
 
@@ -153,6 +179,7 @@ Every function in `Distributions` returns an optional: `Double?` for densities, 
 - ``Distributions/normal/logPDF(x:mean:standardDeviation:)``
 - ``Distributions/t/pdf(x:df:)``
 - ``Distributions/chiSquared/pdf(x:df:)``
+- ``Distributions/f/pdf(x:df1:df2:)``
 - ``Distributions/poisson/pmf(k:lambda:)``
 - ``Distributions/poisson/logPMF(k:lambda:)``
 - ``Distributions/binomial/pmf(k:n:p:)``
@@ -164,6 +191,9 @@ Every function in `Distributions` returns an optional: `Double?` for densities, 
 - ``Distributions/t/cdf(x:df:)``
 - ``Distributions/t/quantile(p:df:)``
 - ``Distributions/chiSquared/cdf(x:df:)``
+- ``Distributions/chiSquared/quantile(p:df:)``
+- ``Distributions/f/cdf(x:df1:df2:)``
+- ``Distributions/f/quantile(p:df1:df2:)``
 - ``Distributions/poisson/cdf(k:lambda:)``
 - ``Distributions/poisson/quantile(p:lambda:)``
 - ``Distributions/binomial/cdf(k:n:p:)``

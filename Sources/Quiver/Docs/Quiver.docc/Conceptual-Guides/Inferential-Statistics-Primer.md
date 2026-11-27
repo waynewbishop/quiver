@@ -112,6 +112,8 @@ if let sampleMean = sessionSeconds.mean(),
 
 The t-statistic of about `4.575` means the sample mean of 250 sits more than four standard errors above the hypothesized population mean of 240. Under the null, a gap that large would happen roughly thirteen times in ten thousand. The p-value is far below alpha, so we reject the null — the data is not consistent with a population mean of 240.
 
+> Note: This walk-through computes the t-statistic by hand to show where each number comes from. In everyday work, `tTest(against:)` returns the same statistic, degrees of freedom, and p-value in a single call, and Quiver also provides Welch, paired, proportion, chi-squared, and analysis of variance tests. See <doc:Hypothesis-Testing>.
+
 > Experiment: **The Quiver Notebook** is the right place to feel a p-value move. Re-run the snippet with `baseline` set to `242`, `245`, `248`, and `250`. Watch the t-statistic shrink toward zero and the p-value climb smoothly past `0.05` somewhere near `245`. The p-value is a continuous gradient, not a switch. See <doc:Quiver-Notebook>.
 
 ### Interpreting the p-value
